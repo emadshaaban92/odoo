@@ -681,9 +681,9 @@ class TestComputeOnchange(common.TransactionCase):
         self.assertEqual(record.bar, "foo1r")
         self.assertEqual(record.baz, "foo1z")
 
-        # recompute 'bar' but not 'baz'
+        # don't recompute 'bar' or 'baz'
         record.write({'foo': "foo2", 'bar': "bar2", 'baz': "baz2"})
-        self.assertEqual(record.bar, "foo2r")
+        self.assertEqual(record.bar, "bar2")
         self.assertEqual(record.baz, "baz2")
 
         # recompute 'bar' and 'baz', but do not change its value
@@ -691,9 +691,9 @@ class TestComputeOnchange(common.TransactionCase):
         self.assertEqual(record.bar, "foo3r")
         self.assertEqual(record.baz, "baz2")
 
-        # recompute 'bar' but not 'baz'
+        # don't recompute 'bar' or 'baz'
         record.write({'active': False, 'foo': "foo4", 'bar': "bar4", 'baz': "baz4"})
-        self.assertEqual(record.bar, "foo4r")
+        self.assertEqual(record.bar, "bar4")
         self.assertEqual(record.baz, "baz4")
 
     def test_set(self):

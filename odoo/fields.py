@@ -1076,9 +1076,6 @@ class Field(MetaField('DummyField', (object,), {})):
         :param value: a value in any format
         :return: the subset of `records` that have been modified
         """
-        # discard recomputation of self on records
-        records.env.remove_to_compute(self, records)
-
         # discard the records that are not modified
         cache = records.env.cache
         cache_value = self.convert_to_cache(value, records)
@@ -1243,6 +1240,16 @@ class Field(MetaField('DummyField', (object,), {})):
 
     def __set__(self, records, value):
         """ set the value of field ``self`` on ``records`` """
+        if self.compute and len(records.pool.field_computed[self]) > 1:
+            # force the computation of fields that are computed with some
+            # assigned fields, but are not assigned themselves
+            records._recompute_recordset([
+                field.name for field in records.pool.field_computed[self]
+            ])
+        elif self.compute and self.store:
+            # discard recomputation of self on records
+            records.env.remove_to_compute(self, records)
+
         protected_ids = []
         new_ids = []
         other_ids = []
@@ -1662,9 +1669,6 @@ class _String(Field):
     def write(self, records, value):
         if not (self.translate and self.store and any(records._ids)):
             return super().write(records, value)
-
-        # discard recomputation of self on records
-        records.env.remove_to_compute(self, records)
 
         # discard the records that are not modified
         cache = records.env.cache
@@ -2260,9 +2264,6 @@ class Binary(Field):
     def write(self, records, value):
         if not self.attachment:
             return super().write(records, value)
-
-        # discard recomputation of self on records
-        records.env.remove_to_compute(self, records)
 
         # update the cache, and discard the records that are not modified
         cache = records.env.cache
@@ -2908,9 +2909,6 @@ class Many2one(_Relational):
         return super(Many2one, self).convert_to_onchange(value, record, names)
 
     def write(self, records, value):
-        # discard recomputation of self on records
-        records.env.remove_to_compute(self, records)
-
         # discard the records that are not modified
         cache = records.env.cache
         cache_value = self.convert_to_cache(value, records)
@@ -3347,8 +3345,6 @@ class _RelationalMulti(_Relational):
         self.write_batch(record_values, True)
 
     def write(self, records, value):
-        # discard recomputation of self on records
-        records.env.remove_to_compute(self, records)
         return self.write_batch([(records, value)])
 
     def write_batch(self, records_commands_list, create=False):

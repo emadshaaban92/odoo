@@ -3898,17 +3898,59 @@ class BaseModel(metaclass=MetaModel):
             vals.setdefault('write_uid', self.env.uid)
             vals.setdefault('write_date', self.env.cr.now())
 
-        field_values = []                           # [(field, value)]
-        determine_inverses = defaultdict(list)      # {inverse: fields}
-        records_to_inverse = {}                     # {field: records}
-        relational_names = []
-        protected = set()
-        check_company = False
+        # This situation is tricky and must dealt with. Assume that both fields
+        # A and B are computed by the same method, that both are marked to
+        # compute, and that A or B or both are assigned.
+        #
+        # CASE 1: records.write() on both A and B.
+        #  - discard the computation of A and B
+        #  - determine idempotent updates, and ignore them
+        #  - proceed with non-idempotent updates
+        #
+        # CASE 2: records.write() on A only. Since B must be recomputed, one
+        # cannot use the current value of A to detect idempotent updates,
+        # because recomputing B might modify A as well.
+        #  - recompute fields A and B
+        #  - determine idempotent updates, and ignore them
+        #  - proceed with non-idempotent updates
+
+        # first determine what to protect
+        fields_to_protect = set()
+        field_values = {}               # {field: value}
+
         for fname, value in vals.items():
             field = self._fields.get(fname)
             if not field:
                 raise ValueError("Invalid field %r on model %r" % (fname, self._name))
-            field_values.append((field, value))
+            if field.inverse or field.compute:
+                if field.store or field.type not in ('one2many', 'many2many'):
+                    # Protect the field from being recomputed. In the case of
+                    # non-stored x2many fields, the field's value may contain
+                    # unexpeced new records (created by command 0). Those new
+                    # records are necessary for inversing the field, but should
+                    # no longer appear if the field is recomputed afterwards.
+                    # Not protecting the field will automatically invalidate the
+                    # field from the cache, forcing its value to be recomputed
+                    # once dependencies are up-to-date.
+                    fields_to_protect.update(self.pool.field_computed.get(field, [field]))
+            field_values[field] = value
+
+        # force the computation of fields that are computed with some assigned
+        # fields, but are not assigned themselves
+        self._recompute_recordset([
+            field.name
+            for field in fields_to_protect
+            if field.compute and field not in field_values
+        ])
+
+        # discard recomputations on fields being written
+        for field in fields_to_protect:
+            self.env.remove_to_compute(field, self)
+
+        determine_inverses = defaultdict(list)      # {inverse: fields}
+        relational_names = []
+        check_company = False
+        for field, value in field_values.items():
             if field.inverse:
                 if field.type in ('one2many', 'many2many'):
                     # The written value is a list of commands that must applied
@@ -3917,38 +3959,15 @@ class BaseModel(metaclass=MetaModel):
                     # will not be computed and default to an empty recordset. So
                     # make sure the field's value is in cache before writing, in
                     # order to avoid an inconsistent update.
-                    self[fname]
+                    self[field.name]
                 determine_inverses[field.inverse].append(field)
-                # DLE P150: `test_cancel_propagation`, `test_manufacturing_3_steps`, `test_manufacturing_flow`
-                # TODO: check whether still necessary
-                records_to_inverse[field] = self.filtered('id')
             if field.relational or self.pool.field_inverses[field]:
-                relational_names.append(fname)
-            if field.inverse or (field.compute and not field.readonly):
-                if field.store or field.type not in ('one2many', 'many2many'):
-                    # Protect the field from being recomputed while being
-                    # inversed. In the case of non-stored x2many fields, the
-                    # field's value may contain unexpeced new records (created
-                    # by command 0). Those new records are necessary for
-                    # inversing the field, but should no longer appear if the
-                    # field is recomputed afterwards. Not protecting the field
-                    # will automatically invalidate the field from the cache,
-                    # forcing its value to be recomputed once dependencies are
-                    # up-to-date.
-                    protected.update(self.pool.field_computed.get(field, [field]))
-            if fname == 'company_id' or (field.relational and field.check_company):
+                relational_names.append(field.name)
+            if field.name == 'company_id' or (field.relational and field.check_company):
                 check_company = True
 
-        # force the computation of fields that are computed with some assigned
-        # fields, but are not assigned themselves
-        to_compute = [field.name
-                      for field in protected
-                      if field.compute and field.name not in vals]
-        if to_compute:
-            self._recompute_recordset(to_compute)
-
         # protect fields being written against recomputation
-        with env.protecting(protected, self):
+        with env.protecting(fields_to_protect, self):
             # Determine records depending on values. When modifying a relational
             # field, you have to recompute what depends on the field's values
             # before and after modification.  This is because the modification
@@ -3975,8 +3994,8 @@ class BaseModel(metaclass=MetaModel):
             # Monetary fields need their corresponding currency field in cache
             # for rounding values. X2many fields must be written last, because
             # they flush other fields when deleting lines.
-            for field, value in sorted(field_values, key=lambda item: item[0].write_sequence):
-                field.write(self, value)
+            for field in sorted(field_values, key=lambda f: f.write_sequence):
+                field.write(self, field_values[field])
 
             # determine records depending on new values
             #
@@ -3997,14 +4016,14 @@ class BaseModel(metaclass=MetaModel):
                 self.flush_model([self._parent_name])
 
             # validate non-inversed fields first
-            inverse_fields = [f.name for fs in determine_inverses.values() for f in fs]
-            real_recs._validate_fields(vals, inverse_fields)
+            inverse_fnames = [f.name for fs in determine_inverses.values() for f in fs]
+            real_recs._validate_fields(vals, inverse_fnames)
 
             for fields in determine_inverses.values():
                 # write again on non-stored fields that have been invalidated from cache
                 for field in fields:
                     if not field.store and any(self.env.cache.get_missing_ids(real_recs, field)):
-                        field.write(real_recs, vals[field.name])
+                        field.write(real_recs, field_values[field])
 
                 # inverse records that are not being computed
                 try:
@@ -4021,7 +4040,7 @@ class BaseModel(metaclass=MetaModel):
                     raise
 
             # validate inversed fields
-            real_recs._validate_fields(inverse_fields)
+            real_recs._validate_fields(inverse_fnames)
 
         if check_company and self._check_company_auto:
             self._check_company()
