@@ -3915,6 +3915,7 @@ class BaseModel(metaclass=MetaModel):
         #  - proceed with non-idempotent updates
 
         # first determine what to protect
+        records_to_protect = self
         fields_to_protect = set()
         field_values = {}               # {field: value}
 
@@ -3947,10 +3948,19 @@ class BaseModel(metaclass=MetaModel):
         for field in fields_to_protect:
             self.env.remove_to_compute(field, self)
 
+        # determine what to update, ignoring idempotent updates
+        fields_to_update = []
+        ids_to_update = set()
         determine_inverses = defaultdict(list)      # {inverse: fields}
         relational_names = []
         check_company = False
+
         for field, value in field_values.items():
+            records = field.filter_not_equal(self, value)
+            if not records:
+                continue
+            fields_to_update.append(field)
+            ids_to_update.update(records._ids)
             if field.inverse:
                 determine_inverses[field.inverse].append(field)
             if field.relational or self.pool.field_inverses[field]:
@@ -3958,8 +3968,14 @@ class BaseModel(metaclass=MetaModel):
             if field.name == 'company_id' or (field.relational and field.check_company):
                 check_company = True
 
+        if not ids_to_update:
+            return True
+
+        # from now on, we ignore records that don't change at all
+        self = self.browse(id_ for id_ in self._ids if id_ in ids_to_update)
+
         # protect fields being written against recomputation
-        with env.protecting(fields_to_protect, self):
+        with env.protecting(fields_to_protect, records_to_protect):
             # Determine records depending on values. When modifying a relational
             # field, you have to recompute what depends on the field's values
             # before and after modification.  This is because the modification
@@ -3986,7 +4002,7 @@ class BaseModel(metaclass=MetaModel):
             # Monetary fields need their corresponding currency field in cache
             # for rounding values. X2many fields must be written last, because
             # they flush other fields when deleting lines.
-            for field in sorted(field_values, key=lambda f: f.write_sequence):
+            for field in sorted(fields_to_update, key=lambda f: f.write_sequence):
                 field.write(self, field_values[field])
 
             # determine records depending on new values
@@ -4002,14 +4018,15 @@ class BaseModel(metaclass=MetaModel):
             # res.partner includes display_name. The computation of display_name
             # is then done too soon because the parent_id was not yet written.
             # (`test_01_website_reset_password_tour`)
-            self.modified(vals)
+            updated_fnames = [field.name for field in fields_to_update]
+            self.modified(updated_fnames)
 
-            if self._parent_store and self._parent_name in vals:
+            if self._parent_store and self._parent_name in updated_fnames:
                 self.flush_model([self._parent_name])
 
             # validate non-inversed fields first
             inverse_fnames = [f.name for fs in determine_inverses.values() for f in fs]
-            real_recs._validate_fields(vals, inverse_fnames)
+            real_recs._validate_fields(updated_fnames, inverse_fnames)
 
             for fields in determine_inverses.values():
                 # write again on non-stored fields that have been invalidated from cache

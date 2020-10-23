@@ -1076,18 +1076,18 @@ class Field(MetaField('DummyField', (object,), {})):
         :param value: a value in any format
         :return: the subset of `records` that have been modified
         """
-        # discard the records that are not modified
         cache = records.env.cache
         cache_value = self.convert_to_cache(value, records)
-        records = cache.get_records_different_from(records, self, cache_value)
-        if not records:
-            return records
-
-        # update the cache
         dirty = self.store and any(records._ids)
         cache.update(records, self, itertools.repeat(cache_value), dirty=dirty)
 
-        return records
+    def filter_not_equal(self, records, value):
+        """ Return the subset of ``records`` on which the value of ``self`` is
+        either not in cache, or different from ``value``.
+        """
+        cache = records.env.cache
+        cache_value = self.convert_to_cache(value, records)
+        return cache.get_records_different_from(records, self, cache_value)
 
     ############################################################################
     #
@@ -1250,6 +1250,12 @@ class Field(MetaField('DummyField', (object,), {})):
             # discard recomputation of self on records
             records.env.remove_to_compute(self, records)
 
+        # ignore idempotent assignments
+        records_to_protect = records
+        records = self.filter_not_equal(records, value)
+        if not records:
+            return
+
         protected_records = records.env.filter_protected(self, records)
         if protected_records:
             # records being computed: no business logic, no recomputation
@@ -1262,7 +1268,8 @@ class Field(MetaField('DummyField', (object,), {})):
         new_records = records.browse([id_ for id_ in records._ids if not id_])
         if new_records:
             # new records: no business logic
-            with records.env.protecting(records.pool.field_computed.get(self, [self]), records):
+            fields_to_protect = records.pool.field_computed.get(self) or [self]
+            with records.env.protecting(fields_to_protect, records_to_protect):
                 if self.relational:
                     new_records.modified([self.name], before=True)
                 self.write(new_records, value)
@@ -1664,12 +1671,8 @@ class _String(Field):
         if not (self.translate and self.store and any(records._ids)):
             return super().write(records, value)
 
-        # discard the records that are not modified
         cache = records.env.cache
         cache_value = self.convert_to_cache(value, records)
-        records = cache.get_records_different_from(records, self, cache_value)
-        if not records:
-            return records
 
         lang = records.env.lang
         installed = records.env['res.lang'].get_installed()
@@ -1728,8 +1731,6 @@ class _String(Field):
                 records.env['ir.translation']._set_ids(
                     tname, 'model', lang, records._ids, value, source_value,
                 )
-
-        return records
 
 
 class Char(_String):
@@ -2259,16 +2260,13 @@ class Binary(Field):
         if not self.attachment:
             return super().write(records, value)
 
-        # update the cache, and discard the records that are not modified
         cache = records.env.cache
-        cache_value = self.convert_to_cache(value, records)
-        records = cache.get_records_different_from(records, self, cache_value)
-        if not records:
-            return records
         if self.store:
             # determine records that are known to be not null
             not_null = cache.get_records_different_from(records, self, None)
 
+        # update the cache
+        cache_value = self.convert_to_cache(value, records)
         cache.update(records, self, itertools.repeat(cache_value))
 
         # retrieve the attachments that store the values, and adapt them
@@ -2300,8 +2298,6 @@ class Binary(Field):
                     ])
             else:
                 atts.unlink()
-
-        return records
 
 
 class Image(Binary):
@@ -2906,9 +2902,6 @@ class Many2one(_Relational):
         # discard the records that are not modified
         cache = records.env.cache
         cache_value = self.convert_to_cache(value, records)
-        records = cache.get_records_different_from(records, self, cache_value)
-        if not records:
-            return records
 
         # remove records from the cache of one2many fields of old corecords
         self._remove_inverses(records, cache_value)
@@ -2957,6 +2950,11 @@ class Many2one(_Relational):
             if ids0 is not None or not corecord.id:
                 ids1 = tuple(unique((ids0 or ()) + valid_records._ids))
                 cache.set(corecord, invf, ids1)
+
+    def filter_not_equal(self, records, value):
+        if isinstance(value, dict):
+            return records
+        return super().filter_not_equal(records, value)
 
 
 class Many2oneReference(Integer):
@@ -3339,31 +3337,37 @@ class _RelationalMulti(_Relational):
         self.write_batch(record_values, True)
 
     def write(self, records, value):
-        return self.write_batch([(records, value)])
+        self.write_batch([(records, value)])
 
     def write_batch(self, records_commands_list, create=False):
         if not records_commands_list:
-            return False
+            return
 
-        for idx, (recs, value) in enumerate(records_commands_list):
-            if isinstance(value, tuple):
-                value = [Command.set(value)]
-            elif isinstance(value, BaseModel) and value._name == self.comodel_name:
-                value = [Command.set(value._ids)]
-            elif value is False or value is None:
-                value = [Command.clear()]
-            elif isinstance(value, list) and value and not isinstance(value[0], (tuple, list)):
-                value = [Command.set(tuple(value))]
-            if not isinstance(value, list):
-                raise ValueError("Wrong value for %s: %s" % (self, value))
-            records_commands_list[idx] = (recs, value)
+        records_commands_list = [
+            (recs, self.convert_to_commands(value))
+            for recs, value in records_commands_list
+        ]
 
         record_ids = {rid for recs, cs in records_commands_list for rid in recs._ids}
         if all(record_ids):
-            return self.write_real(records_commands_list, create)
+            self.write_real(records_commands_list, create)
         else:
             assert not any(record_ids)
-            return self.write_new(records_commands_list)
+            self.write_new(records_commands_list)
+
+    def convert_to_commands(self, value):
+        """ Convert ``value`` into an equivalent list of commands. """
+        if isinstance(value, tuple):
+            value = [Command.set(value)]
+        elif isinstance(value, BaseModel) and value._name == self.comodel_name:
+            value = [Command.set(value._ids)]
+        elif value is False or value is None:
+            value = [Command.clear()]
+        elif isinstance(value, list) and value and not isinstance(value[0], (tuple, list)):
+            value = [Command.set(tuple(value))]
+        if not isinstance(value, list):
+            raise ValueError("Wrong value for %s: %s" % (self, value))
+        return value
 
 
 class One2many(_RelationalMulti):
@@ -3564,8 +3568,6 @@ class One2many(_RelationalMulti):
                         lines = comodel.browse(command[2] if command[0] == Command.SET else [])
                         cache.set(recs[-1], self, lines._ids)
 
-        return records
-
     def write_new(self, records_commands_list):
         if not records_commands_list:
             return
@@ -3642,7 +3644,56 @@ class One2many(_RelationalMulti):
                         lines = comodel.browse(command[2] if command[0] == Command.SET else [])
                         cache.set(recs[-1], self, lines._ids)
 
-        return records
+    def filter_not_equal(self, records, value):
+        commands = self.convert_to_commands(value)
+        if not commands:
+            return records.browse()
+
+        # new records without value in cache are considered not equal (onchange)
+        new_ids = [id_ for id_ in records._ids if not id_]
+        if new_ids and any(
+            True for id_ in records.env.cache.get_missing_ids(records.browse(new_ids), self)
+        ):
+            return records
+
+        # check for obvious changes
+        comodel = records.env[self.comodel_name]
+        for command in commands:
+            if command[0] == Command.CREATE:
+                return records
+            elif command[0] == Command.UPDATE:
+                line = comodel.browse([command[1]])
+                if any(comodel._fields[name].filter_not_equal(line, val)
+                       for name, val in command[2].items()):
+                    return records
+            elif command[0] == Command.DELETE:
+                return records
+            elif command[0] == Command.UNLINK:
+                inverse_field = comodel._fields[self.inverse_name]
+                if getattr(inverse_field, 'ondelete', False) == 'cascade':
+                    return records
+
+        # check for actual changes
+        old_vals = [set(record[self.name]._ids) for record in records]
+        new_vals = [set(ids) for ids in old_vals]
+        for command in commands:
+            if command[0] == Command.UNLINK:
+                for ids in new_vals:
+                    ids.discard(command[1])
+            elif command[0] == Command.LINK:
+                for ids in new_vals:
+                    ids.add(command[1])
+            elif command[0] == Command.CLEAR:
+                for ids in new_vals:
+                    ids.clear()
+            elif command[0] == Command.SET:
+                for idx in range(len(new_vals)):
+                    new_vals[idx] = set(command[2])
+        return records.browse(
+            id_
+            for id_, old_val, new_val in zip(records._ids, old_vals, new_vals)
+            if old_val != new_val
+        )
 
 
 class Many2many(_RelationalMulti):
@@ -3978,10 +4029,6 @@ class Many2many(_RelationalMulti):
                     except KeyError:
                         pass
 
-        return records.filtered(
-            lambda record: new_relation[record.id] != old_relation[record.id]
-        )
-
     def write_new(self, records_commands_list):
         """ Update self on new records. """
         if not records_commands_list:
@@ -4075,8 +4122,51 @@ class Many2many(_RelationalMulti):
                     except KeyError:
                         pass
 
-        return records.filtered(
-            lambda record: new_relation[record.id] != old_relation[record.id]
+    def filter_not_equal(self, records, value):
+        commands = self.convert_to_commands(value)
+        if not commands:
+            return records.browse()
+
+        # new records without value in cache are considered not equal (onchange)
+        new_ids = [id_ for id_ in records._ids if not id_]
+        if new_ids and any(
+            True for id_ in records.env.cache.get_missing_ids(records.browse(new_ids), self)
+        ):
+            return records
+
+        # check for obvious changes
+        comodel = records.env[self.comodel_name]
+        for command in commands:
+            if command[0] == Command.CREATE:
+                return records
+            elif command[0] == Command.UPDATE:
+                line = comodel.browse([command[1]])
+                if any(comodel._fields[key].filter_not_equal(line, val)
+                       for key, val in command[2].items()):
+                    return records
+            elif command[0] == Command.DELETE:
+                return records
+
+        # check for actual changes
+        old_vals = [set(record[self.name]._ids) for record in records]
+        new_vals = [set(ids) for ids in old_vals]
+        for command in commands:
+            if command[0] == Command.UNLINK:
+                for ids in new_vals:
+                    ids.discard(command[1])
+            elif command[0] == Command.LINK:
+                for ids in new_vals:
+                    ids.add(command[1])
+            elif command[0] == Command.CLEAR:
+                for ids in new_vals:
+                    ids.clear()
+            elif command[0] == Command.SET:
+                for idx in range(len(new_vals)):
+                    new_vals[idx] = set(command[2])
+        return records.browse(
+            id_
+            for id_, old_val, new_val in zip(records._ids, old_vals, new_vals)
+            if old_val != new_val
         )
 
 
