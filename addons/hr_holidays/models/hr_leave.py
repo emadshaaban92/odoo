@@ -84,9 +84,9 @@ class HolidaysRequest(models.Model):
             defaults['state'] = 'confirm' if lt and lt.leave_validation_type != 'no_validation' else 'draft'
 
         now = fields.Datetime.now()
-        if 'date_from' not in defaults:
+        if 'date_from' not in defaults and 'date_from' in fields_list:
             defaults.update({'date_from': now})
-        if 'date_to' not in defaults:
+        if 'date_to' not in defaults and 'date_to' in fields_list:
             defaults.update({'date_to': now})
         return defaults
 
