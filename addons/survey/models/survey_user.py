@@ -438,11 +438,11 @@ class SurveyUserInput(models.Model):
               - ensure correct scoring
               - if the selected answer triggers another question later in the survey, if the answer is not cleared,
                 a question that should not be displayed to the user will be.
-        
-        TODO DBE: Maybe this can be the only cleaning method, even for section_per_page or one_page where 
-        conditional questions are, for now, cleared in JS directly. But this can be annoying if user typed a long 
-        answer, changed his mind unchecking depending answer and changed again his mind by rechecking the depending 
-        answer -> For now, the long answer will be lost. If we use this as the master cleaning method, 
+
+        TODO DBE: Maybe this can be the only cleaning method, even for section_per_page or one_page where
+        conditional questions are, for now, cleared in JS directly. But this can be annoying if user typed a long
+        answer, changed his mind unchecking depending answer and changed again his mind by rechecking the depending
+        answer -> For now, the long answer will be lost. If we use this as the master cleaning method,
         long answer will be cleared only during submit.
         """
         inactive_questions = self._get_inactive_conditional_questions()

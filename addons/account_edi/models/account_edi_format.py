@@ -34,9 +34,10 @@ class AccountEdiFormat(models.Model):
     def create(self, vals_list):
         edi_formats = super().create(vals_list)
 
-        # activate by default on journal
-        journals = self.env['account.journal'].search([])
-        journals._compute_edi_format_ids()
+        if edi_formats:
+            # activate by default on journal
+            journals = self.env['account.journal'].search([])
+            journals._compute_edi_format_ids()
 
         # activate cron
         if any(edi_format._needs_web_services() for edi_format in edi_formats):

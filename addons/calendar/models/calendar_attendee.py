@@ -94,6 +94,8 @@ class Attendee(models.Model):
         """
         if isinstance(mail_template, str):
             raise ValueError('Template should be a template record, not an XML ID anymore.')
+        if not self:
+            return False
         if self.env['ir.config_parameter'].sudo().get_param('calendar.block_mail') or self._context.get("no_mail_to_attendees"):
             return False
         if not mail_template:
