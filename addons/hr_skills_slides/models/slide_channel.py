@@ -12,7 +12,7 @@ class SlideChannelPartner(models.Model):
         res = super(SlideChannelPartner, self)._recompute_completion()
         partner_has_completed = {
             channel_partner.partner_id.id: channel_partner.channel_id for channel_partner in self
-            if channel_partner.completed}
+            if channel_partner.member_status == 'completed'}
         employees = self.env['hr.employee'].sudo().search(
             [('user_id.partner_id', 'in', list(partner_has_completed.keys()))])
 
@@ -59,6 +59,7 @@ class Channel(models.Model):
     def _action_add_members(self, target_partners, **member_values):
         res = super()._action_add_members(target_partners, **member_values)
         for channel in self:
+            # TODO: Msg only when joining (not invited) ?
             channel._message_employee_chatter(
                 _('The employee subscribed to the course <a href="%(link)s">%(course)s</a>', link=channel.website_url, course=channel.name),
                 target_partners)

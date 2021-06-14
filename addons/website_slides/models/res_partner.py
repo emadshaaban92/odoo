@@ -26,20 +26,20 @@ class ResPartner(models.Model):
         for partner in self:
             partner.slide_channel_completed_ids = self.env['slide.channel.partner'].search([
                 ('partner_id', '=', partner.id),
-                ('completed', '=', True)
+                ('member_status', '=', 'completed')
             ]).mapped('channel_id')
 
     def _search_slide_channel_completed_ids(self, operator, value):
         cp_done = self.env['slide.channel.partner'].sudo().search([
             ('channel_id', operator, value),
-            ('completed', '=', True)
+            ('member_status', '=', 'completed')
         ])
         return [('id', 'in', cp_done.partner_id.ids)]
 
     @api.depends('is_company')
     def _compute_slide_channel_count(self):
         read_group_res = self.env['slide.channel.partner'].sudo()._read_group(
-            [('partner_id', 'in', self.ids)],
+            [('partner_id', 'in', self.ids), ('member_status', '!=', 'invited')],
             ['partner_id'], 'partner_id'
         )
         data = dict((res['partner_id'][0], res['partner_id_count']) for res in read_group_res)

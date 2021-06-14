@@ -4,6 +4,7 @@
 from ast import literal_eval
 
 import base64
+import hmac
 import json
 import logging
 import math
@@ -638,6 +639,92 @@ class WebsiteSlides(WebsiteProfile):
                 })
 
         return values
+
+    @http.route('/slides/<int:channel_id>/invite', type='http', auth='public', website=True, sitemap=False)
+    def slide_channel_invite(self, channel_id, partner_id=False, invite_hash=False):
+        """ This route is included in the invitation link in email to join the course. It is the main entry point
+        for sharing course to attendees or to invite them directly.
+
+        It acts as a dipatcher, here are the supported use cases:
+            - If the current user (public or logged) can access the course, redirects to the course page
+            - If no user is logged and the public user has no access to the course, redirects to login page,
+            then redirects in turn to this route to be dispatched again, once the user is logged, according
+            to its access rights.
+            - If a logged user has not access to the course, redirects to the main page with all courses, with an
+            invite_state in the url that will trigger an error message to explain the user what is the problem.
+
+        :param channel_id: The id of the course the user is invited to. Do not use <model> in the route
+                           instead, otherwise an error 403 could be returned if the (public) user has no
+                           access to the record.
+
+        :return: redirects to the relevant route, see above.
+        """
+
+        def default_routing(channel=False, has_rights=False, invite_state=''):
+            """ This sub-method redirects to either the course or the main slides page with an appropriate error keyword."""
+            if not channel or not has_rights:
+                return request.redirect("/slides?invite_state=%s" % (invite_state or ('no_channel' if not channel else 'no_rights')))
+            return request.redirect("/slides/%s" % (slug(channel)))
+
+        # ----- Parameters
+        partner_id = int(partner_id) if partner_id else False
+        channel = request.env['slide.channel'].browse(int(channel_id)).exists()
+        if not channel:
+            return default_routing()
+
+        # ----- Compute rights of current user
+        has_rights = True
+        try:
+            channel.check_access_rights('read')
+            channel.check_access_rule('read')
+        except AccessError:
+            has_rights = False
+
+        # ----- Non-Specific Invitation
+        if not partner_id or not invite_hash:
+            # Generic invite
+            return default_routing(channel, has_rights)
+
+        # ----- Invitation to specific partner: check invite_hash
+        partner_hash = tools.hmac(request.env(su=True), 'website_slides-channel-invite', (partner_id, channel_id))
+        if not hmac.compare_digest(partner_hash, invite_hash):
+            # Wrong invite_hash value
+            return default_routing(channel, invite_state='hash_fail')
+
+        # ----- Logged in user
+        if not request.website.is_public_user():
+            logged_partner_sudo = request.env.user.partner_id.sudo()
+            if logged_partner_sudo.id != partner_id:
+                # Wrong User
+                return default_routing(channel, invite_state='partner_fail')
+            # invite_hash correct. If error, then the invite is 'expired'.
+            return default_routing(channel, has_rights, invite_state='expired')
+
+        # ----- No logged in user
+        partner_sudo = request.env['res.partner'].browse(partner_id).sudo()
+        partner_sudo_public = not partner_sudo.user_ids or all(user._is_public() for user in partner_sudo.user_ids)
+        if partner_sudo_public:
+            partner_sudo.signup_prepare(signup_type="signup")
+
+        allow_signup = request.env['res.users']._get_signup_invitation_scope() == 'b2c'
+        # Redirect_url /invite only case useful for public channels is the non website_published courses.
+        redirect_url = '/slides/%s/invite?' % channel_id
+        # TODO: no rights if unpublished
+        if channel.visibility == 'public':
+            if partner_sudo_public:
+                if allow_signup:
+                    # Add auth_signup_token so that users can freely signup later if free signup is on.
+                    signup_parameters = werkzeug.urls.url_encode({'auth_signup_token': partner_sudo.signup_token})
+                else:
+                    # This becomes a direct user invitation link ( signup prepare has been done anyway )
+                    return request.redirect('%s&redirect=%s' % (partner_sudo.signup_url, redirect_url))
+            else:
+                # Add auth_login so that users can freely signin later. There is at least one non-public user linked to partner_id.
+                signup_parameters = werkzeug.urls.url_encode({'auth_login': partner_sudo.user_ids[0].login})
+            return request.redirect('%s%s' % (redirect_url, signup_parameters))
+        else:
+            # Members only: have to signup or login first, then repass through route for user rights (since not logged, how to know if we have access...)
+            return request.redirect('%s&redirect=%s' % (partner_sudo.signup_url, redirect_url))
 
     @http.route(['/slides/channel/join'], type='json', auth='public', website=True)
     def slide_channel_join(self, channel_id):
@@ -1307,8 +1394,11 @@ class WebsiteSlides(WebsiteProfile):
     def _prepare_user_values(self, **kwargs):
         values = super(WebsiteSlides, self)._prepare_user_values(**kwargs)
         channel = self._get_channels(**kwargs)
+        invite_error_msg = self._get_invite_error_msg(**kwargs)
         if channel:
             values['channel'] = channel
+        if invite_error_msg:
+            values['invite_error_msg'] = invite_error_msg
         return values
 
     def _get_channels(self, **kwargs):
@@ -1319,9 +1409,19 @@ class WebsiteSlides(WebsiteProfile):
             channels = tools.lazy(lambda: request.env['slide.channel'].browse(int(kwargs['channel_id'])))
         return channels
 
+    def _get_invite_error_msg(self, **kwargs):
+        invite_error_msgs = {
+            'expired': _('This invitation link has expired.'),
+            'hash_fail': _('This invitation link has an invalid hash.'),
+            'no_channel': _('This course does not exist.'),
+            'no_rights': _('You do not have the rights to access this course.'),
+            'partner_fail': _('This invitation link is not for this partner.'),
+        }
+        return invite_error_msgs.get(kwargs.get('invite_state', 'wrong_state'), '')
+
     def _prepare_user_slides_profile(self, user):
         courses = request.env['slide.channel.partner'].sudo().search([('partner_id', '=', user.partner_id.id)])
-        courses_completed = courses.filtered(lambda c: c.completed)
+        courses_completed = courses.filtered(lambda c: c.member_status == 'completed')
         courses_ongoing = courses - courses_completed
         values = {
             'uid': request.env.user.id,

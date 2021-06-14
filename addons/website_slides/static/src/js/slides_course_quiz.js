@@ -60,12 +60,14 @@
                 name: '',
                 hasNext: false,
                 completed: false,
+                isAllowedMember: false,
                 isMember: false,
             });
             this.quiz = quiz_data || false;
             if (this.quiz) {
                 this.quiz.questionsCount = quiz_data.questions.length;
             }
+            this.isAllowedMember = slide_data.isAllowedMember || false;
             this.isMember = slide_data.isMember || false;
             this.publicUser = session.is_website_user;
             this.userId = session.user_id;
@@ -312,6 +314,7 @@
                 var courseJoinWidget = new CourseJoinWidget(this, {
                     isQuiz: true,
                     channel: this.channel,
+                    isAllowedMember: this.isAllowedMember,
                     isMember: this.isMember,
                     publicUser: this.publicUser,
                     beforeJoin: this._saveQuizAnswersToSession.bind(this),

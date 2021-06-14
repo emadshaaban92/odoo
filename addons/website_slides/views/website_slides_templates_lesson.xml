@@ -476,6 +476,7 @@
         t-att-data-id="slide.id"
         t-att-data-name="slide.name"
         t-att-data-slide-category="slide.slide_category"
+        t-att-data-is-allowed-member="slide.channel_id.is_member or slide.channel_id.is_member_invited"
         t-att-data-is-member="slide.channel_id.is_member"
         t-att-data-can-self-mark-completed="slide.can_self_mark_completed"
         t-att-data-can-self-mark-uncompleted="slide.can_self_mark_uncompleted"

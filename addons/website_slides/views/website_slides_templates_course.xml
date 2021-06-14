@@ -275,19 +275,22 @@
 
 <template id="course_join">
     <div class="o_wslides_js_course_join flex-grow-1 d-grid">
-        <a t-if="not channel.is_member and channel.enroll == 'public'" role="button"
-            class="btn btn-primary o_wslides_js_course_join_link"
-            title="Start Course" aria-label="Start Course Channel" href="#"
+        <a t-if="not channel.is_member and (channel.enroll == 'public' or (channel.is_member_invited and channel.enroll == 'invite'))"
+            role="button" class="btn btn-primary btn-block o_wslides_js_course_join_link"
+            title="Start Course" aria-label="Start Course Channel"
+            href="#"
             t-att-data-channel-id="channel.id"
-            t-att-data-channel-enroll="channel.enroll">
+            t-att-data-channel-enroll="channel.enroll"
+            t-att-data-is-allowed-member="channel.is_member or channel.is_member_invited">
             <span class="cta-title text_small_caps">
-                Join this Course
+                <t t-if="channel.channel_type == 'documentation'">Start this Course</t>
+                <t t-else="">Join this Course</t>
             </span>
         </a>
-
-        <div t-if="not channel.is_member and channel.enroll == 'invite'" class="text-center">
+        
+        <div t-if="not channel.is_member and not channel.is_member_invited and channel.enroll == 'invite'" class="text-center">
             <div t-attf-class="alert my-0 bg-100 p-2 #{'o_wslides_js_channel_enroll' if not is_public_user else ''}"
-                 t-att-data-channel-id="channel.id">
+                t-att-data-channel-id="channel.id">
                 Private Course
                 <div t-if="is_public_user">
                     <small>
@@ -310,7 +313,8 @@
             <button class="d-flex align-items-center alert my-0 px-2 px-xl-3 bg-100 w-100 o_wslides_js_channel_unsubscribe"
                     t-att-data-channel-id="channel.id"
                     t-att-data-is-follower="channel.message_is_follower"
-                    t-att-data-enroll="channel.enroll">
+                    t-att-data-enroll="channel.enroll"
+                    t-att-data-visibility="channel.visibility">
                 <t t-call="website_slides.slides_misc_user_image">
                     <t t-set="img_class" t-value="'rounded-circle me-1'"/>
                     <t t-set="img_style" t-value="'width: 1.4em; height: 1.4em; object-fit: cover;'"/>
@@ -320,20 +324,21 @@
                 <i class="fa fa-times"/>
             </button>
             <div class="d-flex align-items-center pt-3">
-                <span t-attf-class="o_wslides_channel_completion_completed badge rounded-pill text-bg-success py-1 px-2 mx-auto #{'d-none' if not channel.completed else ''}">
-                    <i class="fa fa-check"/> Completed
-                </span>
-                <div t-attf-class="o_wslides_channel_completion_progressbar #{'d-none' if channel.completed else 'd-flex'} w-100 align-items-center">
+                <t t-if="channel.completed">
+                    <span class="o_wslides_channel_completion_completed badge rounded-pill text-bg-success py-1 px-2 mx-auto"><i class="fa fa-check"/> Completed</span>
+                </t>
+                <t t-else="">
                     <div class="progress flex-grow-1 bg-black-50" style="height: 6px;">
                         <div class="progress-bar" role="progressbar" t-attf-style="width: #{channel.completion}%" t-att-aria-valuenow="channel.completion" aria-valuemin="0" aria-valuemax="100"></div>
                     </div>
                     <div class="ms-3 small">
                         <span class="o_wslides_progress_percentage" t-esc="channel.completion"/> %
                     </div>
-                </div>
+                </t>
             </div>
         </t>
     </div>
+    <button t-attf-class="btn d-md-none bg-white ms-1 border #{'alert' if channel.is_member else ''} #{'align-self-start' if channel.is_member or channel.enroll == 'invite' else 'align-self-end'}" type="button" data-toggle="collapse" data-target="#o_wslides_sidebar_collapse" aria-expanded="false" aria-controls="o_wslides_sidebar_collapse">More info</button>
 </template>
 
 <template id="course_slides_list" name="Training Course content: list">

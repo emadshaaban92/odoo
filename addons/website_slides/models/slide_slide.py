@@ -223,6 +223,7 @@ class Slide(models.Model):
     # channel
     channel_type = fields.Selection(related="channel_id.channel_type", string="Channel type")
     channel_allow_comment = fields.Boolean(related="channel_id.allow_comment", string="Allows comment")
+    channel_partner_ids = fields.Many2many(related="channel_id.partner_ids", string='Enrolled partners to the channel of the slide')
     # Statistics in case the slide is a category
     nbr_document = fields.Integer("Number of Documents", compute='_compute_slides_statistics', store=True)
     nbr_video = fields.Integer("Number of Videos", compute='_compute_slides_statistics', store=True)

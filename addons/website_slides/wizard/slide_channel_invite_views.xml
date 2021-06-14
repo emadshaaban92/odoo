@@ -6,12 +6,34 @@
             <field name="model">slide.channel.invite</field>
             <field name="arch" type="xml">
                 <form string="Compose Email" class="o_mail_composer_form">
+                    <field name="channel_can_publish" invisible="1"/>
+                    <field name="channel_published" invisible="1"/>
+                    <field name="channel_visibility" invisible="1"/>
+                    <field name="signup_allowed" invisible="1"/>
                     <group col="1">
+                        <div>
+                            <div attrs="{'invisible': [('signup_allowed', '=', True)]}" role="alert" class="alert alert-info mb-4">
+                                Attendees without account will not be able to create one.
+                            </div>
+                        </div>
+                        <group>
+                            <field name="channel_id" options="{'no_open': True}"/>
+                            <field name="channel_published" attrs="{'readonly': [('channel_can_publish', '=', False)]}" widget="boolean_toggle"/>
+                        </group>
+                        <div>
+                            <div attrs="{'invisible': ['|', ('channel_id', '=', False), ('channel_published', '=', True)]}" role="alert" class="alert alert-warning">
+                                Please publish this course to make its contents accessible to the attendees.
+                            </div>
+                        </div>
                         <group col="2">
-                            <field name="channel_id" invisible="1"/>
+                            <field name="channel_invite_url" readonly="1" widget="CopyClipboardChar"
+                                attrs="{'invisible':[('channel_visibility', '!=', 'public')]}"
+                                class="mb16"/>
+                        </group>
+                        <group col="2">
                             <field name="partner_ids"
                                 widget="many2many_tags_email"
-                                placeholder="Add existing contacts..."
+                                placeholder="Add contacts..."
                                 required="1"
                                 context="{'force_email':True, 'show_email':True, 'no_create_edit': True, 'no_quick_create': True}"/>
                         </group>

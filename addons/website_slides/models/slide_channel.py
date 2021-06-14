@@ -3,8 +3,8 @@
 
 import logging
 import uuid
-from collections import defaultdict
 
+from collections import defaultdict
 from dateutil.relativedelta import relativedelta
 import ast
 
@@ -22,10 +22,9 @@ class ChannelUsersRelation(models.Model):
     _description = 'Channel / Partners (Members)'
     _table = 'slide_channel_partner'
 
-    channel_id = fields.Many2one('slide.channel', index=True, required=True, ondelete='cascade')
-    completed = fields.Boolean('Is Completed', help='Channel validated, even if slides / lessons are added once done.')
-    completion = fields.Integer('% Completed Slides')
-    completed_slides_count = fields.Integer('# Completed Slides')
+    channel_id = fields.Many2one('slide.channel', string='Course', index=True, required=True, ondelete='cascade')
+    completion = fields.Integer('% Completed Contents', default=0, group_operator="avg")
+    completed_slides_count = fields.Integer('# Completed Contents')
     partner_id = fields.Many2one('res.partner', index=True, required=True, ondelete='cascade')
     partner_email = fields.Char(related='partner_id.email', readonly=True)
     # channel-related information (for UX purpose)
@@ -34,6 +33,15 @@ class ChannelUsersRelation(models.Model):
     channel_visibility = fields.Selection(related='channel_id.visibility')
     channel_enroll = fields.Selection(related='channel_id.enroll')
     channel_website_id = fields.Many2one('website', string='Website', related='channel_id.website_id')
+    # Member and enrollment status
+    member_status = fields.Selection([
+        ('invited', 'Invite Sent'),
+        ('joined', 'Joined'),
+        ('ongoing', 'Ongoing'),
+        ('completed', 'Finished')],
+        string='Member Status', readonly=True, store=True, default='joined')
+    # Invitation
+    invitation_link_with_hash = fields.Char('Invitation Link', compute="_compute_invitation_link_with_hash")
 
     _sql_constraints = [
         ('channel_partner_uniq',
@@ -63,15 +71,26 @@ class ChannelUsersRelation(models.Model):
         completed_records = self.env['slide.channel.partner']
         uncompleted_records = self.env['slide.channel.partner']
         for record in self:
+            if record.member_status == 'invited':
+                record.completed_slides_count = 0
+                record.completion = 0.0
+                continue
             record.completed_slides_count = mapped_data.get(record.channel_id.id, dict()).get(record.partner_id.id, 0)
-            record.completion = 100.0 if record.completed else round(100.0 * record.completed_slides_count / (record.channel_id.total_slides or 1))
+            record.completion = 100.0 if record.member_status == 'completed' else round(100.0 * record.completed_slides_count / (record.channel_id.total_slides or 1))
 
             if not record.channel_id.active:
                 continue
-            elif not record.completed and record.completed_slides_count >= record.channel_id.total_slides:
+            elif not record.member_status == 'completed' and record.completed_slides_count >= record.channel_id.total_slides:
                 completed_records += record
-            elif record.completed and record.completed_slides_count < record.channel_id.total_slides:
+            elif record.member_status == 'completed' and record.completed_slides_count < record.channel_id.total_slides:
                 uncompleted_records += record
+
+            if record.completion == 100.0:
+                record.member_status = 'completed'
+            elif record.completion == 0.0:
+                record.member_status = 'joined'
+            else:
+                record.member_status = 'ongoing'
 
         if completed_records:
             completed_records._set_as_completed(completed=True)
@@ -79,6 +98,21 @@ class ChannelUsersRelation(models.Model):
 
         if uncompleted_records:
             uncompleted_records._set_as_completed(completed=False)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        """ If an attendee is created as enrolled, subscribe its partner to the channel. """
+        channel_partners = super(ChannelUsersRelation, self).create(vals_list)
+        subtype = self.env.ref('website_slides.mt_channel_slide_published', raise_if_not_found=False)
+
+        for channel_partner in channel_partners.filtered(
+                lambda channel_partner: channel_partner.member_status in ['joined', 'ongoing', 'completed']):
+            channel_partner.channel_id.message_subscribe(
+                partner_ids=channel_partner.partner_id.ids,
+                subtype_ids=[subtype.id] if subtype else []
+            )
+
+        return channel_partners
 
     def unlink(self):
         """
@@ -97,6 +131,20 @@ class ChannelUsersRelation(models.Model):
             self.env['slide.slide.partner'].search(removed_slide_partner_domain).unlink()
         return super(ChannelUsersRelation, self).unlink()
 
+    @api.depends('channel_id', 'partner_id')
+    def _compute_invitation_link_with_hash(self):
+        ''' This will return the url used as hyperlink in the channel invitation email in template mail_notification_channel_invite.
+        The partner_id is given in the url, as well as a hash based on the partner and channel ids.
+
+        :return: channel invitation url with hash.
+        '''
+        for record in self:
+            partner_sudo = record.partner_id.sudo()
+            channel = record.channel_id
+            token = (partner_sudo.id, channel.id)
+            partner_hash = tools.hmac(record.env(su=True), 'website_slides-channel-invite', token)
+            record.invitation_link_with_hash = '%s/slides/%s/invite?partner_id=%s&invite_hash=%s' % (channel.get_base_url(), channel.id, partner_sudo.id, partner_hash)
+
     def _set_as_completed(self, completed=True):
         """ Set record as completed and compute karma gains
 
@@ -106,7 +154,7 @@ class ChannelUsersRelation(models.Model):
         """
         partner_karma = dict.fromkeys(self.mapped('partner_id').ids, 0)
         for record in self:
-            record.completed = completed
+            record.member_status = 'completed' if completed else 'ongoing' if record.completion > 0 else 'joined'
             partner_karma[record.partner_id.id] += record.channel_id.karma_gen_channel_finish
 
         partner_karma = {
@@ -286,13 +334,28 @@ class Channel(models.Model):
         default='public', string='Visibility', required=True,
         help='Defines who can access your courses and their content.')
     partner_ids = fields.Many2many(
+        'res.partner', string='Attendees', help="All enrolled partners in channel",
+        compute="_compute_partner_ids", search="_search_partner_ids")
+    partner_all_ids = fields.Many2many(
         'res.partner', 'slide_channel_partner', 'channel_id', 'partner_id',
-        string='Members', help="All members of the channel.", context={'active_test': False}, copy=False, depends=['channel_partner_ids'])
-    members_count = fields.Integer('Attendees count', compute='_compute_members_count')
-    members_done_count = fields.Integer('Attendees Done Count', compute='_compute_members_done_count')
+        string='All Attendees', help="All partners in the channel (both enrolled and invited)",
+        context={'active_test': False}, copy=False, depends=['channel_partner_all_ids'])
+    members_count = fields.Integer('Members Count', compute='_compute_members_counts')
+    members_active_count = fields.Integer(
+        '# Attendees Active', help="Active members include both 'joined' and 'ongoing' members.",
+        compute='_compute_members_counts')
+    members_done_count = fields.Integer('# Attendees Done', compute='_compute_members_counts')
+    members_invited_count = fields.Integer('# Attendees Invited', compute='_compute_members_counts')
+    members_all_count = fields.Integer('All Attendees count', compute='_compute_members_counts')
     has_requested_access = fields.Boolean(string='Access Requested', compute='_compute_has_requested_access', compute_sudo=False)
-    is_member = fields.Boolean(string='Is Member', compute='_compute_is_member', compute_sudo=False)
-    channel_partner_ids = fields.One2many('slide.channel.partner', 'channel_id', string='Members Information', groups='website_slides.group_website_slides_officer', depends=['partner_ids'])
+    is_member = fields.Boolean(
+        string='Is Member', help='Has the member accepted the invitation / is actively enrolled.',
+        compute='_compute_membership_values', compute_sudo=False)
+    is_member_invited = fields.Boolean(
+        string='Is Invitation Pending', help='Is the invitation for this member pending.',
+        compute='_compute_membership_values', compute_sudo=False)
+    channel_partner_ids = fields.One2many('slide.channel.partner', 'channel_id', string='Enrolled Members Information', groups='website_slides.group_website_slides_officer', domain=[('member_status', '!=', 'invited')])
+    channel_partner_all_ids = fields.One2many('slide.channel.partner', 'channel_id', string='All Members Information', groups='website_slides.group_website_slides_officer')
     upload_group_ids = fields.Many2many(
         'res.groups', 'rel_upload_groups', 'channel_id', 'group_id', string='Upload Groups',
         help="Group of users allowed to publish contents on a documentation course.")
@@ -314,24 +377,43 @@ class Channel(models.Model):
     can_comment = fields.Boolean('Can Comment', compute='_compute_action_rights', compute_sudo=False)
     can_vote = fields.Boolean('Can Vote', compute='_compute_action_rights', compute_sudo=False)
 
+    @api.depends('channel_partner_all_ids', 'channel_partner_all_ids.member_status')
+    def _compute_partner_ids(self):
+        for record in self:
+            enrolled_partner_ids = record.channel_partner_ids.partner_id.ids or []
+            record.partner_ids = record.partner_all_ids.filtered(lambda partner: partner.id in enrolled_partner_ids)
+
+    def _search_partner_ids(self, operator, value):
+        if isinstance(value, int) and operator == 'in':
+            value = [value]
+        enrolled_channel_partner_ids = self.env['slide.channel.partner'].sudo().search([
+            ('member_status', '!=', 'invited'),
+            ('partner_id', operator, value),
+        ])
+        return [('id', 'in', enrolled_channel_partner_ids.channel_id.ids)]
+
     @api.depends('slide_ids.is_published')
     def _compute_slide_last_update(self):
         for record in self:
             record.slide_last_update = fields.Date.today()
 
-    @api.depends('channel_partner_ids.channel_id')
-    def _compute_members_count(self):
-        read_group_res = self.env['slide.channel.partner'].sudo()._read_group([('channel_id', 'in', self.ids)], ['channel_id'], 'channel_id')
-        data = dict((res['channel_id'][0], res['channel_id_count']) for res in read_group_res)
+    @api.depends('channel_partner_all_ids.channel_id', 'channel_partner_all_ids.member_status')
+    def _compute_members_counts(self):
+        read_group_res = self.env['slide.channel.partner'].sudo()._read_group(
+            [('channel_id', 'in', self.ids)],
+            ['channel_id'],
+            ['channel_id', 'member_status'],
+            lazy=False)
+        data_invited = {res['channel_id'][0]: res['__count'] for res in read_group_res if res.get('member_status') == 'invited'}
+        data_joined = {res['channel_id'][0]: res['__count'] for res in read_group_res if res.get('member_status') == 'joined'}
+        data_ongoing = {res['channel_id'][0]: res['__count'] for res in read_group_res if res.get('member_status') == 'ongoing'}
+        data_completed = {res['channel_id'][0]: res['__count'] for res in read_group_res if res.get('member_status') == 'completed'}
         for channel in self:
-            channel.members_count = data.get(channel.id, 0)
-
-    @api.depends('channel_partner_ids.channel_id', 'channel_partner_ids.completed')
-    def _compute_members_done_count(self):
-        read_group_res = self.env['slide.channel.partner'].sudo()._read_group(['&', ('channel_id', 'in', self.ids), ('completed', '=', True)], ['channel_id'], 'channel_id')
-        data = dict((res['channel_id'][0], res['channel_id_count']) for res in read_group_res)
-        for channel in self:
-            channel.members_done_count = data.get(channel.id, 0)
+            channel.members_invited_count = data_invited.get(channel.id, 0)
+            channel.members_active_count = data_joined.get(channel.id, 0) + data_ongoing.get(channel.id, 0)
+            channel.members_done_count = data_completed.get(channel.id, 0)
+            channel.members_all_count = channel.members_invited_count + channel.members_active_count + channel.members_done_count
+            channel.members_count = channel.members_active_count + channel.members_done_count
 
     @api.depends('activity_ids.request_partner_id')
     @api.depends_context('uid')
@@ -344,20 +426,24 @@ class Channel(models.Model):
         for channel in self:
             channel.has_requested_access = channel.id in requested_cids
 
-    @api.depends('channel_partner_ids.partner_id')
+    @api.depends('channel_partner_all_ids.partner_id', 'channel_partner_all_ids.member_status')
     @api.depends_context('uid')
-    def _compute_is_member(self):
-        if self.env.user._is_public():
-            self.is_member = False
-            return
+    @api.model
+    def _compute_membership_values(self):
         channel_partners = self.env['slide.channel.partner'].sudo().search([
             ('channel_id', 'in', self.ids),
+            ('partner_id', '=', self.env.user.partner_id.id),
         ])
         result = defaultdict(set)
         for cp in channel_partners:
             result[cp.channel_id.id].add(cp.partner_id.id)
+        active_channel_partners = channel_partners.filtered(
+            lambda channel_partner: channel_partner.member_status != 'invited')
+        invitation_pending_channels = (channel_partners - active_channel_partners).channel_id
+        active_channels = active_channel_partners.channel_id
         for channel in self:
-            channel.is_member = self.env.user.partner_id.id in result[channel.id]
+            channel.is_member = channel in active_channels
+            channel.is_member_invited = channel in invitation_pending_channels
 
     @api.depends('slide_ids.is_category')
     def _compute_category_and_slide_ids(self):
@@ -417,7 +503,7 @@ class Channel(models.Model):
         current_user_info = self.env['slide.channel.partner'].sudo().search(
             [('channel_id', 'in', self.ids), ('partner_id', '=', self.env.user.partner_id.id)]
         )
-        mapped_data = dict((info.channel_id.id, (info.completed, info.completed_slides_count)) for info in current_user_info)
+        mapped_data = dict((info.channel_id.id, (info.member_status == 'completed', info.completed_slides_count)) for info in current_user_info)
         for record in self:
             completed, completed_slides_count = mapped_data.get(record.id, (False, 0))
             record.completed = completed
@@ -614,18 +700,21 @@ class Channel(models.Model):
     # Business / Actions
     # ---------------------------------------------------------
 
-    def action_redirect_to_members(self, completed=False):
-        """ Redirects to attendees of the course. If completed is True, a filter
-        will be added in action that will display only attendees who have completed
-        the course. """
+    def action_redirect_to_members(self, member_status=''):
+        """ Redirects to attendees of the course. If member_status is set to 'invited' /
+        'active' ('joined' + 'ongoing') / 'completed', attendees being filtered accordingly."""
         action_ctx = {'active_test': False}
         action = self.env["ir.actions.actions"]._for_xml_id("website_slides.slide_channel_partner_action")
-        if completed:
-            action_ctx['search_default_filter_completed'] = 1
+        if member_status:
+            if member_status == 'active':
+                action_ctx['search_default_filter_joined'] = 1
+                action_ctx['search_default_filter_ongoing'] = 1
+            else:
+                action_ctx['search_default_filter_%s' % member_status] = 1
         action['domain'] = [('channel_id', 'in', self.ids)]
         action['sample'] = 1
-        if completed:
-            help_message = {'header_message':_("No Attendee has completed this course yet!"), 'body_message': ""}
+        if member_status == 'completed':
+            help_message = {'header_message': _("No Attendee has completed this course yet!"), 'body_message': ""}
         else:
             help_message = {
                 'header_message': _("No Attendees Yet!"),
@@ -638,60 +727,115 @@ class Channel(models.Model):
         action['context'] = action_ctx
         return action
 
-    def action_redirect_to_done_members(self):
-        return self.action_redirect_to_members(completed=True)
+    def action_redirect_to_completed_members(self):
+        return self.action_redirect_to_members('completed')
 
-    def action_channel_invite(self):
-        self.ensure_one()
+    def action_redirect_to_active_members(self):
+        return self.action_redirect_to_members('active')
+
+    def action_redirect_to_invited_members(self):
+        return self.action_redirect_to_members('invited')
+
+    def action_channel_enroll_invite(self):
+        return self.action_channel_invite(is_enroll=True)
+
+    def action_channel_invite(self, channel_id=False, is_enroll=False):
         template = self.env.ref('website_slides.mail_template_slide_channel_invite', raise_if_not_found=False)
+        course_name = self.env['slide.channel'].sudo().browse(channel_id).name if channel_id else self.name if len(self) == 1 else ''
 
         local_context = dict(
             self.env.context,
-            default_channel_id=self.id,
+            default_channel_id=channel_id or (self.id if len(self) == 1 else False),
             default_use_template=bool(template),
             default_template_id=template and template.id or False,
             default_email_layout_xmlid='website_slides.mail_notification_channel_invite',
+            default_is_enroll=is_enroll,
         )
+        title_text = _('Invite Members to ') if is_enroll and course_name else _('Invite Members to a course') if is_enroll else _('Share ') if course_name else _('Share a Course')
         return {
             'type': 'ir.actions.act_window',
             'view_mode': 'form',
+            'views': [[False, 'form']],
             'res_model': 'slide.channel.invite',
             'target': 'new',
             'context': local_context,
+            'name': f'{title_text}{course_name}' if course_name else title_text,
         }
 
     def action_add_member(self, **member_values):
-        """ Adds the logged in user in the channel members.
-        (see '_action_add_members' for more info)
+        """ Enroll the logged in user in the course. (see '_action_add_members' for more info)
+        This method is called when a user press the 'Join the course' button in front-end,
+        through '/enroll' route.
 
-        Returns True if added successfully, False otherwise."""
-        return bool(self._action_add_members(self.env.user.partner_id, **member_values))
+        If the logged in user has been invited, then we sudo the add_members method
+        since we consider he has been granted access to the course.
+
+        Returns True if added and enrolled successfully, False otherwise."""
+        invited_res = False
+        courses_invited = self.filtered(lambda course: course.is_member_invited)
+        if courses_invited:
+            invited_res = bool(courses_invited.sudo()._action_add_members(self.env.user.partner_id, **member_values))
+
+        return invited_res or bool((self - courses_invited)._action_add_members(self.env.user.partner_id, **member_values))
 
     def _action_add_members(self, target_partners, **member_values):
-        """ Add the target_partner as a member of the channel (to its slide.channel.partner).
-        This will make the content (slides) of the channel available to that partner.
+        """ Adds the target_partners as members of the channel(s). If member_values contains
+        member_status, then according to its value partners are added as follows:
+            1) Not in member_values / 'joined' : This is default value and behaviour.
+                   The partners will be added as enrolled members. This will make the
+                   content (slides) of the channel available to that partner.
+            2) 'invited' : This is used when inviting partners. The partners are added as invited
+                           members (member_status = 'invited') This will make the channel
+                           accessible but not the slides until they enroll themselves.
+        Uses:
+            - Back-end:
+                1) On course access request approval: enroll partner
+                2) On inviting member by email: add partner to attendees, set member_status to 'invited'
+            - Front-End:
+                3) When a partner not in attendees joins the course: enroll partner
+                4) When partner in attendees with pending invitation joins the course: enroll partner
 
-        Returns the added 'slide.channel.partner's (! as sudo !)
-        """
-        to_join = self._filter_add_members(target_partners, **member_values)
-        if to_join:
-            existing = self.env['slide.channel.partner'].sudo().search([
-                ('channel_id', 'in', self.ids),
-                ('partner_id', 'in', target_partners.ids)
-            ])
-            existing_map = dict((cid, list()) for cid in self.ids)
-            for item in existing:
-                existing_map[item.channel_id.id].append(item.partner_id.id)
+        Returns the union of new partners if any and of the invited partners having
+        enrolled themselves to courses if any."""
+        is_invite = member_values.get('member_status', 'joined') == 'invited'
 
-            to_create_values = [
-                dict(channel_id=channel.id, partner_id=partner.id, **member_values)
-                for channel in to_join
-                for partner in target_partners if partner.id not in existing_map[channel.id]
-            ]
-            slide_partners_sudo = self.env['slide.channel.partner'].sudo().create(to_create_values)
-            to_join.message_subscribe(partner_ids=target_partners.ids, subtype_ids=[self.env.ref('website_slides.mt_channel_slide_published').id])
-            return slide_partners_sudo
-        return self.env['slide.channel.partner'].sudo()
+        # Channels on which the current user has the rights to write.
+        channels_to_join = self._filter_add_members(target_partners, **member_values)
+
+        # Existing channel partners
+        existing_channel_partners = self.env['slide.channel.partner'].sudo().search([
+            ('channel_id', 'in', channels_to_join.ids),
+            ('partner_id', 'in', target_partners.ids)
+        ])
+        existing_channel_partners_map = dict((cid, list()) for cid in self.ids)
+        for channel_partner in existing_channel_partners:
+            existing_channel_partners_map[channel_partner.channel_id.id].append(channel_partner.partner_id.id)
+
+        # Invited partners confirming their invitation by enrolling to the course.
+        confirmed_invitation_partners_sudo = self.env['slide.channel.partner'].sudo()
+        to_create_partners_values = []
+
+        for channel in channels_to_join:
+            for partner in target_partners:
+                if partner.id not in existing_channel_partners_map[channel.id]:
+                    to_create_partners_values.append(dict(channel_id=channel.id, partner_id=partner.id, **member_values))
+                elif not is_invite:
+                    existing_partner = existing_channel_partners.filtered(lambda cp: cp.partner_id.id == partner.id and cp.channel_id.id == channel.id)
+                    if existing_partner.member_status == 'invited':
+                        confirmed_invitation_partners_sudo |= existing_partner
+
+        # Chatter subscription is done in create function override, if member_status is not 'invited'.
+        new_slide_channel_partners = self.env['slide.channel.partner'].sudo().create(to_create_partners_values)
+        confirmed_invitation_partners_sudo.write({'member_status': 'joined'})
+
+        # Subscribe invited partners enrolling to the course to the chatter.
+        for channel_partner in confirmed_invitation_partners_sudo:
+            channel_partner.channel_id.sudo().message_subscribe(
+                partner_ids=[channel_partner.partner_id.id],
+                subtype_ids=[self.env.ref('website_slides.mt_channel_slide_published').id]
+            )
+
+        return confirmed_invitation_partners_sudo | new_slide_channel_partners
 
     def _filter_add_members(self, target_partners, **member_values):
         allowed = self.filtered(lambda channel: channel.enroll == 'public')
@@ -737,7 +881,7 @@ class Channel(models.Model):
         channel_completed = self.env['slide.channel.partner'].sudo().search([
             ('partner_id', 'in', partner_ids),
             ('channel_id', 'in', self.ids),
-            ('completed', '=', True)
+            ('member_status', '=', 'completed')
         ])
         for partner_channel in channel_completed:
             channel = partner_channel.channel_id

@@ -108,6 +108,8 @@
             <t t-foreach="slides" t-as="slide">
                 <t t-set="slide_completed" t-value="channel_progress[slide.id].get('completed')"/>
                 <t t-set="can_access" t-value="can_access_channel or slide.is_preview"/>
+                <t t-set="is_allowed_member" t-value="current_slide.channel_id.is_member or current_slide.channel_id.is_member_invited"/>
+                <t t-set="is_member" t-value="current_slide.channel_id.is_member"/>
                 <li t-attf-class="o_wslides_fs_sidebar_list_item d-flex py-1 #{'active' if slide.id == current_slide.id else ''}"
                     t-att-data-id="slide.id"
                     t-att-data-can-access="can_access"
@@ -121,6 +123,7 @@
                     t-att-data-embed-code="slide.embed_code if slide.slide_category in ['video', 'document', 'infographic'] else False"
                     t-att-data-can-self-mark-completed="slide.can_self_mark_completed"
                     t-att-data-can-self-mark-uncompleted="slide.can_self_mark_uncompleted"
+                    t-att-data-is-allowed-member="is_allowed_member"
                     t-att-data-is-member="is_member"
                     t-att-data-session-answers="session_answers"
                     t-att-data-website-share-url="slide.website_share_url">
@@ -177,6 +180,7 @@
                                 t-att-data-completed="slide_completed"
                                 t-att-data-can-self-mark-completed="slide.can_self_mark_completed"
                                 t-att-data-can-self-mark-uncompleted="slide.can_self_mark_uncompleted"
+                                t-att-data-is-allowed-member="is_allowed_member"
                                 t-att-data-is-member="is_member"
                                 t-att-data-session-answers="session_answers"
                                 t-att-data-website-share-url="slide.website_share_url">

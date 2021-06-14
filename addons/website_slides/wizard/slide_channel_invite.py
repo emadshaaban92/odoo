@@ -22,31 +22,62 @@ class SlideChannelInvite(models.TransientModel):
     # recipients
     partner_ids = fields.Many2many('res.partner', string='Recipients')
     # slide channel
-    channel_id = fields.Many2one('slide.channel', string='Slide channel', required=True)
+    channel_id = fields.Many2one('slide.channel', string='Course', required=True)
+    channel_invite_url = fields.Char('Course Invitation URL', compute='_compute_channel_invite_url')
+    channel_visibility = fields.Selection(related="channel_id.visibility", string='Course Visibility')
+    channel_published = fields.Boolean('Course Published', compute="_compute_channel_published", readonly=False, store=True)
+    channel_can_publish = fields.Boolean(compute="_compute_channel_can_publish")
+    # membership
+    is_enroll = fields.Boolean(
+        'Enroll partners', readonly=True,
+        help="Whether invited partners will be added as enrolled or just invited partners")
+    signup_allowed = fields.Boolean('Signup Allowed', readonly=True, default=lambda self: self.env['res.users']._get_signup_invitation_scope() == 'b2c')
+
+    @api.depends('channel_id')
+    @api.depends_context('uid')
+    def _compute_channel_can_publish(self):
+        for invite in self:
+            invite.channel_can_publish = invite.channel_id and invite.channel_id.can_publish
+
+    @api.depends('channel_id', 'channel_id.is_published')
+    def _compute_channel_published(self):
+        for invite in self:
+            invite.channel_published = invite.channel_id.is_published
+
+    @api.onchange('channel_published')
+    def _onchange_channel_published(self):
+        for invite in self:
+            channel = invite.channel_id
+            if invite.channel_can_publish and channel and channel.is_published != invite.channel_published:
+                channel.write({'is_published': not channel.is_published})
+
+    @api.depends('channel_id')
+    def _compute_channel_invite_url(self):
+        for invite in self:
+            channel = invite.channel_id
+            invite.channel_invite_url = '%s/slides/%s/invite?' % (channel.get_base_url(), channel.id)
 
     # Overrides of mail.composer.mixin
     @api.depends('channel_id')  # fake trigger otherwise not computed in new mode
     def _compute_render_model(self):
         self.render_model = 'slide.channel.partner'
 
-    @api.onchange('partner_ids')
-    def _onchange_partner_ids(self):
-        if self.partner_ids:
-            signup_allowed = self.env['res.users'].sudo()._get_signup_invitation_scope() == 'b2c'
-            if not signup_allowed:
-                invalid_partners = self.env['res.partner'].search([
-                    ('user_ids', '=', False),
-                    ('id', 'in', self.partner_ids.ids)
-                ])
-                if invalid_partners:
-                    raise UserError(_(
-                        'The following recipients have no user account: %s. You should create user accounts for them or allow external sign up in configuration.',
-                        ', '.join(invalid_partners.mapped('name'))
-                    ))
+    @api.model_create_multi
+    def create(self, vals_list):
+        for values in vals_list:
+            if values.get('template_id') and not (values.get('body') or values.get('subject')):
+                template = self.env['mail.template'].browse(values['template_id'])
+                if not values.get('subject'):
+                    values['subject'] = template.subject
+                if not values.get('body'):
+                    values['body'] = template.body_html
+        return super(SlideChannelInvite, self).create(vals_list)
 
     def action_invite(self):
         """ Process the wizard content and proceed with sending the related
-            email(s), rendering any template patterns on the fly if needed """
+            email(s), rendering any template patterns on the fly if needed.
+            This method is used both to add members as 'joined' (on invitation)
+            and as 'invited' (on share), depending on the value of is_enroll"""
         self.ensure_one()
 
         if not self.env.user.email:
@@ -56,7 +87,7 @@ class SlideChannelInvite(models.TransientModel):
 
         mail_values = []
         for partner_id in self.partner_ids:
-            slide_channel_partner = self.channel_id._action_add_members(partner_id)
+            slide_channel_partner = self.channel_id._action_add_members(partner_id, member_status='joined' if self.is_enroll else 'invited')
             if slide_channel_partner:
                 mail_values.append(self._prepare_mail_values(slide_channel_partner))
 

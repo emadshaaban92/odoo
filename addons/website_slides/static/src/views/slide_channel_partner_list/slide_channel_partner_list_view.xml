@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<templates xml:space="preserve">
+
+    <t t-inherit="web.ListView.Buttons" t-inherit-mode="primary" owl="1" t-name="website_slides.SlideChannelPartnerListView.buttons">
+        <xpath expr="//t[@t-if='props.showButtons']" position="inside">
+            <button type="button" class="btn btn-primary o_button_slide_channel_partner_invite" t-on-click="channelEnrollInvite">
+                Invite
+            </button>
+            <button type="button" class="btn btn-secondary o_button_slide_channel_partner_share" t-on-click="channelShareInvite">
+                Share
+            </button>
+        </xpath>
+    </t>
+
+</templates>
