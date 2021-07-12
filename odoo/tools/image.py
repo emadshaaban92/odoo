@@ -51,16 +51,15 @@ EXIF_TAG_ORIENTATION_TO_TRANSPOSE_METHODS = { # Initial side on 1st row/col:
 IMAGE_MAX_RESOLUTION = 45e6
 
 
-class ImageProcess():
+class ImageProcess:
 
     def __init__(self, source, verify_resolution=True):
-        """Initialize the `source` image for processing.
+        """Initialize the ``source`` image for processing.
 
-        :param source: the original image binary
+        :param bytes source: the original image binary
 
             No processing will be done if the `source` is falsy or if
             the image is SVG.
-
         :param verify_resolution: if True, make sure the original image size is not
             excessive before starting to process it. The max allowed resolution is
             defined by `IMAGE_MAX_RESOLUTION`.
@@ -97,12 +96,9 @@ class ImageProcess():
         """Return the image resulting of all the image processing
         operations that have been applied previously.
 
-        Return False if the initialized `image` was falsy, and return
-        the initialized `image` without change if it was SVG.
-
-        Also return the initialized `image` if no operations have been applied
-        and the `output_format` is the same as the original format and the
-        quality is not specified.
+        The source is returned as-is if it's an SVG, or if no operations have
+        been applied, the `output_format` is the same as the original format,
+        and the quality is not specified.
 
         :param int quality: quality setting to apply. Default to 0.
 
@@ -111,11 +107,12 @@ class ImageProcess():
               was changed, otherwise the original image is returned.
             - for PNG: set falsy to prevent conversion to a WEB palette.
             - for other formats: no effect.
-        :param str output_format: the output format. Can be PNG, JPEG, GIF, or ICO.
-            Default to the format of the original image. BMP is converted to
-            PNG, other formats than those mentioned above are converted to JPEG.
-        :return: image
-        :rtype: bytes or False
+
+        :param str output_format: Can be PNG, JPEG, GIF, or ICO.
+            Default to the format of the original image if a valid output format,
+            otherwise BMP is converted to PNG and the rest are converted to JPEG.
+        :return: the final image, or ``False`` if the original ``source`` was falsy.
+        :rtype: bytes | False
         """
         if not self.image:
             return self.source
@@ -392,8 +389,7 @@ def binary_to_image(source):
 def base64_to_image(base64_source):
     """Return a PIL image from the given `base64_source`.
 
-    :param base64_source: the image base64 encoded
-    :type base64_source: string or bytes
+    :param str | bytes base64_source: the image base64 encoded
     :rtype: ~PIL.Image.Image
     :raise: UserError if the base64 is incorrect or the image can't be identified by PIL
     """
@@ -451,13 +447,13 @@ def image_guess_size_from_field_name(field_name):
 
     :param str field_name: the name of a field
     :return: the guessed size
-    :rtype: tuple (width, height)
+    :rtype: (int, int)
     """
     suffix = '1024' if field_name == 'image' else field_name.split('_')[-1]
     try:
-        return (int(suffix), int(suffix))
+        return int(suffix), int(suffix)
     except ValueError:
-        return (0, 0)
+        return 0, 0
 
 
 def image_data_uri(base64_source):

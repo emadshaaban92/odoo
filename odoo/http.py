@@ -1769,7 +1769,7 @@ class JsonRPCDispatcher(Dispatcher):
         no route matched the request path, that no fallback page could
         be delivered and that the request ``Content-Type`` was json.
 
-        :param exc Exception: the exception that occurred.
+        :param Exception exc: the exception that occurred.
         :returns: an HTTP error response
         :rtype: Response
         """
