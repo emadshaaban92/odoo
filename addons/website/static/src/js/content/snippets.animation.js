@@ -963,19 +963,23 @@ registry.anchorSlide = publicWidget.Widget.extend({
      * @private
      */
     _onAnimateClick: function (ev) {
-        var hash = this.$target[0].hash;
+        const hash = this.$target[0].hash;
         if (!hash.length || (this.$target[0].pathname !== window.location.pathname)) {
             return;
         }
-        // Escape special characters to make the jQuery selector to work.
-        hash = '#' + $.escapeSelector(hash.substring(1));
-        var $anchor = $(hash);
+        const $anchor = $(document.getElementById(hash.substring(1)));
+        // Check if the target of the link is a modal.
+        const isModal = $anchor.hasClass('modal');
         const scrollValue = $anchor.attr('data-anchor');
-        if (!$anchor.length || !scrollValue) {
+        if (!isModal && (!$anchor.length || !scrollValue)) {
             return;
         }
         ev.preventDefault();
-        this._scrollTo($anchor, scrollValue);
+        if (isModal) {
+            $anchor.modal('show');
+        } else {
+            this._scrollTo($anchor, scrollValue);
+        }
     },
 });
 
