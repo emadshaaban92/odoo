@@ -736,7 +736,21 @@ const ButtonUserValueWidget = UserValueWidget.extend({
         if (this.options && this.options.childNodes) {
             this.options.childNodes.forEach(node => this.containerEl.appendChild(node));
         }
-
+        if (this.imgEl) {
+            this.$el[0].classList.add('o_we_icon_button');
+            const svgEl = this.$el[0].querySelector('svg');
+            const positionHolderEl = document.createElement('span');
+            if (svgEl) {
+                svgEl.replaceWith(positionHolderEl);
+            }
+            const text = this.$el[0].textContent.replace(/\u200B+/g, '').trim();
+            if (svgEl) {
+                positionHolderEl.replaceWith(svgEl);
+            }
+            if (text) {
+                this.imgEl.classList.add('o_we_img_with_text');
+            }
+        }
         return this._super(...arguments);
     },
 
