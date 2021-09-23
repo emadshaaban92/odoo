@@ -48,3 +48,21 @@ class Stage(models.Model):
     @api.depends('team_id')
     def _compute_team_count(self):
         self.team_count = self.env['crm.team'].search_count([])
+
+    def write(self, vals):
+        """ Since leads that are in a won stage must have their
+        probability = 100%, this override ensures that setting a stage as won
+        will set all the lead in that stage to probability = 100%.
+        Inversely, if a won stage is not marked as won anymore, the lead
+        probability should be recomputed base on automated probability.
+        Note: If a user set a stage as won and change his mind right after,
+        the manuel probability will be lost in the process."""
+        leads_to_update = self.env['crm.lead']
+        if 'is_won' in vals:
+            leads_to_update = leads_to_update.search([('stage_id', 'in', self.ids)])
+        if leads_to_update and vals.get('is_won'):
+            leads_to_update.write({'probability': 100, 'automated_probability': 100})
+        elif leads_to_update and not vals.get('is_won'):
+            leads_to_update._compute_probabilities()
+
+        return super(Stage, self).write(vals)

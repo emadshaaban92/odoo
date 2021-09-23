@@ -142,8 +142,8 @@ class TestLeadAssign(TestLeadAssignCommon):
             count=14,
             suffix='Existing')
         self.assertEqual(existing_leads.team_id, self.sales_team_1, "Team should have lower sequence")
-        existing_leads[0].active = False  # lost
-        existing_leads[1].probability = 100  # not won
+        existing_leads[0].write({'active': False, 'probability': 0})  # lost
+        existing_leads[1].probability = 90  # not won
         existing_leads[2].probability = 0  # not lost
         existing_leads.flush_recordset()
 

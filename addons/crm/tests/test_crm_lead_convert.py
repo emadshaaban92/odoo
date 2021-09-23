@@ -90,10 +90,10 @@ class TestLeadConvert(crm_common.TestLeadConvertCommon):
              'email_from': test_lead.email_from,
              'probability': 100, 'stage_id': self.stage_team1_won.id,
             },
-            {'name': 'Duplicate opp: same email_from, proba 100 but not won',
+            {'name': 'Duplicate opp: same email_from, proba 90 and not won',
              'type': 'opportunity',
              'email_from': test_lead.email_from,
-             'probability': 100, 'stage_id': self.stage_team1_2.id,
+             'probability': 90, 'stage_id': self.stage_team1_2.id,
             }
         ])
         lead_lost = dup_leads.filtered(lambda lead: lead.name == 'Duplicate lead: same email_from, lost')
