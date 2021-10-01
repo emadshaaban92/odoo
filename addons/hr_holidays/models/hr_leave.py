@@ -723,6 +723,7 @@ class HolidaysRequest(models.Model):
 
     def _get_number_of_days(self, date_from, date_to, employee_id):
         """ Returns a float equals to the timedelta between two dates given as string."""
+        self.ensure_one()
         if employee_id:
             return self._get_number_of_days_batch(date_from, date_to, employee_id)[employee_id]
 
