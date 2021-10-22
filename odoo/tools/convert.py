@@ -98,9 +98,13 @@ def _eval_xml(self, node, env):
             if f_search:
                 idref2 = _get_idref(self, env, f_model, self.idref)
             q = safe_eval(f_search, idref2)
-            ids = env[f_model].search(q).ids
-            if f_use != 'id':
-                ids = [x[f_use] for x in env[f_model].browse(ids).read([f_use])]
+            records = env[f_model].search(q)
+            if f_use == 'Model':
+                ids = records
+            elif f_use == 'id':
+                ids = records.ids
+            else:
+                ids = records.mapped(f_use)
             _fields = env[f_model]._fields
             if (f_name in _fields) and _fields[f_name].type == 'many2many':
                 return ids

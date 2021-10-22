@@ -4,17 +4,14 @@
 from odoo import api, models
 
 
-class AccountChartTemplate(models.Model):
+class AccountChartTemplate(models.AbstractModel):
     _inherit = 'account.chart.template'
 
     @api.model
-    def _prepare_all_journals(self, acc_template_ref, company, journals_dict=None):
-        journal_data = super(AccountChartTemplate, self)._prepare_all_journals(
-            acc_template_ref, company, journals_dict)
-        if company.account_fiscal_country_id.code != 'FR':
-            return journal_data
-
-        for journal in journal_data:
-            if journal['type'] in ('sale', 'purchase'):
-                journal.update({'refund_sequence': True})
+    def _get_account_journal(self, template_code):
+        journal_data = super()._get_account_journal(template_code)
+        if template_code == 'fr':
+            for journal in journal_data.values():
+                if journal['type'] in ('sale', 'purchase'):
+                    journal.update({'refund_sequence': True})
         return journal_data

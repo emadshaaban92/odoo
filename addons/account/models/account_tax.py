@@ -25,20 +25,21 @@ class AccountTaxGroup(models.Model):
 
     name = fields.Char(required=True, translate=True)
     sequence = fields.Integer(default=10)
+    company_id = fields.Many2one('res.company', required=True, default=lambda self: self.env.company)
     property_tax_payable_account_id = fields.Many2one(
         comodel_name='account.account',
-        company_dependent=True,
         string='Tax Payable Account',
+        company_dependent=True,  # TODO move this field where it belongs
         help="Tax current account used as a counterpart to the Tax Closing Entry when in favor of the authorities.")
     property_tax_receivable_account_id = fields.Many2one(
         comodel_name='account.account',
-        company_dependent=True,
         string='Tax Receivable Account',
+        company_dependent=True,  # TODO move this field where it belongs
         help="Tax current account used as a counterpart to the Tax Closing Entry when in favor of the company.")
     property_advance_tax_payment_account_id = fields.Many2one(
         comodel_name='account.account',
-        company_dependent=True,
         string='Tax Advance Account',
+        company_dependent=True,  # TODO move this field where it belongs
         help="Downpayments posted on this account will be considered by the Tax Closing Entry.")
     country_id = fields.Many2one(string="Country", comodel_name='res.country', help="The country for which this tax group is applicable.")
     country_code = fields.Char(related="country_id.code")
@@ -81,11 +82,7 @@ class AccountTax(models.Model):
     _check_company_auto = True
     _rec_names_search = ['name', 'description']
 
-    @api.model
-    def _default_tax_group(self):
-        return self.env.ref('account.tax_group_taxes')
-
-    name = fields.Char(string='Tax Name', required=True)
+    name = fields.Char(string='Tax Name', required=True, translate=True)
     name_searchable = fields.Char(store=False, search='_search_name',
           help="This dummy field lets us use another search method on the field 'name'."
                "This allows more freedom on how to search the 'name' compared to 'filter_domain'."
@@ -125,8 +122,12 @@ class AccountTax(models.Model):
         default=True,
         help="If set, taxes with a lower sequence might affect this one, provided they try to do it.")
     analytic = fields.Boolean(string="Include in Analytic Cost", help="If set, the amount computed by this tax will be assigned to the same analytic account as the invoice line (if any)")
-    tax_group_id = fields.Many2one('account.tax.group', string="Tax Group", default=_default_tax_group, required=True,
-                                   domain="[('country_id', 'in', (country_id, False))]")
+    tax_group_id = fields.Many2one(
+        comodel_name='account.tax.group',
+        string="Tax Group",
+        compute='_compute_tax_group_id', readonly=False, store=True,
+        required=True, precompute=True,
+        domain="[('country_id', 'in', (country_id, False))]")
     # Technical field to make the 'tax_exigibility' field invisible if the same named field is set to false in 'res.company' model
     hide_tax_exigibility = fields.Boolean(string='Hide Use Cash Basis Option', related='company_id.tax_exigibility', readonly=True)
     tax_exigibility = fields.Selection(
@@ -142,7 +143,13 @@ class AccountTax(models.Model):
         help="Account used to transition the tax amount for cash basis taxes. It will contain the tax amount as long as the original invoice has not been reconciled ; at reconciliation, this amount cancelled on this account and put on the regular tax account.")
     invoice_repartition_line_ids = fields.One2many(string="Distribution for Invoices", comodel_name="account.tax.repartition.line", inverse_name="invoice_tax_id", copy=True, help="Distribution when the tax is used on an invoice")
     refund_repartition_line_ids = fields.One2many(string="Distribution for Refund Invoices", comodel_name="account.tax.repartition.line", inverse_name="refund_tax_id", copy=True, help="Distribution when the tax is used on a refund")
-    country_id = fields.Many2one(string="Country", comodel_name='res.country', required=True, help="The country for which this tax is applicable.")
+    country_id = fields.Many2one(
+        string="Country",
+        comodel_name='res.country',
+        compute='_compute_country_id', readonly=False, store=True,
+        required=True, precompute=True,
+        help="The country for which this tax is applicable.",
+    )
     country_code = fields.Char(related='country_id.code', readonly=True)
 
     _sql_constraints = [
@@ -155,16 +162,25 @@ class AccountTax(models.Model):
             if record.tax_group_id.country_id and record.tax_group_id.country_id != record.country_id:
                 raise ValidationError(_("The tax group must have the same country_id as the tax using it."))
 
+    @api.depends('company_id')
+    def _compute_country_id(self):
+        for tax in self:
+            tax.country_id = tax.company_id.account_fiscal_country_id or tax.company_id.country_id
+
+    @api.depends('company_id')
+    def _compute_tax_group_id(self):
+        for tax in self:
+            tax.tax_group_id = (
+                self.env.ref(f"account.{tax.company_id.id}_tax_group_taxes", raise_if_not_found=False)
+                or self.env['account.tax.group'].search([('company_id', '=', tax.company_id.id)], limit=1)
+            )
+
     @api.model
     def default_get(self, fields_list):
         # company_id is added so that we are sure to fetch a default value from it to use in repartition lines, below
         rslt = super(AccountTax, self).default_get(fields_list + ['company_id'])
 
         company_id = rslt.get('company_id')
-        company = self.env['res.company'].browse(company_id)
-
-        if 'country_id' in fields_list:
-            rslt['country_id'] = company.account_fiscal_country_id.id
 
         if 'refund_repartition_line_ids' in fields_list:
             rslt['refund_repartition_line_ids'] = [
@@ -213,8 +229,8 @@ class AccountTax(models.Model):
     @api.constrains('invoice_repartition_line_ids', 'refund_repartition_line_ids')
     def _validate_repartition_lines(self):
         for record in self:
-            invoice_repartition_line_ids = record.invoice_repartition_line_ids.sorted()
-            refund_repartition_line_ids = record.refund_repartition_line_ids.sorted()
+            invoice_repartition_line_ids = record.invoice_repartition_line_ids.sorted(lambda l: (l.sequence, l.id))
+            refund_repartition_line_ids = record.refund_repartition_line_ids.sorted(lambda l: (l.sequence, l.id))
             record._check_repartition_lines(invoice_repartition_line_ids)
             record._check_repartition_lines(refund_repartition_line_ids)
 

@@ -34,7 +34,7 @@ class AccountAccount(models.Model):
                 account_unaffected_earnings = self.browse(res['ids'])
                 raise ValidationError(_('You cannot have more than one account with "Current Year Earnings" as type. (accounts: %s)', [a.code for a in account_unaffected_earnings]))
 
-    name = fields.Char(string="Account Name", required=True, index='trigram', tracking=True)
+    name = fields.Char(string="Account Name", required=True, index='trigram', tracking=True, translate=True)
     currency_id = fields.Many2one('res.currency', string='Account Currency', tracking=True,
         help="Forces all journal items in this account to have a specific currency (i.e. bank journals). If no currency is set, entries can use any currency.")
     code = fields.Char(size=64, required=True, tracking=True)
@@ -96,7 +96,7 @@ class AccountAccount(models.Model):
     tag_ids = fields.Many2many('account.account.tag', 'account_account_account_tag', string='Tags', help="Optional tags you may want to assign for custom reporting")
     group_id = fields.Many2one('account.group', compute='_compute_account_group', store=True, readonly=True,
                                help="Account prefixes can determine account groups.")
-    root_id = fields.Many2one('account.root', compute='_compute_account_root', store=True)
+    root_id = fields.Many2one('account.root', compute='_compute_account_group', store=True)
     allowed_journal_ids = fields.Many2many('account.journal', string="Allowed Journals", help="Define in which journals this account can be used. If empty, can be used in all journals.")
     opening_debit = fields.Monetary(string="Opening Debit", compute='_compute_opening_debit_credit', inverse='_set_opening_debit')
     opening_credit = fields.Monetary(string="Opening Credit", compute='_compute_opening_debit_credit', inverse='_set_opening_credit')
@@ -253,7 +253,6 @@ class AccountAccount(models.Model):
         if not accounts:
             return
 
-        self.flush_recordset(['reconcile'])
         self.env['account.journal'].flush_model(['company_id', 'default_account_id'])
         self.env['res.company'].flush_model(['account_journal_payment_credit_account_id', 'account_journal_payment_debit_account_id'])
         self.env['account.payment.method.line'].flush_model(['journal_id', 'payment_account_id'])
@@ -310,19 +309,13 @@ class AccountAccount(models.Model):
             raise ValidationError(_("You cannot change the type of an account set as Bank Account on a journal to Receivable or Payable."))
 
     @api.depends('code')
-    def _compute_account_root(self):
+    def _compute_account_group(self):
         # this computes the first 2 digits of the account.
         # This field should have been a char, but the aim is to use it in a side panel view with hierarchy, and it's only supported by many2one fields so far.
         # So instead, we make it a many2one to a psql view with what we need as records.
         for record in self:
             record.root_id = (ord(record.code[0]) * 1000 + ord(record.code[1:2] or '\x00')) if record.code else False
-
-    @api.depends('code')
-    def _compute_account_group(self):
-        if self.ids:
-            self.env['account.group']._adapt_accounts_for_account_groups(self)
-        else:
-            self.group_id = False
+        self.env['account.group']._adapt_accounts_for_account_groups(self)
 
     def _search_used(self, operator, value):
         if operator not in ['=', '!='] or not isinstance(value, bool):
@@ -769,7 +762,6 @@ class AccountAccount(models.Model):
             'template': '/account/static/xls/coa_import_template.xlsx'
         }]
 
-
 class AccountGroup(models.Model):
     _name = "account.group"
     _description = 'Account Group'
@@ -778,9 +770,9 @@ class AccountGroup(models.Model):
 
     parent_id = fields.Many2one('account.group', index=True, ondelete='cascade', readonly=True)
     parent_path = fields.Char(index=True, unaccent=False)
-    name = fields.Char(required=True)
-    code_prefix_start = fields.Char()
-    code_prefix_end = fields.Char()
+    name = fields.Char(required=True, translate=True)
+    code_prefix_start = fields.Char(compute='_compute_code_prefix_start', readonly=False, store=True, precompute=True)
+    code_prefix_end = fields.Char(compute='_compute_code_prefix_end', readonly=False, store=True, precompute=True)
     company_id = fields.Many2one('res.company', required=True, readonly=True, default=lambda self: self.env.company)
 
     _sql_constraints = [
@@ -791,15 +783,17 @@ class AccountGroup(models.Model):
         ),
     ]
 
-    @api.onchange('code_prefix_start')
-    def _onchange_code_prefix_start(self):
-        if not self.code_prefix_end or self.code_prefix_end < self.code_prefix_start:
-            self.code_prefix_end = self.code_prefix_start
+    @api.depends('code_prefix_start')
+    def _compute_code_prefix_end(self):
+        for group in self:
+            if not group.code_prefix_end or group.code_prefix_end < group.code_prefix_start:
+                group.code_prefix_end = group.code_prefix_start
 
-    @api.onchange('code_prefix_end')
-    def _onchange_code_prefix_end(self):
-        if not self.code_prefix_start or self.code_prefix_start > self.code_prefix_end:
-            self.code_prefix_start = self.code_prefix_end
+    @api.depends('code_prefix_end')
+    def _compute_code_prefix_start(self):
+        for group in self:
+            if not group.code_prefix_start or group.code_prefix_start > group.code_prefix_end:
+                group.code_prefix_start = group.code_prefix_end
 
     def name_get(self):
         result = []
@@ -842,21 +836,36 @@ class AccountGroup(models.Model):
         if res:
             raise ValidationError(_('Account Groups with the same granularity can\'t overlap'))
 
+    def _sanitize_vals(self, vals):
+        if vals.get('code_prefix_start') and 'code_prefix_end' in vals and not vals['code_prefix_end']:
+            del vals['code_prefix_end']
+        if vals.get('code_prefix_end') and 'code_prefix_start' in vals and not vals['code_prefix_start']:
+            del vals['code_prefix_start']
+        return vals
+
     @api.model_create_multi
     def create(self, vals_list):
-        for vals in vals_list:
-            if 'code_prefix_start' in vals and not vals.get('code_prefix_end'):
-                vals['code_prefix_end'] = vals['code_prefix_start']
-        res_ids = super(AccountGroup, self).create(vals_list)
+        res_ids = super(AccountGroup, self).create([self._sanitize_vals(vals) for vals in vals_list])
         res_ids._adapt_accounts_for_account_groups()
         res_ids._adapt_parent_account_group()
         return res_ids
 
     def write(self, vals):
-        res = super(AccountGroup, self).write(vals)
+        res = super(AccountGroup, self).write(self._sanitize_vals(vals))
         if 'code_prefix_start' in vals or 'code_prefix_end' in vals:
-            self._adapt_accounts_for_account_groups()
-            self._adapt_parent_account_group()
+            if self.env.context.get('loading_coa'):
+                def delayed():
+                    ids = self.env.cr.precommit.data.pop('account.group.sync', [])
+                    if ids:
+                        self.browse(ids)._adapt_accounts_for_account_groups(),
+                        self.browse(ids)._adapt_parent_account_group(),
+
+                self.env.cr.precommit.add(delayed)
+                ids = self.env.cr.precommit.data.setdefault('account.group.sync', [])
+                ids.extend(self.ids)
+            else:
+                self._adapt_accounts_for_account_groups()
+                self._adapt_parent_account_group()
         return res
 
     def unlink(self):
@@ -877,10 +886,10 @@ class AccountGroup(models.Model):
         """
         company_ids = account_ids.company_id.ids if account_ids else self.company_id.ids
         account_ids = account_ids.ids if account_ids else []
-        if not company_ids and not account_ids:
+        if not company_ids and account_ids is None:
             return
         self.flush_model()
-        self.env['account.account'].flush_model()
+        self.env['account.account'].flush_model(['code'])
 
         account_where_clause = ''
         where_params = [tuple(company_ids)]

@@ -23,7 +23,7 @@
                     ('company_id', '=', ref('l10n_in.demo_company_in')),
                     ('type_tax_use', '=', 'sale'),
                     ('amount','=', 28),
-                    ('tax_group_id', '=', ref('l10n_in.igst_group'))], limit=1).ids)]
+                    ('tax_group_id', '=', ref('account.{}_igst_group'.format(ref('l10n_in.demo_company_in'))))], limit=1).ids)]
             }),
             (0, 0, {
                 'product_id': ref('product.product_product_9'),
@@ -33,7 +33,7 @@
                     ('company_id', '=', ref('l10n_in.demo_company_in')),
                     ('type_tax_use', '=', 'sale'),
                     ('amount','=', 18),
-                    ('tax_group_id', '=', ref('l10n_in.igst_group'))], limit=1).ids)]
+                    ('tax_group_id', '=', ref('account.{}_igst_group'.format(ref('l10n_in.demo_company_in'))))], limit=1).ids)]
             }),
             (0, 0, {
                 'product_id': ref('product.product_product_10'),
@@ -45,9 +45,9 @@
                     '|',
                         '&amp;',
                         ('amount', '=', 18),
-                        ('tax_group_id', '=', ref('l10n_in.igst_group')),
+                        ('tax_group_id', '=', ref('account.{}_igst_group'.format(ref('l10n_in.demo_company_in')))),
                         '&amp;',
-                        ('tax_group_id', '=', ref('l10n_in.cess_group')),
+                        ('tax_group_id', '=', ref('account.{}_cess_group'.format(ref('l10n_in.demo_company_in')))),
                         ('children_tax_ids.amount','=', 5)
                     ], limit=2).ids)]
             }),
@@ -75,7 +75,7 @@
                     ('company_id', '=', ref('l10n_in.demo_company_in')),
                     ('type_tax_use', '=', 'sale'),
                     ('amount','=', 28),
-                    ('tax_group_id', '=', ref('l10n_in.gst_group'))], limit=1).ids)]
+                    ('tax_group_id', '=', ref('account.{}_gst_group'.format(ref('l10n_in.demo_company_in'))))], limit=1).ids)]
             }),
             (0, 0, {
                 'product_id': ref('product.product_product_9'),
@@ -85,7 +85,7 @@
                     ('company_id', '=', ref('l10n_in.demo_company_in')),
                     ('type_tax_use', '=', 'sale'),
                     ('amount','=', 18),
-                    ('tax_group_id', '=', ref('l10n_in.gst_group'))], limit=1).ids)]
+                    ('tax_group_id', '=', ref('account.{}_gst_group'.format(ref('l10n_in.demo_company_in'))))], limit=1).ids)]
             }),
             (0, 0, {
                 'product_id': ref('product.product_product_10'),
@@ -97,9 +97,9 @@
                     '|',
                         '&amp;',
                         ('amount', '=', 18),
-                        ('tax_group_id', '=', ref('l10n_in.gst_group')),
+                        ('tax_group_id', '=', ref('account.{}_gst_group'.format(ref('l10n_in.demo_company_in')))),
                         '&amp;',
-                        ('tax_group_id', '=', ref('l10n_in.cess_group')),
+                        ('tax_group_id', '=', ref('account.{}_cess_group'.format(ref('l10n_in.demo_company_in')))),
                         ('children_tax_ids.amount','=', 5)
                     ], limit=2).ids)]
             }),
@@ -127,7 +127,7 @@
                     ('company_id', '=', ref('l10n_in.demo_company_in')),
                     ('type_tax_use', '=', 'sale'),
                     ('amount','=', 18),
-                    ('tax_group_id', '=', obj().env.ref('l10n_in.gst_group').id)], limit=1).ids)]
+                    ('tax_group_id', '=', obj().env.ref('account.{}_gst_group'.format(ref('l10n_in.demo_company_in'))).id)], limit=1).ids)]
             }),
             (0, 0, {
                 'product_id': ref('product.product_product_20'),
@@ -137,7 +137,7 @@
                     ('company_id', '=', ref('l10n_in.demo_company_in')),
                     ('type_tax_use', '=', 'sale'),
                     ('amount','=', 18),
-                    ('tax_group_id', '=', obj().env.ref('l10n_in.gst_group').id)], limit=1).ids)]
+                    ('tax_group_id', '=', obj().env.ref('account.{}_gst_group'.format(ref('l10n_in.demo_company_in'))).id)], limit=1).ids)]
             }),
             (0, 0, {
                 'product_id': ref('product.product_product_22'),
@@ -147,7 +147,7 @@
                     ('company_id', '=', ref('l10n_in.demo_company_in')),
                     ('type_tax_use', '=', 'sale'),
                     ('amount','=', 5),
-                    ('tax_group_id', '=', obj().env.ref('l10n_in.gst_group').id)], limit=1).ids)]
+                    ('tax_group_id', '=', obj().env.ref('account.{}_gst_group'.format(ref('l10n_in.demo_company_in'))).id)], limit=1).ids)]
             }),
             (0, 0, {
                 'product_id': ref('product.product_product_24'),
@@ -157,7 +157,7 @@
                     ('company_id', '=', ref('l10n_in.demo_company_in')),
                     ('type_tax_use', '=', 'sale'),
                     ('amount','=', 5),
-                    ('tax_group_id', '=', obj().env.ref('l10n_in.gst_group').id)], limit=1).ids)]
+                    ('tax_group_id', '=', obj().env.ref('account.{}_gst_group'.format(ref('l10n_in.demo_company_in'))).id)], limit=1).ids)]
             }),
         ]"/>
     </record>
@@ -183,7 +183,7 @@
                     ('company_id', '=', ref('l10n_in.demo_company_in')),
                     ('type_tax_use', '=', 'sale'),
                     ('amount','=', 18),
-                    ('tax_group_id', '=', obj().env.ref('l10n_in.igst_group').id)], limit=1).ids)]
+                    ('tax_group_id', '=', obj().env.ref('account.{}_igst_group'.format(ref('l10n_in.demo_company_in'))).id)], limit=1).ids)]
             }),
         ]"/>
     </record>
@@ -212,7 +212,7 @@
                     ('company_id', '=', ref('l10n_in.demo_company_in')),
                     ('type_tax_use', '=', 'sale'),
                     ('amount','=', 18),
-                    ('tax_group_id', '=', obj().env.ref('l10n_in.igst_group').id)], limit=1).ids)]
+                    ('tax_group_id', '=', obj().env.ref('account.{}_igst_group'.format(ref('l10n_in.demo_company_in'))).id)], limit=1).ids)]
             }),
         ]"/>
     </record>
@@ -237,7 +237,7 @@
                 'tax_ids': [(6, 0, obj().tax_ids.search([
                     ('company_id', '=', ref('l10n_in.demo_company_in')),
                     ('type_tax_use', '=', 'sale'),
-                    ('tax_group_id', '=', obj().env.ref('l10n_in.exempt_group').id)], limit=1).ids)]
+                    ('tax_group_id', '=', obj().env.ref('account.{}_exempt_group'.format(ref('l10n_in.demo_company_in'))).id)], limit=1).ids)]
             }),
             (0, 0, {
                 'product_id': ref('product.product_product_5'),
@@ -246,7 +246,7 @@
                 'tax_ids': [(6, 0, obj().tax_ids.search([
                     ('company_id', '=', ref('l10n_in.demo_company_in')),
                     ('type_tax_use', '=', 'sale'),
-                    ('tax_group_id', '=', obj().env.ref('l10n_in.nil_rated_group').id)], limit=1).ids)]
+                    ('tax_group_id', '=', obj().env.ref('account.{}_nil_rated_group'.format(ref('l10n_in.demo_company_in'))).id)], limit=1).ids)]
             }),
         ]"/>
     </record>
@@ -274,7 +274,7 @@
                     ('company_id', '=', ref('l10n_in.demo_company_in')),
                     ('type_tax_use', '=', 'sale'),
                     ('amount','=', 28),
-                    ('tax_group_id', '=', obj().env.ref('l10n_in.gst_group').id)], limit=1).ids)]
+                    ('tax_group_id', '=', obj().env.ref('account.{}_gst_group'.format(ref('l10n_in.demo_company_in'))).id)], limit=1).ids)]
             }),
             (0, 0, {
                 'product_id': ref('product.product_product_9'),
@@ -284,7 +284,7 @@
                     ('company_id', '=', ref('l10n_in.demo_company_in')),
                     ('type_tax_use', '=', 'sale'),
                     ('amount','=', 18),
-                    ('tax_group_id', '=', obj().env.ref('l10n_in.gst_group').id)], limit=1).ids)]
+                    ('tax_group_id', '=', obj().env.ref('account.{}_gst_group'.format(ref('l10n_in.demo_company_in'))).id)], limit=1).ids)]
             }),
             (0, 0, {
                 'product_id': ref('product.product_product_10'),
@@ -296,9 +296,9 @@
                     '|',
                         '&amp;',
                         ('amount', '=', 18),
-                        ('tax_group_id', '=', ref('l10n_in.gst_group')),
+                        ('tax_group_id', '=', ref('account.{}_gst_group'.format(ref('l10n_in.demo_company_in')))),
                         '&amp;',
-                        ('tax_group_id', '=', ref('l10n_in.cess_group')),
+                        ('tax_group_id', '=', ref('account.{}_cess_group'.format(ref('l10n_in.demo_company_in')))),
                         ('children_tax_ids.amount','=', 5)
                     ], limit=2).ids)]
             }),
@@ -327,7 +327,7 @@
                     ('company_id', '=', ref('l10n_in.demo_company_in')),
                     ('type_tax_use', '=', 'sale'),
                     ('amount','=', 18),
-                    ('tax_group_id', '=', obj().env.ref('l10n_in.igst_group').id)], limit=1).ids)]
+                    ('tax_group_id', '=', obj().env.ref('account.{}_igst_group'.format(ref('l10n_in.demo_company_in'))).id)], limit=1).ids)]
             }),
         ]"/>
     </record>
@@ -354,7 +354,7 @@
                     ('company_id', '=', ref('l10n_in.demo_company_in')),
                     ('type_tax_use', '=', 'sale'),
                     ('amount','=', 18),
-                    ('tax_group_id', '=', obj().env.ref('l10n_in.gst_group').id)], limit=1).ids)]
+                    ('tax_group_id', '=', obj().env.ref('account.{}_gst_group'.format(ref('l10n_in.demo_company_in'))).id)], limit=1).ids)]
             }),
         ]"/>
     </record>

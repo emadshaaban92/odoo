@@ -5,7 +5,7 @@
 "116","Caja y bancos - Recaudaciones a Depositar ","116","asset_current","l10n_bo.bo_chart_template","","False"
 "121","Créditos fiscal IVA / Deudores por Ventas","121","asset_receivable","l10n_bo.bo_chart_template","","True"
 "121_001","Créditos fiscal IVA / Deudores por Ventas (PoS)","121.001","asset_receivable","l10n_bo.bo_chart_template","","True"
-"122","Créditos fiscal IVA / Deudores Morosos","122","asset_receivable","","","True"
+"122","Créditos fiscal IVA / Deudores Morosos","122","asset_receivable","l10n_bo.bo_chart_template","","True"
 "123","Créditos fiscal IVA / Deudores en Gestión Judicial","123","asset_receivable","l10n_bo.bo_chart_template","","True"
 "124","Créditos fiscal IVA / Deudores Varios","124","asset_receivable","l10n_bo.bo_chart_template","","True"
 "125","Créditos fiscal IVA / (-) Previsión para Ds. Incobrables","125","asset_receivable","l10n_bo.bo_chart_template","","True"

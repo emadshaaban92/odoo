@@ -12,11 +12,11 @@ class TestSwissQRCode(AccountTestInvoicingCommon):
     """
 
     @classmethod
-    def setUpClass(cls, chart_template_ref='l10n_ch.l10nch_chart_template'):
+    def setUpClass(cls, chart_template_ref='ch'):
         super().setUpClass(chart_template_ref=chart_template_ref)
 
         cls.company_data['company'].qr_code = True
-        cls.company_data['company'].country_id = None
+        cls.company_data['company'].country_id = cls.env.ref('base.ch')
 
         cls.swiss_iban = cls.env['res.partner.bank'].create({
             'acc_number': 'CH15 3881 5158 3845 3843 7',

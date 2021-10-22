@@ -3525,8 +3525,11 @@ class BaseModel(metaclass=MetaModel):
 
             # Check if the records are used as default properties.
             refs = [f'{self._name},{id_}' for id_ in sub_ids]
-            if Property.search([('res_id', '=', False), ('value_reference', 'in', refs)], limit=1):
+            default_preperties = Property.search([('res_id', '=', False), ('value_reference', 'in', refs)])
+            if not self._context.get(MODULE_UNINSTALL_FLAG) and default_preperties:
                 raise UserError(_('Unable to delete this document because it is used as a default property'))
+            else:
+                ir_property_unlink |= default_preperties
 
             # Delete the records' properties.
             ir_property_unlink |= Property.search([('res_id', 'in', refs)])

@@ -100,6 +100,8 @@ _SAFE_OPCODES = _EXPR_OPCODES.union(to_opcodes([
     'MAKE_FUNCTION', 'CALL_FUNCTION', 'CALL_FUNCTION_KW', 'CALL_FUNCTION_EX',
     # Added in P3.7 https://bugs.python.org/issue26110
     'CALL_METHOD', 'LOAD_METHOD',
+    # Added in P3.11
+    'CALL', 'PUSH_NULL', 'PRECALL', 'RESUME', 'BINARY_OP', 'KW_NAMES',
 
     'GET_ITER', 'FOR_ITER', 'YIELD_VALUE',
     'JUMP_FORWARD', 'JUMP_ABSOLUTE',

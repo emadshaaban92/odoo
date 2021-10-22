@@ -17,7 +17,6 @@
             </record>
         </field>
         <field name="line_ids">
-            <!-- Section 0 -->
              <record id="tax_report_title_vat_calculation" model="account.report.line">
                  <field name="name">Vat calculation of supplied goods and services - total value(i. + ii.)</field>
                  <field name="code">c_0_total</field>
@@ -34,7 +33,6 @@
                     </record>
                 </field>
             </record>
-            <!-- Section I -->
             <record id="tax_report_title_transactions0" model="account.report.line">
                 <field name="name">I. Transactions not subject to vat and exempt - total value (1.+2.+3.+4.+5.+6.+7.+8.+9.+10.)</field>
                 <field name="code">c_I_total</field>
@@ -45,7 +43,6 @@
                         <field name="formula">hr01.tax_base + hr02.tax_base + hr03.tax_base + hr04.tax_base + hr05.tax_base + hr06.tax_base + hr07.tax_base + hr08.tax_base + hr09.tax_base + hr10.tax_base </field>
                     </record>
                 </field>
-                <!-- Sub Section 1 -->
                 <field name="children_ids">
                     <record id="tax_report_line_I_1" model="account.report.line">
                         <field name="name">1. Supplies in the republic of croatia in respect of which the receiver calculates vat (domestic reverse charge)</field>
@@ -58,9 +55,6 @@
                             </record>
                         </field>
                     </record>
-                </field>
-                <!-- Sub Section 2 -->
-                <field name="children_ids">
                     <record id="tax_report_line_I_2" model="account.report.line">
                         <field name="name">2. Supplies carried out in another member state</field>
                         <field name="code">hr02</field>
@@ -72,9 +66,6 @@
                             </record>
                         </field>
                     </record>
-                </field>
-                <!-- Sub Section 3 -->
-                <field name="children_ids">
                     <record id="tax_report_line_I_3" model="account.report.line">
                         <field name="name">3. Supplies of goods within the eu</field>
                         <field name="code">hr03</field>
@@ -86,9 +77,6 @@
                             </record>
                         </field>
                     </record>
-                </field>
-                <!-- Sub Section 4 -->
-                <field name="children_ids">
                     <record id="tax_report_line_I_4" model="account.report.line">
                         <field name="name">4. Supplies of services within the eu</field>
                         <field name="code">hr04</field>
@@ -100,9 +88,6 @@
                             </record>
                         </field>
                     </record>
-                </field>
-                <!-- Sub Section 5 -->
-                <field name="children_ids">
                     <record id="tax_report_line_I_5" model="account.report.line">
                         <field name="name">5. Supplies to persons not established in the republic of croatia</field>
                         <field name="code">hr05</field>
@@ -114,9 +99,6 @@
                             </record>
                         </field>
                     </record>
-                </field>
-                <!-- Sub Section 6 -->
-                <field name="children_ids">
                     <record id="tax_report_line_I_6" model="account.report.line">
                         <field name="name">6. Installed and assembled goods in another member state</field>
                                 <field name="code">hr06</field>
@@ -128,9 +110,6 @@
                             </record>
                         </field>
                     </record>
-                </field>
-                <!-- Sub Section 7 -->
-                <field name="children_ids">
                     <record id="tax_report_line_I_7" model="account.report.line">
                         <field name="name">7. Supplies of new means of transport to another member state</field>
                         <field name="code">hr07</field>
@@ -142,9 +121,6 @@
                             </record>
                         </field>
                     </record>
-                </field>
-                <!-- Sub Section 8 -->
-                <field name="children_ids">
                     <record id="tax_report_line_I_8" model="account.report.line">
                         <field name="name">8. Domestic supplies</field>
                         <field name="code">hr08</field>
@@ -156,9 +132,6 @@
                             </record>
                         </field>
                     </record>
-                </field>
-                <!-- Sub Section 9 -->
-                <field name="children_ids">
                     <record id="tax_report_line_I_9" model="account.report.line">
                         <field name="name">9. Exportation</field>
                         <field name="code">hr09</field>
@@ -170,9 +143,6 @@
                             </record>
                         </field>
                     </record>
-                </field>
-                <!-- Sub Section 10 -->
-                <field name="children_ids">
                     <record id="tax_report_line_I_10" model="account.report.line">
                         <field name="name">10. Other exemptions</field>
                         <field name="code">hr10</field>
@@ -186,7 +156,6 @@
                     </record>
                 </field>
             </record>
-            <!-- Section II -->
             <record id="tax_report_title_transactions1" model="account.report.line">
                 <field name="name">II. Taxable transactions – total amount (1.+2.+3.+4.+5.+6.+7.+8.+9.+10.+11.+12.+13.+14.+15.)</field>
                 <field name="code">c_II_total</field>
@@ -202,7 +171,6 @@
                         <field name="formula">hr11.tax_amount + hr12.tax_amount + hr13.tax_amount + hr14.tax_amount + hr15.tax_amount + hr16.tax_amount + hr17.tax_amount + hr18.tax_amount + hr19.tax_amount + hr20.tax_amount + hr21.tax_amount + hr22.tax_amount + hr23.tax_amount + hr24.tax_amount + hr25.tax_amount</field>
                     </record>
                 </field>
-                 <!-- Sub Section 1 -->
                 <field name="children_ids">
                     <record id="tax_report_line_II_1" model="account.report.line">
                         <field name="name">1. Supplies of goods and services in the republic of croatia at a rate 5%</field>
@@ -220,7 +188,6 @@
                             </record>
                         </field>
                     </record>
-                     <!-- Sub Section 2 -->
                     <record id="tax_report_line_II_2" model="account.report.line">
                         <field name="name">2. Supplies of goods and services in the republic of croatia at a rate 13%</field>
                         <field name="code">hr12</field>
@@ -237,7 +204,6 @@
                             </record>
                         </field>
                     </record>
-                    <!-- Sub Section 3 -->
                     <record id="tax_report_line_II_3" model="account.report.line">
                         <field name="name">3. Supplies of goods and services in the republic of croatia at a rate 25%</field>
                         <field name="code">hr13</field>
@@ -254,7 +220,6 @@
                             </record>
                         </field>
                     </record>
-                    <!-- Sub Section 4 -->
                     <record id="tax_report_line_II_4" model="account.report.line">
                         <field name="name">4. Supplies received in the republic of croatia in respect of which the receiver calculates vat (domestic reverse charge)</field>
                         <field name="code">hr14</field>
@@ -271,7 +236,6 @@
                             </record>
                         </field>
                     </record>
-                    <!-- Sub Section 5 -->
                     <record id="tax_report_line_II_5" model="account.report.line">
                         <field name="name">5. Acquisition of goods within the eu at a rate 5%</field>
                         <field name="code">hr15</field>
@@ -288,7 +252,6 @@
                             </record>
                         </field>
                     </record>
-                    <!-- Sub Section 6 -->
                     <record id="tax_report_line_II_6" model="account.report.line">
                         <field name="name">6. Acquisition of goods within the eu at a rate 13%</field>
                         <field name="code">hr16</field>
@@ -305,7 +268,6 @@
                             </record>
                         </field>
                     </record>
-                    <!-- Sub Section 7 -->
                     <record id="tax_report_line_II_7" model="account.report.line">
                         <field name="name">7. Acquisition of goods within the eu at a rate 25%</field>
                         <field name="code">hr17</field>
@@ -322,7 +284,6 @@
                             </record>
                         </field>
                     </record>
-                    <!-- Sub Section 8 -->
                     <record id="tax_report_line_II_8" model="account.report.line">
                         <field name="name">8. Services received from eu at a rate 5%</field>
                         <field name="code">hr18</field>
@@ -339,7 +300,6 @@
                             </record>
                         </field>
                     </record>
-                    <!-- Sub Section 9 -->
                     <record id="tax_report_line_II_9" model="account.report.line">
                         <field name="name">9. Services received from eu at a rate 13%</field>
                         <field name="code">hr19</field>
@@ -356,7 +316,6 @@
                             </record>
                         </field>
                     </record>
-                    <!-- Sub Section 10 -->
                     <record id="tax_report_line_II_10" model="account.report.line">
                         <field name="name">10. Services received from eu at a rate 25%</field>
                         <field name="code">hr20</field>
@@ -373,7 +332,6 @@
                             </record>
                         </field>
                     </record>
-                    <!-- Sub Section 11 -->
                     <record id="tax_report_line_II_11" model="account.report.line">
                         <field name="name">11. Supplies of goods and services received from taxable persons not established in the republic of croatia at a rate 5%</field>
                         <field name="code">hr21</field>
@@ -390,7 +348,6 @@
                             </record>
                         </field>
                     </record>
-                    <!-- Sub Section 12 -->
                     <record id="tax_report_line_II_12" model="account.report.line">
                         <field name="name">12. Supplies of goods and services received from taxable persons not established in the republic of croatia at a rate 13%</field>
                         <field name="code">hr22</field>
@@ -407,7 +364,6 @@
                             </record>
                         </field>
                     </record>
-                    <!-- Sub Section 13 -->
                     <record id="tax_report_line_II_13" model="account.report.line">
                         <field name="name">13. Supplies of goods and services received from taxable persons not established in the republic of croatia at a rate 25%</field>
                         <field name="code">hr23</field>
@@ -424,7 +380,6 @@
                             </record>
                         </field>
                     </record>
-                    <!-- Sub Section 14 -->
                     <record id="tax_report_line_II_14" model="account.report.line">
                         <field name="name">14. Subsequent exemption on exportation related to personal  passenger transportation</field>
                         <field name="code">hr24</field>
@@ -441,7 +396,6 @@
                             </record>
                         </field>
                     </record>
-                    <!-- Sub Section 15 -->
                     <record id="tax_report_line_II_15" model="account.report.line">
                         <field name="name">15. Vat calculated on importation</field>
                         <field name="code">hr25</field>
@@ -460,7 +414,6 @@
                     </record>
                 </field>
             </record>
-            <!-- Section III -->
             <record id="tax_report_title_calculed_vat" model="account.report.line">
                 <field name="name">III. Calculated input vat – total amount (1.+2.+3.+4.+5.+6.+7.+8.+9.+10.+11.+12.+13. +14.+15.)</field>
                 <field name="code">c_III_total</field>
@@ -476,7 +429,6 @@
                         <field name="formula">hr26.tax_amount + hr27.tax_amount + hr28.tax_amount + hr29.tax_amount + hr30.tax_amount + hr31.tax_amount + hr32.tax_amount + hr33.tax_amount + hr34.tax_amount + hr35.tax_amount + hr36.tax_amount + hr37.tax_amount + hr38.tax_amount + hr39.tax_amount + hr40.tax_amount</field>
                     </record>
                 </field>
-                <!-- Sub Section 1 -->
                 <field name="children_ids">
                      <record id="tax_report_line_III_1" model="account.report.line">
                         <field name="name">1. Input vat related to supplies received in the country at a rate 5%</field>
@@ -494,9 +446,6 @@
                             </record>
                         </field>
                      </record>
-                </field>
-                <!-- Sub Section 2 -->
-                <field name="children_ids">
                      <record id="tax_report_line_III_2" model="account.report.line">
                         <field name="name">2. Input vat related to supplies received in the country at a rate 13%</field>
                         <field name="code">hr27</field>
@@ -513,9 +462,6 @@
                             </record>
                         </field>
                      </record>
-                </field>
-                <!-- Sub Section 3 -->
-                <field name="children_ids">
                      <record id="tax_report_line_III_3" model="account.report.line">
                         <field name="name">3. Input vat related to supplies received in the country at a rate 25%</field>
                         <field name="code">hr28</field>
@@ -532,9 +478,6 @@
                             </record>
                         </field>
                      </record>
-                </field>
-                <!-- Sub Section 4 -->
-                <field name="children_ids">
                      <record id="tax_report_line_III_4" model="account.report.line">
                         <field name="name">4. Input vat related to supplies received in the country in respect of which the receiver calculates vat (domestic reverse charge)</field>
                         <field name="code">hr29</field>
@@ -551,9 +494,6 @@
                             </record>
                         </field>
                      </record>
-                </field>
-                <!-- Sub Section 5 -->
-                <field name="children_ids">
                      <record id="tax_report_line_III_5" model="account.report.line">
                         <field name="name">5. Input vat related to acquisition of goods within the eu at a rate 5%</field>
                         <field name="code">hr30</field>
@@ -570,9 +510,6 @@
                             </record>
                         </field>
                      </record>
-                </field>
-                <!-- Sub Section 6 -->
-                <field name="children_ids">
                      <record id="tax_report_line_III_6" model="account.report.line">
                         <field name="name">6. Input vat related to acquisition of goods within the eu at a rate 13%</field>
                         <field name="code">hr31</field>
@@ -589,9 +526,6 @@
                             </record>
                         </field>
                      </record>
-                </field>
-                <!-- Sub Section 7 -->
-                <field name="children_ids">
                      <record id="tax_report_line_III_7" model="account.report.line">
                         <field name="name">7. Input vat related to acquisition of goods within the eu at a rate 25%</field>
                         <field name="code">hr32</field>
@@ -608,9 +542,6 @@
                             </record>
                         </field>
                      </record>
-                </field>
-                <!-- Sub Section 8 -->
-                <field name="children_ids">
                      <record id="tax_report_line_III_8" model="account.report.line">
                         <field name="name">8. Input vat related to services received from eu at a rate 5%</field>
                         <field name="code">hr33</field>
@@ -627,9 +558,6 @@
                             </record>
                         </field>
                      </record>
-                </field>
-                <!-- Sub Section 9 -->
-                <field name="children_ids">
                      <record id="tax_report_line_III_9" model="account.report.line">
                         <field name="name">9. Input vat related to services received from eu at a rate 13%</field>
                         <field name="code">hr34</field>
@@ -646,9 +574,6 @@
                             </record>
                         </field>
                      </record>
-                </field>
-                <!-- Sub Section 10 -->
-                <field name="children_ids">
                      <record id="tax_report_line_III_10" model="account.report.line">
                         <field name="name">10. Input vat related to services received from eu at a rate 25%</field>
                         <field name="code">hr35</field>
@@ -665,9 +590,6 @@
                             </record>
                         </field>
                      </record>
-                </field>
-                <!-- Sub Section 11 -->
-                <field name="children_ids">
                      <record id="tax_report_line_III_11" model="account.report.line">
                         <field name="name">11. Input vat related to supplies of goods and services received from non-established taxable persons at a rate 5%</field>
                         <field name="code">hr36</field>
@@ -684,9 +606,6 @@
                             </record>
                         </field>
                      </record>
-                </field>
-                <!-- Sub Section 12 -->
-                <field name="children_ids">
                      <record id="tax_report_line_III_12" model="account.report.line">
                         <field name="name">12. Input vat related to supplies of goods and services received from non-established taxable persons at a rate 13%</field>
                         <field name="code">hr37</field>
@@ -703,9 +622,6 @@
                             </record>
                         </field>
                      </record>
-                </field>
-                <!-- Sub Section 13 -->
-                <field name="children_ids">
                      <record id="tax_report_line_III_13" model="account.report.line">
                         <field name="name">13. Input vat related to supplies of goods and services received from non-established taxable persons at a rate 25%</field>
                         <field name="code">hr38</field>
@@ -722,9 +638,6 @@
                             </record>
                         </field>
                      </record>
-                </field>
-                <!-- Sub Section 14 -->
-                <field name="children_ids">
                      <record id="tax_report_line_III_14" model="account.report.line">
                         <field name="name">14. Input vat related to importation</field>
                         <field name="code">hr39</field>
@@ -741,9 +654,6 @@
                             </record>
                         </field>
                      </record>
-                </field>
-                <!-- Sub Section 15 -->
-                <field name="children_ids">
                      <record id="tax_report_line_III_15" model="account.report.line">
                         <field name="name">15. Adjustments of deductions</field>
                         <field name="code">hr40</field>
@@ -757,7 +667,6 @@
                      </record>
                 </field>
             </record>
-            <!-- Section IV -->
             <record id="tax_report_title_vat_liab" model="account.report.line">
                 <field name="name">IV. Vat liability in the calculation period: to pay (ii. - iii.) or to refund (iii. - ii.)</field>
                 <field name="code">c_IV_total</field>
@@ -795,7 +704,6 @@
                      </record>
                 </field>
             </record>
-            <!-- Section V -->
             <record id="tax_report_title_prev_calculation" model="account.report.line">
                 <field name="name">V. According to the previous calculation: unpaid vat to the day of submitting of this return-overpaid-tax credit</field>
                 <field name="code">c_V_total</field>
@@ -831,7 +739,6 @@
                      </record>
                 </field>
             </record>
-            <!-- Section VI -->
             <record id="tax_report_title_total_dif" model="account.report.line">
                 <field name="name">VI. Total difference: to pay/to refund</field>
                 <field name="code">c_VI_total</field>
@@ -869,7 +776,6 @@
                      </record>
                 </field>
             </record>
-            <!-- Section VII -->
              <record id="tax_report_title_annual_deductible" model="account.report.line">
                 <field name="name">VII. Annual deductible proportion(%)</field>
              </record>

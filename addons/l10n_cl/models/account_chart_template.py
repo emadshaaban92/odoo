@@ -4,12 +4,12 @@ from odoo import models
 from odoo.http import request
 
 
-class AccountChartTemplate(models.Model):
+class AccountChartTemplate(models.AbstractModel):
     _inherit = 'account.chart.template'
 
-    def _load(self, company):
+    def _get_template_data(self, template_code):
         """ Set tax calculation rounding method required in Chilean localization"""
-        res = super()._load(company)
-        if company.account_fiscal_country_id.code == 'CL':
-            company.write({'tax_calculation_rounding_method': 'round_globally'})
-        return res
+        template_data = super()._get_template_data(template_code)
+        if template_code == 'cl':
+            template_data['tax_calculation_rounding_method'] = 'round_globally'
+        return template_data

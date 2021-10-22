@@ -1,17 +1,27 @@
 from odoo import models
 
 
-class AccountChartTemplate(models.Model):
+class AccountChartTemplate(models.AbstractModel):
     _inherit = 'account.chart.template'
 
-    def _prepare_all_journals(self, acc_template_ref, company, journals_dict=None):
+    def _get_account_journal(self, template_code):
         """ If EGYPT chart, we add 2 new journals TA and IFRS"""
-        if self == self.env.ref('l10n_eg.egypt_chart_template_standard'):
-            if not journals_dict:
-                journals_dict = []
-            journals_dict.extend(
-                [{"name": "Tax Adjustments", "company_id": company.id, "code": "TA", "type": "general", "sequence": 1,
-                  "favorite": True},
-                 {"name": "IFRS 16", "company_id": company.id, "code": "IFRS", "type": "general", "favorite": True,
-                  "sequence": 10}])
-        return super()._prepare_all_journals(acc_template_ref, company, journals_dict=journals_dict)
+        journal_data = super()._get_account_journal(template_code)
+        if template_code == 'eg':
+            journal_data.update({
+                "tax_adjustment": {
+                    "name": "Tax Adjustments",
+                    "code": "TA",
+                    "type": "general",
+                    "sequence": 1,
+                    "show_on_dashboard": True,
+                },
+                "ifrs": {
+                    "name": "IFRS 16",
+                    "code": "IFRS",
+                    "type": "general",
+                    "show_on_dashboard": True,
+                    "sequence": 10,
+                }
+            })
+        return journal_data
