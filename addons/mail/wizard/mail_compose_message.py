@@ -30,8 +30,10 @@ class MailComposer(models.TransientModel):
     """ Generic message composition wizard. You may inherit from this wizard
         at model and view levels to provide specific features.
 
+        TDE FIXME: get_record_data was adding partner ids
+
         The behavior of the wizard depends on the composition_mode field:
-        - 'comment': post on a record. The wizard is pre-populated via ``get_record_data``
+        - 'comment': post on a record.
         - 'mass_mail': wizard in mass mailing mode where the mail details can
             contain template placeholders that will be merged with actual data
             before being sent to each recipient.
@@ -66,19 +68,10 @@ class MailComposer(models.TransientModel):
 
         result = super(MailComposer, self).default_get(fields)
 
-        if 'model' in fields and 'model' not in result:
-            result['model'] = self._context.get('active_model')
         if 'default_res_id' in self.env.context:
             _logger.warning('Usage of deprecated default_res_id')
-        if 'res_ids' in fields and 'res_ids' not in result:
-            if self.env.context.get('active_ids'):
-                result['res_ids'] = self.env.context.get('active_ids')
-            elif self.env.context.get('active_id'):
-                result['res_ids'] = [self.env.context.get('active_id')]
-            else:
-                result['res_ids'] = ''
 
-        if result.get('composition_mode') == 'comment' and (set(fields) & set(['model', 'res_ids', 'partner_ids'])):
+        if result.get('composition_mode') == 'comment' and (set(fields) & set(['partner_ids'])):
             result.update(self.get_record_data(result))
 
         # when being in new mode, create_uid is not granted -> ACLs issue may arise
@@ -115,8 +108,8 @@ class MailComposer(models.TransientModel):
         string='Composition mode', default='comment')
     composition_batch = fields.Boolean(
         'Batch composition', compute='_compute_composition_batch')  # more than 1 record (raw source)
-    model = fields.Char('Related Document Model')
-    res_ids = fields.Text('Related Document IDs')
+    model = fields.Char('Related Document Model', compute='_compute_model', readonly=False, store=True)
+    res_ids = fields.Text('Related Document IDs', compute='_compute_res_ids', readonly=False, store=True)
     res_domain = fields.Text('Active domain')
     res_domain_user_id = fields.Many2one(
         'res.users', string='Responsible',
@@ -237,6 +230,26 @@ class MailComposer(models.TransientModel):
             composer.composition_batch = len(res_ids) > 1 if res_ids else False
         self.filtered('res_domain').composition_batch = True
 
+    @api.depends('composition_mode', 'parent_id')
+    @api.depends_context('active_model')
+    def _compute_model(self):
+        for composer in self:
+            if composer.parent_id and composer.composition_mode == 'comment':
+                composer.model = composer.parent_id.model
+            elif not composer.model:
+                composer.model = self.env.context.get('active_model')
+
+    @api.depends_context('active_ids', 'active_id')
+    @api.depends('composition_mode', 'parent_id')
+    def _compute_res_ids(self):
+        for composer in self.filtered(lambda composer: not composer.res_ids):
+            if composer.parent_id and composer.composition_mode == 'comment':
+                composer.res_ids = [composer.parent_id.res_id]
+            else:
+                composer.res_ids = self.env.context.get('active_ids') or (
+                    [self.env.context['active_id']] if self.env.context.get('active_id') else ''
+                )
+
     @api.depends('composition_batch', 'composition_mode', 'model', 'parent_id', 'res_ids')
     def _compute_record_name(self):
         for composer in self.filtered(lambda comp: not comp.record_name
@@ -309,10 +322,6 @@ class MailComposer(models.TransientModel):
         result = {}
         if values.get('parent_id'):
             parent = self.env['mail.message'].browse(values.get('parent_id'))
-            if not values.get('model'):
-                result['model'] = parent.model
-            if not values.get('res_id'):
-                result['res_ids'] = [parent.res_id]
             partner_ids = values.get('partner_ids', list()) + parent.partner_ids.ids
             result['partner_ids'] = partner_ids
 
@@ -831,10 +840,8 @@ class MailComposer(models.TransientModel):
                 default_res_ids=res_ids
             ).default_get(['attachment_ids',
                            'composition_mode',
-                           'model',
                            'parent_id',
                            'partner_ids',
-                           'res_ids',
                            'scheduled_date',
                           ])
             values = dict(
