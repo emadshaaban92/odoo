@@ -817,7 +817,6 @@ class TestComposerInternals(TestMailComposer):
             'template_id': template_1.id,
             'partner_ids': [self.partner_employee_2.id],
         })
-        composer._onchange_template_id_wrapper()
         composer._action_send_mail()
 
         self.assertEqual(
