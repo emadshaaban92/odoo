@@ -358,8 +358,6 @@ class TestComposerInternals(TestMailComposer):
         }).create({
             'body': '<p>Test Body</p>',
         })
-        # currently onchange necessary
-        composer._onchange_template_id_wrapper()
 
         # values coming from template
         self.assertEqual(len(composer.attachment_ids), 4)
@@ -703,7 +701,6 @@ class TestComposerInternals(TestMailComposer):
             'template_id': template_1.id,
             'partner_ids': [self.partner_employee_2.id],
         })
-        composer._onchange_template_id_wrapper()
         composer._action_send_mail()
 
         self.assertEqual(self.test_record.message_ids[0].subject, 'Template Subject')

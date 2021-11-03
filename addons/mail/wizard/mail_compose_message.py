@@ -208,7 +208,6 @@ class MailComposer(models.TransientModel):
                 composer.attachment_ids = composer.template_id.attachment_ids
             elif composer.composition_mode == 'comment' and len(res_ids) == 1 and composer.template_id:
                 rendered_values = composer._generate_template_for_composer(
-                    composer.template_id,
                     res_ids,
                     ('attachment_ids', 'attachments'),
                 )[res_ids[0]]
@@ -326,7 +325,6 @@ class MailComposer(models.TransientModel):
             res_ids = composer._parse_res_ids(composer.res_ids)
             if composer.template_id and composer.composition_mode == 'comment' and len(res_ids) == 1:
                 rendered_values = composer._generate_template_for_composer(
-                    composer.template_id,
                     res_ids,
                     ('email_cc', 'email_to', 'partner_ids'),
                     partners_only=True
@@ -353,7 +351,6 @@ class MailComposer(models.TransientModel):
             res_ids = composer._parse_res_ids(composer.res_ids)
             if composer.template_id.scheduled_date and composer.composition_mode == 'comment' and len(res_ids) == 1:
                 value = composer._generate_template_for_composer(
-                    composer.template_id,
                     res_ids,
                     ('scheduled_date')
                 )[res_ids[0]]
@@ -366,15 +363,6 @@ class MailComposer(models.TransientModel):
     def _compute_render_model(self):
         for composer in self:
             composer.render_model = composer.model
-
-    # Onchanges
-
-    @api.onchange('template_id')
-    def _onchange_template_id_wrapper(self):
-        self.ensure_one()
-        values = self._onchange_template_id(self.template_id.id, self.composition_mode, self.model, self._parse_res_ids(self.res_ids))['value']
-        for fname, value in values.items():
-            setattr(self, fname, value)
 
     def _compute_can_edit_body(self):
         """Can edit the body if we are not in "mass_mail" mode because the template is
@@ -535,7 +523,6 @@ class MailComposer(models.TransientModel):
 
             # generate the saved template
             record.write({'template_id': template.id})
-            record._onchange_template_id_wrapper()
             return _reopen(self, record.id, record.model, context=self._context)
 
     # ------------------------------------------------------------
@@ -645,7 +632,6 @@ class MailComposer(models.TransientModel):
         # generate template-based values
         if self.template_id:
             template_values = self._generate_template_for_composer(
-                self.template_id,
                 res_ids,
                 ('attachment_ids',
                  'auto_delete',
@@ -845,49 +831,11 @@ class MailComposer(models.TransientModel):
     # TEMPLATE SPECIFIC
     # ----------------------------------------------------------------------
 
-    def _onchange_template_id(self, template_id, composition_mode, model, res_ids):
-        """ - mass_mailing: we cannot render, so return the template values
-            - normal mode: return rendered values
-            /!\ for x2many field, this onchange return command instead of ids
-        """
-        values = {}
-        if template_id and (composition_mode == 'mass_mail' or len(res_ids) > 1):
-            template = self.env['mail.template'].browse(template_id)
-            values = dict(
-                (field, template[field])
-                for field in ()
-                if template[field]
-            )
-        elif template_id and len(res_ids) <= 1:
-            # trick to evaluate qweb even when having no records
-            template_res_ids = res_ids if res_ids else [0]
-            values = self._generate_template_for_composer(
-                self.env['mail.template'].browse(template_id),
-                template_res_ids,
-                ()
-            )[template_res_ids[0]]
-        else:
-            default_values = self.with_context(
-                default_composition_mode=composition_mode,
-                default_model=model,
-                default_res_ids=res_ids
-            ).default_get([])
-            values = dict(
-                (key, default_values[key])
-                for key in () if key in default_values)
-
-        # This onchange should return command instead of ids for x2many field.
-        values = self._convert_to_write(values)
-
-        return {'value': values}
-
-    def _generate_template_for_composer(self, template, res_ids, render_fields,
+    def _generate_template_for_composer(self, res_ids, render_fields,
                                         partners_only=True):
         """ Generate values based on template and relevant values for the
         mail.compose.message wizard.
 
-        :param ercord template: a mail template, as during onchange mode it
-          may not be set on self (to remove when removing the onchange);
         :param list res_ids: list of record IDs on which template is rendered;
         :param list render_fields: list of fields to render on template;
         :param boolean partners_only: transform emails into partners (find or
@@ -912,7 +860,7 @@ class MailComposer(models.TransientModel):
                    'partner_ids': 'partner_to',
                   }
         template_fields = {mapping.get(fname, fname) for fname in render_fields}
-        template_values = template._generate_template(
+        template_values = self.template_id._generate_template(
             res_ids,
             template_fields,
             partners_only=partners_only

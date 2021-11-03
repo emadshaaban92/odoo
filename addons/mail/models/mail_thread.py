@@ -2146,17 +2146,6 @@ class MailThread(models.AbstractModel):
             composer = self.env['mail.compose.message'].with_context(
                 **composer_ctx
             ).create(composer_values)
-            # Simulate the onchange (like trigger in form the view) only
-            # when having a template in single-email mode
-            if template:
-                update_values = composer._onchange_template_id(
-                    template.id,
-                    composer_values['composition_mode'],
-                    self._name,
-                    subset.ids[:1] if subset.ids else [0]  # TDE CHECKME
-                )['value']
-                composer.write(update_values)
-
             mails_as_sudo, _messages_as_sudo = composer._action_send_mail(auto_commit=auto_commit)
             mails_su += mails_as_sudo
         return mails_su
@@ -2225,17 +2214,6 @@ class MailThread(models.AbstractModel):
                     default_res_ids=record.ids,
                     default_template_id=template.id,
                 ).create(composer_values)
-
-                # Simulate the onchange (like trigger in form the view) only
-                # when having a template in single-email mode
-                if template:
-                    update_values = composer._onchange_template_id(
-                        template.id,
-                        composer_values['composition_mode'],
-                        self._name,
-                        record.ids,
-                    )['value']
-                    composer.write(update_values)
                 _mails_as_sudo, messages_as_sudo = composer._action_send_mail()
                 messages += messages_as_sudo
             else:

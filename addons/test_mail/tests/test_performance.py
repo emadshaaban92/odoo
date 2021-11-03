@@ -415,7 +415,6 @@ class TestMailAPIPerformance(BaseMailPerformance):
                 'default_res_ids': test_records.ids,
                 'default_template_id': test_template.id,
             }).create({})
-            composer._onchange_template_id_wrapper()
 
         with self.assertQueryCount(__system__=72, employee=159), self.mock_mail_gateway():
             composer._action_send_mail()
@@ -456,7 +455,6 @@ class TestMailAPIPerformance(BaseMailPerformance):
                 'default_res_ids': test_record.ids,
                 'default_template_id': test_template.id,
             }).create({})
-            composer._onchange_template_id_wrapper()
 
         with self.assertQueryCount(__system__=25, employee=31):
             composer._action_send_mail()
@@ -481,7 +479,6 @@ class TestMailAPIPerformance(BaseMailPerformance):
                 'default_res_ids': test_record.ids,
                 'default_template_id': test_template.id,
             }).create({})
-            composer._onchange_template_id_wrapper()
 
         with self.assertQueryCount(__system__=33, employee=44):
             composer._action_send_mail()
@@ -890,7 +887,6 @@ class TestMailComplexPerformance(BaseMailPerformance):
                 'default_res_ids': test_records.ids,
                 'default_template_id': test_template.id,
             }).create({})
-            composer._onchange_template_id_wrapper()
 
         with self.assertQueryCount(__system__=111, employee=131):
             messages_as_sudo = test_records.message_post_with_source(
