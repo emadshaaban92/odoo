@@ -431,7 +431,7 @@ class Field(MetaField('DummyField', (object,), {})):
             attrs['store'] = store = attrs.get('store', False)
             attrs['compute_sudo'] = attrs.get('compute_sudo', attrs.get('related_sudo', True))
             attrs['copy'] = attrs.get('copy', False)
-            attrs['readonly'] = attrs.get('readonly', True)
+            attrs['readonly'] = attrs.get('readonly', not attrs.get('inverse'))
             attrs['related_field_definition'] = related_field
             attrs['related_made_editable'] = related_field and editable_field and (related_field is not editable_field)
         if attrs.get('precompute'):
@@ -595,7 +595,7 @@ class Field(MetaField('DummyField', (object,), {})):
 
         # determine dependencies, compute, inverse, and search
         self.compute = self._compute_related
-        if self.inherited or not (self.readonly or field.readonly):
+        if self.inverse is True:
             self.inverse = self._inverse_related
         if field._description_searchable:
             # allow searching on self only if the related field is searchable

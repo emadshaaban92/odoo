@@ -3050,7 +3050,7 @@ class BaseModel(metaclass=MetaModel):
                     related=f"{parent_fname}.{name}",
                     related_sudo=False,
                     copy=field.copy,
-                    readonly=field.readonly,
+                    inverse=not field.readonly,
                 ))
 
     @api.model
