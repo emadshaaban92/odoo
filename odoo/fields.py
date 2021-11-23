@@ -245,6 +245,7 @@ class Field(MetaField('DummyField', (object,), {})):
     write_sequence = 0                  # field ordering for write()
 
     args = None                         # the parameters given to __init__()
+    _owner = None
     _module = None                      # the field's module name
     _modules = None                     # modules that define this field
     _setup_done = True                  # whether the field is completely set up
@@ -293,6 +294,9 @@ class Field(MetaField('DummyField', (object,), {})):
     prefetch = True                     # the prefetch group (False means no group)
 
     default_export_compatible = False   # whether the field must be exported by default in an import-compatible export
+
+    related_field_definition = None
+    related_made_editable = False
 
     def __init__(self, string=Default, **kwargs):
         kwargs['string'] = string
@@ -360,6 +364,7 @@ class Field(MetaField('DummyField', (object,), {})):
         self.name = name
         if is_definition_class(owner):
             # only for fields on definition classes, not registry classes
+            self._owner = owner
             self._module = owner._module
             owner._field_definitions.append(self)
 
@@ -381,6 +386,8 @@ class Field(MetaField('DummyField', (object,), {})):
         # determine all inherited field attributes
         attrs = {}
         modules = []
+        related_field = None
+        editable_field = None
         for field in self.args.get('_base_fields', ()):
             if not isinstance(self, type(field)):
                 # 'self' overrides 'field' and their types are not compatible;
@@ -391,6 +398,10 @@ class Field(MetaField('DummyField', (object,), {})):
             attrs.update(field.args)
             if field._module:
                 modules.append(field._module)
+            if field.args.get('related'):
+                related_field = field
+            if field.args.get('readonly') is False:
+                editable_field = field
         attrs.update(self.args)
         if self._module:
             modules.append(self._module)
@@ -421,6 +432,8 @@ class Field(MetaField('DummyField', (object,), {})):
             attrs['compute_sudo'] = attrs.get('compute_sudo', attrs.get('related_sudo', True))
             attrs['copy'] = attrs.get('copy', False)
             attrs['readonly'] = attrs.get('readonly', True)
+            attrs['related_field_definition'] = related_field
+            attrs['related_made_editable'] = related_field and editable_field and (related_field is not editable_field)
         if attrs.get('precompute'):
             if not attrs.get('compute') and not attrs.get('related'):
                 warnings.warn(f"precompute attribute doesn't make any sense on non computed field {self}")

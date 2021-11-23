@@ -7,7 +7,9 @@
 import base64
 from collections import OrderedDict
 from datetime import date, datetime, time
+import inspect
 import io
+import logging
 from PIL import Image
 import psycopg2
 
@@ -18,6 +20,8 @@ from odoo.tests import common
 from odoo.tools import mute_logger, float_repr
 from odoo.tools.date_utils import add, subtract, start_of, end_of
 from odoo.tools.image import image_data_uri
+
+_logger = logging.getLogger(__name__)
 
 
 class TestFields(TransactionCaseWithUserDemo):
@@ -4019,3 +4023,21 @@ class TestPrecompute(common.TransactionCase):
         ]
         with self.assertQueries(QUERIES):
             model.create({})
+
+
+@common.tagged('-at_install', 'post_install')
+class RelatedEditableFields(common.TransactionCase):
+    def test_editable_fields(self):
+        for model_name in sorted(self.registry):
+            Model = self.registry[model_name]
+            for field_name in sorted(Model._fields):
+                field = Model._fields[field_name]
+                if field.inherited or not field.related:
+                    continue
+                if not field.readonly:
+                    def_cls = field.related_field_definition._owner
+                    _logger.warning("Related field with inverse %s (%s)", field, inspect.getfile(def_cls))
+                if field.states:
+                    _logger.warning("Related field with states %s", field)
+                if field.related_made_editable:
+                    _logger.warning("Related field with overridden readonly %s", field)
