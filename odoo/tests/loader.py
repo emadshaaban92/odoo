@@ -7,7 +7,7 @@ import threading
 import unittest
 
 from .. import tools
-from .common import TagsSelector, OdooSuite
+from .common import TagsSelector, OdooSuite, CrossModule
 from .runner import OdooTestResult
 
 
@@ -44,13 +44,22 @@ def make_suite(module_names, position='at_install'):
     """
     config_tags = TagsSelector(tools.config['test_tags'])
     position_tag = TagsSelector(position)
-    tests = (
-        t
-        for module_name in module_names
-        for m in get_test_modules(module_name)
-        for t in unwrap_suite(unittest.TestLoader().loadTestsFromModule(m))
-        if position_tag.check(t) and config_tags.check(t)
-    )
+    loader = unittest.TestLoader()
+
+
+    test_cases = []
+    for module_name in module_names:
+        for m in get_test_modules(module_name):
+            for t in unwrap_suite(loader.loadTestsFromModule(m)):
+                if not isinstance(t, CrossModule):
+                    test_cases.append(t)
+        for c in CrossModule.registry:
+            for t in unwrap_suite(loader.loadTestsFromTestCase(c)):
+                t.test_module = module_name
+                test_cases.append(t)
+
+    tests = (t for t in test_cases if position_tag.check(t) and config_tags.check(t))
+
     return OdooSuite(sorted(tests, key=lambda t: t.test_sequence))
 
 def run_suite(suite, module_name=None):

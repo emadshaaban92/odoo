@@ -275,11 +275,11 @@ def load_module_graph(cr, graph, status=None, perform_checks=True,
         updating = tools.config.options['init'] or tools.config.options['update']
         test_time = test_queries = 0
         test_results = None
-        if tools.config.options['test_enable'] and (needs_update or not updating):
-            env = api.Environment(cr, SUPERUSER_ID, {})
+        if tools.config.options['test_enable']:
             loader = odoo.tests.loader
             suite = loader.make_suite([module_name], 'at_install')
-            if suite.countTestCases():
+            if (needs_update or not updating) and suite.countTestCases():
+                env = api.Environment(cr, SUPERUSER_ID, {})
                 if not needs_update:
                     registry.setup_models(cr)
                 # Python tests

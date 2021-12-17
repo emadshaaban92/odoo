@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
-
+import logging
 import re
 import odoo.tests
+from odoo.modules.module import get_manifest
+
+_logger = logging.getLogger(__name__)
 
 RE_ONLY = re.compile(r'QUnit\.(only|debug)\(')
 
@@ -22,13 +25,33 @@ def qunit_error_checker(message):
 
 
 @odoo.tests.tagged('post_install', '-at_install')
-class WebSuite(odoo.tests.HttpCase):
+class QUnitSuite(odoo.tests.HttpCase, odoo.tests.CrossModule):
 
     @odoo.tests.no_retry
     def test_js(self):
-        # webclient desktop test suite
-        self.browser_js('/web/tests?mod=web', "", "", login='admin', timeout=1800, error_checker=qunit_error_checker)
+        if 'web.qunit_suite_tests' in get_manifest(self.test_module)['assets']:
+          #with self.profile(db='profiling'):
+            self.browser_js('/web/tests?moduleId=%s ' % self.generate_hash(self.test_module), "", "", login='admin', timeout=1800, error_checker=qunit_error_checker)
+        else:
+            _logger.info('No qunit test found for %s', self.test_module)
 
+    def test_module_hash(self):
+        self.assertEqual(self.generate_hash('web'), '61b27308')
+
+    def generate_hash(self, module, testName='undefined'):
+        name = module + '\x1C' + testName
+        name_hash = 0
+
+        for letter in name:
+            name_hash = (name_hash << 5) - name_hash + ord(letter)
+            name_hash |= 0
+
+        hex_repr = hex(name_hash).lstrip('0x').zfill(8)
+        return hex_repr[-8:]
+
+
+@odoo.tests.tagged('post_install', '-at_install')
+class WebSuite(odoo.tests.HttpCase):
     def test_check_suite(self):
         # verify no js test is using `QUnit.only` as it forbid any other test to be executed
         self._check_only_call('web.qunit_suite_tests')

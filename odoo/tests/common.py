@@ -58,7 +58,7 @@ from odoo.osv import expression
 from odoo.osv.expression import normalize_domain, TRUE_LEAF, FALSE_LEAF
 from odoo.service import security
 from odoo.sql_db import BaseCursor, Cursor
-from odoo.tools import float_compare, single_email_re, profiler, lower_logging
+from odoo.tools import float_compare, single_email_re, profiler, lower_logging, OrderedSet
 from odoo.tools.misc import find_in_path
 from odoo.tools.safe_eval import safe_eval
 
@@ -1672,6 +1672,16 @@ class Transport(xmlrpclib.Transport):
         return super().request(*args, **kwargs)
 
 
+class CrossModule():
+
+    registry = OrderedSet()
+
+    @classmethod
+    def __init_subclass__(cls):
+        CrossModule.registry.add(cls)
+        super().__init_subclass__()
+
+
 class HttpCase(TransactionCase):
     """ Transactional HTTP TestCase with url_open and Chrome headless helpers. """
     registry_test_mode = True
@@ -1890,7 +1900,7 @@ class HttpCase(TransactionCase):
         sup = super()
         _profiler = sup.profile(**kwargs)
         def route_profiler(request):
-            return sup.profile(description=request.httprequest.full_path)
+            return sup.profile(description=request.httprequest.full_path, **kwargs)
         return profiler.Nested(_profiler, patch('odoo.http.Request._get_profiler_context_manager', route_profiler))
 
 
