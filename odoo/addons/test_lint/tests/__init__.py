@@ -11,3 +11,4 @@ from . import test_markers
 from . import test_onchange_domains
 from . import test_pofile
 from . import test_pylint
+from . import test_x2many
