@@ -3,7 +3,7 @@ import datetime
 import json
 import logging
 import random
-import select
+import selectors
 import threading
 import time
 
@@ -166,14 +166,14 @@ class ImDispatch:
     def loop(self):
         """ Dispatch postgres notifications to the relevant polling threads/greenlets """
         _logger.info("Bus.loop listen imbus on db postgres")
-        with odoo.sql_db.db_connect('postgres').cursor() as cr:
-            conn = cr._cnx
+        with odoo.sql_db.db_connect('postgres').cursor() as cr, \
+             selectors.DefaultSelector() as sel:
             cr.execute("listen imbus")
             cr.commit()
+            conn = cr._cnx
+            sel.register(conn, selectors.EVENT_READ)
             while True:
-                if select.select([conn], [], [], TIMEOUT) == ([], [], []):
-                    pass
-                else:
+                if sel.select(TIMEOUT):
                     conn.poll()
                     channels = []
                     while conn.notifies:

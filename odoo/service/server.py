@@ -9,6 +9,7 @@ import os.path
 import platform
 import random
 import select
+import selectors
 import signal
 import socket
 import subprocess
@@ -428,7 +429,8 @@ class ThreadedServer(CommonServer):
 
         from odoo.addons.base.models.ir_cron import ir_cron
         conn = odoo.sql_db.db_connect('postgres')
-        with conn.cursor() as cr:
+        with conn.cursor() as cr, \
+             selectors.DefaultSelector() as sel:
             pg_conn = cr._cnx
             # LISTEN / NOTIFY doesn't work in recovery mode
             cr.execute("SELECT pg_is_in_recovery()")
@@ -439,8 +441,9 @@ class ThreadedServer(CommonServer):
                 _logger.warning("PG cluster in recovery mode, cron trigger not activated")
             cr.commit()
 
+            sel.register(pg_conn, selectors.EVENT_READ)
             while True:
-                select.select([pg_conn], [], [], SLEEP_INTERVAL + number)
+                sel.select(timeout=SLEEP_INTERVAL + number)
                 time.sleep(number / 100)
                 pg_conn.poll()
 
@@ -745,6 +748,7 @@ class PreforkServer(CommonServer):
             worker.pid = pid
             self.workers[pid] = worker
             workers_registry[pid] = worker
+            self.selector.register(worker.watchdog_pipe[0], selectors.EVENT_READ)
             return worker
         else:
             worker.run()
@@ -764,8 +768,9 @@ class PreforkServer(CommonServer):
             try:
                 self.workers_http.pop(pid, None)
                 self.workers_cron.pop(pid, None)
-                u = self.workers.pop(pid)
-                u.close()
+                worker = self.workers.pop(pid)
+                self.selector.unregister(worker.watchdog_pipe[0])
+                worker.close()
             except OSError:
                 return
 
@@ -827,6 +832,8 @@ class PreforkServer(CommonServer):
                 self.worker_kill(pid, signal.SIGKILL)
 
     def process_spawn(self):
+        if hasattr(self, 'zeflag'):
+            return
         if config['http_enable']:
             while len(self.workers_http) < self.population:
                 self.worker_spawn(WorkerHTTP, self.workers_http)
@@ -834,28 +841,27 @@ class PreforkServer(CommonServer):
                 self.long_polling_spawn()
         while len(self.workers_cron) < config['max_cron_threads']:
             self.worker_spawn(WorkerCron, self.workers_cron)
+        self.zeflag = True
 
     def sleep(self):
-        try:
-            # map of fd -> worker
-            fds = {w.watchdog_pipe[0]: w for w in self.workers.values()}
-            fd_in = list(fds) + [self.pipe[0]]
-            # check for ping or internal wakeups
-            ready = select.select(fd_in, [], [], self.beat)
+        # map of fd -> worker
+        fds = {w.watchdog_pipe[0]: w for w in self.workers.values()}
+        # check for ping or internal wakeups
+        events = self.selector.select(timeout=self.beat)
+        # update worker watchdogs
+        for key, _mask in events:
             # update worker watchdogs
-            for fd in ready[0]:
-                if fd in fds:
-                    fds[fd].watchdog_time = time.time()
-                empty_pipe(fd)
-        except select.error as e:
-            if e.args[0] not in [errno.EINTR]:
-                raise
+            if key.fd in fds:
+                fds[key.fd].watchdog_time = time.time()
+            empty_pipe(key.fd)
 
     def start(self):
         # wakeup pipe, python doesn't throw EINTR when a syscall is interrupted
         # by a signal simulating a pseudo SA_RESTART. We write to a pipe in the
         # signal handler to overcome this behaviour
         self.pipe = self.pipe_new()
+        self.selector = selectors.DefaultSelector()
+        self.selector.register(self.pipe[0], selectors.EVENT_READ)
         # set signal handlers
         signal.signal(signal.SIGINT, self.signal_handler)
         signal.signal(signal.SIGTERM, self.signal_handler)
@@ -900,6 +906,8 @@ class PreforkServer(CommonServer):
             self.worker_kill(pid, signal.SIGTERM)
         if self.socket:
             self.socket.close()
+        self.selector.unregister(self.pipe[0])
+        self.selector.close()
 
     def run(self, preload, stop):
         self.start()
@@ -968,13 +976,7 @@ class Worker(object):
         raise Exception('CPU time limit exceeded.')
 
     def sleep(self):
-        try:
-            select.select([self.multi.socket, self.wakeup_fd_r], [], [], self.multi.beat)
-            # clear wakeup pipe if we were interrupted
-            empty_pipe(self.wakeup_fd_r)
-        except select.error as e:
-            if e.args[0] not in [errno.EINTR]:
-                raise
+        pass
 
     def check_limits(self):
         # If our parent changed suicide
@@ -1003,17 +1005,14 @@ class Worker(object):
         pass
 
     def start(self):
+        self.multi.selector.close()
+        self.selector = selectors.DefaultSelector()
+
         self.pid = os.getpid()
         self.setproctitle()
         _logger.info("Worker %s (%s) alive", self.__class__.__name__, self.pid)
         # Reseed the random number generator
         random.seed()
-        if self.multi.socket:
-            # Prevent fd inheritance: close_on_exec
-            flags = fcntl.fcntl(self.multi.socket, fcntl.F_GETFD) | fcntl.FD_CLOEXEC
-            fcntl.fcntl(self.multi.socket, fcntl.F_SETFD, flags)
-            # reset blocking status
-            self.multi.socket.setblocking(0)
 
         signal.signal(signal.SIGINT, self.signal_handler)
         signal.signal(signal.SIGXCPU, self.signal_time_expired_handler)
@@ -1025,9 +1024,11 @@ class Worker(object):
         signal.signal(signal.SIGTTOU, signal.SIG_DFL)
 
         signal.set_wakeup_fd(self.wakeup_fd_w)
+        self.selector.register(self.wakeup_fd_r, selectors.EVENT_READ)
 
     def stop(self):
-        pass
+        self.selector.unregister(self.wakeup_fd_r)
+        self.selector.close()
 
     def run(self):
         try:
@@ -1103,7 +1104,24 @@ class WorkerHTTP(Worker):
 
     def start(self):
         Worker.start(self)
+
+        # Prevent fd inheritance: close_on_exec
+        flags = fcntl.fcntl(self.multi.socket, fcntl.F_GETFD) | fcntl.FD_CLOEXEC
+        fcntl.fcntl(self.multi.socket, fcntl.F_SETFD, flags)
+        # reset blocking status
+        self.multi.socket.setblocking(0)
+        self.selector.register(self.multi.socket, selectors.EVENT_READ)
+
         self.server = BaseWSGIServerNoBind(self.multi.app)
+
+    def sleep(self):
+        self.selector.select(timeout=self.multi.beat)
+        # clear wakeup pipe if we were interrupted
+        empty_pipe(self.wakeup_fd_r)
+
+    def stop(self):
+        self.selector.unregister(self.multi.socket)
+        super().stop()
 
 class WorkerCron(Worker):
     """ Cron workers """
@@ -1122,15 +1140,11 @@ class WorkerCron(Worker):
             interval = SLEEP_INTERVAL + self.pid % 10   # chorus effect
 
             # simulate interruptible sleep with select(wakeup_fd, timeout)
-            try:
-                select.select([self.wakeup_fd_r, self.dbcursor._cnx], [], [], interval)
-                # clear pg_conn/wakeup pipe if we were interrupted
-                time.sleep(self.pid / 100 % .1)
-                self.dbcursor._cnx.poll()
-                empty_pipe(self.wakeup_fd_r)
-            except select.error as e:
-                if e.args[0] != errno.EINTR:
-                    raise
+            self.selector.select(interval)
+            # clear pg_conn/wakeup pipe if we were interrupted
+            time.sleep(self.pid / 100 % .1)  # prevent thundering herd
+            self.dbcursor._cnx.poll()
+            empty_pipe(self.wakeup_fd_r)
 
     def _db_list(self):
         if config['db_name']:
@@ -1175,13 +1189,15 @@ class WorkerCron(Worker):
         in_recovery = self.dbcursor.fetchone()[0]
         if not in_recovery:
             self.dbcursor.execute("LISTEN cron_trigger")
+            self.selector.register(self.dbcursor._cnx, selectors.EVENT_READ)
         else:
             _logger.warning("PG cluster in recovery mode, cron trigger not activated")
         self.dbcursor.commit()
 
     def stop(self):
-        super().stop()
+        self.unregister(self.dbcursor._cnx)
         self.dbcursor.close()
+        super().stop()
 
 #----------------------------------------------------------
 # start/stop public api
