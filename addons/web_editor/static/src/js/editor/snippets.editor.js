@@ -1979,10 +1979,12 @@ var SnippetsMenu = Widget.extend({
                 return snippetEditor.__isStarted;
             }
 
-            let editableArea = self.getEditableArea();
-            snippetEditor = new SnippetEditor(parentEditor || self, $snippet, self.templateOptions, $snippet.closest('[data-oe-type="html"], .oe_structure').add(editableArea), self.options);
-            self.snippetEditors.push(snippetEditor);
-            return snippetEditor.appendTo(self.$snippetEditorArea);
+            const $editableArea = $snippet.closest('[data-oe-type="html"], .oe_structure').add(self.getEditableArea());
+            if ($editableArea.length) {
+                snippetEditor = new SnippetEditor(parentEditor || self, $snippet, self.templateOptions, $editableArea, self.options);
+                self.snippetEditors.push(snippetEditor);
+                return snippetEditor.appendTo(self.$snippetEditorArea);
+            }
         }).then(function () {
             return snippetEditor;
         });
@@ -2134,6 +2136,7 @@ var SnippetsMenu = Widget.extend({
         const smoothScrollOptions = this._getScrollOptions({
             jQueryDraggableOptions: {
                 handle: '.oe_snippet_thumbnail:not(.o_we_already_dragging)',
+                cancel: '.oe_snippet.o_disabled',
                 helper: function () {
                     const dragSnip = this.cloneNode(true);
                     dragSnip.querySelectorAll('.o_delete_btn').forEach(
