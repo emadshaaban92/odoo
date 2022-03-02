@@ -1791,6 +1791,29 @@ var SnippetsMenu = Widget.extend({
         this._checkEditorToolbarVisibilityCallback = this._checkEditorToolbarVisibility.bind(this);
         $(this.options.wysiwyg.odooEditor.document.body).on('click', this._checkEditorToolbarVisibilityCallback);
 
+        // Add tooltips on we-title elements whose text overflows and on all
+        // elements with available tooltip text. Note that the tooltips of the
+        // blocks should not be taken into account here because they have
+        // tooltips with a particular behavior (see _showSnippetTooltip).
+        this.tooltips = new Tooltip(this.el, {
+            selector: 'we-title, [title]:not(.oe_snippet)',
+            placement: 'bottom',
+            delay: 100,
+            title: function () {
+                const el = this;
+                if (el.tagName !== 'WE-TITLE') {
+                    return el.title;
+                }
+                // On Firefox, el.scrollWidth is equal to el.clientWidth when
+                // overflow: hidden, so we need to update the style before to
+                // get the right values.
+                el.style.setProperty('overflow', 'scroll', 'important');
+                const tipContent = el.scrollWidth > el.clientWidth ? el.innerHTML : '';
+                el.style.removeProperty('overflow');
+                return tipContent;
+            },
+        });
+
         if (this.options.enableTranslation) {
             // Load the sidebar with the style tab only.
             await this._loadSnippetsTemplates();
@@ -1928,26 +1951,6 @@ var SnippetsMenu = Widget.extend({
         const $autoFocusEls = $('.o_we_snippet_autofocus');
         this._activateSnippet($autoFocusEls.length ? $autoFocusEls.first() : false);
 
-        // Add tooltips on we-title elements whose text overflows
-        this.$el.tooltip({
-            selector: 'we-title',
-            placement: 'bottom',
-            delay: 100,
-            title: function () {
-                const el = this;
-                if (el.tagName !== 'WE-TITLE') {
-                    return el.title;
-                }
-                // On Firefox, el.scrollWidth is equal to el.clientWidth when
-                // overflow: hidden, so we need to update the style before to
-                // get the right values.
-                el.style.setProperty('overflow', 'scroll', 'important');
-                const tipContent = el.scrollWidth > el.clientWidth ? el.innerHTML : '';
-                el.style.removeProperty('overflow');
-                return tipContent;
-            },
-        });
-
         return Promise.all(defs).then(() => {
             const $undoButton = this.$('.o_we_external_history_buttons button[data-action="undo"]');
             const $redoButton = this.$('.o_we_external_history_buttons button[data-action="redo"]');
@@ -1995,6 +1998,8 @@ var SnippetsMenu = Widget.extend({
         core.bus.off('deactivate_snippet', this, this._onDeactivateSnippet);
         $(document.body).off('click', this._checkEditorToolbarVisibilityCallback);
         this.el.ownerDocument.body.classList.remove('editor_has_snippets');
+        // Dispose BS tooltips.
+        this.tooltips.dispose();
     },
 
     //--------------------------------------------------------------------------
@@ -3282,6 +3287,7 @@ var SnippetsMenu = Widget.extend({
      * @param {this.tabs.VALUE} [tab='blocks'] - the tab to select
      */
     _updateRightPanelContent: function ({content, tab, ...options}) {
+        this._hideActiveTooltip();
         this._closeWidgets();
 
         this._currentTab = tab || this.tabs.BLOCKS;
@@ -3404,6 +3410,25 @@ var SnippetsMenu = Widget.extend({
             tab: this.tabs.OPTIONS,
             forceEmptyTab: true,
         });
+    },
+    /**
+     * Hides the active tooltip.
+     *
+     * @private
+     */
+    _hideActiveTooltip() {
+        // The BS documentation says that "Tooltips that use delegation (which
+        // are created using the selector option) cannot be individually
+        // destroyed on descendant trigger elements". So we remove the active
+        // tooltips manually.
+        const tooltipClass = 'aria-describedby';
+        const tooltippedEl = this.el.querySelector(`[${tooltipClass}^="tooltip"]`);
+        if (tooltippedEl) {
+            const tooltipEl = document.getElementById(tooltippedEl.getAttribute(tooltipClass));
+            if (tooltipEl) {
+                Tooltip.getInstance(tooltipEl).hide();
+            }
+        }
     },
 
     //--------------------------------------------------------------------------
@@ -4168,6 +4193,9 @@ var SnippetsMenu = Widget.extend({
         }
         this._buttonAction = true;
         let removeLoadingEffect;
+        // Remove the tooltip now, because the button will be disabled and so,
+        // the tooltip will not be removable (see BS doc).
+        this._hideActiveTooltip();
         if (addLoadingEffect) {
             removeLoadingEffect = dom.addButtonLoadingEffect(button);
         }
