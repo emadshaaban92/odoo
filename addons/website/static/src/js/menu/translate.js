@@ -178,6 +178,21 @@ var TranslatePageMenu = websiteNavbarData.WebsiteNavbarActionWidget.extend({
             devicePreview: false,
         };
 
+        const showNotification = ev => {
+            let message = _t('This translation is not editable.');
+            if (ev.target.closest('.s_table_of_content_navbar_wrap')) {
+                message = _t('Translate header in the text. Menu is generated automatically.');
+            }
+            this.displayNotification({
+                type: 'info',
+                message: message,
+                sticky: false,
+            });
+        };
+        for (const translationEl of $('.o_not_editable [data-oe-translation-id]').not(':o_editable')) {
+            translationEl.addEventListener('click', showNotification);
+        }
+
         this.translator = new EditorMenu(this, {
             wysiwygOptions: params,
             savableSelector: savableSelector,
@@ -245,6 +260,19 @@ var TranslatePageMenu = websiteNavbarData.WebsiteNavbarActionWidget.extend({
 
                 self._markTranslatableNodes();
                 this.$translations.filter('input[type=hidden].o_translatable_input_hidden').prop('type', 'text');
+            },
+            processRecordsCallback(record, el) {
+                const tocMainEl = el.closest('.s_table_of_content_main');
+                const headerEl = el.closest('h1, h2');
+                if (!tocMainEl || !headerEl) {
+                    return;
+                }
+                const headerIndex = [...tocMainEl.querySelectorAll('h1, h2')].indexOf(headerEl);
+                const tocMenuEl = tocMainEl.closest('.s_table_of_content').querySelectorAll('.table_of_content_link > span')[headerIndex];
+                if (tocMenuEl.textContent !== headerEl.textContent) {
+                    tocMenuEl.textContent = headerEl.textContent;
+                    tocMenuEl.classList.add('o_dirty');
+                }
             },
         });
 

@@ -40,14 +40,18 @@ options.registry.TableOfContent = options.Class.extend({
         const $headings = this.$target.find(this.targetedElements);
         $nav.empty();
         _.each($headings, el => {
-            const $el = $(el);
             const id = 'table_of_content_heading_' + _.now() + '_' + _.uniqueId();
-            $('<a>').attr('href', "#" + id)
-                    .addClass('table_of_content_link list-group-item list-group-item-action py-2 border-0 rounded-0')
-                    .text($el.text())
-                    .appendTo($nav);
-            $el.attr('id', id);
-            $el[0].dataset.anchor = 'true';
+            // The intermediary span is needed to make sure the navigation menu
+            // entry has a different translation id than the content.
+            const spanEl = document.createElement('span');
+            spanEl.textContent = el.textContent;
+            const linkEl = document.createElement('a');
+            linkEl.href = '#' + id;
+            linkEl.setAttribute('class', 'table_of_content_link list-group-item list-group-item-action py-2 border-0 rounded-0');
+            linkEl.appendChild(spanEl);
+            $nav[0].appendChild(linkEl);
+            el.setAttribute('id', id);
+            el.dataset.anchor = 'true';
         });
         $nav.find('a:first').addClass('active');
     },

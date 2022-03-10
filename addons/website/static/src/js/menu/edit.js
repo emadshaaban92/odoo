@@ -57,6 +57,9 @@ var EditPageMenu = websiteNavbarData.WebsiteNavbarActionWidget.extend({
         } else {
             this.savableSelector = `${this.oeStructureSelector}, ${this.oeFieldSelector}, ${this.oeCoverSelector}`;
         }
+        if (options.processRecordsCallback) {
+            this.processRecordsCallback = options.processRecordsCallback;
+        }
         this.editableFromEditorMenu = options.editableFromEditorMenu || this.editableFromEditorMenu;
         this._editorAutoStart = (context.editable && window.location.search.indexOf('enable_editor') >= 0);
         var url = new URL(window.location.href);
@@ -314,6 +317,11 @@ var EditPageMenu = websiteNavbarData.WebsiteNavbarActionWidget.extend({
                         this.classList.add('o_dirty');
                     }
                 });
+                if (this.processRecordsCallback) {
+                    for (const el of $savable) {
+                        this.processRecordsCallback(record, el);
+                    }
+                }
             }
         };
         this.observer = new MutationObserver(processRecords);

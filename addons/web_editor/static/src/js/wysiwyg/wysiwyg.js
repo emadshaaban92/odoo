@@ -984,7 +984,7 @@ const Wysiwyg = Widget.extend({
         this.odooEditor.clean();
         this.$editable.find('.oe_edited_link').removeClass('oe_edited_link');
 
-        if (this.snippetsMenu) {
+        if (this.snippetsMenu && !this.options.enableTranslation) {
             await this.snippetsMenu.cleanForSave();
         }
     },
