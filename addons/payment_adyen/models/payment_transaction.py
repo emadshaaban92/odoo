@@ -3,8 +3,9 @@
 import logging
 import pprint
 
-from odoo import _, api, fields, models
+from odoo import _, models
 from odoo.exceptions import UserError, ValidationError
+from odoo.tools import format_amount
 
 from odoo.addons.payment import utils as payment_utils
 from odoo.addons.payment_adyen import utils as adyen_utils
@@ -156,19 +157,22 @@ class PaymentTransaction(models.Model):
 
         return refund_tx
 
-    def _send_capture_request(self):
+    def _send_capture_request(self, amount_to_capture=None):
         """ Override of payment to send a capture request to Adyen.
 
         Note: self.ensure_one()
 
-        :return: None
+        :param float amount_to_capture: The amount to be captured
+        :return: The capture child transaction if any
+        :rtype: recordset of `payment.transaction`
         """
-        super()._send_capture_request()
+        child_capture_tx = super()._send_capture_request(amount_to_capture=amount_to_capture)
         if self.provider_code != 'adyen':
-            return
+            return child_capture_tx
 
+        amount_to_capture = amount_to_capture or self.amount
         converted_amount = payment_utils.to_minor_currency_units(
-            self.amount, self.currency_id, CURRENCY_DECIMALS.get(self.currency_id.name)
+            amount_to_capture, self.currency_id, CURRENCY_DECIMALS.get(self.currency_id.name)
         )
         data = {
             'merchantAccount': self.provider_id.adyen_merchant_account,
@@ -189,22 +193,33 @@ class PaymentTransaction(models.Model):
 
         # Handle the capture request response
         status = response_content.get('status')
+        formatted_amount = format_amount(self.env, amount_to_capture, self.currency_id)
         if status == 'received':
             self._log_message_on_linked_documents(_(
-                "The capture of the transaction with reference %s has been requested (%s).",
-                self.reference, self.provider_id.name
+                "The capture request of %(amount)s for the transaction with reference %(ref)s has "
+                "been requested (%(provider_name)s).",
+                amount=formatted_amount, ref=self.reference, provider_name=self.provider_id.name
             ))
 
-    def _send_void_request(self):
+        if child_capture_tx:
+            # The PSP reference associated with this /capture request is different from the psp
+            # reference associated with the original payment request.
+            child_capture_tx.provider_reference = response_content.get('pspReference')
+
+        return child_capture_tx
+
+    def _send_void_request(self, amount_to_void=None):
         """ Override of payment to send a void request to Adyen.
 
         Note: self.ensure_one()
 
-        :return: None
+        :param float amount_to_void: The amount to be voided
+        :return: The void child transaction if any
+        :rtype: recordset of `payment.transaction`
         """
-        super()._send_void_request()
+        child_void_tx = super()._send_void_request(amount_to_void=amount_to_void)
         if self.provider_code != 'adyen':
-            return
+            return child_void_tx
 
         data = {
             'merchantAccount': self.provider_id.adyen_merchant_account,
@@ -226,6 +241,13 @@ class PaymentTransaction(models.Model):
                 "A request was sent to void the transaction with reference %s (%s).",
                 self.reference, self.provider_id.name
             ))
+
+        if child_void_tx:
+            # The PSP reference associated with this /cancels request is different from the psp
+            # reference associated with the original payment request.
+            child_void_tx.provider_reference = response_content.get('pspReference')
+
+        return child_void_tx
 
     def _get_tx_from_notification_data(self, provider_code, notification_data):
         """ Override of payment to find the transaction based on Adyen data.
@@ -250,13 +272,48 @@ class PaymentTransaction(models.Model):
         source_reference = notification_data.get('originalReference')
         if event_code == 'AUTHORISATION':
             tx = self.search([('reference', '=', reference), ('provider_code', '=', 'adyen')])
-        elif event_code in ['CAPTURE', 'CANCELLATION']:
+        elif event_code in ['CANCELLATION', 'CAPTURE', 'CAPTURE_FAILED']:
             # The capture/void may be initiated from Adyen, so we can't trust the reference.
             # We find the transaction based on the original provider reference since Adyen will have
-            # two different references: one for the original transaction and one for the capture.
-            tx = self.search(
+            # two different references: one for the original transaction and one for the capture or
+            # void. We keep the second one only for child transactions. For full capture/void, no
+            # child transaction are created. Thus, we first look for the source transaction before
+            # checking if we need to find/create a child transaction.
+            notification_data_amount = notification_data.get('amount', {}).get('value')
+            source_tx = self.search(
                 [('provider_reference', '=', source_reference), ('provider_code', '=', 'adyen')]
             )
+            if source_tx:
+                converted_notification_amount = payment_utils.to_major_currency_units(
+                    notification_data_amount, source_tx.currency_id
+                )
+                if source_tx.amount == converted_notification_amount:  # Full capture/void
+                    tx = source_tx
+                else:  # Partial capture/void, we get the child transaction instead
+                    tx = self.search([
+                        ('provider_reference', '=', provider_reference),
+                        ('provider_code', '=', 'adyen'),
+                    ])
+                    if tx and tx.amount != converted_notification_amount:
+                        # If the void was requested expecting a certain amount, but in between,
+                        # others captures that Odoo was unaware of were done, the amount voided will
+                        # be different from the amount of the existing transaction.
+                        tx._set_error(_(
+                            "The amount processed by Adyen for the transaction %s is different than"
+                            " the one requested. Another transaction is created with the correct "
+                            "amount.",
+                            tx.reference
+                        ))
+                        tx = self.env['payment.transaction']
+                    if not tx:  # Partial capture/void initiated from Adyen or with a wrong amount
+                        # Manually create a child transaction with a new reference. The reference of
+                        # the child transaction was personalized from Adyen and could be identical
+                        # to that of an existing transaction.
+                        tx = self._adyen_create_child_tx_from_notification_data(
+                            source_tx, notification_data
+                        )
+            else:  # The capture/void was initiated for an unknown source transaction
+                pass  # Don't do anything with the capture/void notification
         else:  # 'REFUND'
             # The refund may be initiated from Adyen, so we can't trust the reference, which could
             # be identical to another existing transaction. We find the transaction based on the
@@ -273,8 +330,8 @@ class PaymentTransaction(models.Model):
                     # Manually create a refund transaction with a new reference. The reference of
                     # the refund transaction was personalized from Adyen and could be identical to
                     # that of an existing transaction.
-                    tx = self._adyen_create_refund_tx_from_notification_data(
-                        source_tx, notification_data
+                    tx = self._adyen_create_child_tx_from_notification_data(
+                        source_tx, notification_data, operation='refund'
                     )
                 else:  # The refund was initiated for an unknown source transaction
                     pass  # Don't do anything with the refund notification
@@ -285,28 +342,31 @@ class PaymentTransaction(models.Model):
             )
         return tx
 
-    def _adyen_create_refund_tx_from_notification_data(self, source_tx, notification_data):
-        """ Create a refund transaction based on Adyen data.
+    def _adyen_create_child_tx_from_notification_data(
+            self, source_tx, notification_data, operation=None
+    ):
+        """ Create a child transaction based on Adyen data.
 
-        :param recordset source_tx: The source transaction for which a refund is initiated, as a
-                                    `payment.transaction` recordset
+        :param recordset source_tx: The source transaction for which a child is initiated, as
+                                    a `payment.transaction` recordset
         :param dict notification_data: The notification data sent by the provider
-        :return: The newly created refund transaction
+        :param string operation: The operation of the child, e.g. 'refund'.
+                                 Default to `self.operation`
+        :return: The newly created child transaction
         :rtype: recordset of `payment.transaction`
         :raise: ValidationError if inconsistent data were received
         """
-        refund_provider_reference = notification_data.get('pspReference')
-        amount_to_refund = notification_data.get('amount', {}).get('value')
-        if not refund_provider_reference or not amount_to_refund:
+        provider_reference = notification_data.get('pspReference')
+        amount = notification_data.get('amount', {}).get('value')
+        if not provider_reference or amount is None:  # amount=0 if success=False
             raise ValidationError(
-                "Adyen: " + _("Received refund data with missing transaction values")
+                "Adyen: " + _("Received children data with missing transaction values")
             )
 
-        converted_amount = payment_utils.to_major_currency_units(
-            amount_to_refund, source_tx.currency_id
-        )
-        return source_tx._create_refund_transaction(
-            amount_to_refund=converted_amount, provider_reference=refund_provider_reference
+        converted_amount = payment_utils.to_major_currency_units(amount, source_tx.currency_id)
+        operation = operation or self.operation
+        return source_tx._create_child_transaction(
+            amount=converted_amount, provider_reference=provider_reference, operation=operation
         )
 
     def _process_notification_data(self, notification_data):
@@ -375,17 +435,27 @@ class PaymentTransaction(models.Model):
                     "the void of the transaction with reference %s failed. reason: %s",
                     self.reference, refusal_reason
                 )
-                self._log_message_on_linked_documents(
-                    _("The void of the transaction with reference %s failed.", self.reference)
-                )
-            else:  # 'CAPTURE'
+                if self.source_transaction_id:  # child tx => the event can't be retried
+                    self._set_error(
+                        _("The void of the transaction with reference %s failed.", self.reference)
+                    )
+                else:  # source tx with failed void stays in its state, could be voided again
+                    self._log_message_on_linked_documents(_(
+                        "The void of the transaction with reference %s failed.", self.reference
+                    ))
+            else:  # 'CAPTURE', 'CAPTURE_FAILED'
                 _logger.warning(
                     "the capture of the transaction with reference %s failed. reason: %s",
                     self.reference, refusal_reason
                 )
-                self._log_message_on_linked_documents(
-                    _("The capture of the transaction with reference %s failed.", self.reference)
-                )
+                if self.source_transaction_id:  # child_tx => the event can't be retried
+                    self._set_error(_(
+                        "The capture of the transaction with reference %s failed.", self.reference
+                    ))
+                else:  # source tx with failed capture stays in its state, could be captured again
+                    self._log_message_on_linked_documents(_(
+                        "The capture of the transaction with reference %s failed.", self.reference
+                    ))
         elif payment_state in RESULT_CODES_MAPPING['refused']:
             _logger.warning(
                 "the transaction with reference %s was refused. reason: %s",

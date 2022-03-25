@@ -89,6 +89,22 @@ class PaymentTransaction(models.Model):
                 return separator.join(invoices.mapped('name'))
         return super()._compute_reference_prefix(provider_code, separator, **values)
 
+    def _create_child_transaction(self, amount=None, operation=None, **custom_create_values):
+        """ Create a child transaction.
+
+        :param float amount: The amount of the child transaction
+        :param str operation: The operation of the child transaction
+        :param dict custom_create_values: The custom values used to create the child transaction
+        :return: The created transaction
+        :rtype: `payment.transaction` recordset
+        """
+        self.ensure_one()
+        if operation != 'refund':  # Refund tx are linked to the source payment, not invoices
+            return super()._create_child_transaction(
+                amount, operation, invoice_ids=self.invoice_ids, **custom_create_values
+            )
+        return super()._create_child_transaction(amount, operation, **custom_create_values)
+
     def _set_canceled(self, state_message=None):
         """ Update the transactions' state to 'cancel'.
 
@@ -110,6 +126,9 @@ class PaymentTransaction(models.Model):
         them. This is also true for validations with a validity check (transfer of a small amount
         with immediate refund) because validation amounts are not included in payouts.
 
+        As the reconciliation is done in the child transactions for partial voids and captures, no
+        payment is created for their source transactions.
+
         :return: None
         """
         super()._reconcile_after_done()
@@ -118,7 +137,11 @@ class PaymentTransaction(models.Model):
         self.invoice_ids.filtered(lambda inv: inv.state == 'draft').action_post()
 
         # Create and post missing payments for transactions requiring reconciliation
-        for tx in self.filtered(lambda t: t.operation != 'validation' and not t.payment_id):
+        for tx in self.filtered(
+            lambda t: t.operation != 'validation'
+                and not t.payment_id
+                and not t.child_transaction_ids.filtered(lambda t: t.state in ['done', 'cancel'])
+        ):
             tx._create_payment()
 
     def _create_payment(self, **extra_create_values):

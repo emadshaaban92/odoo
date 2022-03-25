@@ -108,7 +108,8 @@ class PaymentTransaction(models.Model):
         """
         super()._log_message_on_linked_documents(message)
         self = self.with_user(SUPERUSER_ID)  # Log messages as 'OdooBot'
-        for order in self.sale_order_ids:
+        orders = self.sale_order_ids or self.source_transaction_id.sale_order_ids
+        for order in orders:
             order.message_post(body=message)
 
     def _reconcile_after_done(self):

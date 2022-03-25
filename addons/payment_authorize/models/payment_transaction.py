@@ -144,16 +144,18 @@ class PaymentTransaction(models.Model):
             ))
         return refund_tx
 
-    def _send_capture_request(self):
+    def _send_capture_request(self, amount_to_capture=None):
         """ Override of payment to send a capture request to Authorize.
 
         Note: self.ensure_one()
 
-        :return: None
+        :param float amount_to_capture: The amount to be captured
+        :return: The capture child transaction if any
+        :rtype: recordset of `payment.transaction`
         """
-        super()._send_capture_request()
+        child_capture_tx = super()._send_capture_request(amount_to_capture=amount_to_capture)
         if self.provider_code != 'authorize':
-            return
+            return child_capture_tx
 
         authorize_API = AuthorizeAPI(self.provider_id)
         rounded_amount = round(self.amount, self.currency_id.decimal_places)
@@ -164,16 +166,20 @@ class PaymentTransaction(models.Model):
         )
         self._handle_notification_data('authorize', {'response': res_content})
 
-    def _send_void_request(self):
+        return child_capture_tx
+
+    def _send_void_request(self, amount_to_void=None):
         """ Override of payment to send a void request to Authorize.
 
         Note: self.ensure_one()
 
-        :return: None
+        :param float amount_to_void: The amount to be voided
+        :return: The void child transaction if any
+        :rtype: recordset of `payment.transaction`
         """
-        super()._send_void_request()
+        child_void_tx = super()._send_void_request(amount_to_void=amount_to_void)
         if self.provider_code != 'authorize':
-            return
+            return child_void_tx
 
         authorize_API = AuthorizeAPI(self.provider_id)
         res_content = authorize_API.void(self.provider_reference)
@@ -182,6 +188,8 @@ class PaymentTransaction(models.Model):
             self.reference, pprint.pformat(res_content)
         )
         self._handle_notification_data('authorize', {'response': res_content})
+
+        return child_void_tx
 
     def _get_tx_from_notification_data(self, provider_code, notification_data):
         """ Find the transaction based on Authorize.net data.
