@@ -71,7 +71,16 @@ class WebsiteEventController(http.Controller):
         events = events[(page - 1) * step:page * step]
 
         # count by domains without self search
-        domain_search = [('name', 'ilike', fuzzy_search_term or searches['search'])] if searches['search'] else []
+        domain_search = []
+        if searches['search']:
+            address_event_ids = Event.sudo().search([
+                ('address_search', 'ilike', fuzzy_search_term or searches['search']),
+            ]).ids
+            domain_search = [
+                '|',
+                ('name', 'ilike', fuzzy_search_term or searches['search']),
+                ('id', 'in', address_event_ids),
+            ]
 
         no_date_domain = event_details['no_date_domain']
         dates = event_details['dates']

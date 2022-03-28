@@ -531,10 +531,18 @@ class Event(models.Model):
             mapping['description'] = {'name': 'subtitle', 'type': 'text', 'match': True}
         if with_date:
             mapping['detail'] = {'name': 'range', 'type': 'html'}
+
+        def search_in_address(env, search_term):
+            events_ids = env['event.event'].sudo().search([
+                ('address_search', 'ilike', search_term),
+            ]).ids
+            return [('id', 'in', events_ids)]
+
         return {
             'model': 'event.event',
             'base_domain': domain,
             'search_fields': search_fields,
+            'search_extra': search_in_address,
             'fetch_fields': fetch_fields,
             'mapping': mapping,
             'icon': 'fa-ticket',
