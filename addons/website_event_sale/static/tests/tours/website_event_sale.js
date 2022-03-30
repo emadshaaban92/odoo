@@ -19,13 +19,23 @@ tour.register('event_buy_tickets', {
             run: 'text 1',
         },
         {
+            content: "Check that the `VIP` ticket unit price is 1500",
+            trigger: '.o_wevent_ticket_selector:eq(1) .o_wevent_registration_multi_select:contains("1500.00")',
+            run: function () {}, // it's a check
+        },
+        {
             content: "Select 2 units of `VIP` ticket type",
             extra_trigger: 'select:eq(0):has(option:contains(1):propSelected)',
             trigger: 'select:eq(1)',
             run: 'text 2',
         },
         {
-            content: "Click on `Order Now` button",
+            content: "Check that the `VIP` ticket unit price has been updated to 1500 - 25% discount = 1125",
+            trigger: '.o_wevent_ticket_selector:eq(1) .o_wevent_registration_multi_select:contains("1125.00")',
+            run: function () {}, // it's a check
+        },
+        {
+            content: "Check that the unit price has been updated to 1500 - 25% discount = 1125  and click on `Order Now` button",
             extra_trigger: 'select:eq(1):has(option:contains(2):propSelected)',
             trigger: '.btn-primary:contains("Register")',
         },
@@ -64,8 +74,13 @@ tour.register('event_buy_tickets', {
             trigger: '.btn-primary:contains("Process Checkout")'
         },
         {
-            content: "Check that the subtotal is 4,000.00 USD", // this test will fail if the currency of the main company is not USD
-            trigger: '#order_total_untaxed .oe_currency_value:contains("4,000.00")',
+            content: "Check that the subtotal is 3,250.00 USD (1x 1000 + (2x 1500 at 25% discount) = 3250)", // this test will fail if the currency of the main company is not USD
+            trigger: '#order_total_untaxed .oe_currency_value:contains("3,250.00")',
+            run: function () {}, // it's a check
+        },
+        {
+            content: "Check that the total is 3,575.00 USD (3250 + 10% tax = 3575)",
+            trigger: '#order_total .oe_currency_value:contains("3,575.00")',
             run: function () {}, // it's a check
         },
         {

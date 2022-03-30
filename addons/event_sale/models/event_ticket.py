@@ -43,21 +43,14 @@ class EventTemplateTicket(models.Model):
             if not ticket.description:
                 ticket.description = False
 
-    # TODO clean this feature in master
-    # Feature broken by design, depending on the hacky `_get_contextual_price` field on products
-    # context_dependent, core part of the pricelist mess
-    # This field usage should be restricted to the UX, and any use in effective
-    # price computation should be replaced by clear calls to the pricelist API
-    @api.depends_context('uom', 'qty', 'pricelist') # Cf product.price context dependencies
-    @api.depends('product_id', 'price')
+    @api.depends_context('uom', 'quantity', 'pricelist')  # Cf product._get_contextual_price() context dependencies
+    @api.depends('product_id', 'price')  # price is indirectly injected into product through context variable
     def _compute_price_reduce(self):
         for ticket in self:
-            product = ticket.product_id
-            # seems strange to not apply pricelist logic but still use pricelist discount...
-            discount = (
-                product.lst_price - product._get_contextual_price()
-            ) / product.lst_price if product.lst_price else 0.0
-            ticket.price_reduce = (1.0 - discount) * ticket.price
+            ticket.price_reduce = ticket.product_id.with_context({
+                **self._context,
+                'record_being_sold': ticket.id,
+            })._get_contextual_price()
 
     def _init_column(self, column_name):
         if column_name != "product_id":
@@ -108,12 +101,15 @@ class EventTicket(models.Model):
         string='Price Reduce Tax inc', compute='_compute_price_reduce_taxinc',
         compute_sudo=True)
 
+    # Cf price_reduce dependencies
+    @api.depends_context('uom', 'quantity', 'pricelist')
+    @api.depends('price', 'product_id')
     def _compute_price_reduce_taxinc(self):
-        for event in self:
+        for ticket in self:
             # sudo necessary here since the field is most probably accessed through the website
-            tax_ids = event.product_id.taxes_id.filtered(lambda r: r.company_id == event.event_id.company_id)
-            taxes = tax_ids.compute_all(event.price_reduce, event.event_id.company_id.currency_id, 1.0, product=event.product_id)
-            event.price_reduce_taxinc = taxes['total_included']
+            tax_ids = ticket.product_id.taxes_id.filtered(lambda r: r.company_id == ticket.event_id.company_id)
+            taxes = tax_ids.compute_all(ticket.price_reduce, ticket.event_id.company_id.currency_id, 1.0, product=ticket.product_id)
+            ticket.price_reduce_taxinc = taxes['total_included']
 
     @api.depends('product_id.active')
     def _compute_sale_available(self):

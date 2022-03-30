@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="website_event_sale.event_ticket_price">
+        <t t-if="widget.ready">
+            <del t-if="widget.data.price_not_reduced"
+                 class="text-danger me-1"
+                 t-esc="widget.render_monetary_field(widget.data.price_not_reduced, widget.data.currency)"/>
+            <span t-esc="widget.render_monetary_field(widget.data.price, widget.data.currency)"/>
+        </t>
+    </t>
+</templates>

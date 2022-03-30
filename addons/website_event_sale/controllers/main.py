@@ -2,6 +2,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from collections import defaultdict
+import datetime
 from odoo import _
 from odoo.http import request, route
 
@@ -90,4 +91,52 @@ class WebsiteEventSaleController(WebsiteEventController):
                     'price': 0,
                 }]]
             })
+        return values
+
+    @route(['/website_event_sale/ticket-price-info/<int:event_ticket_id>'],
+           type='json', auth="public", website=True, sitemap=False)
+    def get_ticket_price_info(self, event_ticket_id, quantity=1):
+        """
+        :param: int event_ticket_id: id of an event ticket
+        :param: int quantity: optional quantity (default 1)
+        :return: a dict containing detailed unit price of the ticket for the given quantity
+        """
+        pricelist = request.website.pricelist_id
+        event_ticket = request.env['event.event.ticket'].browse(event_ticket_id)
+        company_id = event_ticket.event_id.sudo().company_id
+        ticket_currency = company_id.currency_id
+        ctx = dict(quantity=quantity)
+        if pricelist:
+            ctx.update(pricelist=pricelist.id)
+            currency_id = pricelist.currency_id
+            discount_policy = pricelist.discount_policy
+        else:
+            currency_id = ticket_currency
+            discount_policy = None
+
+        event_ticket = event_ticket.with_context(ctx)
+
+        if not request.env.user.has_group('account.group_show_line_subtotals_tax_excluded'):
+            # All in tax included
+            price = event_ticket.price_reduce_taxinc
+            price_not_reduced = event_ticket.with_context(pricelist=None, quantity=1).price_reduce_taxinc
+        else:
+            # All in tax excluded
+            price = event_ticket.price_reduce
+            price_not_reduced = ticket_currency._convert(
+                event_ticket.price,
+                currency_id,
+                company_id,
+                datetime.date.today())
+
+        values = {
+            'price': price,
+            'currency': {
+                'symbol': currency_id.symbol,
+                'position': currency_id.position,
+                'decimal_places': currency_id.decimal_places,
+            },
+        }
+        if price_not_reduced > price and discount_policy == 'without_discount':
+            values['price_not_reduced'] = price_not_reduced
         return values
