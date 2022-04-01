@@ -1,0 +1,285 @@
+{
+  "BatchIdentifier": "INV/2023/00001",
+  "BuyerParty": {
+    "AdministrativeCentres": [],
+    "Assignee": {
+      "Individual": {
+        "ContactDetails": {
+          "ElectronicMail": false,
+          "Telephone": false,
+          "WebAdress": false
+        },
+        "FirstSurname": "",
+        "Name": "",
+        "SecondSurname": "",
+        "address": {
+          "Address": "Rue de Bruxelles, 15000",
+          "CountryCode": "BEL",
+          "PostCode": "5000",
+          "Province": "Belgium",
+          "Town": "Namur"
+        }
+      },
+      "LegalEntity": false
+    },
+    "PartyIdentification": false,
+    "TaxIdentification": {
+      "PersonTypeCode": "F",
+      "ResidenceTypeCode": "U",
+      "TaxIdentificationNumber": "BE0477472701"
+    }
+  },
+  "Extensions": false,
+  "FactoringAssignmentData": false,
+  "InvoiceCurrencyCode": "EUR",
+  "InvoiceIssuerType": "EM",
+  "Invoices": [
+    {
+      "AdditionalData": {
+        "Extensions": false,
+        "RelatedDocuments": [],
+        "RelatedInvoice": false
+      },
+      "AmountsWithheld": false,
+      "InvoiceClass": "OO",
+      "InvoiceDocumentType": "FC",
+      "InvoiceIssueData": {
+        "ExchangeRate": "1.00",
+        "ExchangeRateDate": "2023-01-01",
+        "ExchangeRateDetails": false,
+        "InvoiceCurrencyCode": "EUR",
+        "IssueDate": "2023-01-01",
+        "LanguageName": "en",
+        "TaxCurrencyCode": "EUR"
+      },
+      "InvoiceNumber": "INV/2023/00001",
+      "InvoiceTotal": "484.00",
+      "Items": [
+        {
+          "AdditionalLineItemInformation": false,
+          "ArticleCode": false,
+          "Charges": [],
+          "DeliveryNotesReferences": [],
+          "DiscountsAndRebates": [],
+          "Extensions": false,
+          "FileDate": false,
+          "FileReference": false,
+          "GrossAmount": "100.00",
+          "IssuerContractDate": false,
+          "IssuerContractReference": false,
+          "IssuerTransactionDate": false,
+          "IssuerTransactionReference": false,
+          "ItemDescription": "product_a",
+          "LineItemPeriod": false,
+          "Quantity": 1.0,
+          "ReceiverContractDate": false,
+          "ReceiverContractReference": false,
+          "ReceiverTransactionDate": false,
+          "ReceiverTransactionReference": false,
+          "SequenceNumber": false,
+          "SpecialTaxableEvent": false,
+          "TaxesOutputs": [
+            {
+              "TaxAmount": {
+                "EquivalentInEuros": "21.00",
+                "TotalAmount": "21.00"
+              },
+              "TaxRate": "21.000",
+              "TaxTypeCode": "01",
+              "TaxableBase": {
+                "EquivalentInEuros": false,
+                "TotalAmount": "100.00"
+              }
+            }
+          ],
+          "TaxesWitheld": [],
+          "TotalCost": "100.00",
+          "TransactionDate": false,
+          "UnitOfMeasure": "01",
+          "UnitPriceWithoutTax": "100.00"
+        },
+        {
+          "AdditionalLineItemInformation": false,
+          "ArticleCode": false,
+          "Charges": [],
+          "DeliveryNotesReferences": [],
+          "DiscountsAndRebates": [],
+          "Extensions": false,
+          "FileDate": false,
+          "FileReference": false,
+          "GrossAmount": "100.00",
+          "IssuerContractDate": false,
+          "IssuerContractReference": false,
+          "IssuerTransactionDate": false,
+          "IssuerTransactionReference": false,
+          "ItemDescription": "product_a",
+          "LineItemPeriod": false,
+          "Quantity": 1.0,
+          "ReceiverContractDate": false,
+          "ReceiverContractReference": false,
+          "ReceiverTransactionDate": false,
+          "ReceiverTransactionReference": false,
+          "SequenceNumber": false,
+          "SpecialTaxableEvent": false,
+          "TaxesOutputs": [
+            {
+              "TaxAmount": {
+                "EquivalentInEuros": "21.00",
+                "TotalAmount": "21.00"
+              },
+              "TaxRate": "21.000",
+              "TaxTypeCode": "01",
+              "TaxableBase": {
+                "EquivalentInEuros": false,
+                "TotalAmount": "100.00"
+              }
+            }
+          ],
+          "TaxesWitheld": [],
+          "TotalCost": "100.00",
+          "TransactionDate": false,
+          "UnitOfMeasure": "01",
+          "UnitPriceWithoutTax": "100.00"
+        },
+        {
+          "AdditionalLineItemInformation": false,
+          "ArticleCode": false,
+          "Charges": [],
+          "DeliveryNotesReferences": [],
+          "DiscountsAndRebates": [],
+          "Extensions": false,
+          "FileDate": false,
+          "FileReference": false,
+          "GrossAmount": "200.00",
+          "IssuerContractDate": false,
+          "IssuerContractReference": false,
+          "IssuerTransactionDate": false,
+          "IssuerTransactionReference": false,
+          "ItemDescription": "product_a",
+          "LineItemPeriod": false,
+          "Quantity": 1.0,
+          "ReceiverContractDate": false,
+          "ReceiverContractReference": false,
+          "ReceiverTransactionDate": false,
+          "ReceiverTransactionReference": false,
+          "SequenceNumber": false,
+          "SpecialTaxableEvent": false,
+          "TaxesOutputs": [
+            {
+              "TaxAmount": {
+                "EquivalentInEuros": "42.00",
+                "TotalAmount": "42.00"
+              },
+              "TaxRate": "21.000",
+              "TaxTypeCode": "01",
+              "TaxableBase": {
+                "EquivalentInEuros": false,
+                "TotalAmount": "200.00"
+              }
+            }
+          ],
+          "TaxesWitheld": [],
+          "TotalCost": "200.00",
+          "TransactionDate": false,
+          "UnitOfMeasure": "01",
+          "UnitPriceWithoutTax": "200.00"
+        }
+      ],
+      "LegalLiterals": false,
+      "PaymentDetails": [],
+      "PaymentsOnAccount": [],
+      "TaxOutputs": [
+        {
+          "TaxAmount": {
+            "EquivalentInEuros": "21.00",
+            "TotalAmount": "21.00"
+          },
+          "TaxRate": "21.000",
+          "TaxTypeCode": "01",
+          "TaxableBase": {
+            "EquivalentInEuros": false,
+            "TotalAmount": "100.00"
+          }
+        },
+        {
+          "TaxAmount": {
+            "EquivalentInEuros": "21.00",
+            "TotalAmount": "21.00"
+          },
+          "TaxRate": "21.000",
+          "TaxTypeCode": "01",
+          "TaxableBase": {
+            "EquivalentInEuros": false,
+            "TotalAmount": "100.00"
+          }
+        },
+        {
+          "TaxAmount": {
+            "EquivalentInEuros": "42.00",
+            "TotalAmount": "42.00"
+          },
+          "TaxRate": "21.000",
+          "TaxTypeCode": "01",
+          "TaxableBase": {
+            "EquivalentInEuros": false,
+            "TotalAmount": "200.00"
+          }
+        }
+      ],
+      "TaxesWithheld": [],
+      "TotalExecutableAmount": "484.00",
+      "TotalGeneralDiscounts": "0.00",
+      "TotalGeneralSurcharges": "0.00",
+      "TotalGrossAmount": "400.00",
+      "TotalGrossAmountBeforeTaxes": "400.00",
+      "TotalOutstandingAmount": "484.00",
+      "TotalPaymentsOnAccount": "0.00",
+      "TotalTaxOutputs": "84.00",
+      "TotalTaxesWithheld": "0.00"
+    }
+  ],
+  "InvoicesCount": 1,
+  "Modality": "I",
+  "SellerParty": {
+    "AdministrativeCentres": [],
+    "Assignee": {
+      "LegalEntity": {
+        "ContactDetails": {
+          "ElectronicMail": false,
+          "Telephone": false,
+          "WebAdress": false
+        },
+        "CorporateName": "company_1_data",
+        "TradeName": "company_1_data",
+        "address": {
+          "Address": "Rue de Bruxelles, 15000",
+          "CountryCode": "ESP",
+          "PostCode": "12345",
+          "Province": "Madrid",
+          "Town": "Madrid"
+        }
+      }
+    },
+    "PartyIdentification": false,
+    "TaxIdentification": {
+      "PersonTypeCode": "J",
+      "ResidenceTypeCode": "R",
+      "TaxIdentificationNumber": "ES59962470K"
+    }
+  },
+  "SignerRole": "supplier",
+  "SigningTime": "",
+  "ThirdParty": false,
+  "TotalExecutableAmount": {
+    "EquivalentInEuros": false,
+    "TotalAmount": "484.00"
+  },
+  "TotalInvoicesAmount": {
+    "EquivalentInEuros": false,
+    "TotalAmount": "484.00"
+  },
+  "TotalOutstandingAmount": {
+    "EquivalentInEuros": false,
+    "TotalAmount": "484.00"
+  }
+}
