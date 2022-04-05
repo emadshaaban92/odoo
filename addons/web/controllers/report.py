@@ -42,6 +42,7 @@ class ReportController(http.Controller):
             html = report.with_context(context)._render_qweb_html(reportname, docids, data=data)[0]
             return request.make_response(html)
         elif converter == 'pdf':
+            context['pdf'] = True
             pdf = report.with_context(context)._render_qweb_pdf(reportname, docids, data=data)[0]
             pdfhttpheaders = [('Content-Type', 'application/pdf'), ('Content-Length', len(pdf))]
             return request.make_response(pdf, headers=pdfhttpheaders)
