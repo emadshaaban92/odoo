@@ -7917,7 +7917,6 @@ registry.SelectTemplate = SnippetOptionWidget.extend({
     },
 });
 
-
 return {
     SnippetOptionWidget: SnippetOptionWidget,
     snippetOptionRegistry: registry,
