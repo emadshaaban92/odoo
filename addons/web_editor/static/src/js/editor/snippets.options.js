@@ -1229,6 +1229,7 @@ const InputUserValueWidget = UnitUserValueWidget.extend({
     async setValue() {
         await this._super(...arguments);
         this.inputEl.value = this._value;
+        this._oldValue = this._value;
     },
 
     //--------------------------------------------------------------------------
@@ -1255,22 +1256,36 @@ const InputUserValueWidget = UnitUserValueWidget.extend({
         this._onUserValuePreview(ev);
     },
     /**
-     * TODO remove in master
+     * @private
+     * @param {Event} ev
      */
-    _onInputBlur: function (ev) {},
+    _onInputBlur: function (ev) {
+        if (this.notifyValueChangeOnBlur && this._oldValue !== this._value) {
+            // In case the input value has been modified with key up/down, the
+            // change event is never triggered, so if the element doesn't
+            // trigger a preview, we have to notify that the value changes now.
+            this._onUserValueChange(ev);
+            this.notifyValueChangeOnBlur = false;
+        }
+    },
     /**
      * @private
      * @param {Event} ev
      */
     _onInputKeydown: function (ev) {
+        const params = this._methodsParams;
+        if (!params.unit && !params.step) {
+            return;
+        }
         switch (ev.which) {
+            case $.ui.keyCode.ENTER:
+                if (this._oldValue !== this._value) {
+                    this._onUserValueChange(ev);
+                }
+                break;
             case $.ui.keyCode.UP:
             case $.ui.keyCode.DOWN: {
                 const input = ev.currentTarget;
-                const params = this._methodsParams;
-                if (!params.unit && !params.step) {
-                    break;
-                }
                 let value = parseFloat(input.value || input.placeholder);
                 if (isNaN(value)) {
                     value = 0.0;
@@ -1282,6 +1297,7 @@ const InputUserValueWidget = UnitUserValueWidget.extend({
                 value += (ev.which === $.ui.keyCode.UP ? step : -step);
                 input.value = this._floatToStr(value);
                 $(input).trigger('input');
+                this.notifyValueChangeOnBlur = true;
                 break;
             }
         }
