@@ -185,6 +185,15 @@ odoo.define('website.s_website_form', function (require) {
                 this._disabledStates[inputEl] = inputEl.disabled;
             }
 
+            // Add a tooltip for the input fields with a file type, displaying
+            // the number of files that can be uploaded and their size limit.
+            this.$target[0].querySelectorAll('input[type=file]').forEach(input => {
+                const maxFilesNumber = input.dataset.maxFilesNumber;
+                const maxFileSize = input.dataset.maxFileSize;
+                const title = _.str.sprintf(_t("You can choose maximum %s file(s) and the file(s) size should not exceed %s MB."), maxFilesNumber, maxFileSize);
+                input.setAttribute('title', title);
+            });
+
             return this._super(...arguments).then(() => this.__startResolve());
         },
 
@@ -261,8 +270,28 @@ odoo.define('website.s_website_form', function (require) {
 
             // Prepare form inputs
             this.form_fields = this.$target.serializeArray();
+
+            let tooManyFiles = false;
+            let fileTooBig = false;
             $.each(this.$target.find('input[type=file]:not([disabled])'), (outer_index, input) => {
+                // Check if the number of files uploaded is bigger than the
+                // number allowed.
+                const maxFilesNumber = input.dataset.maxFilesNumber;
+                if (input.files.length > maxFilesNumber) {
+                    tooManyFiles = true;
+                    self.update_status('error', _.str.sprintf(_t("You uploaded too many files. (Maximum %s files)"), maxFilesNumber));
+                    return false;
+                }
+
+                const maxFileSize = input.dataset.maxFileSize; // in megabytes.
                 $.each($(input).prop('files'), function (index, file) {
+                    // Check if the file size is bigger than the size allowed.
+                    if (file.size / 1000000 > maxFileSize) {
+                        fileTooBig = true;
+                        self.update_status('error', _.str.sprintf(_t("The file %s is too big. (Maximum %s MB)"), file.name, maxFileSize));
+                        return false;
+                    }
+
                     // Index field name as ajax won't accept arrays of files
                     // when aggregating multiple files into a single field value
                     self.form_fields.push({
@@ -271,6 +300,11 @@ odoo.define('website.s_website_form', function (require) {
                     });
                 });
             });
+
+            // If too many files were uploaded or if a file was too big.
+            if (tooManyFiles || fileTooBig) {
+                return false;
+            }
 
             // Serialize form inputs into a single object
             // Aggregate multiple values into arrays
