@@ -524,7 +524,7 @@ Link.getOrCreateLink = ({ containerNode, startNode } = {})  => {
             return { link: startNode, needLabel: false };
         } else {
             $(startNode).wrap('<a href="#"/>');
-            return { link: startNode.parentElement, needLabel: false };
+            return { link: startNode.parentElement, needLabel: false, linkCreated: true };
         }
     }
 
@@ -537,6 +537,7 @@ Link.getOrCreateLink = ({ containerNode, startNode } = {})  => {
         return {};
     }
     const isContained = containerNode.contains(range.startContainer) && containerNode.contains(range.endContainer);
+    let linkCreated = false;
     if (link && (!$link.has(range.startContainer).length || !$link.has(range.endContainer).length)) {
         // Expand the current link to include the whole selection.
         let before = link.previousSibling;
@@ -551,6 +552,7 @@ Link.getOrCreateLink = ({ containerNode, startNode } = {})  => {
         }
     } else if (!link && isContained) {
         link = document.createElement('a');
+        linkCreated = true;
         if (range.collapsed) {
             range.insertNode(link);
             needLabel = true;
@@ -559,7 +561,7 @@ Link.getOrCreateLink = ({ containerNode, startNode } = {})  => {
             range.insertNode(link);
         }
     }
-    return { link, needLabel };
+    return { link, needLabel, linkCreated };
 };
 
 return Link;
