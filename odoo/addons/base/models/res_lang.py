@@ -254,6 +254,24 @@ class Lang(models.Model):
         return self._lang_get(code).url_code
 
     @api.model
+    def _get_enabled_lang_code(self):
+        """ Get the list of code enabled (aka installed and default) """
+        langs = self._get_available_lang()
+        return [lang[0] for lang in langs]
+
+    @api.model
+    @tools.ormcache('self.iso_code')
+    def _get_available_lang(self):
+        """
+        Return the installed languages and the default one (aka iso_code is only 2 letters)
+        as a list of (code, name) sorted by the active state and the name (default order of model)
+        """
+        langs = self.with_context(active_test=False).search([])
+        lang_4iso_desactivated = langs.filtered(lambda lang: not lang.active and len(lang.iso_code) > 2)
+        langs_enabled = langs - lang_4iso_desactivated
+        return list(zip(langs_enabled.mapped('code'), langs_enabled.mapped('display_name')))
+
+    @api.model
     @tools.ormcache()
     def get_installed(self):
         """ Return the installed languages as a list of (code, name) sorted by name. """
@@ -348,6 +366,16 @@ class Lang(models.Model):
                 'next': {'type': 'ir.actions.act_window_close'},
             }
         }
+
+    def name_get(self):
+        """ Add an icon next to the langs installed if the context key 'lang_installed' is present """
+        res = []
+        for lang in self:
+            lang_name = lang.name
+            if lang.active and self.env.context.get('lang_installed'):
+                lang_name = _("%s 💬") % lang_name
+            res.append((lang.id, lang_name))
+        return res
 
 def split(l, counts):
     """
