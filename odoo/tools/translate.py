@@ -13,6 +13,7 @@ import re
 import tarfile
 import tempfile
 import threading
+import json
 from collections import defaultdict, namedtuple
 from datetime import datetime
 from os.path import join
@@ -1086,6 +1087,20 @@ class TranslationModuleReader:
         finally:
             src_file.close()
 
+    def _extract_spreadsheet_terms(self, fname, path, root):
+        module, fabsolutepath, _, display_path = self._verified_module_filepaths(fname, path, root)
+        if not module:
+            return
+        print("OK")
+        with open(fabsolutepath) as file:
+            data = json.load(file)
+            for sheet in data["sheets"]:
+                for xc, cell in sheet["cells"].items():
+                    if "ODOO.TRANSLATE" in cell["content"]:
+                        self._push_translation(module, "code", display_path, 1,
+                                        encode(cell["content"]))
+
+
     def _export_translatable_resources(self):
         """ Export translations for static terms
         
@@ -1109,6 +1124,10 @@ class TranslationModuleReader:
                 for fname in fnmatch.filter(files, '*.py'):
                     self._babel_extract_terms(fname, path, root,
                                               extract_keywords={'_': None, '_lt': None})
+                if fnmatch.fnmatch(root, '*/data/*'):
+                    for fname in fnmatch.filter(files, "*.json"):
+                        print(fname)
+                        self._extract_spreadsheet_terms(fname, path, root)
                 if fnmatch.fnmatch(root, '*/static/src*'):
                     # Javascript source files
                     for fname in fnmatch.filter(files, '*.js'):
