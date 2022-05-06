@@ -193,8 +193,9 @@ class Lead(models.Model):
         ('incorrect', 'Incorrect')], string='Email Quality', compute="_compute_email_state", store=True)
     website = fields.Char('Website', help="Website of the contact", compute="_compute_website", readonly=False, store=True)
     lang_id = fields.Many2one(
-        'res.lang', string='Language',
-        compute='_compute_lang_id', readonly=False, store=True)
+        'res.lang', string="Language",
+        compute='_compute_lang_id', domain=lambda self: [('code', 'in', self.env['res.lang']._get_enabled_lang_code())],
+        readonly=False, store=True)
     lang_code = fields.Char(related='lang_id.code')
     # Address fields
     street = fields.Char('Street', compute='_compute_partner_address_values', readonly=False, store=True)
@@ -416,7 +417,7 @@ class Lead(models.Model):
         else:
             lang_id_by_code = {}
         for lead in self.filtered('partner_id'):
-            lead.lang_id = lang_id_by_code.get(lead.partner_id.lang, False)
+            lead.lang_id = lang_id_by_code.get(lead.partner_id.lang, lead.lang_id)
 
     @api.depends('partner_id')
     def _compute_partner_address_values(self):
@@ -1763,7 +1764,7 @@ class Lead(models.Model):
             'is_company': is_company,
             'type': 'contact'
         }
-        if self.lang_id:
+        if self.lang_id.active:
             res['lang'] = self.lang_id.code
         return res
 

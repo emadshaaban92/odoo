@@ -47,7 +47,8 @@
                             <field name="chat_room_id" required="0"/>
                             <field name="room_participant_count" readonly="1"/>
                             <field name="room_max_capacity" widget="radio" options="{'horizontal': true}"/>
-                            <field name="room_lang_id" options="{'no_create': True}"/>
+                            <field name="room_lang_id" options="{'no_create': True}"
+                                context="{'active_test': False, 'lang_installed': True}"/>
                         </group>
                     </group>
                     <notebook>

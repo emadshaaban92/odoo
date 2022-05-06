@@ -112,8 +112,9 @@
                                         'default_user_id': user_id,
                                         'default_team_id': team_id,
                                         'default_website': website,
-                                        'default_lang': lang_code,
-                                        'show_vat': True
+                                        'show_vat': True,
+                                        'active_model': 'crm.lead',
+                                        'active_id': active_id,
                                     }" attrs="{'invisible': [('is_partner_visible', '=', False)]}"/>
                                 <field name="partner_name"/>
                                 <label for="street" string="Address"/>
@@ -127,7 +128,8 @@
                                 </div>
                                 <field name="website" widget="url" placeholder="e.g. https://www.odoo.com"/>
                                 <field name="lang_code" invisible="1"/>
-                                <field name="lang_id" options="{'no_quick_create': True, 'no_create_edit': True, 'no_open': True}"/>
+                                <field name="lang_id" options="{'no_quick_create': True, 'no_create_edit': True, 'no_open': True}"
+                                    context="{'active_test': False, 'lang_installed': True}"/>
                             </group>
 
                             <group name="opportunity_partner" attrs="{'invisible': [('type', '=', 'lead')]}">
@@ -152,8 +154,9 @@
                                         'default_user_id': user_id,
                                         'default_team_id': team_id,
                                         'default_website': website,
-                                        'default_lang': lang_code,
                                         'show_vat': True,
+                                        'active_model': 'crm.lead',
+                                        'active_id': active_id,
                                     }"
                                 />
                                 <field name="is_blacklisted" invisible="1"/>
@@ -295,7 +298,8 @@
                                             <field name="country_id" placeholder="Country" class="o_address_country" options='{"no_open": True, "no_create": True}'/>
                                         </div>
                                         <field name="website" widget="url" placeholder="e.g. https://www.odoo.com"/>
-                                        <field name="lang_id" options="{'no_quick_create': True, 'no_create_edit': True, 'no_open': True}"/>
+                                        <field name="lang_id" options="{'no_quick_create': True, 'no_create_edit': True, 'no_open': True}"
+                                            context="{'active_test': False, 'lang_installed': True}"/>
                                     </group>
                                     <group class="mt48">
                                         <label for="contact_name_page_lead"/>
