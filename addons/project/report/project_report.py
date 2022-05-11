@@ -34,7 +34,7 @@ class ReportProjectTaskUser(models.Model):
         ('0', 'Low'),
         ('1', 'High')
         ], readonly=True, string="Priority")
-    state = fields.Selection([
+    kanban_state = fields.Selection([
             ('normal', 'In Progress'),
             ('blocked', 'Blocked'),
             ('done', 'Ready for Next Stage')
@@ -56,8 +56,14 @@ class ReportProjectTaskUser(models.Model):
         column1='task_id', column2='stage_id',
         string="Personal Stage", readonly=True)
     milestone_id = fields.Many2one('project.milestone', readonly=True)
-    milestone_reached = fields.Boolean('Is Milestone Reached', readonly=True)
-    milestone_deadline = fields.Date('Milestone Deadline', readonly=True)
+    message_is_follower = fields.Boolean(related='task_id.message_is_follower')
+    is_blocked = fields.Boolean('Is Blocked', readonly=True)
+    dependent_ids = fields.Many2many('project.task', relation='task_dependencies_rel', column1='depends_on_id',
+        column2='task_id', string='Block', readonly=True,
+        domain="[('allow_task_dependencies', '=', True), ('id', '!=', id)]")
+    description = fields.Text(readonly=True)
+    my_activity_user_id = fields.Many2one('res.users', readonly=True)
+    my_activity_date_deadline = fields.Date(readonly=True)
 
     def _compute_rating_last_text(self):
         for task_analysis in self:
@@ -72,31 +78,36 @@ class ReportProjectTaskUser(models.Model):
                 t.id as id,
                 t.id as task_id,
                 t.active,
-                t.create_date as create_date,
-                t.date_assign as date_assign,
-                t.date_end as date_end,
-                t.date_last_stage_update as date_last_stage_update,
-                t.date_deadline as date_deadline,
+                t.create_date,
+                t.date_assign,
+                t.date_end,
+                t.date_last_stage_update,
+                t.date_deadline,
                 t.project_id,
                 t.priority,
                 t.name as name,
                 t.company_id,
                 t.partner_id,
-                t.parent_id as parent_id,
-                t.ancestor_id as ancestor_id,
-                t.stage_id as stage_id,
-                t.is_closed as is_closed,
-                t.kanban_state as state,
+                t.parent_id,
+                t.ancestor_id,
+                t.stage_id,
+                t.is_closed,
+                t.kanban_state,
                 t.milestone_id,
-                pm.is_reached as milestone_reached,
-                pm.deadline as milestone_deadline,
+                CASE WHEN pm.id IS NOT NULL THEN true ELSE false END as has_late_and_unreached_milestone,
+                t.is_blocked,
+                t.description,
                 NULLIF(t.rating_last_value, 0) as rating_last_value,
                 AVG(rt.rating) as rating_avg,
-                t.working_days_close as working_days_close,
-                t.working_days_open  as working_days_open,
-                t.working_hours_open as working_hours_open,
-                t.working_hours_close as working_hours_close,
-                (extract('epoch' from (t.date_deadline-(now() at time zone 'UTC'))))/(3600*24)  as delay_endings_days
+                t.working_days_close,
+                t.working_days_open,
+                t.working_hours_open,
+                t.working_hours_close,
+                (extract('epoch' from (t.date_deadline-(now() at time zone 'UTC'))))/(3600*24) as delay_endings_days,
+                CASE WHEN t.project_id IS NOT NULL OR t.parent_id IS NOT NULL THEN false ELSE true END as is_private,
+                COUNT(td.task_id) as dependent_ids_count,
+                ma.user_id as my_activity_user_id,
+                MIN(ma.date_deadline) as my_activity_date_deadline
         """
 
     def _group_by(self):
@@ -124,18 +135,24 @@ class ReportProjectTaskUser(models.Model):
                 t.working_hours_open,
                 t.working_hours_close,
                 t.milestone_id,
-                pm.is_reached,
-                pm.deadline
+                pm.id,
+                td.depends_on_id,
+                ma.user_id
         """
 
     def _from(self):
         return f"""
                 project_task t
                     LEFT JOIN rating_rating rt ON rt.res_id = t.id
-                        AND rt.res_model = 'project.task'
-                        AND rt.consumed = True
-                        AND rt.rating >= {RATING_LIMIT_MIN}
+                          AND rt.res_model = 'project.task'
+                          AND rt.consumed = True
+                          AND rt.rating >= {RATING_LIMIT_MIN}
                     LEFT JOIN project_milestone pm ON pm.id = t.milestone_id
+                          AND pm.is_reached = False
+                          AND pm.deadline <= CAST(now() AS DATE)
+                    LEFT JOIN task_dependencies_rel td ON td.depends_on_id = t.id
+                    LEFT JOIN mail_activity ma ON ma.res_id = t.id
+                          AND ma.res_model = 'project.task'
         """
 
     def _where(self):
