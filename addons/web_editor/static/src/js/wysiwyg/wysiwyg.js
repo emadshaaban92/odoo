@@ -294,7 +294,7 @@ const Wysiwyg = Widget.extend({
             }
         );
 
-        this.$editable.on('click', '.o_image, .media_iframe_video', e => e.preventDefault());
+        this.$editable.on('click.odoo-website-editor', '*',  e => e.preventDefault());
         this.showTooltip = true;
         this.$editable.on('dblclick', mediaSelector, function () {
             if (this.isContentEditable || (this.parentElement && this.parentElement.isContentEditable)) {
@@ -710,6 +710,7 @@ const Wysiwyg = Widget.extend({
         if (this.ptp) {
             this.ptp.stop();
         }
+        this.$editable.off('.odoo-website-editor');
         document.removeEventListener("mousemove", this._signalOnline, true);
         document.removeEventListener("keydown", this._signalOnline, true);
         document.removeEventListener("keyup", this._signalOnline, true);
