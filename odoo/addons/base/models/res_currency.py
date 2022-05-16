@@ -97,6 +97,15 @@ class Currency(models.Model):
         if group_user and group_mc:
             group_user.sudo()._remove_group(group_mc.sudo())
 
+    @api.constrains('active')
+    def _check_company_currency_stays_active(self):
+        if self._context.get('install_mode'):
+            return
+
+        currencies = self.filtered(lambda c: not c.active)
+        if self.env['res.company'].search([('currency_id', 'in', currencies.ids)]):
+            raise UserError(_("This currency is set on a company and therefore must be active."))
+
     def _get_rates(self, company, date):
         if not self.ids:
             return {}
