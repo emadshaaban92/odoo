@@ -36,7 +36,7 @@ odoo.define('website.s_website_form', function (require) {
         },
     });
 
-    publicWidget.registry.s_website_form = publicWidget.Widget.extend({
+    const WebsiteForm = publicWidget.Widget.extend({
         selector: '.s_website_form form, form.s_website_form', // !compatibility
         events: {
             'click .s_website_form_send, .o_website_form_send': 'send', // !compatibility
@@ -639,4 +639,8 @@ odoo.define('website.s_website_form', function (require) {
             this._updateFieldsVisibility();
         },
     });
+
+    publicWidget.registry.s_website_form = WebsiteForm; 
+
+    return WebsiteForm;
 });

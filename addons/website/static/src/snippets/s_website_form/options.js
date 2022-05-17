@@ -284,7 +284,7 @@ const FieldEditor = FormEditor.extend({
     },
 });
 
-options.registry.WebsiteFormEditor = FormEditor.extend({
+const WebsiteFormEditor = FormEditor.extend({
     events: _.extend({}, options.Class.prototype.events || {}, {
         'click .toggle-edit-message': '_onToggleEndMessageClick',
     }),
@@ -792,6 +792,8 @@ options.registry.WebsiteFormEditor = FormEditor.extend({
         });
     },
 });
+
+options.registry.WebsiteFormEditor = WebsiteFormEditor;
 
 const authorizedFieldsCache = {};
 
@@ -1519,4 +1521,7 @@ options.registry.MobileVisibility.include({
             && !this.$target.hasClass('s_website_form_field_hidden');
     },
 });
+
+return WebsiteFormEditor;
+
 });
