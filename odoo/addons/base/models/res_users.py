@@ -194,7 +194,7 @@ class Groups(models.Model):
             groups = super(Groups, self).search(domain)
             groups = groups.sorted('full_name', reverse=order.endswith('DESC'))
             groups = groups[offset:offset+limit] if limit else groups[offset:]
-            return groups.ids
+            return groups._as_query(order)
         return super(Groups, self)._search(domain, offset=offset, limit=limit, order=order, access_rights_uid=access_rights_uid)
 
     def copy(self, default=None):
