@@ -16,7 +16,7 @@ class MassMailController(http.Controller):
         if not (mailing_id and res_id and email and token):
             return False
         mailing = request.env['mailing.mailing'].sudo().browse(mailing_id)
-        return consteq(mailing._unsubscribe_token(res_id, email), token)
+        return consteq(mailing._generate_mailing_recipient_hash(res_id, email), token)
 
     def _log_blacklist_action(self, blacklist_entry, mailing_id, description):
         mailing = request.env['mailing.mailing'].sudo().browse(mailing_id)
@@ -116,7 +116,8 @@ class MassMailController(http.Controller):
     @http.route('/mail/track/<int:mail_id>/<string:token>/blank.gif', type='http', auth='public')
     def track_mail_open(self, mail_id, token, **post):
         """ Email tracking. """
-        if not consteq(token, tools.hmac(request.env(su=True), 'mass_mailing-mail_mail-open', mail_id)):
+        mail = request.env['mail.mail'].sudo().browse(mail_id).exists()
+        if not mail or not consteq(token, mail._generate_mail_recipient_hash()):
             raise BadRequest()
 
         request.env['mailing.trace'].sudo().set_opened(domain=[('mail_mail_id_int', 'in', [mail_id])])
@@ -149,7 +150,7 @@ class MassMailController(http.Controller):
         if not token or not user_id:
             raise werkzeug.exceptions.NotFound()
         user_id = int(user_id)
-        correct_token = consteq(token, request.env['mailing.mailing']._get_unsubscribe_token(user_id))
+        correct_token = consteq(token, request.env['mailing.mailing']._generate_mailing_report_hash(user_id))
         user = request.env['res.users'].sudo().browse(user_id)
         if correct_token and user.has_group('mass_mailing.group_mass_mailing_user'):
             request.env['ir.config_parameter'].sudo().set_param('mass_mailing.mass_mailing_reports', False)
