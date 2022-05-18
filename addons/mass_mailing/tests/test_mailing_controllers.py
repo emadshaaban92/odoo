@@ -91,4 +91,4 @@ class TestMailingControllers(MassMailCommon, HttpCase):
             'mail/track/%s/fake_token/blank.gif' % mail.id
         )
         response = self.url_open(track_url)
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 401)
