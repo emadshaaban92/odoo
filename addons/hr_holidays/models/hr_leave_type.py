@@ -557,7 +557,7 @@ class HolidaysType(models.Model):
         to the method.
         """
         employee_id = self._get_contextual_employee_id()
-        post_sort = (not order and employee_id)
+        post_sort = (order == self._order and employee_id)
         leave_ids = super(HolidaysType, self)._search(domain, offset=offset, limit=(None if post_sort else limit), order=order, access_rights_uid=access_rights_uid)
         if not post_sort:
             return leave_ids

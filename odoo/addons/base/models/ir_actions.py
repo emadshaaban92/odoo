@@ -746,10 +746,10 @@ class IrServerObjectLines(models.Model):
                 try:
                     value = int(value)
                     if not self.env[line.col1.relation].browse(value).exists():
-                        record = list(self.env[line.col1.relation]._search([], limit=1))
+                        record = list(self.env[line.col1.relation]._search([], limit=1, order=self._order))
                         value = record[0] if record else 0
                 except ValueError:
-                    record = list(self.env[line.col1.relation]._search([], limit=1))
+                    record = list(self.env[line.col1.relation]._search([], limit=1, order=self._order))
                     value = record[0] if record else 0
                 line.resource_ref = '%s,%s' % (line.col1.relation, value)
             else:
