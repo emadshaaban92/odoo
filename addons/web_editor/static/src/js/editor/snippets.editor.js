@@ -1956,18 +1956,22 @@ var SnippetsMenu = Widget.extend({
                 }
 
                 // First disable all editors...
+                let hadEditorsToKeep = false;
                 for (let i = this.snippetEditors.length; i--;) {
                     const editor = this.snippetEditors[i];
                     editor.toggleOverlay(false, previewMode);
                     if (!previewMode) {
                         const wasShown = !!await editor.toggleOptions(false);
-                        if (wasShown) {
-                            this._updateRightPanelContent({
-                                content: [],
-                                tab: this.tabs.BLOCKS,
-                            });
+                        if (wasShown && (editorToEnable ? editor === editorToEnable : editor.isSticky())) {
+                            hadEditorsToKeep = true;
                         }
                     }
+                }
+                if (hadEditorsToKeep) {
+                    this._updateRightPanelContent({
+                        content: [],
+                        tab: this.tabs.BLOCKS,
+                    });
                 }
                 // ... then enable the right editor or look if some have been
                 // enabled previously by a click
