@@ -81,18 +81,18 @@ class Country(models.Model):
             'The code of the country must be unique !')
     ]
 
-    def _name_search(self, name='', args=None, operator='ilike', limit=100, name_get_uid=None):
+    def _name_search(self, name='', args=None, operator='ilike', limit=None, order=None, name_get_uid=None):
         if args is None:
             args = []
 
         ids = []
         if len(name) == 2:
-            ids = list(self._search([('code', 'ilike', name)] + args, limit=limit, order=self._order))
+            ids = list(self._search([('code', 'ilike', name)] + args, limit=limit, order=order))
 
         search_domain = [('name', operator, name)]
         if ids:
             search_domain.append(('id', 'not in', ids))
-        ids += list(self._search(search_domain + args, limit=limit, order=self._order))
+        ids += list(self._search(search_domain + args, limit=limit, order=order))
 
         return ids
 
@@ -168,7 +168,7 @@ class CountryState(models.Model):
     ]
 
     @api.model
-    def _name_search(self, name, args=None, operator='ilike', limit=100, name_get_uid=None):
+    def _name_search(self, name, args=None, operator='ilike', limit=None, order=None, name_get_uid=None):
         args = args or []
         if self.env.context.get('country_id'):
             args = expression.AND([args, [('country_id', '=', self.env.context.get('country_id'))]])
@@ -180,11 +180,11 @@ class CountryState(models.Model):
             first_domain = [('code', '=ilike', name)]
             domain = [('name', operator, name)]
 
-        first_state_ids = self._search(expression.AND([first_domain, args]), limit=limit, order=self._order, access_rights_uid=name_get_uid) if first_domain else []
+        first_state_ids = self._search(expression.AND([first_domain, args]), limit=limit, order=order, access_rights_uid=name_get_uid) if first_domain else []
         return list(first_state_ids) + [
             state_id
             for state_id in self._search(expression.AND([domain, args]),
-                                         limit=limit, order=self._order, access_rights_uid=name_get_uid)
+                                         limit=limit, order=order, access_rights_uid=name_get_uid)
             if state_id not in first_state_ids
         ]
 

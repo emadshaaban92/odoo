@@ -477,11 +477,11 @@ class ProductTemplate(models.Model):
                 for template in self]
 
     @api.model
-    def _name_search(self, name, args=None, operator='ilike', limit=100, name_get_uid=None):
+    def _name_search(self, name, args=None, operator='ilike', limit=None, order=None, name_get_uid=None):
         # Only use the product.product heuristics if there is a search term and the domain
         # does not specify a match on `product.template` IDs.
         if not name or any(term[0] == 'id' for term in (args or [])):
-            return super(ProductTemplate, self)._name_search(name=name, args=args, operator=operator, limit=limit, name_get_uid=name_get_uid)
+            return super(ProductTemplate, self)._name_search(name=name, args=args, operator=operator, limit=limit, order=order, name_get_uid=name_get_uid)
 
         Product = self.env['product.product']
         templates = self.browse([])
@@ -519,12 +519,13 @@ class ProductTemplate(models.Model):
                     args=domain,
                     operator=operator,
                     limit=limit,
+                    order=order,
                     name_get_uid=name_get_uid))
 
         # re-apply product.template order + name_get
         return super(ProductTemplate, self)._name_search(
             '', args=[('id', 'in', list(searched_ids))],
-            operator='ilike', limit=limit, name_get_uid=name_get_uid)
+            operator='ilike', limit=limit, order=order, name_get_uid=name_get_uid)
 
     def action_open_label_layout(self):
         action = self.env['ir.actions.act_window']._for_xml_id('product.action_open_label_layout')
