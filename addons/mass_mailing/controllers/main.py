@@ -67,55 +67,67 @@ class MassMailController(http.Controller):
         # Unsubscribe directly + Let the user choose their subscriptions
         mailing.contact_list_ids._update_subscription_from_email(email, opt_out=True)
 
-        contacts = request.env['mailing.contact'].sudo().search([('email_normalized', '=', tools.email_normalize(email))])
-        subscription_list_ids = contacts.mapped('subscription_list_ids')
-        # In many user are found : if user is opt_out on the list with contact_id 1 but not with contact_id 2,
-        # assume that the user is not opt_out on both
-        # TODO DBE Fixme : Optimise the following to get real opt_out and opt_in
-        opt_out_list_ids = subscription_list_ids.filtered(lambda rel: rel.opt_out).mapped('list_id')
-        opt_in_list_ids = subscription_list_ids.filtered(lambda rel: not rel.opt_out).mapped('list_id')
-        opt_out_list_ids = set([list.id for list in opt_out_list_ids if list not in opt_in_list_ids])
+        # compute name of unsubscribed list: hide non public lists
+        if all(not mlist.is_public for mlist in mailing.contact_list_ids):
+            lists_unsubscribed_name = _('You are no longer part of our mailing list(s).')
+        elif len(mailing.contact_list_ids) == 1:
+            lists_unsubscribed_name = _('You are no longer part of the %(mailing_name)s mailing list.',
+                                        mailing_name=mailing.contact_list_ids.name)
+        else:
+            lists_unsubscribed_name = _(
+                'You are no longer part of the %(mailing_names)s mailing list.',
+                ', '.join(mlist.name for mlist in mailing.contact_list_ids if mlist.is_public)
+            )
 
-        unique_list_ids = set([list.list_id.id for list in subscription_list_ids])
-        list_ids = request.env['mailing.list'].sudo().browse(unique_list_ids)
-        unsubscribed_list = ', '.join(str(list.name) for list in mailing.contact_list_ids if list.is_public)
-
-        render_values = self._prepare_mailing_subscription_values(mailing, document_id, email, hash_token)
         return request.render(
             'mass_mailing.page_mailing_unsubscribe',
             dict(
-                **render_values,
-                contacts=contacts,
-                list_ids=list_ids,
-                opt_out_list_ids=opt_out_list_ids,
-                unsubscribed_list=unsubscribed_list,
+                self._prepare_mailing_subscription_values(
+                    mailing, document_id, email, hash_token
+                ),
+                unsubscribed_name=lists_unsubscribed_name,
             )
         )
 
     def _mailing_unsubscribe_from_document(self, mailing, document_id, email, hash_token):
-        opt_in_lists = request.env['mailing.contact.subscription'].sudo().search([
-            ('contact_id.email_normalized', '=', email),
-            ('opt_out', '=', False)
-        ]).mapped('list_id')
         blacklist_rec = request.env['mail.blacklist'].sudo()._add(email)
         self._log_blacklist_action(
             blacklist_rec, mailing.id,
             _("""Requested blacklisting via unsubscribe link."""))
 
-        render_values = self._prepare_mailing_subscription_values(mailing, document_id, email, hash_token)
         return request.render(
-            'mass_mailing.page_mailing_unsubscribe_done',
+            'mass_mailing.page_mailing_unsubscribe',
             dict(
-                **render_values,
-                list_ids=opt_in_lists,
+                self._prepare_mailing_subscription_values(
+                    mailing, document_id, email, hash_token
+                ),
+                unsubscribed_name=_('You are no longer part of our services and will not be contacted again.'),
             )
         )
 
     def _prepare_mailing_subscription_values(self, mailing, document_id, email, hash_token):
-        """ Prepare common values used in various subscription management or 
+        """ Prepare common values used in various subscription management or
         blacklist flows done in portal. """
         bl_record = self._fetch_blacklist_record(email)
         email_normalized = tools.email_normalize(email)
+
+        # as there may be several contacts / email -> consider any opt-in overrides
+        # opt-out
+        contacts = self._fetch_contacts(email)
+        lists_optin = contacts.subscription_list_ids.filtered(
+            lambda sub: not sub.opt_out
+        ).list_id
+        lists_optout = contacts.subscription_list_ids.filtered(
+            lambda sub: sub.opt_out and sub.list_id not in lists_optin
+        ).list_id
+        lists_public = request.env['mailing.list'].sudo().search(
+            [('is_public', '=', True),
+             ('id', 'not in', (lists_optin + lists_optout).ids)
+            ],
+            limit=10,
+            order='create_date DESC, id DESC',
+        )
+
         return {
             # customer
             'document_id': document_id,
@@ -124,6 +136,9 @@ class MassMailController(http.Controller):
             'hash_token': hash_token,
             'mailing_id': mailing.id,
             'res_id': document_id,
+            # feedback
+            'feedback_enabled': True,
+            'feedback_readonly': False,
             # blacklist
             'blacklist_enabled': bool(
                 request.env['ir.config_parameter'].sudo().get_param(
@@ -133,6 +148,12 @@ class MassMailController(http.Controller):
             ),
             'blacklist_possible': bl_record is not False,
             'is_blacklisted': bl_record.active if bl_record else False,
+            # mailing lists
+            'contacts': contacts,
+            'lists_contacts': contacts.subscription_list_ids.list_id,
+            'lists_optin': lists_optin,
+            'lists_optout': lists_optout,
+            'lists_public': lists_public,
         }
 
     @http.route('/mailing/list/update', type='json', auth='public')
@@ -155,7 +176,7 @@ class MassMailController(http.Controller):
         # opt-in in either already member, either public (to avoid trying to opt-in
         # in private lists)
         lists_to_optin = lists_optin.filtered(
-            lambda mlist: mlist.is_public or mlist in contacts.lists_ids
+            lambda mlist: mlist.is_public or mlist in contacts.list_ids
         )
 
         if lists_to_optout:

@@ -43,11 +43,29 @@ publicWidget.registry.MailingPortalSubscriptionForm = publicWidget.Widget.extend
     },
 
     /**
-     * Set form elements as readonly, e.g. because blacklisted email take precedence
+     * Set form elements as hidden / displayed, as this form contains either an
+     * informational text when being blacklisted, either the complete form to
+     * manage their subscription.
+     * @private
+     */
+    _setBlacklisted: function (isBlacklisted) {
+        if (isBlacklisted) {
+            document.getElementById('o_mailing_subscription_form_blacklisted').classList.remove('d-none');
+            document.getElementById('o_mailing_subscription_form_manage').classList.add('d-none');
+        }
+        else {
+            document.getElementById('o_mailing_subscription_form_blacklisted').classList.add('d-none');
+            document.getElementById('o_mailing_subscription_form_manage').classList.remove('d-none');
+        }
+    },
+
+    /**
+     * Set form elements as readonly, e.g. when blacklisted email take precedence
+     * over subscription update.
      * @private
      */
     _setReadonly: function (isReadonly) {
-        const formInputNodes = document.querySelectorAll('#o_mailing_subscription_form form input');
+        const formInputNodes = document.querySelectorAll('#o_mailing_subscription_form_manage input');
         const formButtonNode = document.getElementById('button_form_send');
         if (isReadonly) {
             formInputNodes.forEach(node => {node.setAttribute('disabled', 'disabled')});

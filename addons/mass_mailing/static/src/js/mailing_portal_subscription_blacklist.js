@@ -1,6 +1,7 @@
 /** @odoo-module alias=mailing.PortalSubscriptionBlacklist **/
 
 import publicWidget from 'web.public.widget';
+import { _t } from 'web.core';
 
 
 publicWidget.registry.MailingPortalSubscriptionBlacklist = publicWidget.Widget.extend({
@@ -44,7 +45,7 @@ publicWidget.registry.MailingPortalSubscriptionBlacklist = publicWidget.Widget.e
             if (result === true) {
                 this.customerData.isBlacklisted = true;
             }
-            this._updateDisplay();
+            this._updateDisplay(result === true ? 'blacklist_add' : 'error');
             this.trigger_up(
                 'blacklist_add',
                 {'callKey': result === true ? 'blacklist_add' : result,
@@ -73,7 +74,7 @@ publicWidget.registry.MailingPortalSubscriptionBlacklist = publicWidget.Widget.e
             if (result === true) {
                 this.customerData.isBlacklisted = false;
             }
-            this._updateDisplay();
+            this._updateDisplay(result === true ? 'blacklist_remove' : 'error');
             this.trigger_up(
                 'blacklist_remove',
                 {'callKey': result === true ? 'blacklist_remove' : result,
@@ -84,12 +85,12 @@ publicWidget.registry.MailingPortalSubscriptionBlacklist = publicWidget.Widget.e
     },
 
     /*
-     * Display buttons according to current state. Removing from blacklist is
-     * always available when being blacklisted. Adding in blacklist is available
+     * Display buttons and info according to current state. Removing from blacklist
+     # is always available when being blacklisted. Adding in blacklist is available
      * when not being blacklisted, if the action is possible (valid email mainly)
      * and if the option is activated.
      */
-    _updateDisplay: function () {
+    _updateDisplay: function (infoKey) {
         const buttonAddNode = document.getElementById('button_blacklist_add');
         const buttonRemoveNode = document.getElementById('button_blacklist_remove');
         if (this.customerData.blacklistEnabled && this.customerData.blacklistPossible && !this.customerData.isBlacklisted) {
@@ -103,6 +104,36 @@ publicWidget.registry.MailingPortalSubscriptionBlacklist = publicWidget.Widget.e
         }
         else {
             buttonRemoveNode.classList.add('d-none');
+        }
+
+        // update state info
+        this._updateInfo(infoKey);
+    },
+
+    _updateInfo: function (infoKey) {
+        const blacklistInfo = document.getElementById('o_mailing_subscription_blacklist_info');
+        if (infoKey !== undefined) {
+            const textSpan = document.createElement('span');
+            const info = document.createElement('i');
+            if (infoKey === 'blacklist_remove') {            
+                textSpan.textContent = _t('Email removed from our blocklist.');
+                info.setAttribute('class', 'fa fa-check text-success');
+            }
+            else if (infoKey === 'blacklist_add') {
+                textSpan.textContent = _t('Email added to our blocklist.');
+                info.setAttribute('class', 'fa fa-check text-success');
+            }
+            else {
+                textSpan.textContent = _t('An error occured. Please retry later.');
+                info.setAttribute('class', 'fa fa-check text-danger');
+            }
+            info.appendChild(textSpan);
+            blacklistInfo.innerHTML = "";
+            blacklistInfo.appendChild(info);
+            blacklistInfo.setAttribute('class', '');
+        }
+        else {
+            blacklistInfo.setAttribute('class', 'd-none');
         }
     },
 });
