@@ -25,14 +25,14 @@ publicWidget.registry.MailingPortalSubscriptionForm = publicWidget.Widget.extend
         const formData = new FormData(document.querySelector('div#o_mailing_subscription_form form'));
         const mailingListIds = formData.getAll('mailing_list_ids').map(id_str => parseInt(id_str));
         return this._rpc({
-            route: '/mail/mailing/unsubscribe',
+            route: '/mailing/list/update',
             params: {
                 csrf_token: formData.get('csrf_token'),
                 document_id: this.customerData.documentId,
                 email: this.customerData.email,
                 hash_token: this.customerData.hashToken,
+                lists_optin_ids: mailingListIds,
                 mailing_id: this.customerData.mailingId,
-                opt_in_ids: mailingListIds,
             }
         }).then((result) => {
             this.trigger_up(

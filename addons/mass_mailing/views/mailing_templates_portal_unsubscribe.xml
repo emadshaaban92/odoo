@@ -43,7 +43,7 @@
                     </div>
 
                     <div id="o_mailing_subscription_form" t-if="contacts">
-                        <form action="/mail/mailing/unsubscribe" method="POST">
+                        <form action="/mailing/list/update" method="POST">
                             <h1 class="o_page_header">Mailing Subscriptions</h1>
                             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                             <p>Choose your mailing subscriptions</p>

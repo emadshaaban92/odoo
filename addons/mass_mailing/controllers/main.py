@@ -36,6 +36,13 @@ class MassMailController(http.Controller):
             [('email', '=', tools.email_normalize(email))]
         )
 
+    def _fetch_contacts(self, email):
+        if not email or not tools.email_normalize(email):
+            return False
+        return request.env['mailing.contact'].sudo().search(
+            [('email_normalized', '=', tools.email_normalize(email))]
+        )
+
     def _log_blacklist_action(self, blacklist_entry, mailing_id, description):
         mailing = request.env['mailing.mailing'].sudo().browse(mailing_id)
         model_display = mailing.mailing_model_id.display_name
@@ -58,7 +65,7 @@ class MassMailController(http.Controller):
 
     def _mailing_unsubscribe_from_list(self, mailing, document_id, email, hash_token):
         # Unsubscribe directly + Let the user choose their subscriptions
-        mailing.update_opt_out(email, mailing.contact_list_ids.ids, True)
+        mailing.contact_list_ids._update_subscription_from_email(email, opt_out=True)
 
         contacts = request.env['mailing.contact'].sudo().search([('email_normalized', '=', tools.email_normalize(email))])
         subscription_list_ids = contacts.mapped('subscription_list_ids')
@@ -128,21 +135,34 @@ class MassMailController(http.Controller):
             'is_blacklisted': bl_record.active if bl_record else False,
         }
 
-    @http.route('/mail/mailing/unsubscribe', type='json', auth='public')
+    @http.route('/mailing/list/update', type='json', auth='public')
     def mailing_update_list_subscription(self, mailing_id=None, document_id=None,
                                          email=None, hash_token=None,
-                                         opt_in_ids=None, opt_out_ids=None):
+                                         lists_optin_ids=None):
         try:
-            mailing_sudo = self._check_mailing_email_token(mailing_id, document_id, email, hash_token)
+            _mailing_sudo = self._check_mailing_email_token(mailing_id, document_id, email, hash_token)
         except BadRequest:
             return 'error'
         except (NotFound, Unauthorized):
             return 'unauthorized'
 
-        if opt_in_ids:
-            mailing_sudo.update_opt_out(email, opt_in_ids, False)
-        if opt_out_ids:
-            mailing_sudo.update_opt_out(email, opt_out_ids, True)
+        contacts = self._fetch_contacts(email)
+        lists_optin = request.env['mailing.list'].sudo().browse(lists_optin_ids or []).exists()
+        # opt-out all not chosen lists
+        lists_to_optout = contacts.subscription_list_ids.filtered(
+            lambda sub: not sub.opt_out and sub.list_id not in lists_optin
+        ).list_id
+        # opt-in in either already member, either public (to avoid trying to opt-in
+        # in private lists)
+        lists_to_optin = lists_optin.filtered(
+            lambda mlist: mlist.is_public or mlist in contacts.lists_ids
+        )
+
+        if lists_to_optout:
+            lists_to_optout._update_subscription_from_email(email, opt_out=True)
+        if lists_to_optin:
+            lists_to_optin._update_subscription_from_email(email, opt_out=False)
+
         return True
 
     @http.route('/mailing/feedback', type='json', auth='public')
