@@ -62,6 +62,21 @@ class MassMailController(http.Controller):
     # SUBSCRIPTION MANAGEMENT
     # ------------------------------------------------------------
 
+    @http.route('/mailing/my', type='http', website=True, auth='user')
+    def mailing_my(self):
+        _email, _hash_token = self._fetch_user_information(None, None)
+        if not _email:
+            raise Unauthorized()
+
+        render_values = self._prepare_mailing_subscription_values(
+            request.env['mailing.mailing'], False, _email, None
+        )
+        render_values.update(feedback_enabled=False)
+        return request.render(
+            'mass_mailing.page_mailing_unsubscribe',
+            render_values
+        )
+
     @http.route('/mailing/<int:mailing_id>/unsubscribe', type='http', website=True, auth='public')
     def mailing_unsubscribe(self, mailing_id, document_id=None, email=None, hash_token=None):
         _email, _hash_token = self._fetch_user_information(email, hash_token)
@@ -168,13 +183,13 @@ class MassMailController(http.Controller):
         }
 
     @http.route('/mail/mailing/<int:mailing_id>/unsubscribe', type='http', website=True, auth='public')
-    def _mailing_unsubscribe(self, mailing_id, document_id=None, email=None, hash_token=None, **post):
+    def _mailing_unsubscribe(self, mailing_id, res_id=None, email=None, token=None, **post):
         """ Backward compatible route, for mailings sent before saas~15.4 whose
         subscription links should work for a few weeks after migration. """
         params = werkzeug.urls.url_encode(
-            dict(**post, document_id=document_id, email=email, hash_token=hash_token)
+            dict(**post, document_id=res_id, email=email, hash_token=token)
         )
-        return request.redirect(f'/mailing/{mailing_id}?{params}')
+        return request.redirect(f'/mailing/{mailing_id}/unsubscribe?{params}')
 
     @http.route('/mailing/list/update', type='json', auth='public')
     def mailing_update_list_subscription(self, mailing_id=None, document_id=None,
