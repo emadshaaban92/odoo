@@ -49,6 +49,9 @@ class MassMailController(http.Controller):
             [('email_normalized', '=', tools.email_normalize(email))]
         )
 
+    def _fetch_subscription_optouts(self):
+        return request.env['mailing.subscription.optout'].sudo().search([])
+
     def _fetch_user_information(self, email, hash_token):
         if hash_token or request.env.user.share:
             return email, hash_token
@@ -138,6 +141,9 @@ class MassMailController(http.Controller):
         bl_record = self._fetch_blacklist_record(email)
         email_normalized = tools.email_normalize(email)
 
+        # fetch optout/blacklist reasons
+        opt_out_reasons = self._fetch_subscription_optouts()
+
         # as there may be several contacts / email -> consider any opt-in overrides
         # opt-out
         contacts = self._fetch_contacts(email)
@@ -166,6 +172,7 @@ class MassMailController(http.Controller):
             # feedback
             'feedback_enabled': True,
             'feedback_readonly': False,
+            'opt_out_reasons': opt_out_reasons,
             # blacklist
             'blacklist_enabled': bool(
                 request.env['ir.config_parameter'].sudo().get_param(
@@ -226,7 +233,7 @@ class MassMailController(http.Controller):
     @http.route('/mailing/feedback', type='json', auth='public')
     def mailing_send_feedback(self, mailing_id=None, document_id=None,
                               email=None, hash_token=None,
-                              last_action=None, feedback=None):
+                              last_action=None, opt_out_reason_id=False, feedback=None):
         _email, _hash_token = self._fetch_user_information(email, hash_token)
         try:
             _mailing_sudo = self._check_mailing_email_token(mailing_id, document_id, _email, _hash_token)
@@ -238,9 +245,15 @@ class MassMailController(http.Controller):
         message = Markup("<p>%s<br />%s</p>") % (_('Feedback from user'), feedback)
         if last_action == 'blacklist_add':
             bl_record = self._fetch_blacklist_record(email)
-            bl_record.message_post(body=message)
+            if opt_out_reason_id:
+                bl_record._track_set_log_message(message)
+                bl_record.opt_out_reason_id = opt_out_reason_id
+            else:
+                bl_record.message_post(body=message)
         elif last_action == 'subscription_updated':
             contacts = self._fetch_contacts(_email)
+            if contacts and opt_out_reason_id:
+                contacts.subscription_ids.opt_out_reason_id = opt_out_reason_id
             for contact in contacts:
                 contact.message_post(body=message)
         return True

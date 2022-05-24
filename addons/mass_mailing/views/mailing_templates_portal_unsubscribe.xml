@@ -37,7 +37,23 @@
                                     Please let us know why you updated your subscription.
                                 </p>
                                 <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
-                                <textarea class="form-control" name="feedback" cols="60" rows="3"></textarea>
+                                <fieldset>
+                                    <t t-foreach="opt_out_reasons"
+                                       t-as="opt_out_reason">
+                                        <div class="form-check">
+                                            <input class="form-check-input o_mailing_subscription_opt_out_reason"
+                                                   type="radio"
+                                                   name="opt_out_reason_id"
+                                                   t-att-id="'opt_out_reason_id' + str(opt_out_reason.id)"
+                                                   t-att-data-is-feedback="opt_out_reason.is_feedback"
+                                                   t-att-value="opt_out_reason.id"/>
+                                            <label class="form-check-label"
+                                                   t-att-for="'opt_out_reason_id' + str(opt_out_reason.id)"
+                                                   t-out="opt_out_reason.name"/>
+                                        </div>
+                                    </t>
+                                </fieldset>
+                                <textarea class="form-control d-none" name="feedback" cols="60" rows="3"></textarea>
                                 <div class="d-flex align-items-center mt-2">
                                     <button type="submit" id="button_feedback"
                                             class="btn btn-primary text-left mr-2">Send</button>

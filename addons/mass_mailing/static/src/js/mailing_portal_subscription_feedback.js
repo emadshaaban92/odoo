@@ -7,6 +7,7 @@ import { _t } from 'web.core';
 publicWidget.registry.MailingPortalSubscriptionFeedback = publicWidget.Widget.extend({
     events: {
         'click #button_feedback': '_onFeedbackClick',
+        'click .o_mailing_subscription_opt_out_reason': '_onOptOutReasonClick',
     },
 
     /**
@@ -14,7 +15,7 @@ publicWidget.registry.MailingPortalSubscriptionFeedback = publicWidget.Widget.ex
      */
     init: function (parent, options) {
         this.customerData = options.customerData;
-        this.allowFeedback = true;
+        this.allowFeedback = false;
         this.lastAction = false;
         return this._super.apply(this, arguments);
     },
@@ -34,6 +35,7 @@ publicWidget.registry.MailingPortalSubscriptionFeedback = publicWidget.Widget.ex
     _onFeedbackClick: function (event) {
         event.preventDefault();
         const formData = new FormData(document.querySelector('div#o_mailing_subscription_feedback form'));
+        const optoutReasonId = parseInt(formData.get('opt_out_reason_id'));
         return this._rpc({
             route: '/mailing/feedback',
             params: {
@@ -44,6 +46,7 @@ publicWidget.registry.MailingPortalSubscriptionFeedback = publicWidget.Widget.ex
                 hash_token: this.customerData.hashToken,
                 last_action: this.lastAction,
                 mailing_id: this.customerData.mailingId,
+                opt_out_reason_id: optoutReasonId,
             }
         }).then((result) => {
             if (result === true) {
@@ -62,12 +65,21 @@ publicWidget.registry.MailingPortalSubscriptionFeedback = publicWidget.Widget.ex
     },
 
     /*
+     * Toggle feedback textarea display based on reason configuration
+     */
+    _onOptOutReasonClick: function (event) {
+        this.allowFeedback = $(event.currentTarget).data('isFeedback');
+        this._updateDisplay()
+    },
+
+    /*
      * Update display after option changes, notably feedback textarea not being
      * always accessible.
      */
     _updateDisplay: function (cleanFeedback, setReadonly) {
         const feedbackArea = document.querySelector('div#o_mailing_subscription_feedback textarea');
         const feedbackButton = document.getElementById('button_feedback');
+        const feedbackReasons = document.querySelectorAll('div#o_mailing_subscription_feedback input');
         const feedbackInfo = document.getElementById('o_mailing_subscription_feedback_info');
         if (this.allowFeedback) {
             feedbackArea.classList.remove('d-none');
@@ -78,10 +90,12 @@ publicWidget.registry.MailingPortalSubscriptionFeedback = publicWidget.Widget.ex
         if (setReadonly) {
             feedbackArea.setAttribute('disabled', 'disabled');
             feedbackButton.setAttribute('disabled', 'disabled');
+            feedbackReasons.forEach(node => node.setAttribute('disabled', 'disabled'));
         }
         else {
             feedbackArea.removeAttribute('disabled');
             feedbackButton.removeAttribute('disabled');
+            feedbackReasons.forEach(node => node.removeAttribute('disabled'));
         }
         if (cleanFeedback) {
             feedbackArea.value = '';
