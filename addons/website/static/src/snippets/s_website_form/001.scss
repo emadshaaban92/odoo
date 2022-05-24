@@ -55,6 +55,35 @@
             display: none;
         }
     }
+
+    div.o_files_zone {
+        margin: 0px;
+
+        div.o_file_block {
+            margin-bottom: 2px;
+            padding: 0.25em 0.4em;
+            border: 1px solid $o-gray-400;
+            border-radius: 0.25rem;
+            font-size: 0.9em;
+            line-height: normal;
+
+            div.o_file_name {
+                display: inline-block;
+                width: 75%;
+                padding-top: 5px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            i.o_file_delete {
+                float: right;
+                margin-top: 3px;
+                padding: 2px 4px 3px 4px;
+                cursor: pointer;
+            }
+        }
+    }
 }
 
 body:not(.editor_enable) .s_website_form[data-vcss="001"] {

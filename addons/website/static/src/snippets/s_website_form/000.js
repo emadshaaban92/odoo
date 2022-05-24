@@ -40,6 +40,9 @@ odoo.define('website.s_website_form', function (require) {
         selector: '.s_website_form form, form.s_website_form', // !compatibility
         events: {
             'click .s_website_form_send, .o_website_form_send': 'send', // !compatibility
+            'change input[type=file]': '_onFileChange',
+            'click input.o_add_files_button': '_onAddFilesButtonClick',
+            'click .o_file_delete': '_onFileDelete',
         },
 
         /**
@@ -237,6 +240,16 @@ odoo.define('website.s_website_form', function (require) {
                 inputEl.disabled = !!this._disabledStates.get(inputEl);
             }
 
+            // Remove the fake upload file buttons and the file blocks and put
+            // the native buttons back.
+            this.$target[0].querySelectorAll('input.o_add_files_button').forEach(el => el.remove());
+            this.$target[0].querySelectorAll('input[type="file"]').forEach(button => {
+                button.classList.remove('d-none');
+                delete button.fileList;
+                delete button.fileNames;
+            });
+            this.$target[0].querySelectorAll('.o_files_zone').forEach(el => el.remove());
+
             // All 'hidden if' fields start with d-none
             this.$target[0].querySelectorAll('.s_website_form_field_hidden_if:not(.d-none)').forEach(el => el.classList.add('d-none'));
 
@@ -406,6 +419,8 @@ odoo.define('website.s_website_form', function (require) {
                     }
 
                     self.$target[0].reset();
+                    self.$target[0].querySelectorAll('.o_files_zone, .o_add_files_button').forEach(el => el.remove());
+                    self.$target[0].querySelectorAll('input[type="file"]').forEach(el => el.classList.remove('d-none'));
                     self.restoreBtnLoading();
                 }
             })
@@ -660,6 +675,61 @@ odoo.define('website.s_website_form', function (require) {
                 inputEl.disabled = !haveToBeVisible;
             }
         },
+        /**
+         * Creates a block containing the file name and a cross to delete the
+         * file.
+         *
+         * @private
+         * @param {File} file a file being uploaded
+         * @param {Element} fileZoneEl the zone where the file blocks are
+         *  displayed.
+         */
+        _createFileBlock(file, fileZoneEl) {
+            const fileblockEl = document.createElement('div');
+            fileblockEl.classList.add('o_file_block', 'col-4');
+
+            const fileNameEl = document.createElement('div');
+            fileNameEl.classList.add('o_file_name');
+            fileNameEl.textContent = file.name;
+            fileNameEl.title = file.name;
+
+            const fileDeleteEl = document.createElement('i');
+            fileDeleteEl.classList.add('fa', 'fa-times', 'o_file_delete', 'btn-outline-primary');
+
+            fileblockEl.appendChild(fileNameEl);
+            fileblockEl.appendChild(fileDeleteEl);
+            fileZoneEl.appendChild(fileblockEl);
+        },
+        /**
+         * Creates a button to replace the native file upload button in order
+         * to modify its text content to make its role more clear.
+         *
+         * @private
+         * @param {Element} realButtonEl the native file upload button
+         * @param {Element} fieldEl the parent element of the button
+         */
+        _createAddFilesButton(realButtonEl, fieldEl) {
+            let addFilesButtonEl = fieldEl.querySelector('input.o_add_files_button');
+            if (!addFilesButtonEl) {
+                // Hide the current input button.
+                realButtonEl.classList.add('d-none');
+
+                // Create the fake button.
+                addFilesButtonEl = document.createElement('input');
+                addFilesButtonEl.type = 'button';
+                addFilesButtonEl.classList.add('o_add_files_button');
+                addFilesButtonEl.value = realButtonEl.getAttribute('multiple') ? _t("Add Files") : _t("Replace File");
+                addFilesButtonEl.title = realButtonEl.title;
+
+                // Add it before the description if there is one.
+                const descriptionEl = fieldEl.querySelector('.s_website_form_field_description');
+                if (descriptionEl) {
+                    descriptionEl.before(addFilesButtonEl);
+                } else {
+                    fieldEl.append(addFilesButtonEl);
+                }
+            }
+        },
 
         //----------------------------------------------------------------------
         // Handlers
@@ -671,6 +741,111 @@ odoo.define('website.s_website_form', function (require) {
          */
         _onFieldInput() {
             this._updateFieldsVisibility();
+        },
+        /**
+         * Called when files are uploaded: replaces the button by a new one
+         * with a better text, displays blocks containing the files name and a
+         * cross to delete them, and manages the files.
+         *
+         * @private
+         * @param {Event} ev
+         */
+        _onFileChange(ev) {
+            const uploadButtonEl = ev.currentTarget;
+            const fieldEl = ev.target.parentNode;
+            const uploadedFiles = uploadButtonEl.files;
+
+            // Create lists to keep track of the files.
+            if (!uploadButtonEl.fileList) {
+                uploadButtonEl.fileList = new DataTransfer();
+                uploadButtonEl.fileNames = {};
+            }
+
+            // Replace the button by a clearer one.
+            this._createAddFilesButton(uploadButtonEl, fieldEl);
+
+            // Create/get the zone where the file blocks are displayed.
+            let filesZoneEl = fieldEl.querySelector('.o_files_zone');
+            if (!filesZoneEl) {
+                filesZoneEl = document.createElement('div');
+                filesZoneEl.classList.add('o_files_zone', 'row');
+
+                if (fieldEl.classList.contains('s_website_form_field')) {
+                    const labelEl = fieldEl.querySelector('label');
+                    labelEl.after(filesZoneEl);
+                } else {
+                    fieldEl.prepend(filesZoneEl);
+                }
+            }
+
+            // If only one file can be uploaded, delete the previous file from
+            // the lists and remove its block.
+            if (!uploadButtonEl.getAttribute('multiple') && uploadedFiles.length > 0) {
+                uploadButtonEl.fileList = new DataTransfer();
+                uploadButtonEl.fileNames = {};
+                const fileBlockEl = fieldEl.querySelector('.o_file_block');
+                if (fileBlockEl) {
+                    fileBlockEl.remove();
+                }
+            }
+
+            // Add the uploaded files to the lists.
+            for (const file of uploadedFiles) {
+                if (!uploadButtonEl.fileNames[file.name]) {
+                    uploadButtonEl.fileList.items.add(file);
+                    uploadButtonEl.fileNames[file.name] = 1;
+                    this._createFileBlock(file, filesZoneEl);
+                }
+            }
+            // Update the files of the input.
+            uploadButtonEl.files = uploadButtonEl.fileList.files;
+        },
+        /**
+         * Called when a file is deleted by clicking on the cross on the block
+         * describing the file.
+         *
+         * @private
+         * @param {Event} ev
+         */
+        _onFileDelete(ev) {
+            const fileBlockEl = ev.target.parentNode;
+            const fieldEl = fileBlockEl.parentNode.parentNode;
+            const uploadButtonEl = fieldEl.querySelector('input[type="file"]');
+
+            // Remove the file name from the names list.
+            const fileName = fileBlockEl.querySelector('.o_file_name').textContent;
+            delete uploadButtonEl.fileNames[fileName];
+
+            // Create a new files list containing the remaining files.
+            const newFileList = new DataTransfer();
+            for (const file of Object.values(uploadButtonEl.fileList.files)) {
+                if (file.name !== fileName) {
+                    newFileList.items.add(file);
+                }
+            }
+
+            // Update the button files list and remove the file block.
+            uploadButtonEl.fileList = newFileList;
+            uploadButtonEl.files = newFileList.files;
+            fileBlockEl.remove();
+
+            // Put the original button back if there is no file uploaded.
+            if (!newFileList.files.length) {
+                const addFilesButtonEl = fieldEl.querySelector('input.o_add_files_button');
+                addFilesButtonEl.remove();
+                uploadButtonEl.classList.remove('d-none');
+            }
+        },
+        /**
+         * Detects when the fake input file button is clicked to simulate a
+         * click on the real button.
+         *
+         * @private
+         * @param {MouseEvent} ev
+         */
+        _onAddFilesButtonClick(ev) {
+            const realButtonEl = ev.target.parentNode.querySelector('input[type="file"]');
+            realButtonEl.click();
         },
     });
 });
