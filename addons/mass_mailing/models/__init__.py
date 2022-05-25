@@ -3,7 +3,7 @@
 
 from . import ir_model
 from . import link_tracker
-from . import mailing_contact_subscription
+from . import mailing_subscription  # keep before due to decorated m2m
 from . import mailing_contact
 from . import mailing_list
 from . import mailing_trace

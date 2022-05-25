@@ -18,7 +18,7 @@ class MassMailController(main.MassMailController):
 
         is_subscriber = False
         if email:
-            contacts_count = request.env['mailing.contact.subscription'].sudo().search_count([('list_id', 'in', [int(list_id)]), ('contact_id.email', '=', email), ('opt_out', '=', False)])
+            contacts_count = request.env['mailing.subscription'].sudo().search_count([('list_id', 'in', [int(list_id)]), ('contact_id.email', '=', email), ('opt_out', '=', False)])
             is_subscriber = contacts_count > 0
 
         return {'is_subscriber': is_subscriber, 'email': email}
@@ -30,7 +30,7 @@ class MassMailController(main.MassMailController):
                 'toast_type': 'danger',
                 'toast_content': _("Suspicious activity detected by Google reCaptcha."),
             }
-        ContactSubscription = request.env['mailing.contact.subscription'].sudo()
+        ContactSubscription = request.env['mailing.subscription'].sudo()
         Contacts = request.env['mailing.contact'].sudo()
         name, email = Contacts.get_name_email(email)
 
