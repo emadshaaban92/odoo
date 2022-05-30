@@ -112,9 +112,10 @@ QUnit.test('activity view: simple activity rendering', async function (assert) {
         },
     });
 
-    const $activity = $(document);
+    const $activity = $(document.querySelector('.o_activity_view'));
     assert.containsOnce($activity, 'table',
         'should have a table');
+
     var $th1 = $activity.find('table thead tr:first th:nth-child(2)');
     assert.containsOnce($th1, 'span:first:contains(Email)', 'should contain "Email" in header of first column');
     assert.containsOnce($th1, '.o_kanban_counter', 'should contain a progressbar in header of first column');
