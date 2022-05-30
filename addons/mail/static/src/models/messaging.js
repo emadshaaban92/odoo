@@ -430,6 +430,11 @@ registerModel({
             isCausal: true,
             readonly: true,
         }),
+        emojiRegistry: one('EmojiRegistry', {
+            default: insertAndReplace(),
+            isCausal: true,
+            readonly: true,
+        }),
         /**
          * Mailbox Starred.
          */
