@@ -490,6 +490,8 @@ class Web_Editor(http.Controller):
             fields['res_id'] = res_id
         if name:
             fields['name'] = name
+        if request.env.user.has_group('website.group_website_publisher'):
+            attachment = attachment.sudo()
         attachment = attachment.copy(fields)
         if attachment.url:
             # Don't keep url if modifying static attachment because static images

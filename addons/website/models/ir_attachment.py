@@ -34,3 +34,6 @@ class Attachment(models.Model):
         extra_domain = (extra_domain or []) + website.website_domain()
         order = ('website_id, %s' % order) if order else 'website_id'
         return super(Attachment, self).get_serve_attachment(url, extra_domain, extra_fields, order)
+
+    def _can_user_save_xml_image(self, user):
+        return super()._can_user_save_xml_image(user) or user.has_group('website.group_website_publisher')
