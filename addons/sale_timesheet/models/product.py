@@ -21,6 +21,7 @@ class ProductTemplate(models.Model):
     # override domain
     project_id = fields.Many2one(domain="[('company_id', '=', current_company_id), ('allow_billable', '=', True), ('pricing_type', '=', 'task_rate'), ('allow_timesheets', 'in', [service_policy == 'delivered_timesheet', True])]")
     project_template_id = fields.Many2one(domain="[('company_id', '=', current_company_id), ('allow_billable', '=', True), ('allow_timesheets', 'in', [service_policy == 'delivered_timesheet', True])]")
+    task_template_id = fields.Many2one(domain="[('company_id', '=', current_company_id), ('allow_billable', '=', True), ('allow_timesheets', 'in', [service_policy == 'delivered_timesheet', True]), ('project_id', '!=', False), ('project_id', 'in', [project_id, project_template_id])]")
     service_upsell_threshold = fields.Float('Threshold', default=1, help="Percentage of time delivered compared to the prepaid amount that must be reached for the upselling opportunity activity to be triggered.")
     service_upsell_threshold_ratio = fields.Char(compute='_compute_service_upsell_threshold_ratio')
 
@@ -76,13 +77,20 @@ class ProductTemplate(models.Model):
         }
 
     @api.model
-    def _get_onchange_service_policy_updates(self, service_tracking, service_policy, project_id, project_template_id):
+    def _get_onchange_service_policy_updates(self,
+                                            service_tracking,
+                                            service_policy,
+                                            project_id,
+                                            project_template_id,
+                                            task_template_id):
         vals = {}
         if service_tracking != 'no' and service_policy == 'delivered_timesheet':
             if project_id and not project_id.allow_timesheets:
                 vals['project_id'] = False
             elif project_template_id and not project_template_id.allow_timesheets:
                 vals['project_template_id'] = False
+            if task_template_id and not task_template_id.allow_timesheets:
+                vals['task_template_id'] = False
         return vals
 
     @api.onchange('service_policy')
@@ -91,7 +99,8 @@ class ProductTemplate(models.Model):
         vals = self._get_onchange_service_policy_updates(self.service_tracking,
                                                         self.service_policy,
                                                         self.project_id,
-                                                        self.project_template_id)
+                                                        self.project_template_id,
+                                                        self.task_template_id)
         if vals:
             self.update(vals)
 
@@ -125,7 +134,8 @@ class ProductProduct(models.Model):
         vals = self.product_tmpl_id._get_onchange_service_policy_updates(self.service_tracking,
                                                                         self.service_policy,
                                                                         self.project_id,
-                                                                        self.project_template_id)
+                                                                        self.project_template_id,
+                                                                        self.task_template_id)
         if vals:
             self.update(vals)
 

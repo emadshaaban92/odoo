@@ -220,7 +220,14 @@ class SaleOrderLine(models.Model):
             :return task: record of the created task
         """
         values = self._timesheet_create_task_prepare_values(project)
-        task = self.env['project.task'].sudo().create(values)
+        task_template = self.product_id.task_template_id
+        if task_template:
+            values.pop('description')
+            values.pop('user_ids')
+            values['name'] = "%s - %s" % (values['name'], task_template.name)
+            task = task_template.copy(values)
+        else:
+            task = self.env['project.task'].sudo().create(values)
         self.write({'task_id': task.id})
         # post message on task
         task_msg = _("This task has been created from: %s (%s)", self.order_id._get_html_link(), self.product_id.name)

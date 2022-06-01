@@ -38,9 +38,20 @@ class ProductTemplate(models.Model):
         'project.project', 'Project Template', company_dependent=True, copy=True,
         domain="[('company_id', '=', current_company_id)]")
     service_policy = fields.Selection('_selection_service_policy', string="Service Invoicing Policy", compute='_compute_service_policy', inverse='_inverse_service_policy')
+    task_template_id = fields.Many2one(
+        'project.task', 'Task Template', company_dependent=True, copy=True,
+        domain="[('company_id', '=', current_company_id), ('project_id', '!=', False), ('project_id', 'in', [project_id, project_template_id])]",
+        help='Select a billable task to be the skeleton of the new created task when selling the current product. Its properties will be duplicated.')
     service_type = fields.Selection(selection_add=[
         ('milestones', 'Project Milestones'),
     ])
+
+    @api.constrains('task_template_id')
+    def _check_task_template_project(self):
+        for product in self:
+            task_template = product.task_template_id
+            if task_template and not task_template.project_id:
+                raise ValidationError(_('The product %s needs the task %s not to be private, in order to use it as a template.') % (product.name, task_template.name,))
 
     @api.depends('invoice_policy', 'service_type', 'type')
     def _compute_service_policy(self):
@@ -141,22 +152,28 @@ class ProductTemplate(models.Model):
             if product.service_policy:
                 product.invoice_policy, product.service_type = self._get_service_to_general(product.service_policy)
 
-    @api.constrains('project_id', 'project_template_id')
+    @api.constrains('project_id', 'project_template_id', 'task_template_id')
     def _check_project_and_template(self):
         """ NOTE 'service_tracking' should be in decorator parameters but since ORM check constraints twice (one after setting
             stored fields, one after setting non stored field), the error is raised when company-dependent fields are not set.
             So, this constraints does cover all cases and inconsistent can still be recorded until the ORM change its behavior.
         """
         for product in self:
-            if product.service_tracking == 'no' and (product.project_id or product.project_template_id):
-                raise ValidationError(_('The product %s should not have a project nor a project template since it will not generate project.') % (product.name,))
+            if product.service_tracking == 'no':
+                if product.project_id or product.project_template_id:
+                    raise ValidationError(_('The product %s should not have a project nor a project template since it will not generate project.') % (product.name,))
+                if product.task_template_id:
+                    raise ValidationError(_('The product %s should not have a task template since it will not generate task.') % (product.name,))
             elif product.service_tracking == 'task_global_project' and product.project_template_id:
                 raise ValidationError(_('The product %s should not have a project template since it will generate a task in a global project.') % (product.name,))
-            elif product.service_tracking in ['task_in_project', 'project_only'] and product.project_id:
+            elif product.service_tracking == 'task_in_project' and product.project_id:
                 raise ValidationError(_('The product %s should not have a global project since it will generate a project.') % (product.name,))
+            elif product.service_tracking == 'project_only' and (product.project_id or product.task_template_id):
+                raise ValidationError(_('The product %s should not have a global project nor a task template since it will generate a project and no task.') % (product.name,))
 
     @api.onchange('service_tracking')
     def _onchange_service_tracking(self):
+        self.task_template_id = False
         if self.service_tracking == 'no':
             self.project_id = False
             self.project_template_id = False
@@ -164,6 +181,10 @@ class ProductTemplate(models.Model):
             self.project_template_id = False
         elif self.service_tracking in ['task_in_project', 'project_only']:
             self.project_id = False
+
+    @api.onchange('project_id', 'project_template_id')
+    def _onchange_project(self):
+        self.task_template_id = False
 
     @api.onchange('type')
     def _onchange_type(self):
@@ -193,6 +214,10 @@ class ProductProduct(models.Model):
             self.project_template_id = False
         elif self.service_tracking in ['task_in_project', 'project_only']:
             self.project_id = False
+
+    @api.onchange('project_id', 'project_template_id')
+    def _onchange_project(self):
+        self.task_template_id = False
 
     @api.onchange('type')
     def _onchange_type(self):

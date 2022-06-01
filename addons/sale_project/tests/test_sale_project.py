@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
+from odoo.exceptions import ValidationError
 from odoo.tests.common import TransactionCase, users
 
 
@@ -234,3 +235,19 @@ class TestSaleProject(TransactionCase):
         self.project_global.sale_line_id = sale_order_line
         sale_order.with_context({'disable_cancel_warning': True}).action_cancel()
         self.assertFalse(self.project_global.sale_line_id, "The project should not be linked to the SOL anymore")
+
+    def test_private_task_template(self):
+        task_template = self.env['project.task'].create({'name': 'Todo'})
+        product_vals = {
+            'name': 'Product with task template',
+            'type': 'service',
+            'project_id': self.project_global.id,
+            'task_template_id': task_template.id,
+            'service_tracking': 'task_global_project',
+        }
+        with self.assertRaises(ValidationError):
+            self.env['product.template'].create(product_vals)
+        task_template.project_id = self.project_global
+        self.env['product.template'].create(product_vals)
+        with self.assertRaises(ValidationError):
+            task_template.project_id = False

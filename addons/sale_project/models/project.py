@@ -566,6 +566,12 @@ class ProjectTask(models.Model):
     def SELF_READABLE_FIELDS(self):
         return super().SELF_READABLE_FIELDS | {'allow_billable', 'sale_order_id', 'sale_line_id', 'display_sale_order_button'}
 
+    @api.constrains('project_id')
+    def _check_task_template_project(self):
+        task_without_project = self.filtered(lambda t: not t.project_id)
+        if task_without_project and self.env['product.template'].search_count([('task_template_id', 'in', task_without_project.ids)]):
+            raise ValidationError(_('A product needs the task not to be private, in order to use it as a template.'))
+
     @api.depends('sale_line_id', 'project_id', 'commercial_partner_id', 'allow_billable')
     def _compute_sale_order_id(self):
         for task in self:
