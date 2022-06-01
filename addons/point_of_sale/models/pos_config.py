@@ -28,12 +28,15 @@ class PosConfig(models.Model):
     def _default_payment_methods(self):
         """ Should only default to payment methods that are compatible to this config's company and currency.
         """
+        cash_journal = self.env['account.journal'].search(
+            [('company_id', '=', self.env.company.id), ('type', '=', 'cash')])
         return self.env['pos.payment.method'].search([
             ('split_transactions', '=', False),
             ('company_id', '=', self.env.company.id),
             '|',
                 ('journal_id', '=', False),
                 ('journal_id.currency_id', 'in', (False, self.env.company.currency_id.id)),
+                ('journal_id', 'not in', cash_journal.ids)
         ])
 
     def _default_pricelist(self):
@@ -141,7 +144,7 @@ class PosConfig(models.Model):
         help="This field depicts the maximum difference allowed between the ending balance and the theoretical cash when "
              "closing a session, for non-POS managers. If this maximum is reached, the user will have an error message at "
              "the closing of his session saying that he needs to contact his manager.")
-    payment_method_ids = fields.Many2many('pos.payment.method', string='Payment Methods', default=lambda self: self._default_payment_methods())
+    payment_method_ids = fields.Many2many('pos.payment.method', copy=False, string='Payment Methods', default=lambda self: self._default_payment_methods())
     company_has_template = fields.Boolean(string="Company has chart of accounts", compute="_compute_company_has_template")
     current_user_id = fields.Many2one('res.users', string='Current Session Responsible', compute='_compute_current_session_user')
     other_devices = fields.Boolean(string="Other Devices", help="Connect devices to your PoS without an IoT Box.")
@@ -336,6 +339,15 @@ class PosConfig(models.Model):
         for config in self:
             if any(pricelist.company_id.id not in [False, config.company_id.id] for pricelist in config.available_pricelist_ids):
                 raise ValidationError(_("The selected pricelists must belong to no company or the company of the point of sale."))
+
+    @api.constrains('payment_method_ids')
+    def _onchange_payment_method_ids(self):
+        cash_journal = self.env['account.journal'].search([('company_id', '=', self.env.company.id), ('type', '=', 'cash')])
+
+        for cash_method in self.payment_method_ids.filtered(lambda s: s.journal_id.id in cash_journal.ids):
+            if self.env['pos.config'].search([('id', '!=', self.id), ('payment_method_ids', 'in', cash_method.ids)]):
+                raise ValidationError(_("This cash payment method is already used in another Point of Sale.\n"
+                                        "You have to create a new cash payment method linked to a new cash journal for this Point of Sale."))
 
     def name_get(self):
         result = []
