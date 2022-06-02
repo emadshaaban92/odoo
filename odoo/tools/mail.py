@@ -10,6 +10,7 @@ import socket
 import threading
 import time
 from email.utils import getaddresses
+from html import unescape
 from urllib.parse import urlparse
 
 import idna
@@ -299,43 +300,52 @@ def html_keep_url(text):
     return final
 
 
-def html_to_inner_content(html):
+def html_to_plaintext(html, **kwargs):
+    """:param kwargs: See `html_to_text`"""
+    return html_to_text(html, **dict(convert_entities=True, **kwargs))
+
+
+def html_to_formatted_plaintext(html, **kwargs):
+    """:param kwargs: See `html_to_text`"""
+    return html_to_text(html, **dict(formatted=True, **kwargs))
+
+
+def html_to_text(html, keep_newlines=False, convert_entities=False, formatted=False,
+                 skip_sanitation=False):
     """Returns unformatted text after removing html tags and excessive whitespace from a
-    string/Markup. Passed strings will first be sanitized.
+    string/Markup.
     """
+    # Exclude non string-like falsy cases first as `ustr` converts them.
+    if not html:
+        return ''
+
+    html = ustr(html)
+
     if is_html_empty(html):
         return ''
-    if not isinstance(html, markupsafe.Markup):
+
+    if not isinstance(html, markupsafe.Markup) and not skip_sanitation:
         html = html_sanitize(html)
-    processed = re.sub(HTML_NEWLINES_REGEX, ' ', html)
-    processed = re.sub(HTML_TAGS_REGEX, '', processed)
-    processed = re.sub(r' {2,}|\t', ' ', processed)
+
+    tree = etree.fromstring(html, parser=etree.HTMLParser())
+    root = tree.xpath('//body')[0]
+    if formatted:
+        # todo: this part, obviously
+        processed = _html2plaintext(root)
+    else:
+        processed = etree.tostring(root, encoding=str)
+        processed = re.sub(HTML_NEWLINES_REGEX, '\n' if keep_newlines else ' ', processed)
+        processed = re.sub(HTML_TAGS_REGEX, '', processed)
+        processed = re.sub(r' {2,}|\t', ' ', processed)
+    if convert_entities:
+        processed = unescape(processed)
     processed = processed.strip()
     return processed
 
 
-def html2plaintext(html, body_id=None, encoding='utf-8'):
+def _html2plaintext(tree):
     """ From an HTML text, convert the HTML to plain text.
-    If @param body_id is provided then this is the tag where the
-    body (not necessarily <body>) starts.
     """
-    ## (c) Fry-IT, www.fry-it.com, 2007
-    ## <peter@fry-it.com>
-    ## download here: http://www.peterbe.com/plog/html2plaintext
-
-    html = ustr(html)
-
-    if not html.strip():
-        return ''
-
-    tree = etree.fromstring(html, parser=etree.HTMLParser())
-
-    if body_id is not None:
-        source = tree.xpath('//*[@id=%s]' % (body_id,))
-    else:
-        source = tree.xpath('//body')
-    if len(source):
-        tree = source[0]
 
     url_index = []
     i = 0
@@ -347,7 +357,7 @@ def html2plaintext(html, body_id=None, encoding='utf-8'):
             link.text = '%s [%s]' % (link.text, i)
             url_index.append(url)
 
-    html = ustr(etree.tostring(tree, encoding=encoding))
+    html = ustr(etree.tostring(tree, encoding='unicode'))
     # \r char is converted into &#13;, must remove it
     html = html.replace('&#13;', '')
 
@@ -375,7 +385,7 @@ def html2plaintext(html, body_id=None, encoding='utf-8'):
             html += '\n\n'
         html += ustr('[%s] %s\n') % (i + 1, url)
 
-    return html.strip()
+    return html
 
 def plaintext2html(text, container_tag=None):
     r"""Convert plaintext into html. Content of the text is escaped to manage
@@ -409,8 +419,10 @@ def plaintext2html(text, container_tag=None):
     final += text[idx:] + '</p>'
 
     # 5. container
-    if container_tag: # FIXME: validate that container_tag is just a simple tag?
-        final = '<%s>%s</%s>' % (container_tag, final, container_tag)
+    if container_tag:
+        if not re.match(r'^[a-zA-Z]+$', container_tag):
+            raise ValueError('`container_tag` should be a simple tag.')
+        final = f'<{container_tag}>{final}</{container_tag}>'
     return markupsafe.Markup(final)
 
 def append_content_to_html(html, content, plaintext=True, preserve=False, container_tag=None):

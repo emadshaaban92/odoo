@@ -492,7 +492,7 @@ class IrMailServer(models.Model):
 
         email_body = ustr(body)
         if subtype == 'html' and not body_alternative:
-            msg.add_alternative(tools.html2plaintext(email_body), subtype='plain', charset='utf-8')
+            msg.add_alternative(tools.html_to_formatted_plaintext(email_body, skip_sanitation=True), subtype='plain', charset='utf-8')
             msg.add_alternative(email_body, subtype=subtype, charset='utf-8')
         elif body_alternative:
             msg.add_alternative(ustr(body_alternative), subtype=subtype_alternative, charset='utf-8')

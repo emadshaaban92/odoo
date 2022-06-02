@@ -3,7 +3,7 @@
 
 from odoo import http
 from odoo.http import request
-from odoo.tools import html2plaintext
+from odoo.tools import html_to_plaintext
 
 
 class CrmClient(http.Controller):
@@ -44,7 +44,7 @@ class CrmClient(http.Controller):
             return {'error': 'partner_not_found'}
 
         record = request.env['crm.lead'].create({
-            'name': html2plaintext(email_subject),
+            'name': html_to_plaintext(email_subject),
             'partner_id': partner_id,
             'description': email_body,
         })
