@@ -20,9 +20,7 @@ class ShowGroupedList extends Component {
     }
 
     formatData(props) {
-        this.data = props.value
-            ? JSON.parse(props.value)
-            : { groups_vals: [], options: { discarded_number: "", columns: [] } };
+        this.data = props.value || { groups_vals: [], options: { discarded_number: "", columns: [] } };
     }
 }
 ShowGroupedList.template = "account.GroupedListTemplate";
