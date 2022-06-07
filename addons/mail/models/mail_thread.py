@@ -274,12 +274,13 @@ class MailThread(models.AbstractModel):
 
         # auto_subscribe: take values and defaults into account
         create_values_list = {}
+        notify_data_list = []
         for thread, values in zip(threads, vals_list):
             create_values = dict(values)
             for key, val in self._context.items():
                 if key.startswith('default_') and key[8:] not in create_values:
                     create_values[key[8:]] = val
-            thread._message_auto_subscribe(create_values, followers_existing_policy='update')
+            notify_data_list.append(thread._message_auto_subscribe(create_values, followers_existing_policy='update', return_notify_data=True))
             create_values_list[thread.id] = create_values
 
         # automatic logging unless asked not to (mainly for various testing purpose)
@@ -308,6 +309,10 @@ class MailThread(models.AbstractModel):
                 # we don't consider that a falsy field is a change, to stay consistent with previous implementation,
                 # but we may want to change that behaviour later.
                 thread._message_track_post_template(changes)
+
+        for thread, notify_data in zip(threads, notify_data_list):
+            if notify_data:
+                thread._notify_auto_subscribe(notify_data)
 
         return threads
 
@@ -2129,6 +2134,11 @@ class MailThread(models.AbstractModel):
     # NOTIFICATION API
     # ------------------------------------------------------
 
+    def _notify_auto_subscribe(self, notify_data):
+        for (template, lang), pids in notify_data.items():
+            self.with_context(lang=lang)._message_auto_subscribe_notify(pids, template)
+        return True
+
     def _notify_thread(self, message, msg_vals=False, notify_by_email=True, **kwargs):
         """ Main notification method. This method basically does two things
 
@@ -2831,7 +2841,7 @@ class MailThread(models.AbstractModel):
                 model_description=model_description,
             )
 
-    def _message_auto_subscribe(self, updated_values, followers_existing_policy='skip'):
+    def _message_auto_subscribe(self, updated_values, followers_existing_policy='skip', return_notify_data=False):
         """ Handle auto subscription. Auto subscription is done based on two
         main mechanisms
 
@@ -2897,11 +2907,12 @@ class MailThread(models.AbstractModel):
             list(new_channels), new_channels,
             check_existing=True, existing_policy=followers_existing_policy)
 
-        # notify people from auto subscription, for example like assignation
-        for (template, lang), pids in notify_data.items():
-            self.with_context(lang=lang)._message_auto_subscribe_notify(pids, template)
-
-        return True
+        if return_notify_data:
+            return notify_data
+        else:
+            # notify people from auto subscription, for example like assignation
+            self._notify_auto_subscribe(notify_data)
+            return True
 
     # ------------------------------------------------------
     # CONTROLLERS
