@@ -24,6 +24,8 @@ class ChannelUsersRelation(models.Model):
     channel_id = fields.Many2one('slide.channel', index=True, required=True, ondelete='cascade')
     completed = fields.Boolean('Is Completed', help='Channel validated, even if slides / lessons are added once done.')
     completion = fields.Integer('% Completed Slides')
+    completion_date = fields.Datetime('Completion date', help='Completion date', compute='_compute_completion_date',
+                                      store=True)
     completed_slides_count = fields.Integer('# Completed Slides')
     partner_id = fields.Many2one('res.partner', index=True, required=True, ondelete='cascade')
     partner_email = fields.Char(related='partner_id.email', readonly=True)
@@ -44,6 +46,18 @@ class ChannelUsersRelation(models.Model):
          'The completion of a channel is a percentage and should be between 0% and 100.'
         )
     ]
+
+    @api.depends('completed')
+    def _compute_completion_date(self):
+        """ Set the completion date to now when it gets completed and resets the completion date when it's set again to
+        incomplete (completed=False) so that completion date represents the date of completion and is coherent with the
+        "completed" field."""
+        for record in self:
+            if not record.completion_date:
+                if record.completed:
+                    record.completion_date = fields.Datetime.now()
+            elif not record.completed:
+                record.completion_date = None
 
     def _recompute_completion(self):
         read_group_res = self.env['slide.slide.partner'].sudo()._read_group(
