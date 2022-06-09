@@ -111,6 +111,9 @@ You could use this simplified accounting in case you work with an (external) acc
         'web.qunit_suite_tests': [
             'account/static/tests/*.js',
         ],
+        'web.report_assets_common': [
+            'account/static/src/scss/account_report_common.scss',
+        ]
     },
     'license': 'LGPL-3',
 }
