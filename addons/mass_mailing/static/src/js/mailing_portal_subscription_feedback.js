@@ -15,6 +15,7 @@ publicWidget.registry.MailingPortalSubscriptionFeedback = publicWidget.Widget.ex
     init: function (parent, options) {
         this.customerData = options.customerData;
         this.allowFeedback = true;
+        this.lastAction = false;
         return this._super.apply(this, arguments);
     },
 
@@ -41,6 +42,7 @@ publicWidget.registry.MailingPortalSubscriptionFeedback = publicWidget.Widget.ex
                 email: this.customerData.email,
                 feedback: formData.get('feedback'),
                 hash_token: this.customerData.hashToken,
+                last_action: this.lastAction,
                 mailing_id: this.customerData.mailingId,
             }
         }).then((result) => {
@@ -107,6 +109,20 @@ publicWidget.registry.MailingPortalSubscriptionFeedback = publicWidget.Widget.ex
         }
         else {
             feedbackInfo.classList.add('d-none');
+        }
+    },
+
+    _setLastAction: function (lastAction) {
+        this.lastAction = lastAction;
+        if (this.lastAction === 'blacklist_add') {
+            document.querySelector('div#o_mailing_subscription_feedback p').innerHTML = _t(
+                'Please let us know why you want to be in our block list.'
+            );
+        }
+        else {
+            document.querySelector('div#o_mailing_subscription_feedback p').innerHTML = _t(
+                'Please let us know why you updated your subscription.'
+            );
         }
     },
 });

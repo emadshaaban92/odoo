@@ -15,6 +15,7 @@
              t-att-data-feedback-enabled="feedback_enabled"
              t-att-data-feedback-readonly="feedback_readonly"
              t-att-data-hash-token="hash_token"
+             t-att-data-last-action="last_action"
              t-att-data-email="email"
              t-att-data-email-valid="email_valid"
              t-att-data-is-blacklisted="is_blacklisted"

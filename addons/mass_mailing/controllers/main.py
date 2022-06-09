@@ -3,6 +3,7 @@
 
 import base64
 import werkzeug
+from markupsafe import Markup
 from werkzeug.exceptions import BadRequest, NotFound, Unauthorized
 
 from odoo import _, http, tools
@@ -53,11 +54,6 @@ class MassMailController(http.Controller):
             return email, hash_token
         return request.env.user.email_normalized, None
 
-    def _log_blacklist_action(self, blacklist_entry, mailing_id, description):
-        mailing = request.env['mailing.mailing'].sudo().browse(mailing_id)
-        model_display = mailing.mailing_model_id.display_name
-        blacklist_entry._message_log(body=description + " ({})".format(model_display))
-
     # ------------------------------------------------------------
     # SUBSCRIPTION MANAGEMENT
     # ------------------------------------------------------------
@@ -85,7 +81,7 @@ class MassMailController(http.Controller):
         except NotFound:
             raise Unauthorized()
 
-        if mailing_sudo.mailing_model_real == 'mailing.contact':
+        if mailing_sudo.mailing_on_mailing_list:
             return self._mailing_unsubscribe_from_list(mailing_sudo, document_id, _email, _hash_token)
         return self._mailing_unsubscribe_from_document(mailing_sudo, document_id, _email, _hash_token)
 
@@ -111,15 +107,19 @@ class MassMailController(http.Controller):
                 self._prepare_mailing_subscription_values(
                     mailing, document_id, email, hash_token
                 ),
+                last_action='subscription_updated',
                 unsubscribed_name=lists_unsubscribed_name,
             )
         )
 
     def _mailing_unsubscribe_from_document(self, mailing, document_id, email, hash_token):
-        blacklist_rec = request.env['mail.blacklist'].sudo()._add(email)
-        self._log_blacklist_action(
-            blacklist_rec, mailing.id,
-            _("""Requested blacklisting via unsubscribe link."""))
+        message = Markup(
+            '<p>%s</p>' % _(
+                'Blocklist request from unsubscribe link on mailing %(mailing_link)s (done on %(record_link)s).',
+                **self._format_bl_request(mailing, document_id)
+            )
+        )
+        _blacklist_rec = request.env['mail.blacklist'].sudo()._add(email, message=message)
 
         return request.render(
             'mass_mailing.page_mailing_unsubscribe',
@@ -127,6 +127,7 @@ class MassMailController(http.Controller):
                 self._prepare_mailing_subscription_values(
                     mailing, document_id, email, hash_token
                 ),
+                last_action='blacklist_add',
                 unsubscribed_name=_('You are no longer part of our services and will not be contacted again.'),
             )
         )
@@ -225,20 +226,24 @@ class MassMailController(http.Controller):
     @http.route('/mailing/feedback', type='json', auth='public')
     def mailing_send_feedback(self, mailing_id=None, document_id=None,
                               email=None, hash_token=None,
-                              feedback=None):
+                              last_action=None, feedback=None):
         _email, _hash_token = self._fetch_user_information(email, hash_token)
         try:
-            mailing_sudo = self._check_mailing_email_token(mailing_id, document_id, _email, _hash_token)
+            _mailing_sudo = self._check_mailing_email_token(mailing_id, document_id, _email, _hash_token)
         except BadRequest:
             return 'error'
         except (NotFound, Unauthorized):
             return 'unauthorized'
 
-        model = request.env[mailing_sudo.mailing_model_real]
-        records = model.sudo().search([('email_normalized', '=', tools.email_normalize(email))])
-        for record in records:
-            record.sudo().message_post(body=_("Feedback from %(email)s: %(feedback)s", email=email, feedback=feedback))
-        return bool(records)
+        message = Markup("<p>%s<br />%s</p>") % (_('Feedback from user'), feedback)
+        if last_action == 'blacklist_add':
+            bl_record = self._fetch_blacklist_record(email)
+            bl_record.message_post(body=message)
+        elif last_action == 'subscription_updated':
+            contacts = self._fetch_contacts(_email)
+            for contact in contacts:
+                contact.message_post(body=message)
+        return True
 
     @http.route(['/unsubscribe_from_list'], type='http', website=True, multilang=False, auth='public', sitemap=False)
     def mailing_unsubscribe_placeholder_link(self, **post):
@@ -336,16 +341,23 @@ class MassMailController(http.Controller):
                            email=None, hash_token=None):
         _email, _hash_token = self._fetch_user_information(email, hash_token)
         try:
-            _mailing_sudo = self._check_mailing_email_token(mailing_id, document_id, _email, _hash_token)
+            mailing_sudo = self._check_mailing_email_token(mailing_id, document_id, _email, _hash_token)
         except BadRequest:
             return 'error'
         except (NotFound, Unauthorized):
             return 'unauthorized'
 
-        blacklist_rec = request.env['mail.blacklist'].sudo()._add(_email)
-        self._log_blacklist_action(
-            blacklist_rec, mailing_id,
-            _("""Requested blacklisting via unsubscription page."""))
+        if mailing_sudo and document_id:
+            message = Markup(
+                '<p>%s</p>' % _(
+                    'Blocklist request from link (mailing %(mailing_link)s done on %(record_link)s).',
+                    **self._format_bl_request(mailing_sudo, document_id)
+                )
+            )
+        else:
+            message = '<p>%s</p>' % _('Blocklist request from portal')
+
+        _blacklist_rec = request.env['mail.blacklist'].sudo()._add(_email, message=message)
         return True
 
     @http.route('/mailing/blacklist/remove', type='json', auth='public')
@@ -353,14 +365,28 @@ class MassMailController(http.Controller):
                               email=None, hash_token=None):
         _email, _hash_token = self._fetch_user_information(email, hash_token)
         try:
-            _mailing_sudo = self._check_mailing_email_token(mailing_id, document_id, _email, _hash_token)
+            mailing_sudo = self._check_mailing_email_token(mailing_id, document_id, _email, _hash_token)
         except BadRequest:
             return 'error'
         except (NotFound, Unauthorized):
             return 'unauthorized'
 
-        blacklist_rec = request.env['mail.blacklist'].sudo()._remove(email)
-        self._log_blacklist_action(
-            blacklist_rec, mailing_id,
-            _("""Requested de-blacklisting via unsubscription page."""))
+        if mailing_sudo and document_id:
+            message = Markup(
+                '<p>%s</p>' % _(
+                    'Blocklist removal request from link (mailing %(mailing_link)s done on %(record_link)s).',
+                    **self._format_bl_request(mailing_sudo, document_id)
+                )
+            )
+        else:
+            message = '<p>%s</p>' % _('Blocklist removal request from portal')
+
+        _blacklist_rec = request.env['mail.blacklist'].sudo()._remove(email, message=message)
         return True
+
+    def _format_bl_request(self, mailing, document_id):
+        mailing_model_name = request.env['ir.model']._get(mailing.mailing_model_real).display_name
+        return {
+            'mailing_link': f'<a href="#" data-oe-model="mailing.mailing" data-oe-id="{mailing.id}">{mailing.subject}</a>',
+            'record_link': f'<a href="#" data-oe-model="{mailing.mailing_model_real}" data-oe-id="{document_id}">{mailing_model_name}</a>',
+        }
