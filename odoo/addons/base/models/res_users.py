@@ -162,7 +162,17 @@ class Groups(models.Model):
     def _search_full_name(self, operator, operand):
         lst = True
         if isinstance(operand, bool):
+<<<<<<< HEAD
             return [[('name', operator, operand)]]
+||||||| parent of 412a2c18b9b (temp)
+            domains = [[('name', operator, operand)], [('category_id.name', operator, operand)]]
+            if operator in expression.NEGATIVE_TERM_OPERATORS == (not operand):
+                return expression.AND(domains)
+            else:
+                return expression.OR(domains)
+=======
+            return [('name', operator, operand)]
+>>>>>>> 412a2c18b9b (temp)
         if isinstance(operand, str):
             lst = False
             operand = [operand]
