@@ -536,6 +536,8 @@ Please change the quantity done or the rounding precision of your unit of measur
         # Handle the propagation of `date_deadline` fields (up and down stream - only update by up/downstream documents)
         already_propagate_ids = self.env.context.get('date_deadline_propagate_ids', set()) | set(self.ids)
         self = self.with_context(date_deadline_propagate_ids=already_propagate_ids)
+        # context to hard set linked move date_deadline to new_deadline
+        hard_set_deadline = self.env.context.get('hard_set_deadline', False)
         for move in self:
             moves_to_update = (move.move_dest_ids | move.move_orig_ids)
             if move.date_deadline:
@@ -547,7 +549,7 @@ Please change the quantity done or the rounding precision of your unit of measur
                     continue
                 if move_update.id in already_propagate_ids:
                     continue
-                if move_update.date_deadline and delta:
+                if move_update.date_deadline and delta and not hard_set_deadline:
                     move_update.date_deadline -= delta
                 else:
                     move_update.date_deadline = new_deadline
@@ -900,9 +902,9 @@ Please change the quantity done or the rounding precision of your unit of measur
         """Cleanup hook used when merging moves"""
         self.write({'propagate_cancel': False})
 
-    def _update_candidate_moves_list(self, candidate_moves_list):
+    def _update_candidate_moves_list(self, candidate_moves_set):
         for picking in self.mapped('picking_id'):
-            candidate_moves_list.append(picking.move_ids)
+            candidate_moves_set.add(picking.move_ids)
 
     def _merge_moves(self, merge_into=False):
         """ This method will, for each move in `self`, go up in their linked picking and try to
@@ -912,11 +914,11 @@ Please change the quantity done or the rounding precision of your unit of measur
         """
         distinct_fields = self._prepare_merge_moves_distinct_fields()
 
-        candidate_moves_list = []
+        candidate_moves_set = set()
         if not merge_into:
-            self._update_candidate_moves_list(candidate_moves_list)
+            self._update_candidate_moves_list(candidate_moves_set)
         else:
-            candidate_moves_list.append(merge_into | self)
+            candidate_moves_set.add(merge_into | self)
 
         # Move removed after merge
         moves_to_unlink = self.env['stock.move']
@@ -933,7 +935,7 @@ Please change the quantity done or the rounding precision of your unit of measur
         excluded_fields = self._prepare_merge_negative_moves_excluded_distinct_fields()
         neg_key = itemgetter(*[field for field in distinct_fields if field not in excluded_fields])
 
-        for candidate_moves in candidate_moves_list:
+        for candidate_moves in candidate_moves_set:
             # First step find move to merge.
             candidate_moves = candidate_moves.filtered(lambda m: m.state not in ('done', 'cancel', 'draft')) - neg_qty_moves
             for __, g in groupby(candidate_moves, key=itemgetter(*distinct_fields)):
