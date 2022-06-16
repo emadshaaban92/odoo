@@ -453,8 +453,8 @@ publicWidget.registry.SurveyFormWidget = publicWidget.Widget.extend(SurveyPreloa
         if (this.options.isStartScreen) {
             route = "/survey/begin";
             // Hide survey title in 'page_per_question' layout: it takes too much space
-            if (this.options.questionsLayout === 'page_per_question') {
-                this.$('.o_survey_main_title').fadeOut(400);
+            if (this.options.questionsLayout !== 'page_per_question') {
+                this.$('.o_survey_main_title').removeClass('d-none').hide(0);
             }
         } else {
             var $form = this.$('form');
@@ -567,7 +567,6 @@ publicWidget.registry.SurveyFormWidget = publicWidget.Widget.extend(SurveyPreloa
             });
             if (this.options.isStartScreen || (options && options.initTimer)) {
                 this._initTimer();
-                this.options.isStartScreen = false;
             } else {
                 if (this.options.sessionInProgress && this.surveyTimerWidget) {
                     this.surveyTimerWidget.destroy();
@@ -596,6 +595,12 @@ publicWidget.registry.SurveyFormWidget = publicWidget.Widget.extend(SurveyPreloa
             if (this.options.refreshBackground) {
                 $('div.o_survey_background').css("background-image", "url(" + result.background_image_url + ")");
                 $('div.o_survey_background').removeClass('o_survey_background_transition');
+            }
+            if (this.options.isStartScreen) {
+                if (this.options.questionsLayout !== 'page_per_question') {
+                    this.$('.o_survey_main_title').fadeIn(this.fadeInOutDelay);
+                }
+                this.options.isStartScreen = false;
             }
             this.$('.o_survey_form_content').fadeIn(this.fadeInOutDelay);
             $("html, body").animate({ scrollTop: 0 }, this.fadeInOutDelay);
