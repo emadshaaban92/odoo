@@ -24,9 +24,6 @@ registerModel({
             if ('id' in data) {
                 data2.id = data.id;
             }
-            if ('is_main' in data) {
-                data2.is_main = data.is_main;
-            }
             if ('mimetype' in data) {
                 data2.mimetype = data.mimetype;
             }
@@ -332,7 +329,6 @@ registerModel({
         isImage: attr({
             compute: '_computeIsImage',
         }),
-        is_main: attr(),
         /**
          * States if the attachment is a PDF file.
          */
@@ -390,6 +386,9 @@ registerModel({
         name: attr(),
         originThread: one('Thread', {
             inverse: 'originThreadAttachments',
+        }),
+        originThreadAsMainAttachment: one('Thread', {
+            inverse: 'mainAttachment',
         }),
         size: attr(),
         threads: many('Thread', {

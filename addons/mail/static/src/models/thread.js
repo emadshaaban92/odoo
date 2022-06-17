@@ -525,6 +525,7 @@ registerModel({
                 attachments: attachmentsData,
                 followers: followersData,
                 hasWriteAccess,
+                mainAttachment,
                 suggestedRecipients: suggestedRecipientsData,
             } = await this.messaging.rpc({
                 route: '/mail/thread/data',
@@ -537,7 +538,7 @@ registerModel({
             if (!this.exists()) {
                 return;
             }
-            const values = { hasWriteAccess };
+            const values = { hasWriteAccess, mainAttachment };
             if (activitiesData) {
                 Object.assign(values, {
                     activities: insertAndReplace(activitiesData.map(activityData =>
@@ -2039,6 +2040,9 @@ registerModel({
          */
         localMessageUnreadCounter: attr({
             compute: '_computeLocalMessageUnreadCounter',
+        }),
+        mainAttachment: one('Attachment', {
+            inverse: 'originThreadAsMainAttachment',
         }),
         /**
          * States the number of members in this thread according to the server.
