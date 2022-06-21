@@ -12,6 +12,12 @@ const {ColorPaletteWidget} = require('web_editor.ColorPalette');
 const SmoothScrollOnDrag = require('web/static/src/js/core/smooth_scroll_on_drag.js');
 const {getCSSVariableValue} = require('web_editor.utils');
 const QWeb = core.qweb;
+const rpc = require('web.rpc');
+const {
+    loadImageInfo,
+    applyModifications,
+    removeOnImageChangeAttrs,
+} = require('web_editor.image_processing');
 
 var _t = core._t;
 
@@ -2606,6 +2612,35 @@ var SnippetsMenu = Widget.extend({
                         });
                         dynamicSvg.src = colorCustomizedURL.pathname + colorCustomizedURL.search;
                     });
+                    // Apply missing image processing.
+                    const processImgEls = $toInsert[0].querySelectorAll('img[data-original-src]:not([src])');
+                    Promise.all([...processImgEls].map(async img => {
+                        for (const attr of removeOnImageChangeAttrs) {
+                            if (img.dataset[attr]) {
+                                const originalSrc = img.dataset.originalSrc;
+                                delete img.dataset.originalSrc;
+                                if (originalSrc.startsWith('/web_editor/image_shape/')) {
+                                    img.src = '/web/image/' + originalSrc.split('/')[3];
+                                } else {
+                                    img.src = originalSrc;
+                                }
+                                await loadImageInfo(img, rpc.query);
+                                let imgDataURL = await applyModifications(img, {});
+                                if (originalSrc.startsWith('/web_editor/image_shape/')) {
+                                    // Reuse the SVG that already takes the options into account.
+                                    const response = await window.fetch(originalSrc);
+                                    const updatedSvg = (await response.text()).replace(
+                                        /(?<=image[^>]+xlink:href=")data:image\/.*;base64,[^"]*/gm,
+                                        imgDataURL
+                                    );
+                                    imgDataURL = 'data:image/svg+xml;base64,' + window.btoa(updatedSvg);
+                                    img.dataset.mimetype = 'image/svg+xml';
+                                }
+                                img.src = imgDataURL;
+                                break;
+                            }
+                        }
+                    }));
 
                     if (!$selectorSiblings.length && !$selectorChildren.length) {
                         console.warn($snippet.find('.oe_snippet_thumbnail_title').text() + " have not insert action: data-drop-near or data-drop-in");
