@@ -104,6 +104,13 @@ class IrModule(models.Model):
                     if attachment:
                         attachment.write(values)
                     else:
+                        # TODO In master find a way to not get an implicit
+                        # website_id on attachments for operations that are
+                        # not related to website.
+                        # Do not create a bridge module for this check.
+                        if 'website_id' in IrAttachment._fields:
+                            # Static data is not website-specific.
+                            values['website_id'] = None
                         attachment = IrAttachment.create(values)
                         self.env['ir.model.data'].create({
                             'name': f"attachment_{url_path}".replace('.', '_'),
