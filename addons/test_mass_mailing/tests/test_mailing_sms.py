@@ -4,7 +4,7 @@
 from ast import literal_eval
 
 from odoo.addons.phone_validation.tools import phone_validation
-from odoo.addons.test_mail_full.tests.common import TestMailFullCommon
+from odoo.addons.test_mass_mailing.tests.common import TestMassMailCommon
 from odoo import exceptions
 from odoo.tests import tagged
 from odoo.tests.common import users
@@ -12,7 +12,7 @@ from odoo.tools import mute_logger
 
 
 @tagged('mass_mailing')
-class TestMassSMSCommon(TestMailFullCommon):
+class TestMassSMSCommon(TestMassMailCommon):
 
     @classmethod
     def setUpClass(cls):

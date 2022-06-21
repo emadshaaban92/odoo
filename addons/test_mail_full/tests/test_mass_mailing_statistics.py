@@ -4,14 +4,14 @@
 from lxml import html
 
 from odoo.addons.mail.tests.common import mail_new_test_user
-from odoo.addons.test_mail_full.tests.test_mass_sms import TestMassSMSCommon
+from odoo.addons.test_mail_full.tests.common import TestMailFullCommon
 from odoo.tests.common import users
 from odoo.tests import tagged
 from odoo.tools import mute_logger
 
 
 @tagged('digest', 'mass_mailing')
-class TestMailingStatistics(TestMassSMSCommon):
+class TestMailingStatistics(TestMailFullCommon):
 
     @classmethod
     def setUpClass(cls):
