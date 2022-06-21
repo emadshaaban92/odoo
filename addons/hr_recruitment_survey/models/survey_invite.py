@@ -9,6 +9,12 @@ class SurveyInvite(models.TransientModel):
 
     applicant_id = fields.Many2one('hr.applicant', string='Applicant')
 
+    def _send_mail(self, answer):
+        mail = super()._send_mail(answer)
+        if answer.applicant_id:
+            answer.applicant_id.message_post(body=mail.body_html)
+        return mail
+
     def action_invite(self):
         self.ensure_one()
         if self.applicant_id:
@@ -16,7 +22,8 @@ class SurveyInvite(models.TransientModel):
 
             if not self.applicant_id.response_id:
                 self.applicant_id.write({
-                    'response_id': survey._create_answer(partner=self.applicant_id.partner_id).id
+                    'response_id': survey._create_answer(partner=self.applicant_id.partner_id,
+                        **self._get_answers_values()).id
                 })
 
             partner = self.applicant_id.partner_id
@@ -26,7 +33,6 @@ class SurveyInvite(models.TransientModel):
             body = '<p>%s</p>' % content
             self.applicant_id.message_post(body=body)
         return super().action_invite()
-
 
 class SurveyUserInput(models.Model):
     _inherit = "survey.user_input"
