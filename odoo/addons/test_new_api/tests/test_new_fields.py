@@ -2936,9 +2936,9 @@ class TestHtmlField(common.TransactionCase):
 
     def test_00_sanitize(self):
         self.assertEqual(self.model._fields['comment1'].sanitize, False)
-        self.assertEqual(self.model._fields['comment2'].sanitize_attributes, True)
+        self.assertEqual(self.model._fields['comment2'].restricted_attributes, True)
         self.assertEqual(self.model._fields['comment2'].strip_classes, False)
-        self.assertEqual(self.model._fields['comment3'].sanitize_attributes, True)
+        self.assertEqual(self.model._fields['comment3'].restricted_attributes, True)
         self.assertEqual(self.model._fields['comment3'].strip_classes, True)
 
         some_ugly_html = """<p>Oops this should maybe be sanitized
@@ -3012,15 +3012,16 @@ class TestHtmlField(common.TransactionCase):
 
         # 2. Make sure field compare in `_convert` is working as expected with
         #    special content / format
-        val = '<span  attr1 ="att1"   attr2=\'attr2\'>é@&nbsp;</span><p><span/></p>'
+        val = '<span  title ="test"   alt=\'alt\'>é@&nbsp;</span><p><span/></p>'
         write_vals = {'comment5': val}
         # Once sent through `html_sanitize()` this is becoming:
-        # `<span attr1="att1" attr2="attr2">é@\xa0</span><p><span></span></p>`
+        # `<span alt="alt" title="test">é@\xa0</span><p><span></span></p>`
         # Notice those change:
-        # -     `attr1 =` -> `attr1=`    (space before `=`)
-        # -    `   attr2` -> ` attr2`    (multi space -> single space)
-        # -  `=\'attr2\'` -> `="attr2"`  (escaped single quote -> double quote)
+        # -     `title =` -> `title=`    (space before `=`)
+        # -    `   alt` -> ` alt`    (multi space -> single space)
+        # -  `=\'alt\'` -> `="alt"`  (escaped single quote -> double quote)
         # -      `&nbsp;` -> `\xa0`
+        # the order of the attributes changed
         # Still, those 2 archs should be considered equals and not raise
 
         record.with_user(bypass_user).write(write_vals)

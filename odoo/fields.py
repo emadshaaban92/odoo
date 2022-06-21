@@ -16,6 +16,7 @@ import enum
 import itertools
 import json
 import logging
+import re
 import uuid
 import warnings
 
@@ -1912,7 +1913,7 @@ class Html(_String):
         the users part of the `base.group_sanitize_override` group (default: ``False``)
     :param bool sanitize_tags: whether to sanitize tags
         (only a white list of attributes is accepted, default: ``True``)
-    :param bool sanitize_attributes: whether to sanitize attributes
+    :param bool restricted_attributes: whether to sanitize attributes
         (only a white list of attributes is accepted, default: ``True``)
     :param bool sanitize_style: whether to sanitize style attributes (default: ``False``)
     :param bool strip_style: whether to strip style attributes
@@ -1924,7 +1925,7 @@ class Html(_String):
     sanitize = True                     # whether value must be sanitized
     sanitize_overridable = False        # whether the sanitation can be bypassed by the users part of the `base.group_sanitize_override` group
     sanitize_tags = True                # whether to sanitize tags (only a white list of attributes is accepted)
-    sanitize_attributes = True          # whether to sanitize attributes (only a white list of attributes is accepted)
+    restricted_attributes = True        # whether to restrict more the list of safe attributes or not
     sanitize_style = False              # whether to sanitize style attributes
     sanitize_form = True                # whether to sanitize forms
     strip_style = False                 # whether to strip style attributes (removed and therefore not sanitized)
@@ -1944,14 +1945,14 @@ class Html(_String):
 
     _related_sanitize = property(attrgetter('sanitize'))
     _related_sanitize_tags = property(attrgetter('sanitize_tags'))
-    _related_sanitize_attributes = property(attrgetter('sanitize_attributes'))
+    _related_restricted_attributes = property(attrgetter('restricted_attributes'))
     _related_sanitize_style = property(attrgetter('sanitize_style'))
     _related_strip_style = property(attrgetter('strip_style'))
     _related_strip_classes = property(attrgetter('strip_classes'))
 
     _description_sanitize = property(attrgetter('sanitize'))
     _description_sanitize_tags = property(attrgetter('sanitize_tags'))
-    _description_sanitize_attributes = property(attrgetter('sanitize_attributes'))
+    _description_restricted_attributes = property(attrgetter('restricted_attributes'))
     _description_sanitize_style = property(attrgetter('sanitize_style'))
     _description_strip_style = property(attrgetter('strip_style'))
     _description_strip_classes = property(attrgetter('strip_classes'))
@@ -1972,7 +1973,7 @@ class Html(_String):
         sanitize_vals = {
             'silent': True,
             'sanitize_tags': self.sanitize_tags,
-            'sanitize_attributes': self.sanitize_attributes,
+            'restricted_attributes': self.restricted_attributes,
             'sanitize_style': self.sanitize_style,
             'sanitize_form': self.sanitize_form,
             'strip_style': self.strip_style,
@@ -1988,7 +1989,15 @@ class Html(_String):
                 initial_value_sanitized = html_sanitize(original_value, **sanitize_vals)
 
                 def get_parsed(val):
-                    return etree.tostring(html.fromstring(val))
+                    if not val:
+                        return ''
+
+                    # method "c14n" sort XML attributes
+                    # (encoding is not compatible with canonicalisation)
+                    result = etree.tostring(html.fromstring(val), method="c14n").decode()
+                    # remove space between tags
+                    result = re.sub(r'(>|^)\s+(<|$)', r'\g<1>\g<2>', result)
+                    return result
 
                 # could have been emptied by the sanitizer
                 if (
