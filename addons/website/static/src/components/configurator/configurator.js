@@ -9,6 +9,7 @@ import {ColorpickerWidget} from 'web.Colorpicker';
 import {_t, _lt} from 'web.core';
 import {svgToPNG} from 'website.utils';
 import {useService} from "@web/core/utils/hooks";
+import {loadImageInfo, applyModifications} from 'web_editor.image_processing';
 
 const {Component, Store, mount, QWeb} = owl;
 const {useDispatch, useStore, useGetters, useRef} = owl.hooks;
@@ -616,6 +617,44 @@ async function skipConfigurator(services) {
     window.location = '/web#action=website.theme_install_kanban_action';
 }
 
+async function generateImage(self, imgId, rawData) {
+    const imgAttrs = JSON.parse(rawData.replaceAll("'", '"'));
+    // Apply missing image processing.
+    const imgEl = document.createElement('img');
+    for (const attr in imgAttrs) {
+        imgEl.setAttribute(attr, imgAttrs[attr]);
+    }
+    const originalSrc = imgEl.dataset.originalSrc;
+    delete imgEl.dataset.originalSrc;
+    if (originalSrc.startsWith('/web_editor/image_shape/')) {
+        imgEl.src = '/web/image/' + originalSrc.split('/')[3];
+    } else {
+        imgEl.src = originalSrc;
+    }
+    await loadImageInfo(imgEl, self.rpc.bind(self));
+    const imgDataURL = await applyModifications(imgEl, {});
+    let newAttachmentSrc = await self.rpc({
+        route: `/web_editor/modify_image/${imgEl.dataset.originalId}`,
+        params: {
+            data: imgDataURL.split(',')[1],
+            mimetype: imgEl.dataset.mimetype,
+            name: (imgEl.dataset.fileName ? imgEl.dataset.fileName : null),
+        },
+    });
+    if (originalSrc.startsWith('/web_editor/image_shape/')) {
+        // Get id from '/web/image/[id]-[unique]/[name]'.
+        const newAttachmentId = newAttachmentSrc.match(/(?<=\/web\/image\/)[^-]*/)[0];
+        // Turn '/web_editor/image_shape/[xmlid]/...'
+        // into '/web_editor/image_shape/[id]/...'.
+        newAttachmentSrc = originalSrc.replace(originalSrc.split('/')[3], newAttachmentId);
+    }
+    imgEl.src = newAttachmentSrc;
+    const updatedAttrs = imgEl.getAttributeNames().reduce((acc, name) => {
+        return {...acc, [name]: imgEl.getAttribute(name)};
+    }, {});
+    return [imgId, updatedAttrs];
+}
+
 async function applyConfigurator(self, themeName) {
     if (!self.state.selectedIndustry) {
         self.env.router.navigate({to: 'CONFIGURATOR_DESCRIPTION_SCREEN'});
@@ -628,11 +667,23 @@ async function applyConfigurator(self, themeName) {
 
     async function attemptConfiguratorApply(data, retryCount = 0) {
         try {
-            return await self.rpc({
+            let resp = await self.rpc({
                 model: 'website',
                 method: 'configurator_apply',
                 kwargs: data,
             });
+            // If response asks for image processing: generate images and call again.
+            if (resp.imageProcessings) {
+                const keyValues = Object.entries(resp.imageProcessings);
+                const newImages = await Promise.all(keyValues.map(([imgId, rawData]) => generateImage(self, imgId, rawData)));
+                data['image_processings'] = Object.fromEntries(newImages);
+                resp = await self.rpc({
+                    model: 'website',
+                    method: 'configurator_apply',
+                    kwargs: data,
+                });
+            }
+            return resp;
         } catch (error) {
             // Wait a bit before retrying or allowing manual retry.
             await concurrency.delay(5000);

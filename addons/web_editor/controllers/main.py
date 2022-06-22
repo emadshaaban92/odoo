@@ -638,7 +638,9 @@ class Web_Editor(http.Controller):
     def image_shape(self, module, filename, img_key, **kwargs):
         svg = self._get_shape_svg(module, 'image_shapes', filename)
         _, _, image_base64 = request.env['ir.http'].binary_content(
-            xmlid=img_key, model='ir.attachment', field='datas', default_mimetype='image/png')
+            id=img_key if '.' not in img_key else None,
+            xmlid=img_key if '.' in img_key else None,
+            model='ir.attachment', field='datas', default_mimetype='image/png')
         if not image_base64:
             image_base64 = b64encode(request.env['ir.http']._placeholder())
         image = base64_to_image(image_base64)

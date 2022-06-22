@@ -250,6 +250,12 @@
         ],
         'website.website_configurator_assets_js': [
             '/website/static/src/components/configurator/configurator.js',
+            # Image processing & libs
+            '/web_editor/static/src/js/editor/image_processing.js',
+            '/web_editor/static/lib/cropperjs/cropper.css',
+            '/web_editor/static/lib/cropperjs/cropper.js',
+            '/web_editor/static/lib/jquery-cropper/jquery-cropper.js',
+            '/web_editor/static/lib/webgl-image-filter/webgl-image-filter.js',
         ],
         'website.website_configurator_assets_scss': [
             ('include', 'web.assets_frontend'),
