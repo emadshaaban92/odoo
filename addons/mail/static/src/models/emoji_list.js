@@ -5,30 +5,30 @@ import { many, one } from '@mail/model/model_field';
 import { insertAndReplace, replace } from '@mail/model/model_field_command';
 
 registerModel({
-    name: 'EmojiCategoryBar',
+    name: 'EmojiList',
     identifyingFields: ['emojiPickerView'],
     recordMethods: {
         /**
          * @private
          * @returns {FieldCommand}
          */
-        _computeEmojiCategoryViews() {
+        _computeEmojiViews() {
             return insertAndReplace(
-                this.messaging.emojiRegistry.allCategories.map(emojiCategory => {
-                    return { emojiCategory: replace(emojiCategory) };
+                this.messaging.emojiRegistry.currentCategory.allEmojis.map(emoji => {
+                    return { emoji: replace(emoji) };
                 })
             );
         },
     },
     fields: {
-        emojiCategoryViews: many('EmojiCategoryView', {
-            compute: '_computeEmojiCategoryViews',
-            inverse: 'emojiCategoryBar',
+        emojiViews: many('EmojiView', {
+            compute: '_computeEmojiViews',
+            inverse: 'emojiList',
             readonly: true,
             isCausal: true,
         }),
         emojiPickerView: one('EmojiPickerView', {
-            inverse: 'emojiCategoryBar',
+            inverse: 'emojiList',
             readonly: true,
             required: true,
         }),

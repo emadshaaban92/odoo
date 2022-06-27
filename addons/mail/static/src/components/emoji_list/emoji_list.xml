@@ -1,0 +1,12 @@
+<templates xml:space="preserve">
+
+    <t t-name="mail.EmojiList" owl="1">
+        <div class="o_EmojiList px-1 overflow-auto" t-attf-class="{{ className }}" t-ref="root">
+            
+            <t t-foreach="props.emojiList.emojiViews" t-as="emojiView" t-key="emojiView.localId">
+                <Emoji emojiView="emojiView"/>
+            </t>
+        </div>
+    </t>
+
+</templates>

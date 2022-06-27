@@ -4,11 +4,7 @@
     <t t-name="mail.EmojiPicker" owl="1">
         <div class="o_EmojiPicker px-1" t-attf-class="{{ className }}" t-ref="root">
             <EmojiCategoryBar emojiCategoryBar="props.record.emojiCategoryBar"/>
-            <t t-if="props.record">
-                <t t-foreach="props.record.emojiViews" t-as="emojiView" t-key="emojiView.localId">
-                    <Emoji emojiView="emojiView"/>
-                </t>
-            </t>
+            <EmojiList emojiList="props.record.emojiList"/>
         </div>
     </t>
 

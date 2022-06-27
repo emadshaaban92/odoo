@@ -18,18 +18,6 @@ registerModel({
                 this.popoverViewOwner.composerViewOwnerAsEmoji.onClickEmoji(ev);
             }
         },
-        
-        /**
-         * @private
-         * @returns {FieldCommand}
-         */
-        _computeEmojiViews() {
-            return insertAndReplace(
-                this.messaging.emojiRegistry.allEmojis.map(emoji => {
-                    return { emoji: replace(emoji) };
-                })
-            );
-        },
     },
     fields: {
         emojiCategoryBar: one('EmojiCategoryBar', {
@@ -38,8 +26,8 @@ registerModel({
             readonly: true,
             isCausal: true,
         }),
-        emojiViews: many('EmojiView', {
-            compute: '_computeEmojiViews',
+        emojiList: one('EmojiList', {
+            default: insertAndReplace(),
             inverse: 'emojiPickerView',
             readonly: true,
             isCausal: true,
