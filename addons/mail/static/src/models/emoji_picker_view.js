@@ -30,22 +30,10 @@ registerModel({
                 })
             );
         },
-        
-        /**
-         * @private
-         * @returns {FieldCommand}
-         */
-        _computeEmojiCategoryViews() {
-            return insertAndReplace(
-                this.messaging.emojiRegistry.allCategories.map(emojiCategory => {
-                    return { emojiCategory: replace(emojiCategory) };
-                })
-            );
-        },
     },
     fields: {
-        emojiCategoryViews: many('EmojiCategoryView', {
-            compute: '_computeEmojiCategoryViews',
+        emojiCategoryBar: one('EmojiCategoryBar', {
+            default: insertAndReplace(),
             inverse: 'emojiPickerView',
             readonly: true,
             isCausal: true,
