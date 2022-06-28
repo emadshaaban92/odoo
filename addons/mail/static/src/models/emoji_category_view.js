@@ -11,7 +11,7 @@ registerModel({
         /** 
          * @param {MouseEvent} ev
          */
-        onClickEmojiCategory() {
+        onClick() {
             this.emojiCategory.emojiRegistry.update({ currentCategory: replace(this.emojiCategory) });
         },
     },
