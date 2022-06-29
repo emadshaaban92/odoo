@@ -1,3 +1,9 @@
 .o_project_kanban .oe_kanban_align.badge {
     color: inherit;
 }
+
+.o_form_task_label_custom {
+    &:after {
+        content: "" !important;
+    }
+}

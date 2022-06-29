@@ -1063,7 +1063,7 @@ class Task(models.Model):
         project_id = self.env.context.get('default_project_id')
         if not project_id:
             return False
-        return self.stage_find(project_id, [('fold', '=', False)])
+        return self.stage_find(project_id, [('fold', '=', False)]) or self.stage_find(project_id)
 
     @api.model
     def _default_personal_stage_type_id(self):

@@ -20,6 +20,16 @@ export class ProjectStatusWithColorSelectionField extends SelectionField {
         return this.colors[value] ? this.colorPrefix + this.colors[value] : "";
     }
 }
+
+SelectionField.props = {
+    ...SelectionField.props,
+    status_label: { type: String, optional: true },
+};
+
+ProjectStatusWithColorSelectionField.extractProps = ({ attrs }) => {
+    return {...SelectionField.extractProps({attrs}), status_label: attrs.status_label};
+};
+
 ProjectStatusWithColorSelectionField.template = 'project.ProjectStatusWithColorSelectionField';
 
 registry.category('fields').add('status_with_color', ProjectStatusWithColorSelectionField);
