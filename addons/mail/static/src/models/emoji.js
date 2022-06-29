@@ -2,7 +2,7 @@
 
 import { registerModel } from '@mail/model/model_core';
 import { attr, many, one } from '@mail/model/model_field';
-import { replace } from '@mail/model/model_field_command';
+import { insertAndReplace, replace } from '@mail/model/model_field_command';
 
 registerModel({
     name: 'Emoji',
@@ -25,6 +25,7 @@ registerModel({
         }),
         emojiRegistry: one('EmojiRegistry', {
             compute: '_computeEmojiRegistry',
+            default: insertAndReplace(),
             inverse: 'allEmojis',
             readonly: true,
             required: true,
