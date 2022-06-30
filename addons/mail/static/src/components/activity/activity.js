@@ -8,6 +8,8 @@ import {
     getLangDatetimeFormat,
 } from 'web.time';
 
+import { useComponentToModel } from '@mail/component_hooks/use_component_to_model/use_component_to_model';
+
 const { Component, useState } = owl;
 const { useRef } = owl.hooks;
 
@@ -28,9 +30,22 @@ export class Activity extends Component {
         this._fileUploaderRef = useRef('fileUploader');
     }
 
+    setup() {
+        super.setup();
+        useComponentToModel({
+            fieldName: 'component',
+            modelName: 'mail.activity',
+            propNameAsRecordLocalId: 'activityLocalId'
+        });
+    }
+
     //--------------------------------------------------------------------------
     // Public
     //--------------------------------------------------------------------------
+
+    reload() {
+        this.trigger('reload', {keepChanges: true});
+    }
 
     /**
      * @returns {mail.activity}

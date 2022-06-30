@@ -141,7 +141,12 @@ function factory(dependencies) {
             };
             this.env.bus.trigger('do-action', {
                 action,
-                options: { on_close: () => this.fetchAndUpdate() },
+                options: {
+                    on_close: () => {
+                        this.fetchAndUpdate();
+                        this.component.reload();
+                    }
+                },
             });
         }
 
@@ -256,6 +261,7 @@ function factory(dependencies) {
         attachments: many2many('mail.attachment', {
             inverse: 'activities',
         }),
+        component: attr(),
         canWrite: attr({
             default: false,
         }),
