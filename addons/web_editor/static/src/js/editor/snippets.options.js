@@ -3604,6 +3604,13 @@ const SnippetOptionWidget = Widget.extend({
             el.querySelector('.o_we_collapse_toggler').classList.toggle('d-none', hasNoVisibleElInCollapseMenu);
         }
     },
+    /**
+     * Called after an option was used.
+     * @see _select.
+     */
+    onOptionUsed(previewMode, widget) {
+        // To be overridden by options that need specific behavior.
+    },
 
     //--------------------------------------------------------------------------
     // Private
@@ -4012,6 +4019,8 @@ const SnippetOptionWidget = Widget.extend({
                 await this[methodName](previewMode, widgetValue, params);
             }
         }
+
+        this.onOptionUsed(previewMode, widget);
 
         if (previewMode === 'reset' || previewMode === false) {
             this.options.wysiwyg.odooEditor.automaticStepActive('preview_option');
