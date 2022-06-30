@@ -107,6 +107,7 @@ For more specific needs, you may also assign custom-defined actions
         'views/res_partner_views.xml',
         'views/mail_blacklist_views.xml',
         'views/mail_menus.xml',
+        'views/mail_mail_templates.xml',
     ],
     'demo': [
         'data/mail_channel_demo.xml',

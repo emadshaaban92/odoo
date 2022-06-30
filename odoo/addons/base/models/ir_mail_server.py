@@ -121,6 +121,14 @@ class IrMailServer(models.Model):
     smtp_debug = fields.Boolean(string='Debugging', help="If enabled, the full output of SMTP sessions will "
                                                          "be written to the server log at DEBUG level "
                                                          "(this is very verbose and may include confidential info!)")
+    max_email_size = fields.Float(string="Max email size (MB)", default=5,
+                                  help="Maximum email size that the outgoing server can send. "
+                                       "Don't set this value too high even if your server support high value "
+                                       "because it is also limited by what the recipient server can accept. "
+                                       "A good value is 5MB. "
+                                       "If a mail size exceeds that limit, its attachments will be turned into "
+                                       "downloadable links appended at the end of the email."
+                                  )
     sequence = fields.Integer(string='Priority', default=10, help="When no specific mail server is requested for a mail, the highest priority one "
                                                                   "is used. Default priority is 10 (smaller number = higher priority)")
     active = fields.Boolean(default=True)
@@ -209,7 +217,17 @@ class IrMailServer(models.Model):
                               'sending an email message via this outgoing server'))
         return email_from, 'noreply@odoo.com'
 
-    def test_smtp_connection(self):
+    def test_smtp_connection(self, is_set_max_email_size=False):
+        """Test the connection and if is_set_max_email_size, set auto-detected max email size.
+
+        The method raises UserError
+        - if the connection fails
+        - if is_set_max_email_size and the server doesn't support the auto-detection of email max size
+
+        :param bool is_set_max_email_size: whether to set the max email size
+        :return (dict): client action to notify the user of the result of the operation (connection test or
+        auto-detection successful depending on the is_set_max_email_size parameter)
+        """
         for server in self:
             smtp = False
             try:
@@ -233,6 +251,12 @@ class IrMailServer(models.Model):
                 if code != 354:
                     raise UserError(_('The server refused the test connection '
                                       'with error %(repl)s') % locals())
+                if is_set_max_email_size:
+                    max_size = smtp.esmtp_features.get('size')
+                    if max_size:
+                        server.max_email_size = float(max_size) / (1024 ** 2)
+                    else:
+                        raise UserError(_("The server doesn't return the email maximum size."))
             except UserError as e:
                 # let UserErrors (messages) bubble up
                 raise e
@@ -260,16 +284,21 @@ class IrMailServer(models.Model):
                     # ignored, just a consequence of the previous exception
                     pass
 
-        message = _("Connection Test Successful!")
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',
             'params': {
-                'message': message,
+                'message': _('Max email size has been set') if is_set_max_email_size
+                else _('Connection Test Successful!'),
                 'type': 'success',
                 'sticky': False,
             }
         }
+
+    def action_retrieve_max_email_size(self):
+        self.ensure_one()
+        # Don't return the client notification because otherwise the data are not updated on the client side
+        self.test_smtp_connection(is_set_max_email_size=True)
 
     def connect(self, host=None, port=None, user=None, password=None, encryption=None,
                 smtp_from=None, ssl_certificate=None, ssl_private_key=None, smtp_debug=False, mail_server_id=None,

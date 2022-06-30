@@ -4,6 +4,7 @@
 import ast
 import base64
 import datetime
+import json
 import logging
 import psycopg2
 import smtplib
@@ -19,6 +20,9 @@ from odoo import tools
 from odoo.addons.base.models.ir_mail_server import MailDeliveryException
 
 _logger = logging.getLogger(__name__)
+
+BASE_64_SIZE_OVERHEAD_RATIO = 8 / 6
+EMAIL_SIZE_SECURITY_MARGIN_BYTES = 10 * 1024
 
 
 class MailMail(models.Model):
@@ -419,10 +423,14 @@ class MailMail(models.Model):
                     batch.write({'state': 'exception', 'failure_reason': exc})
                     batch._postprocess_sent_message(success_pids=[], failure_type="mail_smtp")
             else:
+                max_email_size = self.env['ir.mail_server'].browse(mail_server_id).max_email_size if mail_server_id \
+                    else tools.config.get('max_outgoing_email_size', 5)
                 self.browse(batch_ids)._send(
                     auto_commit=auto_commit,
                     raise_exception=raise_exception,
-                    smtp_session=smtp_session)
+                    smtp_session=smtp_session,
+                    max_email_size_in_bytes=max_email_size * 1024 ** 2,
+                )
                 _logger.info(
                     'Sent batch %s emails via mail server ID #%s',
                     len(batch_ids), mail_server_id)
@@ -430,7 +438,8 @@ class MailMail(models.Model):
                 if smtp_session:
                     smtp_session.quit()
 
-    def _send(self, auto_commit=False, raise_exception=False, smtp_session=None):
+    def _send(self, auto_commit=False, raise_exception=False, smtp_session=None,
+              max_email_size_in_bytes=5 * 1024 ** 2):
         IrMailServer = self.env['ir.mail_server']
         IrAttachment = self.env['ir.attachment']
         for mail_id in self.ids:
@@ -448,12 +457,6 @@ class MailMail(models.Model):
                 attachments = mail.attachment_ids
                 for link in re.findall(r'/web/(?:content|image)/([0-9]+)', body):
                     attachments = attachments - IrAttachment.browse(int(link))
-
-                # load attachment binary data with a separate read(), as prefetching all
-                # `datas` (binary field) could bloat the browse cache, triggerring
-                # soft/hard mem limits with temporary data.
-                attachments = [(a['name'], base64.b64decode(a['datas']), a['mimetype'])
-                               for a in attachments.sudo().read(['name', 'datas', 'mimetype']) if a['datas'] is not False]
 
                 # specific behavior to customize the send email for notified partners
                 email_list = []
@@ -476,6 +479,31 @@ class MailMail(models.Model):
                         headers.update(ast.literal_eval(mail.headers))
                     except Exception:
                         pass
+
+                # Compute email size and transform attachment in downloadable link in the body if it exceeds the limit
+                estimated_email_size = (
+                        (len(json.dumps(headers, ensure_ascii=False).encode(errors='ignore')) +
+                         len(body.encode(errors='ignore')) +
+                         sum(attachment['file_size'] for attachment in
+                             attachments.sudo().read(['file_size']))) * BASE_64_SIZE_OVERHEAD_RATIO +
+                        EMAIL_SIZE_SECURITY_MARGIN_BYTES
+                )
+
+                attachments_links = None
+                if attachments and estimated_email_size > max_email_size_in_bytes:
+                    # Remove attachments and prepare downloadable link to be added in the body
+                    for attachment in attachments:
+                        attachment.generate_access_token()
+                    attachments_links = self.env['ir.qweb']._render('mail.mail_attachment_links',
+                                                                    {'attachments': attachments})
+                    attachments = self.env['ir.attachment']
+
+                # load attachment binary data with a separate read(), as prefetching all
+                # `datas` (binary field) could bloat the browse cache, triggerring
+                # soft/hard mem limits with temporary data.
+                attachments = [(a['name'], base64.b64decode(a['datas']), a['mimetype'])
+                               for a in attachments.sudo().read(['name', 'datas', 'mimetype']) if
+                               a['datas'] is not False]
 
                 # Writing on the mail object may fail (e.g. lock on user) which
                 # would trigger a rollback *after* actually sending the email.
@@ -508,6 +536,9 @@ class MailMail(models.Model):
                 # TDE note: could be great to pre-detect missing to/cc and skip sending it
                 # to go directly to failed state update
                 for email in email_list:
+                    if attachments_links:
+                        email['body'] = tools.append_content_to_html(email.get('body'), attachments_links,
+                                                                     plaintext=False)
                     msg = IrMailServer.build_email(
                         email_from=mail.email_from,
                         email_to=email.get('email_to'),

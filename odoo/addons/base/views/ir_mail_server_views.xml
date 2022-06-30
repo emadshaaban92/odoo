@@ -20,6 +20,13 @@
                             <group>
                                 <field name="sequence"/>
                                 <field name="active" invisible="1"/>
+                                <label for="max_email_size"/>
+                                <div class="o_row">
+                                    <field name="max_email_size" class="oe_inline"/> MB
+                                    <button class="btn btn-link" type="object" name="action_retrieve_max_email_size">
+                                        Detect
+                                    </button>
+                                </div>
                             </group>
                         </group>
                         <group>

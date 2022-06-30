@@ -368,7 +368,7 @@ class TestMailAPIPerformance(BaseMailPerformance):
                 'partner_ids': [(4, customer.id)],
             })
 
-        with self.assertQueryCount(__system__=29, employee=37):
+        with self.assertQueryCount(__system__=30, employee=38):
             composer._action_send_mail()
 
     @users('__system__', 'employee')
@@ -392,7 +392,7 @@ class TestMailAPIPerformance(BaseMailPerformance):
                 composer_form.attachment_ids.add(attachment)
             composer = composer_form.save()
 
-        with self.assertQueryCount(__system__=39, employee=47):  # tm+com 38/46
+        with self.assertQueryCount(__system__=40, employee=48):  # tm+com 39/47
             composer._action_send_mail()
 
         # notifications
@@ -415,7 +415,7 @@ class TestMailAPIPerformance(BaseMailPerformance):
             }).create({})
             composer._onchange_template_id_wrapper()
 
-        with self.assertQueryCount(__system__=126, employee=159), self.mock_mail_gateway():
+        with self.assertQueryCount(__system__=136, employee=169), self.mock_mail_gateway():
             composer._action_send_mail()
 
         self.assertEqual(len(self._new_mails), 10)
@@ -481,7 +481,7 @@ class TestMailAPIPerformance(BaseMailPerformance):
             }).create({})
             composer._onchange_template_id_wrapper()
 
-        with self.assertQueryCount(__system__=33, employee=44):
+        with self.assertQueryCount(__system__=34, employee=45):
             composer._action_send_mail()
 
         # notifications
@@ -543,7 +543,7 @@ class TestMailAPIPerformance(BaseMailPerformance):
             )
             composer = composer_form.save()
 
-        with self.assertQueryCount(__system__=47, employee=64):
+        with self.assertQueryCount(__system__=48, employee=65):
             composer._action_send_mail()
 
         # notifications
@@ -795,7 +795,7 @@ class TestMailComplexPerformance(BaseMailPerformance):
             'mail_message_id': message.id,
             'recipient_ids': [(4, pid) for pid in self.partners.ids],
         })
-        with self.assertQueryCount(__system__=9, employee=9):
+        with self.assertQueryCount(__system__=10, employee=10):
             self.env['mail.mail'].sudo().browse(mail.ids).send()
 
     @mute_logger('odoo.tests', 'odoo.addons.mail.models.mail_mail', 'odoo.models.unlink')
@@ -828,7 +828,7 @@ class TestMailComplexPerformance(BaseMailPerformance):
         } for idx in range(12)])
         mails[-2].write({'email_cc': False, 'email_to': 'strange@example¢¡.com', 'recipient_ids': [(5, 0)]})
         mails[-1].write({'email_cc': False, 'email_to': 'void', 'recipient_ids': [(5, 0)]})
-        with self.assertQueryCount(__system__=43, employee=43):
+        with self.assertQueryCount(__system__=55, employee=55):
             self.env['mail.mail'].sudo().browse(mails.ids).send()
 
         for mail in mails[:-2]:
@@ -1300,7 +1300,7 @@ class TestMailHeavyPerformancePost(BaseMailPerformance):
         attachments = self.env['ir.attachment'].with_user(self.env.user).create(self.test_attachments_vals)
         # enable_logging = self.cr._enable_logging() if self.warm else nullcontext()
         # with self.assertQueryCount(employee=49), enable_logging:
-        with self.assertQueryCount(employee=49):
+        with self.assertQueryCount(employee=51):
             record_container.with_context({}).message_post(
                 body='<p>Test body <img src="cid:cid1"> <img src="cid:cid2"></p>',
                 subject='Test Subject',

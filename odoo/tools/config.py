@@ -224,6 +224,9 @@ class configmanager(object):
         group = optparse.OptionGroup(parser, "SMTP Configuration")
         group.add_option('--email-from', dest='email_from', my_default=False,
                          help='specify the SMTP email address for sending email')
+        group.add_option('--max-outgoing-email-size', dest='max_outgoing_email_size', my_default=5,
+                         help='specify the maximum size (MB) of outgoing mail; when reached, the attachments are sent as links added in the mail body',
+                         type="float")
         group.add_option('--from-filter', dest='from_filter', my_default=False,
                          help='specify for which email address the SMTP configuration can be used')
         group.add_option('--smtp', dest='smtp_server', my_default='localhost',
@@ -445,7 +448,7 @@ class configmanager(object):
                 'db_name', 'db_user', 'db_password', 'db_host', 'db_sslmode',
                 'db_port', 'db_template', 'logfile', 'pidfile', 'smtp_port',
                 'email_from', 'smtp_server', 'smtp_user', 'smtp_password', 'from_filter',
-                'smtp_ssl_certificate_filename', 'smtp_ssl_private_key_filename',
+                'smtp_ssl_certificate_filename', 'smtp_ssl_private_key_filename', 'max_outgoing_email_size',
                 'db_maxconn', 'import_partial', 'addons_path', 'upgrade_path',
                 'syslog', 'without_demo', 'screencasts', 'screenshots',
                 'dbfilter', 'log_level', 'log_db',
