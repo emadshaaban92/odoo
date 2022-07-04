@@ -509,9 +509,15 @@ class Environment(Mapping):
 
         # if env already exists, return it
         existing = transaction.envs.get(args)
-        if existing:
+        if existing is not None:
             assert existing.args == args
             return existing
+        else:
+            for key, env in transaction.envs.items():
+                if env.args == args:
+                    #_logger.warning('matching env but not found with get')
+                    return env
+
 
         # otherwise create environment, and add it in the set
         self = object.__new__(cls)
@@ -844,7 +850,7 @@ class Transaction:
     def flush(self):
         """ Flush pending computations and updates in the transaction. """
         env_to_flush = None
-        for env in self.envs.values():
+        for env in reversed(list(self.envs.values())):
             if isinstance(env.uid, int) or env.uid is None:
                 env_to_flush = env
                 if env.uid is not None:
