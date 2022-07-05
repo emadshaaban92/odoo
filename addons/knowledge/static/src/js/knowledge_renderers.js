@@ -39,8 +39,6 @@ const KnowledgeArticleFormRenderer = FormRenderer.extend(KnowledgeTreePanelMixin
          * the chatter is only rendered when the user clicks on the button).
          */
         this.chatterFields = {
-            // `knowledge.article` has `mail.activity.mixin`
-            hasActivities: true,
             hasFollowers: true,
             hasMessageIds: true,
         };

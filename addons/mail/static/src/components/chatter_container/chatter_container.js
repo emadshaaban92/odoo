@@ -93,10 +93,6 @@ export class ChatterContainer extends Component {
 Object.assign(ChatterContainer, {
     components: { Chatter: getMessagingComponent('Chatter') },
     props: {
-        hasActivities: {
-            type: Boolean,
-            optional: true,
-        },
         hasExternalBorder: {
             type: Boolean,
             optional: true,

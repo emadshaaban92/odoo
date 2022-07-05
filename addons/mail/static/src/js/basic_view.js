@@ -16,7 +16,6 @@ BasicView.include({
         const post_refresh = this._getFieldOption('message_ids', 'post_refresh', false);
         const followers_post_refresh = this._getFieldOption('message_follower_ids', 'post_refresh', false);
         this.chatterFields = {
-            hasActivityIds: this._hasField('activity_ids'),
             hasMessageFollowerIds: this._hasField('message_follower_ids'),
             hasMessageIds: this._hasField('message_ids'),
             hasRecordReloadOnAttachmentsChanged: post_refresh === 'always',

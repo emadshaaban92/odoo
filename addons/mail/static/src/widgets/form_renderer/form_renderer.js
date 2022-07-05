@@ -203,7 +203,6 @@ FormRenderer.include({
     _makeChatterContainerProps() {
         const isChatterAside = this._isChatterAside();
         return {
-            hasActivities: this.chatterFields.hasActivityIds,
             hasExternalBorder: !isChatterAside,
             hasFollowers: this.chatterFields.hasMessageFollowerIds,
             hasMessageList: this.chatterFields.hasMessageIds,

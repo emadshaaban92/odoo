@@ -35,7 +35,7 @@
                             Log note
                         </button>
                     </t>
-                    <t t-if="chatterTopbar.chatter.hasActivities">
+                    <t t-if="chatterTopbar.chatter.thread and chatterTopbar.chatter.thread.hasActivities">
                         <button class="o_ChatterTopbar_button o_ChatterTopbar_buttonScheduleActivity btn btn-link" type="button" t-att-disabled="chatterTopbar.chatter.isDisabled" t-on-click="chatterTopbar.chatter.onClickScheduleActivity" title="Schedule an activity" data-hotkey="shift+a">
                             <i class="fa fa-clock-o"/>
                             Schedule activity

@@ -268,9 +268,6 @@ registerModel({
                 this.update({
                     attachmentBoxView: this.isAttachmentBoxVisibleInitially ? insertAndReplace() : clear(),
                     thread: insert({
-                        // If the thread was considered to have the activity
-                        // mixin once, it will have it forever.
-                        hasActivities: this.hasActivities ? true : undefined,
                         id: this.threadId,
                         model: this.threadModel,
                     }),
@@ -370,12 +367,6 @@ registerModel({
             compute: '_computeFollowerListMenuView',
             inverse: 'chatterOwner',
             isCausal: true,
-        }),
-        /**
-         * Determines whether `this` should display an activity box.
-         */
-        hasActivities: attr({
-            default: true,
         }),
         hasExternalBorder: attr({
             default: true,

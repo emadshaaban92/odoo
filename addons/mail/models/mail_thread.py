@@ -3160,7 +3160,8 @@ class MailThread(models.AbstractModel):
             res['hasWriteAccess'] = True
         except AccessError:
             pass
-        if 'activities' in request_list:
+        res['hasActivities'] = issubclass(type(self), self.pool['mail.activity.mixin'])
+        if 'activities' in request_list and res['hasActivities']:
             res['activities'] = self.activity_ids.activity_format()
         if 'attachments' in request_list:
             res['attachments'] = self._get_mail_thread_data_attachments()._attachment_format()
