@@ -9,9 +9,9 @@ class ResConfigSettings(models.TransientModel):
 
     internal_project_id = fields.Many2one(
         related='company_id.internal_project_id', required=True, string="Internal Project",
-        domain="[('company_id', '=', company_id)]", readonly=False)
+        domain="[('company_id', '=', company_id)]", inverse=True)
     leave_timesheet_task_id = fields.Many2one(
-        related='company_id.leave_timesheet_task_id', string="Time Off Task", readonly=False,
+        related='company_id.leave_timesheet_task_id', string="Time Off Task", inverse=True,
         domain="[('company_id', '=', company_id), ('project_id', '=?', internal_project_id)]")
 
     @api.onchange('internal_project_id')

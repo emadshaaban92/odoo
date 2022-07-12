@@ -32,7 +32,7 @@ class Mailing(models.Model):
     # even when 'mass_mailing_sms' removed (see 'mailing_mailing_view_form_sms' for more details).                    
     sms_subject = fields.Char(
         'Title', related='subject',
-        readonly=False, translate=False,
+        inverse=True, translate=False,
         help='For an email, the subject your recipients will see in their inbox.\n'
              'For an SMS, the internal title of the message.')
     # sms options
@@ -53,7 +53,7 @@ class Mailing(models.Model):
     # A/B Testing
     ab_testing_sms_winner_selection = fields.Selection(
         related="campaign_id.ab_testing_sms_winner_selection",
-        default="clicks_ratio", readonly=False, copy=True)
+        default="clicks_ratio", inverse=True, copy=True)
 
     @api.depends('mailing_type')
     def _compute_medium_id(self):

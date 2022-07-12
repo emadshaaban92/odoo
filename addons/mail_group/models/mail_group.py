@@ -44,7 +44,7 @@ class MailGroup(models.Model):
 
     active = fields.Boolean('Active', default=True)
     name = fields.Char('Name', required=True, translate=True)
-    alias_name = fields.Char('Alias Name', copy=False, related='alias_id.alias_name', readonly=False)
+    alias_name = fields.Char('Alias Name', copy=False, related='alias_id.alias_name', inverse=True)
     alias_fullname = fields.Char('Alias Full Name', compute='_compute_alias_fullname')
     description = fields.Text('Description')
     image_128 = fields.Image('Image', max_width=128, max_height=128)

@@ -1129,7 +1129,7 @@ class Task(models.Model):
     partner_phone = fields.Char(
         compute='_compute_partner_phone', inverse='_inverse_partner_phone',
         string="Phone", readonly=False, store=True, copy=False)
-    partner_city = fields.Char(related='partner_id.city', readonly=False)
+    partner_city = fields.Char(related='partner_id.city', inverse=True)
     manager_id = fields.Many2one('res.users', string='Project Manager', related='project_id.user_id', readonly=True)
     company_id = fields.Many2one(
         'res.company', string='Company', compute='_compute_company_id', store=True, readonly=False,

@@ -31,10 +31,10 @@ class HrEmployeePrivate(models.Model):
 
     # resource and user
     # required on the resource, make sure required="True" set in the view
-    name = fields.Char(string="Employee Name", related='resource_id.name', store=True, readonly=False, tracking=True)
-    user_id = fields.Many2one('res.users', 'User', related='resource_id.user_id', store=True, readonly=False)
+    name = fields.Char(string="Employee Name", related='resource_id.name', store=True, inverse=True, tracking=True)
+    user_id = fields.Many2one('res.users', 'User', related='resource_id.user_id', store=True, inverse=True)
     user_partner_id = fields.Many2one(related='user_id.partner_id', related_sudo=False, string="User's partner")
-    active = fields.Boolean('Active', related='resource_id.active', default=True, store=True, readonly=False)
+    active = fields.Boolean('Active', related='resource_id.active', default=True, store=True, inverse=True)
     company_id = fields.Many2one('res.company', required=True)
     company_country_id = fields.Many2one('res.country', 'Company Country', related='company_id.country_id', readonly=True)
     company_country_code = fields.Char(related='company_country_id.code', readonly=True)
@@ -48,7 +48,7 @@ class HrEmployeePrivate(models.Model):
         compute='_compute_is_address_home_a_company',
     )
     private_email = fields.Char(related='address_home_id.email', string="Private Email", groups="hr.group_hr_user")
-    lang = fields.Selection(related='address_home_id.lang', string="Lang", groups="hr.group_hr_user", readonly=False)
+    lang = fields.Selection(related='address_home_id.lang', string="Lang", groups="hr.group_hr_user", inverse=True)
     country_id = fields.Many2one(
         'res.country', 'Nationality (Country)', groups="hr.group_hr_user", tracking=True)
     gender = fields.Selection([
@@ -100,7 +100,7 @@ class HrEmployeePrivate(models.Model):
     km_home_work = fields.Integer(string="Home-Work Distance", groups="hr.group_hr_user", tracking=True)
 
     job_id = fields.Many2one(tracking=True)
-    phone = fields.Char(related='address_home_id.phone', related_sudo=False, readonly=False, string="Private Phone", groups="hr.group_hr_user")
+    phone = fields.Char(related='address_home_id.phone', related_sudo=False, inverse=True, string="Private Phone", groups="hr.group_hr_user")
     # employee in company
     child_ids = fields.One2many('hr.employee', 'parent_id', string='Direct subordinates')
     category_ids = fields.Many2many(

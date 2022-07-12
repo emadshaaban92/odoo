@@ -44,7 +44,7 @@ class EventRegistration(models.Model):
     event_user_id = fields.Many2one(string='Event Responsible', related='event_id.user_id', readonly=True)
     company_id = fields.Many2one(
         'res.company', string='Company', related='event_id.company_id',
-        store=True, readonly=True, states={'draft': [('readonly', False)]})
+        store=True, inverse=True, readonly=True, states={'draft': [('readonly', False)]})
     state = fields.Selection([
         ('draft', 'Unconfirmed'), ('cancel', 'Cancelled'),
         ('open', 'Confirmed'), ('done', 'Attended')],

@@ -36,18 +36,18 @@ class LunchSupplier(models.Model):
 
     partner_id = fields.Many2one('res.partner', string='Vendor', required=True)
 
-    name = fields.Char('Name', related='partner_id.name', readonly=False)
+    name = fields.Char('Name', related='partner_id.name', inverse=True)
 
-    email = fields.Char(related='partner_id.email', readonly=False)
+    email = fields.Char(related='partner_id.email', inverse=True)
     email_formatted = fields.Char(related='partner_id.email_formatted', readonly=True)
-    phone = fields.Char(related='partner_id.phone', readonly=False)
-    street = fields.Char(related='partner_id.street', readonly=False)
-    street2 = fields.Char(related='partner_id.street2', readonly=False)
-    zip_code = fields.Char(related='partner_id.zip', readonly=False)
-    city = fields.Char(related='partner_id.city', readonly=False)
-    state_id = fields.Many2one("res.country.state", related='partner_id.state_id', readonly=False)
-    country_id = fields.Many2one('res.country', related='partner_id.country_id', readonly=False)
-    company_id = fields.Many2one('res.company', related='partner_id.company_id', readonly=False, store=True)
+    phone = fields.Char(related='partner_id.phone', inverse=True)
+    street = fields.Char(related='partner_id.street', inverse=True)
+    street2 = fields.Char(related='partner_id.street2', inverse=True)
+    zip_code = fields.Char(related='partner_id.zip', inverse=True)
+    city = fields.Char(related='partner_id.city', inverse=True)
+    state_id = fields.Many2one("res.country.state", related='partner_id.state_id', inverse=True)
+    country_id = fields.Many2one('res.country', related='partner_id.country_id', inverse=True)
+    company_id = fields.Many2one('res.company', related='partner_id.company_id', inverse=True, store=True)
 
     responsible_id = fields.Many2one('res.users', string="Responsible", domain=lambda self: [('groups_id', 'in', self.env.ref('lunch.group_lunch_manager').id)],
                                      default=lambda self: self.env.user,

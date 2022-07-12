@@ -61,9 +61,9 @@ class Contract(models.Model):
         ('blocked', 'Red')
     ], string='Kanban State', default='normal', tracking=True, copy=False)
     currency_id = fields.Many2one(string="Currency", related='company_id.currency_id', readonly=True)
-    permit_no = fields.Char('Work Permit No', related="employee_id.permit_no", readonly=False)
-    visa_no = fields.Char('Visa No', related="employee_id.visa_no", readonly=False)
-    visa_expire = fields.Date('Visa Expire Date', related="employee_id.visa_expire", readonly=False)
+    permit_no = fields.Char('Work Permit No', related="employee_id.permit_no", inverse=True)
+    visa_no = fields.Char('Visa No', related="employee_id.visa_no", inverse=True)
+    visa_expire = fields.Date('Visa Expire Date', related="employee_id.visa_expire", inverse=True)
     hr_responsible_id = fields.Many2one('res.users', 'HR Responsible', tracking=True,
         help='Person responsible for validating the employee\'s contracts.', domain="[('company_id', '=', company_id)]")
     calendar_mismatch = fields.Boolean(compute='_compute_calendar_mismatch')

@@ -56,7 +56,7 @@ class Company(models.Model):
             new_image.save(stream, format="ICO")
             return base64.b64encode(stream.getvalue())
 
-    name = fields.Char(related='partner_id.name', string='Company Name', required=True, store=True, readonly=False)
+    name = fields.Char(related='partner_id.name', string='Company Name', required=True, store=True, inverse=True)
     sequence = fields.Integer(help='Used to order Companies in the company switcher', default=10)
     parent_id = fields.Many2one('res.company', string='Parent Company', index=True)
     child_ids = fields.One2many('res.company', 'parent_id', string='Child Companies')
@@ -64,7 +64,7 @@ class Company(models.Model):
     report_header = fields.Html(string='Company Tagline', help="Appears by default on the top right corner of your printed documents (report header).")
     report_footer = fields.Html(string='Report Footer', translate=True, help="Footer text displayed at the bottom of all reports.")
     company_details = fields.Html(string='Company Details', help="Header text displayed at the top of all reports.")
-    logo = fields.Binary(related='partner_id.image_1920', default=_get_logo, string="Company Logo", readonly=False)
+    logo = fields.Binary(related='partner_id.image_1920', default=_get_logo, string="Company Logo", inverse=True)
     # logo_web: do not store in attachments, since the image is retrieved in SQL for
     # performance reasons (see addons/web/controllers/main.py, Binary.company_logo)
     logo_web = fields.Binary(compute='_compute_logo_web', store=True, attachment=False)
@@ -78,14 +78,14 @@ class Company(models.Model):
         'res.country.state', compute='_compute_address', inverse='_inverse_state',
         string="Fed. State", domain="[('country_id', '=?', country_id)]"
     )
-    bank_ids = fields.One2many(related='partner_id.bank_ids', readonly=False)
+    bank_ids = fields.One2many(related='partner_id.bank_ids', inverse=True)
     country_id = fields.Many2one('res.country', compute='_compute_address', inverse='_inverse_country', string="Country")
-    email = fields.Char(related='partner_id.email', store=True, readonly=False)
-    phone = fields.Char(related='partner_id.phone', store=True, readonly=False)
-    mobile = fields.Char(related='partner_id.mobile', store=True, readonly=False)
-    website = fields.Char(related='partner_id.website', readonly=False)
-    vat = fields.Char(related='partner_id.vat', string="Tax ID", readonly=False)
-    company_registry = fields.Char(related='partner_id.company_registry', string="Company ID", readonly=False)
+    email = fields.Char(related='partner_id.email', store=True, inverse=True)
+    phone = fields.Char(related='partner_id.phone', store=True, inverse=True)
+    mobile = fields.Char(related='partner_id.mobile', store=True, inverse=True)
+    website = fields.Char(related='partner_id.website', inverse=True)
+    vat = fields.Char(related='partner_id.vat', string="Tax ID", inverse=True)
+    company_registry = fields.Char(related='partner_id.company_registry', string="Company ID", inverse=True)
     paperformat_id = fields.Many2one('report.paperformat', 'Paper format', default=lambda self: self.env.ref('base.paperformat_euro', raise_if_not_found=False))
     external_report_layout_id = fields.Many2one('ir.ui.view', 'Document Template')
     base_onboarding_company_state = fields.Selection([

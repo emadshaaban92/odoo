@@ -29,7 +29,7 @@ class Digest(models.Model):
                                     ('quarterly', 'Quarterly')],
                                    string='Periodicity', default='daily', required=True)
     next_run_date = fields.Date(string='Next Mailing Date')
-    currency_id = fields.Many2one(related="company_id.currency_id", string='Currency', readonly=False)
+    currency_id = fields.Many2one(related="company_id.currency_id", string='Currency', inverse=True)
     company_id = fields.Many2one('res.company', string='Company', default=lambda self: self.env.company.id)
     available_fields = fields.Char(compute='_compute_available_fields')
     is_subscribed = fields.Boolean('Is user subscribed', compute='_compute_is_subscribed')

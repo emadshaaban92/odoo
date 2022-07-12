@@ -7,8 +7,8 @@ from odoo import api, models, fields, _
 class ResConfigSettings(models.TransientModel):
     _inherit = 'res.config.settings'
 
-    salesperson_id = fields.Many2one('res.users', related='website_id.salesperson_id', string='Salesperson', readonly=False, domain="[('share', '=', False)]")
-    salesteam_id = fields.Many2one('crm.team', related='website_id.salesteam_id', string='Sales Team', readonly=False)
+    salesperson_id = fields.Many2one('res.users', related='website_id.salesperson_id', string='Salesperson', inverse=True, domain="[('share', '=', False)]")
+    salesteam_id = fields.Many2one('crm.team', related='website_id.salesteam_id', string='Sales Team', inverse=True)
     module_website_sale_delivery = fields.Boolean("eCommerce Shipping Costs")
     # field used to have a nice radio in form view, resuming the 2 fields above
     sale_delivery_settings = fields.Selection([
@@ -33,10 +33,10 @@ class ResConfigSettings(models.TransientModel):
     module_website_sale_picking = fields.Boolean('On Site Payments & Picking')
 
     cart_recovery_mail_template = fields.Many2one('mail.template', string='Cart Recovery Email', domain="[('model', '=', 'sale.order')]",
-                                                  related='website_id.cart_recovery_mail_template_id', readonly=False)
+                                                  related='website_id.cart_recovery_mail_template_id', inverse=True)
     cart_abandoned_delay = fields.Float("Abandoned Delay", help="Number of hours after which the cart is considered abandoned.",
-                                        related='website_id.cart_abandoned_delay', readonly=False)
-    add_to_cart_action = fields.Selection(related='website_id.add_to_cart_action', readonly=False)
+                                        related='website_id.cart_abandoned_delay', inverse=True)
+    add_to_cart_action = fields.Selection(related='website_id.add_to_cart_action', inverse=True)
     terms_url = fields.Char(compute='_compute_terms_url', string="URL", help="A preview will be available at this URL.")
 
     module_delivery = fields.Boolean(

@@ -21,8 +21,8 @@ class MassMailingContactListRel(models.Model):
         default=False,
         help='The contact has chosen not to receive mails anymore from this list')
     unsubscription_date = fields.Datetime(string='Unsubscription Date')
-    message_bounce = fields.Integer(related='contact_id.message_bounce', store=False, readonly=False)
-    is_blacklisted = fields.Boolean(related='contact_id.is_blacklisted', store=False, readonly=False)
+    message_bounce = fields.Integer(related='contact_id.message_bounce', store=False, inverse=True)
+    is_blacklisted = fields.Boolean(related='contact_id.is_blacklisted', store=False, inverse=True)
 
     _sql_constraints = [
         ('unique_contact_list', 'unique (contact_id, list_id)',

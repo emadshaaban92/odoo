@@ -200,7 +200,7 @@ class EventEvent(models.Model):
         string='Venue (formatted for one line uses)', compute='_compute_address_inline',
         compute_sudo=True)
     country_id = fields.Many2one(
-        'res.country', 'Country', related='address_id.country_id', readonly=False, store=True)
+        'res.country', 'Country', related='address_id.country_id', inverse=True, store=True)
     # ticket reports
     ticket_instructions = fields.Html('Ticket Instructions', translate=True,
         compute='_compute_ticket_instructions', store=True, readonly=False,

@@ -33,7 +33,7 @@ class Rating(models.Model):
         compute='_compute_resource_ref', readonly=True)
     parent_res_name = fields.Char('Parent Document Name', compute='_compute_parent_res_name', store=True)
     parent_res_model_id = fields.Many2one('ir.model', 'Parent Related Document Model', index=True, ondelete='cascade')
-    parent_res_model = fields.Char('Parent Document Model', store=True, related='parent_res_model_id.model', index=True, readonly=False)
+    parent_res_model = fields.Char('Parent Document Model', store=True, related='parent_res_model_id.model', index=True, inverse=True)
     parent_res_id = fields.Integer('Parent Document', index=True)
     parent_ref = fields.Reference(
         string='Parent Ref', selection='_selection_target_model',
@@ -50,7 +50,7 @@ class Rating(models.Model):
         'mail.message', string="Message",
         index=True, ondelete='cascade',
         help="Associated message when posting a review. Mainly used in website addons.")
-    is_internal = fields.Boolean('Visible Internally Only', readonly=False, related='message_id.is_internal', store=True)
+    is_internal = fields.Boolean('Visible Internally Only', related='message_id.is_internal', inverse=True, store=True)
     access_token = fields.Char('Security Token', default=_default_access_token, help="Access token to set the rating of the value")
     consumed = fields.Boolean(string="Filled Rating", help="Enabled if the rating has been filled.")
 

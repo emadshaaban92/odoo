@@ -22,25 +22,25 @@ class ResConfigSettings(models.TransientModel):
     website_name = fields.Char(
         'Website Name',
         related='website_id.name',
-        readonly=False)
+        inverse=True)
     website_domain = fields.Char(
         'Website Domain',
         related='website_id.domain',
-        readonly=False)
+        inverse=True)
     website_country_group_ids = fields.Many2many(
         related='website_id.country_group_ids',
-        readonly=False)
+        inverse=True)
     website_company_id = fields.Many2one(
         related='website_id.company_id',
         string='Website Company',
-        readonly=False)
+        inverse=True)
     website_logo = fields.Binary(
         related='website_id.logo',
-        readonly=False)
+        inverse=True)
     language_ids = fields.Many2many(
         related='website_id.language_ids',
         relation='res.lang',
-        readonly=False)
+        inverse=True)
     website_language_count = fields.Integer(
         string='Number of languages',
         compute='_compute_website_language_count',
@@ -48,51 +48,51 @@ class ResConfigSettings(models.TransientModel):
     website_default_lang_id = fields.Many2one(
         string='Default language',
         related='website_id.default_lang_id',
-        readonly=False)
+        inverse=True)
     website_default_lang_code = fields.Char(
         'Default language code',
         related='website_id.default_lang_id.code',
-        readonly=False)
+        inverse=True)
     shared_user_account = fields.Boolean(
         string="Shared Customer Accounts",
         compute='_compute_shared_user_account',
         inverse='_inverse_shared_user_account')
     website_cookies_bar = fields.Boolean(
         related='website_id.cookies_bar',
-        readonly=False)
+        inverse=True)
     google_analytics_key = fields.Char(
         'Google Analytics Key',
         related='website_id.google_analytics_key',
-        readonly=False)
+        inverse=True)
     google_management_client_id = fields.Char(
         'Google Client ID',
         related='website_id.google_management_client_id',
-        readonly=False)
+        inverse=True)
     google_management_client_secret = fields.Char(
         'Google Client Secret',
         related='website_id.google_management_client_secret',
-        readonly=False)
+        inverse=True)
     google_search_console = fields.Char(
         'Google Search Console',
         related='website_id.google_search_console',
-        readonly=False)
+        inverse=True)
     plausible_shared_key = fields.Char(
         'Plausible auth Key',
         related='website_id.plausible_shared_key',
-        readonly=False)
+        inverse=True)
     plausible_site = fields.Char(
         'Plausible Site (e.g. domain.com)',
         related='website_id.plausible_site',
-        readonly=False)
+        inverse=True)
     cdn_activated = fields.Boolean(
         related='website_id.cdn_activated',
-        readonly=False)
+        inverse=True)
     cdn_url = fields.Char(
         related='website_id.cdn_url',
-        readonly=False)
+        inverse=True)
     cdn_filters = fields.Text(
         related='website_id.cdn_filters',
-        readonly=False)
+        inverse=True)
     auth_signup_uninvited = fields.Selection(
         compute="_compute_auth_signup_uninvited",
         inverse="_inverse_auth_signup_uninvited",
@@ -102,11 +102,11 @@ class ResConfigSettings(models.TransientModel):
     favicon = fields.Binary(
         'Favicon',
         related='website_id.favicon',
-        readonly=False)
+        inverse=True)
     social_default_image = fields.Binary(
         'Default Social Share Image',
         related='website_id.social_default_image',
-        readonly=False)
+        inverse=True)
 
     group_multi_website = fields.Boolean(
         "Multi-website",

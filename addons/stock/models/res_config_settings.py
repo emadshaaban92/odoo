@@ -29,8 +29,8 @@ class ResConfigSettings(models.TransientModel):
     group_stock_picking_wave = fields.Boolean('Wave Transfers', implied_group='stock.group_stock_picking_wave',
         help="Group your move operations in wave transfer to process them together")
     module_stock_barcode = fields.Boolean("Barcode Scanner")
-    stock_move_email_validation = fields.Boolean(related='company_id.stock_move_email_validation', readonly=False)
-    stock_mail_confirmation_template_id = fields.Many2one(related='company_id.stock_mail_confirmation_template_id', readonly=False)
+    stock_move_email_validation = fields.Boolean(related='company_id.stock_move_email_validation', inverse=True)
+    stock_mail_confirmation_template_id = fields.Many2one(related='company_id.stock_mail_confirmation_template_id', inverse=True)
     module_stock_sms = fields.Boolean("SMS Confirmation")
     module_delivery = fields.Boolean("Delivery Methods")
     module_delivery_dhl = fields.Boolean("DHL Express Connector")
@@ -45,8 +45,8 @@ class ResConfigSettings(models.TransientModel):
         help="Store products in specific locations of your warehouse (e.g. bins, racks) and to track inventory accordingly.")
     group_stock_storage_categories = fields.Boolean(
         'Storage Categories', implied_group='stock.group_stock_storage_categories')
-    annual_inventory_month = fields.Selection(related='company_id.annual_inventory_month', readonly=False)
-    annual_inventory_day = fields.Integer(related='company_id.annual_inventory_day', readonly=False)
+    annual_inventory_month = fields.Selection(related='company_id.annual_inventory_month', inverse=True)
+    annual_inventory_day = fields.Integer(related='company_id.annual_inventory_day', inverse=True)
     group_stock_reception_report = fields.Boolean("Reception Report", implied_group='stock.group_reception_report')
 
     @api.onchange('group_stock_multi_locations')
