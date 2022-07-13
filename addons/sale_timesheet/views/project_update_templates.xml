@@ -16,25 +16,40 @@
 </thead>
 <tr t-foreach="services['data']" t-as="service">
 <t t-set="is_unit" t-value="service['is_unit']"/>
+<t t-set="is_hour" t-value="service['is_hour']"/>
+<t t-set="unit" t-value="service['unit']"/>
 <td t-attf-class="#{ 'fst-italic' if is_unit else ''}"><t t-esc="service['name']"/></td>
-<td t-attf-class="#{ 'fst-italic' if is_unit else ''}" style="text-align: right; vertical-align: middle;"><t t-esc="format_value(service['sold_value'], service['is_hour'])"/> <t t-esc="service['unit']"/></td>
-<td t-attf-class="#{ 'fst-italic' if is_unit else ''}" style="text-align: right; vertical-align: middle;"><t t-esc="format_value(service['effective_value'], service['is_hour'])"/> <t t-esc="service['unit']"/></td>
-<td t-attf-class="#{ 'fst-italic' if is_unit else ''}" style="text-align: right; vertical-align: middle;"><t t-esc="format_value(service['remaining_value'], service['is_hour'])"/> <t t-esc="service['unit']"/></td>
+<td t-attf-class="#{ 'fst-italic' if is_unit else ''}" style="text-align: right; vertical-align: middle;"><t t-esc="format_value(service['sold_value'], is_hour)"/> <t t-esc="unit"/></td>
+<td t-attf-class="#{ 'fst-italic' if is_unit else ''}" style="text-align: right; vertical-align: middle;"><t t-esc="format_value(service['effective_value'], is_hour)"/> <t t-esc="unit"/></td>
+<td t-attf-class="#{ 'fst-italic' if is_unit else ''}" style="text-align: right; vertical-align: middle;"><t t-esc="format_value(service['remaining_value'], is_hour)"/> <t t-esc="unit"/></td>
 </tr>
 <tfoot>
-<td style="font-weight: bolder; text-align: right">Total</td>
-<td style="font-weight: bolder; text-align: right; vertical-align: middle;"><t t-esc="format_value(services['total_sold'], services['is_hour'])"/> <t t-esc="services['company_unit_name']"/></td>
-<td style="font-weight: bolder; text-align: right; vertical-align: middle;"><t t-esc="format_value(services['total_effective'], services['is_hour'])"/> <t t-esc="services['company_unit_name']"/></td>
-<td style="font-weight: bolder; text-align: right; vertical-align: middle;"><t t-esc="format_value(services['total_remaining'], services['is_hour'])"/> <t t-esc="services['company_unit_name']"/></td>
+<t t-set="totals" t-value="services['totals']"/>
+<t t-set="is_hour" t-value="services['is_hour']"/>
+<t t-set="company_time_uom" t-value="services['company_time_uom']"/>
+<td style="font-weight: bolder; text-align: right">Total<br/> </td>
+<td style="font-weight: bolder; text-align: right; vertical-align: middle;">
+    <t t-esc="format_value(totals['hours_sold'], is_hour)"/> <t t-esc="company_time_uom"/><br/>
+    <div class="fst-italic"><t t-esc="format_value(totals['units_sold'], False)"/> Units</div>
+</td>
+<td style="font-weight: bolder; text-align: right; vertical-align: middle;">
+    <t t-esc="format_value(totals['hours_effective'], is_hour)"/> <t t-esc="company_time_uom"/><br/>
+    <div class="fst-italic"><t t-esc="format_value(totals['units_effective'], False)"/> Units</div>
+</td>
+<td style="font-weight: bolder; text-align: right; vertical-align: middle;">
+    <t t-esc="format_value(totals['hours_remaining'], is_hour)"/> <t t-esc="company_time_uom"/><br/>
+    <div class="fst-italic"><t t-esc="format_value(totals['units_remaining'], False)"/> Units</div>
+</td>
 </tfoot>
 </tbody>
 </table>
 <br/>
-</div>        
-        
+</div>
+
 <div name="profitability" t-if="show_profitability">
 <t t-if="project.analytic_account_id and project.allow_billable and user.has_group('project.group_project_manager')" name="costs">
 <h3 style="font-weight: bolder"><u>Profitability</u></h3>
+<t t-if="project.allow_billable">
 The cost of the project is now at <t t-esc="profitability['costs_formatted']"/>, for a revenue of <t t-esc="profitability['revenues_formatted']"/>, leading to a
 <span>
 <font t-if="profitability['margin'] &gt; 0"  style="color: rgb(0, 128, 0)">
@@ -45,6 +60,7 @@ The cost of the project is now at <t t-esc="profitability['costs_formatted']"/>,
 </font>
 <t t-else="" t-esc="profitability['margin_formatted']"/>
 </span> margin (<t t-esc="profitability['margin_percentage']"/>%).
+</t>
 </t>
 </div>
         </xpath>

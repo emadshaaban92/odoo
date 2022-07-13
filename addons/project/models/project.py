@@ -1215,6 +1215,7 @@ class Task(models.Model):
                                      column2="task_id", string="Block", copy=False,
                                      domain="[('allow_task_dependencies', '=', True), ('id', '!=', id)]")
     dependent_tasks_count = fields.Integer(string="Dependent Tasks", compute='_compute_dependent_tasks_count')
+    depend_on_tasks_count = fields.Integer(string="Blocked By (Count)", compute='_compute_depend_on_tasks_count')
     is_blocked = fields.Boolean(compute='_compute_is_blocked', store=True, recursive=True)
 
     # Project sharing fields
@@ -1527,6 +1528,22 @@ class Task(models.Model):
             }
             for task in tasks_with_dependency:
                 task.dependent_tasks_count = dependent_tasks_count_dict.get(task.id, 0)
+
+    @api.depends('depend_on_ids')
+    def _compute_depend_on_tasks_count(self):
+        tasks_with_dependency = self.filtered('allow_task_dependencies')
+        (self - tasks_with_dependency).depend_on_tasks_count = 0
+        if tasks_with_dependency:
+            group_depend_on = self.env['project.task']._read_group([
+                ('dependent_ids', 'in', tasks_with_dependency.ids),
+                ('is_closed', '=', False),
+            ], ['dependent_ids'], ['dependent_ids'])
+            depend_on_tasks_count_dict = {
+                group['dependent_ids'][0]: group['dependent_ids_count']
+                for group in group_depend_on
+            }
+            for task in tasks_with_dependency:
+                task.depend_on_tasks_count = depend_on_tasks_count_dict.get(task.id, 0)
 
     @api.depends('depend_on_ids.is_closed', 'depend_on_ids.is_blocked')
     def _compute_is_blocked(self):

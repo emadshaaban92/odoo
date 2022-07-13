@@ -31,7 +31,8 @@ class ProjectUpdate(models.Model):
             return {}
 
         services = []
-        total_sold, total_effective, total_remaining = 0, 0, 0
+        total_hours_sold, total_hours_effective, total_hours_remaining = 0, 0, 0
+        total_units_sold, total_units_effective, total_units_remaining = 0, 0, 0
         sols = self.env['sale.order.line'].search(
             project._get_sale_items_domain([
                 ('is_service', '=', True),
@@ -48,7 +49,7 @@ class ProjectUpdate(models.Model):
             if sol.product_uom.category_id == company_uom.category_id or is_unit:
                 product_uom_qty = sol.product_uom._compute_quantity(sol.product_uom_qty, company_uom, raise_if_failure=False)
                 qty_delivered = sol.product_uom._compute_quantity(sol.qty_delivered, company_uom, raise_if_failure=False)
-                unit = sol.product_uom if is_unit else company_uom
+                unit = product_uom_unit if is_unit else company_uom
                 services.append({
                     'name': name_by_sol[sol.id],
                     'sold_value': product_uom_qty,
@@ -59,17 +60,26 @@ class ProjectUpdate(models.Model):
                     'is_hour': unit == product_uom_hour,
                     'sol': sol,
                 })
-                if sol.product_uom.category_id == company_uom.category_id:
-                    total_sold += product_uom_qty
-                    total_effective += qty_delivered
-        total_remaining = total_sold - total_effective
+                if is_unit:
+                    total_units_sold += product_uom_qty
+                    total_units_effective += qty_delivered
+                else:
+                    total_hours_sold += product_uom_qty
+                    total_hours_effective += qty_delivered
+        total_hours_remaining = total_hours_sold - total_hours_effective
+        total_units_remaining = total_units_sold - total_units_effective
 
         return {
             'data': services,
-            'total_sold': total_sold,
-            'total_effective': total_effective,
-            'total_remaining': total_remaining,
-            'company_unit_name': company_uom.name,
+            'totals': {
+                'hours_sold': total_hours_sold,
+                'hours_effective': total_hours_effective,
+                'hours_remaining': total_hours_remaining,
+                'units_sold': total_units_sold,
+                'units_effective': total_units_effective,
+                'units_remaining': total_units_remaining,
+            },
+            'company_time_uom': company_uom.name,
             'is_hour': company_uom == product_uom_hour,
         }
 

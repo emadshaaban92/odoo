@@ -76,6 +76,7 @@
             'project/static/src/js/subtasks_list_renderer.js',
             'project/static/src/js/tours/project.js',
             'project/static/src/js/project_calendar.js',
+            'project/static/src/js/widgets/depend_on_widget.js',
             'project/static/src/js/widgets/*',
             'project/static/src/scss/project_dashboard.scss',
             'project/static/src/scss/project_form.scss',

@@ -116,7 +116,7 @@
                     <field name="subtask_effective_hours" string="Sub-tasks Hours Spent" widget="timesheet_uom" sum="Sub-tasks Hours Spent" optional="hide" groups="hr_timesheet.group_hr_timesheet_user"/>
                     <field name="total_hours_spent" string="Total Hours" widget="timesheet_uom" sum="Total Hours" optional="hide" groups="hr_timesheet.group_hr_timesheet_user"/>
                     <field name="remaining_hours" widget="timesheet_uom" sum="Remaining Hours" optional="hide" decoration-danger="progress &gt;= 100" decoration-warning="progress &gt;= 80 and progress &lt; 100" groups="hr_timesheet.group_hr_timesheet_user"/>
-                    <field name="progress" widget="progressbar" optional="hide" groups="hr_timesheet.group_hr_timesheet_user"/>
+                    <field name="progress" widget="progressbar_overtime" optional="hide" groups="hr_timesheet.group_hr_timesheet_user"/>
                 </xpath>
                 <xpath expr="//notebook/page[@name='description_page']" position="after">
                     <field name="allow_timesheets" invisible="1"/>
@@ -140,7 +140,7 @@
                                 </div>
                             </group>
                             <group>
-                                <field name="progress" widget="progressbar"/>
+                                <field name="progress" widget="progressbar_overtime"/>
                             </group>
                         </group>
                         <group name="timesheet_error" attrs="{'invisible': [('analytic_account_active', '!=', False)]}">
@@ -250,7 +250,7 @@
                     <field name="subtask_effective_hours" widget="timesheet_uom" attrs="{'invisible' : [('allow_subtasks', '=', False)]}" optional="hide" groups="hr_timesheet.group_hr_timesheet_user"/>
                     <field name="total_hours_spent" widget="timesheet_uom" attrs="{'invisible' : [('allow_subtasks', '=', False)]}" optional="hide" groups="hr_timesheet.group_hr_timesheet_user"/>
                     <field name="remaining_hours" widget="timesheet_uom" sum="Remaining Hours" optional="hide" decoration-danger="progress &gt;= 100" decoration-warning="progress &gt;= 80 and progress &lt; 100" groups="hr_timesheet.group_hr_timesheet_user"/>
-                    <field name="progress" widget="progressbar" optional="hide" groups="hr_timesheet.group_hr_timesheet_user"/>
+                    <field name="progress" widget="progressbar_overtime" optional="hide" groups="hr_timesheet.group_hr_timesheet_user"/>
                 </xpath>
             </field>
         </record>
@@ -280,7 +280,7 @@
                     <field name="subtask_effective_hours" widget="timesheet_uom" attrs="{'invisible' : [('allow_subtasks', '=', False)]}" optional="hide"/>
                     <field name="total_hours_spent" widget="timesheet_uom" attrs="{'invisible' : [('allow_subtasks', '=', False)]}" optional="hide"/>
                     <field name="remaining_hours" widget="timesheet_uom" sum="Remaining Hours" optional="hide" decoration-danger="progress &gt;= 100" decoration-warning="progress &gt;= 80 and progress &lt; 100"/>
-                    <field name="progress" widget="progressbar" optional="show" groups="hr_timesheet.group_hr_timesheet_user" attrs="{'invisible' : [('planned_hours', '=', 0)]}"/>
+                    <field name="progress" widget="progressbar_overtime" optional="show" groups="hr_timesheet.group_hr_timesheet_user" attrs="{'invisible' : [('planned_hours', '=', 0)]}"/>
                 </field>
             </field>
         </record>

@@ -549,11 +549,11 @@
                                     <field name="analytic_tag_ids" groups="analytic.group_analytic_tags" widget="many2many_tags"/>
                                     <field name="privacy_visibility" widget="radio"/>
                                     <span colspan="2" class="text-muted" attrs="{'invisible':[('access_instruction_message', '=', '')]}">
-                                        <i class="fa fa-lightbulb-o"/>&amp;nbsp;<field name="access_instruction_message" nolabel="1"/>
+                                        <i class="fa fa-lightbulb-o"/>&amp;nbsp;<field name="access_instruction_message" nolabel="1"/>  
                                     </span>
                                     <span colspan="2" class="text-muted" attrs="{'invisible':[('privacy_visibility_warning', '=', '')]}">
                                         <i class="fa fa-warning">&amp;nbsp;</i>
-                                        <field name="privacy_visibility_warning" nolabel="1"/>
+                                        <field name="privacy_visibility_warning" nolabel="1"/>  
                                     </span>
                                 </group>
                                 <group>
@@ -1462,6 +1462,7 @@
                                 <div class="o_kanban_record_bottom" t-if="!selection_mode">
                                     <div class="oe_kanban_bottom_left">
                                         <field name="priority" widget="priority"/>
+                                        <field name="depend_on_tasks_count" widget="depend_on"/>
                                         <field name="activity_ids" widget="kanban_activity"/>
                                         <b t-if="record.rating_active.raw_value and record.rating_count.raw_value &gt; 0" groups="project.group_project_rating">
                                             <span style="font-weight:bold;" class="fa fa-fw mt4 fa-smile-o text-success" t-if="record.rating_avg.raw_value &gt;= 3.66" title="Average Rating: Satisfied" role="img" aria-label="Happy face"/>
@@ -1495,6 +1496,7 @@
                     <field name="sequence" invisible="1" readonly="1"/>
                     <field name="allow_milestones" invisible="1"/>
                     <field name="priority" widget="priority" optional="show" nolabel="1"/>
+                    <field name="depend_on_tasks_count" widget="depend_on" optional="show" nolabel="1" width="1" groups="project.group_project_task_dependencies"/>
                     <field name="id" optional="hide"/>
                     <field name="child_text" invisible="1"/>
                     <field name="allow_subtasks" invisible="1"/>
