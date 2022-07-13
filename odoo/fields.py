@@ -1357,8 +1357,10 @@ class Field(MetaField('DummyField', (object,), {})):
         """ Given the value of ``self`` on ``records``, inverse the computation. """
         if isinstance(self.inverse, str):
             getattr(records, self.inverse)()
-        else:
+        elif callable(self.inverse):
             self.inverse(records)
+        else:
+            raise TypeError(f"Unexpected field {self} with inverse={self.inverse!r}")
 
     def determine_domain(self, records, operator, value):
         """ Return a domain representing a condition on ``self``. """
