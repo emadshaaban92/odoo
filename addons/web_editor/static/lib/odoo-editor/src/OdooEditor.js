@@ -2242,6 +2242,9 @@ export class OdooEditor extends EventTarget {
      * @param {Node} node
      */
     _cleanForPaste(node) {
+        if (node.nodeName === 'FONT') {
+            return;
+        }
         if (!this._isWhitelisted(node) || this._isBlacklisted(node)) {
             if (!node.matches || node.matches(CLIPBOARD_BLACKLISTS.remove.join(','))) {
                 node.remove();
@@ -2258,11 +2261,24 @@ export class OdooEditor extends EventTarget {
                 // Keep allowed styles on nodes with allowed tags.
                 if (CLIPBOARD_WHITELISTS.styledTags.includes(node.nodeName) && attribute.name === 'style') {
                     const spanInlineStyles = attribute.value.split(';').map(x => x.trim());
+                    let fontStyle = '';
                     const allowedSpanInlineStyles = spanInlineStyles.filter(rawStyle => {
                         const [styleName, styleValue] = rawStyle.split(':');
                         const style = CLIPBOARD_WHITELISTS.styles[styleName.trim()];
-                        return style && !style.defaultValues.includes(styleValue.trim());
+                        const hasNotDefaultValues = style && !style.defaultValues.includes(styleValue.trim());
+                        if (['color', 'background-color'].includes(styleName.trim()) && hasNotDefaultValues) {
+                            fontStyle += rawStyle.concat(';');
+                        } else {
+                            return hasNotDefaultValues;
+                        }
                     });
+                    if (fontStyle) {
+                        const font = document.createElement('font');
+                        font.setAttribute(attribute.name, fontStyle);
+                        font.textContent = node.textContent;
+                        node.textContent = '';
+                        node.appendChild(font);
+                    }
                     node.removeAttribute(attribute.name);
                     if (allowedSpanInlineStyles.length > 0) {
                         node.setAttribute(attribute.name, allowedSpanInlineStyles.join(';'));

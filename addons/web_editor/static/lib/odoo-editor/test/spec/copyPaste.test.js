@@ -1488,4 +1488,27 @@ describe('Copy and paste', () => {
             });
         });
     });
+    describe('Complex html font+span', () => {
+        const complexHtmlData = '<span style="color: rgb(220,221,222); font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, &quot;Helvetica Neue&quot;, Arial, &quot;Noto Sans&quot;, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;, &quot;Segoe UI Symbol&quot;, &quot;Noto Color Emoji&quot;; font-size: 16px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: left; text-indent: 0px; text-transform: none; white-space: normal; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; background-color: rgb(4, 4, 5, 0.07); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; display: inline !important; float: none;">x</span>'
+        describe('range collapsed', async () => {
+            it('should paste text in font tag with color and background-color styles', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>[]abcd</p>',
+                    stepFunction: async editor => {
+                        await pasteHtml(editor, complexHtmlData);
+                    },
+                    contentAfter: '<p><font style="color: rgb(220,221,222);background-color: rgb(4, 4, 5, 0.07);">x</font>[]abcd</p>',
+                });
+            });
+            it('should paste text in the font with color and background-color styles only and other styles should keep on span tag', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<p>[]a<span style="font-weight: bolder">bc</span>d</p>',
+                    stepFunction: async editor => {
+                        await pasteHtml(editor, complexHtmlData);
+                    },
+                    contentAfter: '<p><font style="color: rgb(220,221,222);background-color: rgb(4, 4, 5, 0.07);">x</font>[]a<span style="font-weight: bolder">bc</span>d</p>',
+                });
+            });
+        });
+    });
 });
