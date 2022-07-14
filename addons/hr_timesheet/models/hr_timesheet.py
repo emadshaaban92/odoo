@@ -64,6 +64,7 @@ class AccountAnalyticLine(models.Model):
     manager_id = fields.Many2one('hr.employee', "Manager", related='employee_id.parent_id', store=True)
     encoding_uom_id = fields.Many2one('uom.uom', compute='_compute_encoding_uom_id')
     partner_id = fields.Many2one(compute='_compute_partner_id', store=True, readonly=False)
+    readonly_timesheet = fields.Boolean(string="Readonly Timesheet", compute="_compute_readonly_timesheet")
 
     def name_get(self):
         result = super().name_get()
@@ -82,6 +83,10 @@ class AccountAnalyticLine(models.Model):
             return project_id[1]
         timesheet_dict = {res['id']: _get_display_name(res['project_id'], res['task_id']) for res in timesheets_read}
         return list({**dict(result), **timesheet_dict}.items())
+
+    def _compute_readonly_timesheet(self):
+        # is overridden in other timesheet related modules
+        self.readonly_timesheet = False
 
     def _compute_encoding_uom_id(self):
         for analytic_line in self:

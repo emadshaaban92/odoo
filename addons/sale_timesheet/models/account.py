@@ -37,6 +37,12 @@ class AccountAnalyticLine(models.Model):
     is_so_line_edited = fields.Boolean("Is Sales Order Item Manually Edited")
     allow_billable = fields.Boolean(related="project_id.allow_billable")
 
+    @api.depends('timesheet_invoice_id')
+    def _compute_readonly_timesheet(self):
+        invoiced_timesheets = self.filtered('timesheet_invoice_id')
+        invoiced_timesheets.readonly_timesheet = True
+        super(AccountAnalyticLine, self - invoiced_timesheets)._compute_readonly_timesheet()
+
     @api.depends('project_id.commercial_partner_id', 'task_id.commercial_partner_id')
     def _compute_commercial_partner(self):
         for timesheet in self:
