@@ -53,6 +53,7 @@ from . import ir_mail_server
 from . import ir_model
 from . import ir_model_fields
 from . import ir_translation
+from . import ir_ui_menu
 from . import ir_ui_view
 from . import ir_qweb
 from . import ir_websocket
