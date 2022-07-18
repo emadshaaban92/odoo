@@ -5,26 +5,26 @@
         <t t-if="!props.readonly">
             <div class="position-relative" aria-atomic="true" t-att-style="sizeStyle">
                 <div class="o_form_image_controls">
-                    <FileUploader
+                    <FileInput
                         acceptedFileExtensions="props.acceptedFileExtensions"
-                        onUploaded.bind="onFileUploaded"
+                        onUpload.bind="onFileUploaded"
+                        onError.bind="onError"
                         type="'image'"
+                        shouldUpload="false"
                     >
-                        <t t-set-slot="toggler">
-                            <button
-                                class="fa fa-pencil fa-lg float-start o_select_file_button"
-                                data-tooltip="Edit"
-                                aria-label="Edit"
-                            />
-                        </t>
                         <button
-                            t-if="props.value and state.isValid"
-                            class="fa fa-trash-o fa-lg float-end o_clear_file_button"
-                            data-tooltip="Clear"
-                            aria-label="Clear"
-                            t-on-click="onFileRemove"
+                            class="fa fa-pencil fa-lg float-start o_select_file_button"
+                            data-tooltip="Edit"
+                            aria-label="Edit"
                         />
-                    </FileUploader>
+                    </FileInput>
+                    <button
+                        t-if="props.value and state.isValid"
+                        class="fa fa-trash-o fa-lg float-end o_clear_file_button"
+                        data-tooltip="Clear"
+                        aria-label="Clear"
+                        t-on-click="onFileRemove"
+                    />
                 </div>
             </div>
         </t>

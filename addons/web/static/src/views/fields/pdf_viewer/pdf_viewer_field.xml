@@ -4,37 +4,35 @@
     <t t-name="web.PdfViewerField" owl="1">
         <t t-if="!props.readonly">
             <t t-if="file.data">
-                <FileUploader
+                <FileInput
                     acceptedFileExtensions="'.pdf'"
                     file="file"
-                    onUploaded.bind="onFileUploaded"
+                    onUpload.bind="onFileUploaded"
+                    shouldUpload="false"
                 >
-                    <t t-set-slot="toggler">
-                        <span class="mx-2" t-esc="file.name"/>
-                        <button
-                            class="btn btn-secondary fa fa-pencil o_select_file_button"
-                            data-tooltip="Edit"
-                            aria-label="Edit"
-                        />
-                    </t>
+                    <span class="mx-2" t-esc="file.name"/>
                     <button
-                        class="btn btn-secondary fa fa-trash o_clear_file_button"
-                        data-tooltip="Clear"
-                        aria-label="Clear"
-                        t-on-click="onFileRemove"
+                        class="btn btn-secondary fa fa-pencil o_select_file_button"
+                        data-tooltip="Edit"
+                        aria-label="Edit"
                     />
-                </FileUploader>
+                </FileInput>
+                <button
+                    class="btn btn-secondary fa fa-trash o_clear_file_button"
+                    data-tooltip="Clear"
+                    aria-label="Clear"
+                    t-on-click="onFileRemove"
+                />
             </t>
             <t t-else="">
                 <label class="o_select_file_button btn btn-primary">
-                    <FileUploader
+                    <FileInput
                         acceptedFileExtensions="'.pdf'"
                         onUploaded.bind="onFileUploaded"
+                        shouldUpload="false"
                     >
-                        <t t-set-slot="toggler">
-                            <span t-esc="'Upload your file'"/>
-                        </t>
-                    </FileUploader>
+                        <span t-esc="'Upload your file'"/>
+                    </FileInput>
                 </label>
             </t>
         </t>

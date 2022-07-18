@@ -4,7 +4,7 @@ import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 import { url } from "@web/core/utils/urls";
 import { _lt } from "@web/core/l10n/translation";
-import { FileUploader } from "../file_handler";
+import { FileInput } from "@web/core/file_input/file_input";
 import { standardFieldProps } from "../standard_field_props";
 
 const { Component, useState } = owl;
@@ -79,11 +79,17 @@ export class ImageField extends Component {
             type: "danger",
         });
     }
+    onError(file) {
+        console.warn(`Error while uploading file : ${file.name}`);
+        this.notification.add(this.env._t("There was a problem while uploading your file."), {
+            type: "danger",
+        });
+    }
 }
 
 ImageField.template = "web.ImageField";
 ImageField.components = {
-    FileUploader,
+    FileInput,
 };
 ImageField.props = {
     ...standardFieldProps,

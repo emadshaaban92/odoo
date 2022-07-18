@@ -5,7 +5,7 @@ import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 import { url } from "@web/core/utils/urls";
 import { standardFieldProps } from "../standard_field_props";
-import { FileUploader } from "../file_handler";
+import { FileInput } from "@web/core/file_input/file_input";
 
 const { Component, onWillUpdateProps, useState } = owl;
 
@@ -73,7 +73,7 @@ export class PdfViewerField extends Component {
 
 PdfViewerField.template = "web.PdfViewerField";
 PdfViewerField.components = {
-    FileUploader,
+    FileInput,
 };
 PdfViewerField.props = {
     ...standardFieldProps,

@@ -1,8 +1,6 @@
 /** @odoo-module **/
 
 import { browser } from "@web/core/browser/browser";
-import { patch, unpatch } from "@web/core/utils/patch";
-import { FileUploader } from "@web/views/fields/file_handler";
 import { registerCleanup } from "@web/../tests/helpers/cleanup";
 import { makeMockXHR } from "@web/../tests/helpers/mock_services";
 import {
@@ -13,6 +11,9 @@ import {
     patchWithCleanup,
 } from "@web/../tests/helpers/utils";
 import { makeView, setupViewRegistries } from "@web/../tests/views/helpers";
+import { registry } from "@web/core/registry";
+
+const serviceRegistry = registry.category("services");
 
 let serverData;
 let target;
@@ -64,6 +65,12 @@ QUnit.module("Fields", (hooks) => {
         };
 
         setupViewRegistries();
+        const fakeHTTPService = {
+            start() {
+                return {};
+            },
+        };
+        serviceRegistry.add("http", fakeHTTPService);
     });
 
     QUnit.module("BinaryField");
@@ -197,17 +204,6 @@ QUnit.module("Fields", (hooks) => {
     QUnit.test(
         "binary fields input value is empty when clearing after uploading",
         async function (assert) {
-            patch(FileUploader.prototype, "test.FileUploader", {
-                async onFileChange(ev) {
-                    const file = new File([ev.target.value], ev.target.value + ".txt", {
-                        type: "text/plain",
-                    });
-                    await this._super({
-                        target: { files: [file] },
-                    });
-                },
-            });
-
             await makeView({
                 type: "form",
                 resModel: "partner",
@@ -222,14 +218,14 @@ QUnit.module("Fields", (hooks) => {
 
             await click(target, ".o_form_button_edit");
 
-            const input = target.querySelector(".o_field_binary input");
-            // We need to convert the input type since we can't programmatically set
-            // the value of a file input. The patch of the onFileChange will create
-            // a file object to be used by the component.
-            input.setAttribute("type", "text");
-            input.value = "fake_file";
-            input.dispatchEvent(new InputEvent("input", { bubbles: true }));
-            input.dispatchEvent(new Event("change", { bubbles: true }));
+            // Set and trigger the change of a pdf file for the input
+            const fileInput = target.querySelector('input[type="file"]');
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(
+                new File(["fake_file"], "fake_file.txt", { type: "plain/text" })
+            );
+            fileInput.files = dataTransfer.files;
+            fileInput.dispatchEvent(new Event("change", { bubbles: true }));
             await nextTick();
             await nextTick();
 
@@ -246,8 +242,6 @@ QUnit.module("Fields", (hooks) => {
                 "",
                 "input value should be empty"
             );
-
-            unpatch(FileUploader.prototype, "test.FileUploader");
         }
     );
 

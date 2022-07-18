@@ -2,6 +2,9 @@
 
 import { getFixture, nextTick } from "@web/../tests/helpers/utils";
 import { makeView, setupViewRegistries } from "@web/../tests/views/helpers";
+import { registry } from "@web/core/registry";
+
+const serviceRegistry = registry.category("services");
 
 let serverData;
 let target;
@@ -25,6 +28,12 @@ QUnit.module("Fields", (hooks) => {
         };
 
         setupViewRegistries();
+        const fakeHTTPService = {
+            start() {
+                return {};
+            },
+        };
+        serviceRegistry.add("http", fakeHTTPService);
     });
 
     QUnit.module("PdfViewerField");

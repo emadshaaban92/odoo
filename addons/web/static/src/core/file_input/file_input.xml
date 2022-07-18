@@ -15,6 +15,7 @@
                 t-att-accept="props.acceptedFileExtensions"
                 t-ref="file-input"
                 t-on-change="onFileInputChange"
+                t-on-error="props.onError"
             />
         </span>
     </t>
