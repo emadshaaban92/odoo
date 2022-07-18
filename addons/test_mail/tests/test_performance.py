@@ -960,7 +960,7 @@ class TestMailComplexPerformance(BaseMailPerformance):
         customer_id = self.customer.id
         user_id = self.user_portal.id
 
-        with self.assertQueryCount(__system__=57, employee=58):  # tm 57/58
+        with self.assertQueryCount(__system__=60, employee=61):  # tm 60/61
             rec = self.env['mail.test.ticket'].create({
                 'name': 'Test',
                 'container_id': container_id,
