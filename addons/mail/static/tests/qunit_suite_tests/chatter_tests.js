@@ -4,7 +4,7 @@ import { start, startServer } from '@mail/../tests/helpers/test_utils';
 import { WEBCLIENT_LOAD_ROUTES } from '@mail/../tests/helpers/webclient_setup';
 
 import testUtils from 'web.test_utils';
-import { patchWithCleanup } from '@web/../tests/helpers/utils';
+import { clickEdit, patchWithCleanup, selectDropdownItem } from '@web/../tests/helpers/utils';
 import { ViewAdapter } from "@web/legacy/action_adapters";
 
 QUnit.module('mail', {}, function () {
@@ -465,7 +465,7 @@ QUnit.test('fieldmany2many tags email (edition)', async function (assert) {
     assert.verifySteps([`[${resPartnerId2}]`, `[${resPartnerId2}]`, `[${resPartnerId2}]`]);
 });
 
-QUnit.skipWOWL('many2many_tags_email widget can load more than 40 records', async function (assert) {
+QUnit.debug('many2many_tags_email widget can load more than 40 records', async function (assert) {
     assert.expect(3);
 
     const pyEnv = await startServer();
@@ -490,13 +490,12 @@ QUnit.skipWOWL('many2many_tags_email widget can load more than 40 records', asyn
 
     assert.strictEqual(document.querySelectorAll('.o_field_widget[name="partner_ids"] .badge').length, 100);
 
-    await click('.o_form_button_edit');
+    await clickEdit(document.body);
 
     assert.containsOnce(document.body, '.o_form_editable');
 
     // add a record to the relation
-    await testUtils.fields.many2one.clickOpenDropdown('partner_ids');
-    await testUtils.fields.many2one.clickHighlightedItem('partner_ids');
+    await selectDropdownItem(document.body, 'partner_ids', "Public user");
 
     assert.strictEqual(document.querySelectorAll('.o_field_widget[name="partner_ids"] .badge').length, 101);
 });
