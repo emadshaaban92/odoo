@@ -410,7 +410,7 @@ class TestMailAPIPerformance(BaseMailPerformance):
             }).create({})
             composer._onchange_template_id_wrapper()
 
-        with self.assertQueryCount(__system__=126, employee=159), self.mock_mail_gateway():
+        with self.assertQueryCount(__system__=127, employee=160), self.mock_mail_gateway():
             composer._action_send_mail()
 
         self.assertEqual(len(self._new_mails), 10)
