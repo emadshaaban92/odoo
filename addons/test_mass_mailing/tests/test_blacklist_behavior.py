@@ -91,3 +91,38 @@ class TestAutoBlacklist(common.TestMassMailCommon):
             [{'email': 'test.record.00@test.example.com', 'trace_status': 'cancel', 'failure_type': 'mail_bl'}],
             new_mailing, target, check_mail=True
         )
+
+
+@tagged('mail_blacklist')
+class TestBlackListAlwaysApplied(common.TestMassMailCommon):
+    """ Test that blacklist is applied even if the target model doesn't inherit from mail.thread.blacklist. """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.target_rec = cls._create_mailing_test_records(model='mailing.test.simple')[0]
+        cls.mailing_bl.write({
+            'mailing_domain': [('id', 'in', cls.target_rec.ids)],
+            'mailing_model_id': cls.env['ir.model']._get('mailing.test.simple').id,
+        })
+
+    def test_mailing_not_blacklisted_sent(self):
+        """ Verify the base case: not blacklisted mails are sent """
+        with self.mock_mail_gateway(mail_unlink_sent=False):
+            self.mailing_bl.action_send_mail()
+        self.assertMailTraces(
+            [{'email': 'test.record.00@test.example.com'}],
+            self.mailing_bl, self.target_rec, check_mail=False)
+
+    def test_mailing_blacklisted_not_sent(self):
+        """ Verify that blacklisted mails are not sent """
+        self.env['mail.blacklist'].create([{
+            'email': 'test.record.00@test.example.com',
+            'active': True,
+        }])
+
+        with self.mock_mail_gateway(mail_unlink_sent=False):
+            self.mailing_bl.action_send_mail()
+        self.assertMailTraces(
+            [{'email': 'test.record.00@test.example.com', 'trace_status': 'cancel', 'failure_type': 'mail_bl'}],
+            self.mailing_bl, self.target_rec, check_mail=False)
