@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates>
+    <t t-name="account.sectionAndNoteRecordRow" t-inherit="web.ListRenderer.RecordRow" t-inherit-mode="extension" owl="1">
+        <xpath expr="//td[@class='o_data_cell']" position="attributes">
+            <attribute name="t-att-colspan">allowSectionsAndNotes ? getCellColspan(column) : 1</attribute>
+        </xpath>
+    </t>
+    <t t-name="account.sectionAndNoteListRenderer" t-inherit="web.ListRenderer" t-inherit-mode="extension" owl="1">
+        <xpath expr="//table" position="attributes">
+            <attribute name="t-att-class">allowSectionsAndNotes ? 'o_section_and_note_list_view' : ''</attribute>
+        </xpath>
+    </t>
+    <t t-name="account.SectionAndNoteText" owl="1">
+        <t t-component="componentToUse" t-props="props"/>
+    </t>
+</templates>
