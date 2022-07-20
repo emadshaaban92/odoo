@@ -146,6 +146,10 @@ class MailComposer(models.TransientModel):
         help='This option permanently removes any track of email after it\'s been sent, including from the Technical menu in the Settings, in order to preserve storage space of your Odoo database.')
     auto_delete_message = fields.Boolean('Delete Message Copy', help='Do not keep a copy of the email in the document communication history (mass mailing only)')
     mail_server_id = fields.Many2one('ir.mail_server', 'Outgoing mail server')
+    bypass_blacklist = fields.Boolean('Include Blacklist',
+                                      help='Include all recipients, even the blacklisted ones. '
+                                           'To use with caution and for non-marketing-related issues '
+                                           '(shortage of service, emergencies, …)')
 
     @api.depends('reply_to_force_new')
     def _compute_reply_to_mode(self):
@@ -528,7 +532,7 @@ class MailComposer(models.TransientModel):
 
     def _get_blacklist_record_ids(self, mail_values_dict, recipients_info):
         blacklisted_rec_ids = set()
-        if self.composition_mode == 'mass_mail':
+        if self.composition_mode == 'mass_mail' and not self.bypass_blacklist:
             self.env['mail.blacklist'].flush_model(['email', 'active'])
             self._cr.execute("SELECT email FROM mail_blacklist WHERE active=true")
             blacklist = {x[0] for x in self._cr.fetchall()}

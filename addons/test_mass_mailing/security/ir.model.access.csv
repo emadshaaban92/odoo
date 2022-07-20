@@ -1,6 +1,8 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_mailing_test_simple_all,access.mailing.test.simple.all,model_mailing_test_simple,,0,0,0,0
 access_mailing_test_simple_user,access.mailing.test.simple.user,model_mailing_test_simple,base.group_user,1,1,1,1
+access_mailing_test_simple_partner_all,access.mailing.test.simple.all,model_mailing_test_simple_partner,,0,0,0,0
+access_mailing_test_simple_partner_user,access.mailing.test.simple.user,model_mailing_test_simple_partner,base.group_user,1,1,1,1
 access_mailing_test_blacklist_all,access.mailing.test.blacklist.all,model_mailing_test_blacklist,,0,0,0,0
 access_mailing_test_blacklist_user,access.mailing.test.blacklist.user,model_mailing_test_blacklist,base.group_user,1,1,1,1
 access_mailing_test_optout_all,access.mailing.test.optout.all,model_mailing_test_optout,,0,0,0,0

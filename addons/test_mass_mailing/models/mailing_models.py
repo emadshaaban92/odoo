@@ -16,6 +16,18 @@ class MailingSimple(models.Model):
     email_from = fields.Char()
 
 
+class MailingSimplePartner(models.Model):
+    """ A very simple model only inheriting from mail.thread with partner_id. """
+    _description = 'Simple Mailing'
+    _name = 'mailing.test.simple.partner'
+    _inherit = ['mail.thread']
+    _primary_email = 'email_from'
+
+    name = fields.Char()
+    email_from = fields.Char()
+    partner_id = fields.Many2one('res.partner', 'Customer')
+
+
 class MailingUTM(models.Model):
     """ Model inheriting from mail.thread and utm.mixin for checking utm of mailing is caught and set on reply """
     _description = 'Mailing: UTM enabled to test UTM sync with mailing'

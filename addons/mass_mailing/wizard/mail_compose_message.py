@@ -44,6 +44,7 @@ class MailComposeMessage(models.TransientModel):
                     'mailing_model_id': self.env['ir.model']._get(self.model).id,
                     'mailing_domain': self.active_domain,
                     'attachment_ids': [(6, 0, self.attachment_ids.ids)],
+                    'bypass_blacklist': self.bypass_blacklist,
                 })
                 self.mass_mailing_id = mass_mailing.id
 

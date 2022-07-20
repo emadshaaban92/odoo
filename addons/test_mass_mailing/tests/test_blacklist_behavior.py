@@ -6,6 +6,7 @@ import datetime
 from freezegun import freeze_time
 from unittest.mock import patch
 
+from odoo import tools
 from odoo.addons.mass_mailing.models.mail_thread import BLACKLIST_MAX_BOUNCED_LIMIT
 from odoo.addons.test_mass_mailing.tests import common
 from odoo.tests import tagged
@@ -125,4 +126,44 @@ class TestBlackListAlwaysApplied(common.TestMassMailCommon):
             self.mailing_bl.action_send_mail()
         self.assertMailTraces(
             [{'email': 'test.record.00@test.example.com', 'trace_status': 'cancel', 'failure_type': 'mail_bl'}],
+            self.mailing_bl, self.target_rec, check_mail=False)
+
+
+@tagged('mail_blacklist')
+class TestBlackListAlwaysAppliedWithPartner(common.TestMassMailCommon):
+    """ Test that blacklist is applied even if the target model doesn't inherit from mail.thread.blacklist with target
+    model with partner_id field.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super(TestBlackListAlwaysAppliedWithPartner, cls).setUpClass()
+        cls.email_to = '"Customer_00" <customer_00@test.example.com>'
+        cls.customer = cls.env['res.partner'].create({
+                'name': 'Customer_00',
+                'email': cls.email_to,
+            })
+        cls.target_rec = cls._create_mailing_test_records('mailing.test.simple.partner', [cls.customer.id])[0]
+        cls.mailing_bl.write({
+            'mailing_domain': [('id', 'in', cls.target_rec.ids)],
+            'mailing_model_id': cls.env['ir.model']._get('mailing.test.simple.partner').id,
+        })
+
+    def test_mailing_not_blacklisted_sent(self):
+        """ Verify the base case: not blacklisted mail are sent """
+        with self.mock_mail_gateway(mail_unlink_sent=False):
+            self.mailing_bl.action_send_mail()
+        self.assertMailTraces([{'email': self.email_to}], self.mailing_bl, self.target_rec, check_mail=False)
+
+    def test_mailing_blacklisted_not_sent(self):
+        """ Verify that blacklisted mail are not sent """
+        self.env['mail.blacklist'].create([{
+            'email': tools.email_normalize(self.email_to),
+            'active': True,
+        }])
+
+        with self.mock_mail_gateway(mail_unlink_sent=False):
+            self.mailing_bl.action_send_mail()
+        self.assertMailTraces(
+            [{'email': self.email_to, 'trace_status': 'cancel', 'failure_type': 'mail_bl'}],
             self.mailing_bl, self.target_rec, check_mail=False)
