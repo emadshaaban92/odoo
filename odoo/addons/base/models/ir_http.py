@@ -93,6 +93,7 @@ class IrHttp(models.AbstractModel):
     def _auth_method_user(cls):
         request.uid = request.session.uid
         if not request.uid:
+            http._logger_session.warning("Session %r expired. Endpoint is auth='user' but session is uid=None.", request.httprequest.session.sid[:8])
             raise http.SessionExpiredException("Session expired")
 
     @classmethod

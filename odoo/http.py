@@ -61,6 +61,7 @@ from .modules.module import read_manifest
 _logger = logging.getLogger(__name__)
 rpc_request = logging.getLogger(__name__ + '.rpc.request')
 rpc_response = logging.getLogger(__name__ + '.rpc.response')
+_logger_session = _logger.getChild('session')
 
 # One week cache for static content (static files in apps, library files, ...)
 # Safe resources may use what google page speed recommends (1 year)
@@ -1057,12 +1058,14 @@ class OpenERPSession(sessions.Session):
         authentication fails, a :exc:`SessionExpiredException` is raised.
         """
         if not self.db or not self.uid:
+            _logger_session.warning('Session %r expired, missing db or uid, db=%s, uid=%s', self.sid[:8], self.db, self.uid)
             raise SessionExpiredException("Session expired")
         # We create our own environment instead of the request's one.
         # to avoid creating it without the uid since request.uid isn't set yet
         env = odoo.api.Environment(request.cr, self.uid, self.context)
         # here we check if the session is still valid
         if not security.check_session(self, env):
+            _logger_session.warning('Session %r expired, security.check_session failed (password changed?)', self.sid[:8])
             raise SessionExpiredException("Session expired")
 
     def logout(self, keep_db=False):
@@ -1284,7 +1287,11 @@ class DisableCacheMiddleware(object):
     def __call__(self, environ, start_response):
         def start_wrapped(status, headers):
             req = werkzeug.wrappers.Request(environ)
-            root.setup_session(req)
+            try:
+                logging.disable(logging.INFO)
+                root.setup_session(req)
+            finally:
+                logging.disable(logging.NOTSET)
             if req.session and req.session.debug and not 'wkhtmltopdf' in req.headers.get('User-Agent'):
 
                 if "assets" in req.session.debug and (".js" in req.base_url or ".css" in req.base_url):
@@ -1375,6 +1382,7 @@ class Root(object):
             explicit_session = False
         if sid is None:
             httprequest.session = self.session_store.new()
+            _logger_session.warning('Missing session cookie. Use new session %r', httprequest.session.sid[:8])
         else:
             httprequest.session = self.session_store.get(sid)
         return explicit_session

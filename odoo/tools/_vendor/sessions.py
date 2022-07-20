@@ -15,6 +15,7 @@ r"""
     :copyright: 2007 Pallets
     :license: BSD-3-Clause
 """
+import logging
 import os
 import re
 import tempfile
@@ -28,6 +29,7 @@ from time import time
 from werkzeug.datastructures import CallbackDict
 
 _sha1_re = re.compile(r"^[a-f0-9]{40}$")
+_logger_session = logging.getLogger('odoo.http.session')
 
 
 def generate_key(salt=None):
@@ -211,19 +213,29 @@ class FilesystemSessionStore(SessionStore):
 
     def get(self, sid):
         if not self.is_valid_key(sid):
-            return self.new()
+            session = self.new()
+            _logger_session.warning("Invalid input sid %r, use new empty session %r instead.", sid[:8], session.sid[:8])
+            return session
         try:
             f = open(self.get_session_filename(sid), "rb")
         except IOError:
             if self.renew_missing:
-                return self.new()
+                session = self.new()
+                _logger_session.warning("Session %r not found on disk. User new empty session %r instead.", sid[:8], session.sid[:8])
+                return session
             data = {}
+            _logger_session.warning("Session %r not found on disk. Keep same session id but use blank data.", sid[:8])
         else:
             try:
                 try:
                     data = load(f)
                 except Exception:
+                    _logger_session.warning("Session %r contains invalid data. Keep same session id but use blank data.", sid[:8])
                     data = {}
+            except:
+                raise
+            else:
+                _logger_session.info("Found session %r on disk. uid=%s", sid[:8], data.get('uid'))
             finally:
                 f.close()
         return self.session_class(data, sid, False)
