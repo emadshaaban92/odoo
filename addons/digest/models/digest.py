@@ -65,13 +65,23 @@ class Digest(models.Model):
     def _get_kpi_compute_parameters(self):
         return fields.Datetime.to_string(self._context.get('start_datetime')), fields.Datetime.to_string(self._context.get('end_datetime')), self.env.company
 
+    def _ensure_user_has_one_of_the_group(self, *group_names):
+        """ Raise an exception if the current user has not one of the group specified.
+
+        The goal is to use this method in the compute method of each kpi to check rights.
+        """
+        if not any(self.env.user.has_group(group_name) for group_name in group_names):
+            raise AccessError(_("Do not have access, skip this data for user's digest email"))
+
     def _compute_kpi_res_users_connected_value(self):
+        self._ensure_user_has_one_of_the_group('base.group_system')
         for record in self:
             start, end, company = record._get_kpi_compute_parameters()
             user_connected = self.env['res.users'].search_count([('company_id', '=', company.id), ('login_date', '>=', start), ('login_date', '<', end)])
             record.kpi_res_users_connected_value = user_connected
 
     def _compute_kpi_mail_message_total_value(self):
+        self._ensure_user_has_one_of_the_group('base.group_system')
         discussion_subtype_id = self.env.ref('mail.mt_comment').id
         for record in self:
             start, end, company = record._get_kpi_compute_parameters()

@@ -79,7 +79,7 @@ class TestDigest(mail_test.MailCommon):
     @users('admin')
     def test_digest_numbers(self):
         digest = self.env['digest.digest'].browse(self.test_digest.ids)
-        digest._action_subscribe_users(self.user_employee)
+        digest._action_subscribe_users(self.user_admin)
 
         # digest creates its mails in auto_delete mode so we need to capture
         # the formatted body during the sending process
