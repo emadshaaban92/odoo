@@ -239,6 +239,12 @@ class DiscussController(http.Controller):
             thread = channel_member_sudo.channel_id
         else:
             thread = request.env[thread_model].browse(int(thread_id)).exists()
+            try:
+                thread.check_access_rights("write")
+                thread.check_access_rule("write")
+                thread = thread.sudo()
+            except AccessError:
+                pass
         return thread.message_post(**{key: value for key, value in post_data.items() if key in self._get_allowed_message_post_params()}).message_format()[0]
 
     @http.route('/mail/message/update_content', methods=['POST'], type='json', auth='public')

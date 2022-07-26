@@ -3152,7 +3152,6 @@ class MailThread(models.AbstractModel):
         if not self:
             res['hasReadAccess'] = False
             return res
-
         self.ensure_one()
         try:
             self.check_access_rights("write")
@@ -3160,6 +3159,7 @@ class MailThread(models.AbstractModel):
             res['hasWriteAccess'] = True
         except AccessError:
             pass
+        self = self.sudo()
         if 'activities' in request_list:
             res['activities'] = self.activity_ids.activity_format()
         if 'attachments' in request_list:
