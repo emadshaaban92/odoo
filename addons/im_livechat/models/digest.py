@@ -15,6 +15,7 @@ class Digest(models.Model):
     kpi_livechat_response_value = fields.Float(compute='_compute_kpi_livechat_response_value')
 
     def _compute_kpi_livechat_rating_value(self):
+        self._ensure_user_has_one_of_the_group('im_livechat.im_livechat_group_manager')
         channels = self.env['mail.channel'].search([('livechat_operator_id', '=', self.env.user.partner_id.id)])
         for record in self:
             start, end, company = record._get_kpi_compute_parameters()
@@ -26,6 +27,7 @@ class Digest(models.Model):
             record.kpi_livechat_rating_value = ratings['great'] * 100 / sum(ratings.values()) if sum(ratings.values()) else 0
 
     def _compute_kpi_livechat_conversations_value(self):
+        self._ensure_user_has_one_of_the_group('im_livechat.im_livechat_group_manager')
         for record in self:
             start, end, company = record._get_kpi_compute_parameters()
             record.kpi_livechat_conversations_value = self.env['mail.channel'].search_count([
@@ -35,6 +37,7 @@ class Digest(models.Model):
             ])
 
     def _compute_kpi_livechat_response_value(self):
+        self._ensure_user_has_one_of_the_group('im_livechat.im_livechat_group_manager')
         for record in self:
             start, end, company = record._get_kpi_compute_parameters()
             response_time = self.env['im_livechat.report.operator'].sudo()._read_group([
@@ -43,6 +46,7 @@ class Digest(models.Model):
             record.kpi_livechat_response_value = "%.2f" % sum([response['time_to_answer'] for response in response_time]) or 0
 
     def _compute_kpis_actions(self, company, user):
+        self._ensure_user_has_one_of_the_group('im_livechat.im_livechat_group_manager')
         res = super(Digest, self)._compute_kpis_actions(company, user)
         res['kpi_livechat_rating'] = 'im_livechat.rating_rating_action_livechat_report'
         res['kpi_livechat_conversations'] = 'im_livechat.im_livechat_report_operator_action'
