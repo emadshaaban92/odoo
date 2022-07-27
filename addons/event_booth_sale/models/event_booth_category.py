@@ -44,14 +44,14 @@ class EventBoothCategory(models.Model):
             if category.product_id and category.product_id.list_price:
                 category.price = category.product_id.list_price + category.product_id.price_extra
 
-    @api.depends_context('pricelist', 'quantity')
+    @api.depends_context('uom', 'pricelist', 'quantity')
     @api.depends('product_id', 'price')
     def _compute_price_reduce(self):
         for category in self:
-            product = category.product_id
-            list_price = product.list_price + product.price_extra
-            discount = (list_price - product._get_contextual_price()) / list_price if list_price else 0.0
-            category.price_reduce = (1.0 - discount) * category.price
+            category.price_reduce = category.product_id.with_context({
+                **self._context,
+                'record_being_sold': category.id,
+            })._get_contextual_price()
 
     @api.depends_context('pricelist', 'quantity')
     @api.depends('product_id', 'price_reduce')

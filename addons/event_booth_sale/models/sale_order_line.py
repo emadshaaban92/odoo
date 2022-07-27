@@ -92,11 +92,20 @@ class SaleOrderLine(models.Model):
 
     def _get_display_price(self):
         if self.event_booth_pending_ids and self.event_id:
-            company = self.event_id.company_id or self.env.company
-            currency = company.currency_id
-            total_price = sum([booth.price for booth in self.event_booth_pending_ids])
-            return currency._convert(
-                total_price, self.order_id.currency_id,
-                self.order_id.company_id or self.env.company.id,
-                self.order_id.date_order or fields.Date.today())
+            pricelist_id = self.order_id.pricelist_id.id
+            return sum(
+                super(SaleOrderLine,
+                      self.with_context(
+                          pricelist=pricelist_id,
+                          record_being_sold=booth._origin.booth_category_id.id,
+                          quantity=1)  # Assume there are no duplicate booth -> quantity = 1
+                      )._get_display_price()
+                for booth in self.event_booth_pending_ids
+            )
+
         return super()._get_display_price()
+
+    @api.depends('event_booth_registration_ids')
+    def _compute_price_unit(self):
+        # Note that this method call indirectly _get_display_price to sum the booth prices
+        super()._compute_price_unit()

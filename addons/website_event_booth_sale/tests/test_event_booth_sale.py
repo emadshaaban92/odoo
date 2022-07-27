@@ -59,5 +59,20 @@ class TestWebsiteEventBoothSale(HttpCase):
             'booth_menu': True,
         })
 
+        # Add price list rule on booth_product on all price list
+        # All are modified because some user don't get the default price list (depending on ir_property)
+        for price_list in self.env['product.pricelist'].search([]):
+            price_list.write({
+                'discount_policy': 'with_discount',
+            })
+            price_list.item_ids += self.env['product.pricelist.item'].create({
+                'compute_price': 'percentage',
+                'percent_price': 25.0,
+                'base': 'list_price',
+                'min_quantity': 1,
+                'product_id': self.booth_product.id,
+                'applied_on': '0_product_variant',
+            })
+
     def test_tour(self):
         self.start_tour('/event', 'website_event_booth_tour', login='portal')
