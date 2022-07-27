@@ -180,13 +180,18 @@ class StockMove(models.Model):
         help="Computes when a move should be reserved")
     product_packaging_id = fields.Many2one('product.packaging', 'Packaging', domain="[('product_id', '=', product_id)]", check_company=True)
     from_immediate_transfer = fields.Boolean(related="picking_id.immediate_transfer")
+    product_packaging_qty = fields.Float(
+            string="Reserved Packaging Quantity",
+            compute='_compute_product_packaging_qty')
+    product_packaging_qty_done = fields.Float(
+            string="Done Packaging Quantity",
+            compute='_compute_product_packaging_qty_done')
 
     @api.depends('product_id')
     def _compute_product_uom(self):
         for move in self:
             if not move.product_uom:
                 move.product_uom = move.product_id.uom_id.id
-
 
     @api.depends('has_tracking', 'picking_type_id.use_create_lots', 'picking_type_id.use_existing_lots', 'state')
     def _compute_display_assign_serial(self):
@@ -294,6 +299,38 @@ class StockMove(models.Model):
         for move in self:
             move.product_qty = move.product_uom._compute_quantity(
                 move.product_uom_qty, move.product_id.uom_id, rounding_method='HALF-UP')
+
+    @api.depends('product_packaging_id', 'product_uom', 'product_qty')
+    def _compute_product_packaging_qty(self):
+        self.product_packaging_qty = False
+        for move in self:
+            if not move.product_packaging_id:
+                continue
+            else:
+                move.product_packaging_qty = float_round(
+                    move.product_qty / move.product_packaging_id.qty,
+                    precision_rounding=move.product_packaging_id.product_uom_id.rounding)
+
+    @api.depends('product_packaging_id', 'product_uom', 'quantity_done')
+    def _compute_product_packaging_qty_done(self):
+        self.product_packaging_qty_done = False
+        for move in self:
+            if not move.product_packaging_id:
+                continue
+            else:
+                quantity_done = move.product_id.uom_id._compute_quantity(move.quantity_done, move.product_id.uom_id)
+                move.product_packaging_qty_done = float_round(
+                    quantity_done / move.product_packaging_id.qty,
+                    precision_rounding=move.product_id.uom_id.rounding)
+
+    def compute_product_packaging_qty(self, qty):
+        """ This is used when we need to compute the packaging quantity base on a given quantity.
+        Created for delivery slips"""
+        packaging_uom = self.product_packaging_id.product_uom_id
+        packaging_uom_qty = self.product_uom._compute_quantity(qty, packaging_uom)
+        return float_round(
+            packaging_uom_qty / self.product_packaging_id.qty,
+            precision_rounding=packaging_uom.rounding)
 
     def _get_move_lines(self):
         """ This will return the move lines to consider when applying _quantity_done_compute on a stock.move.
