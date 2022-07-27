@@ -141,6 +141,7 @@ class StockReplenishmentOption(models.TransientModel):
                 "target": "new",
                 "name": _("Quantity available too low")
             }
+
         return self.order_all()
 
     def order_avbl(self):
