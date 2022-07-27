@@ -962,6 +962,17 @@ class TransactionCase(BaseCase):
 
         self.addCleanup(self.registry.clear_caches)
 
+        # This prevents precommit functions and data from piling up
+        # until cr.flush is called in 'assertRaises' clauses
+        # (these are not cleared in self.env.clear or envs.clear)
+        precommit_funcs = collections.deque(list(self.env.cr.precommit._funcs))
+        precommit_data = dict(self.env.cr.precommit.data.items())
+
+        def setPrecommit(funcs, data):
+            self.env.cr.precommit.data = funcs
+            self.env.cr.precommit.data = data
+        self.addCleanup(setPrecommit, precommit_funcs, precommit_data)
+
         # flush everything in setUpClass before introducing a savepoint
         self.env.flush_all()
 
@@ -998,6 +1009,16 @@ class SingleTransactionCase(BaseCase):
     def setUp(self):
         super(SingleTransactionCase, self).setUp()
         self.env.flush_all()
+        # reset precommits to prevent them from piling up
+        # until they are executed by 'cr.flush' in 'assertRaises' clauses
+        # (not cleared by flush_all)
+        precommit_funcs = collections.deque(list(self.env.cr.precommit._funcs))
+        precommit_data = dict(self.env.cr.precommit.data.items())
+
+        def setPrecommit(funcs, data):
+            self.env.cr.precommit.data = funcs
+            self.env.cr.precommit.data = data
+        self.addCleanup(setPrecommit, precommit_funcs, precommit_data)
 
 
 class ChromeBrowserException(Exception):
