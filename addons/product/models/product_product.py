@@ -5,6 +5,7 @@ import re
 from collections import defaultdict
 
 from odoo import api, fields, models, tools, _
+from odoo.addons.product.models.product_template import DETAILED_TYPE_MODELS
 from odoo.exceptions import ValidationError
 from odoo.osv import expression
 from odoo.tools import float_compare
@@ -618,12 +619,12 @@ class ProductProduct(models.Model):
 
         prices = dict.fromkeys(self.ids, 0.0)
         for product in self:
-            price = product[price_type] or 0.0
+            price, is_price_overridden = product._get_base_or_overridden_price(price_type)
             price_currency = product.currency_id
             if price_type == 'standard_price':
                 price_currency = product.cost_currency_id
 
-            if price_type == 'list_price':
+            if price_type == 'list_price' and not is_price_overridden:
                 price += product.price_extra
                 # we need to add the price from the attributes that do not generate variants
                 # (see field product.attribute create_variant)
@@ -642,6 +643,16 @@ class ProductProduct(models.Model):
             prices[product.id] = price
 
         return prices
+
+    def _get_base_or_overridden_price(self, price_type):
+        """See `product.template._get_base_or_overridden_price`"""
+        self.ensure_one()
+        if price_type == 'list_price' and self._context.get('record_being_sold'):
+            model_name = DETAILED_TYPE_MODELS.get(self.detailed_type)
+            if not model_name:
+                raise ValueError(f'No model found in `DETAILED_TYPE_MODELS` for detailed type "{self.detailed_type}"')
+            return self.env[model_name].browse(self._context['record_being_sold']).price, True
+        return self[price_type] or 0.0, False
 
     @api.model
     def get_empty_list_help(self, help):
