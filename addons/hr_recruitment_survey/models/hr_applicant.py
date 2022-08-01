@@ -9,13 +9,20 @@ class Applicant(models.Model):
     _inherit = "hr.applicant"
 
     survey_id = fields.Many2one('survey.survey', related='job_id.survey_id', string="Survey", readonly=True)
-    response_id = fields.Many2one('survey.user_input', "Response", ondelete="set null", copy=False)
-    response_state = fields.Selection(related='response_id.state', readonly=True)
+    response_ids = fields.One2many('survey.user_input', 'applicant_id', string="Responses")
 
     def action_print_survey(self):
         """ If response is available then print this response otherwise print survey form (print template of the survey) """
         self.ensure_one()
-        return self.survey_id.action_print_survey(answer=self.response_id)
+        sorted_interviews = self.response_ids\
+            .filtered(lambda i: i.survey_id == self.survey_id)\
+            .sorted(lambda i: i.create_date, reverse=True)
+        answered_interviews = sorted_interviews.filtered(lambda i: i.state == 'done')
+        if answered_interviews:
+            return self.survey_id.action_print_survey(answer=answered_interviews[0])
+        if sorted_interviews:
+            return self.survey_id.action_print_survey(answer=sorted_interviews[0])
+        return self.survey_id.action_print_survey()
 
     def action_send_survey(self):
         self.ensure_one()

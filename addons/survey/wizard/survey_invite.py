@@ -56,7 +56,7 @@ class SurveyInvite(models.TransientModel):
     existing_mode = fields.Selection([
         ('new', 'New invite'), ('resend', 'Resend invite')],
         string='Handle existing', default='resend', required=True)
-    existing_text = fields.Text('Resend Comment', compute='_compute_existing_text', readonly=True, store=False)
+    existing_text = fields.Text('Resend Comment', compute='_compute_existing_text')
     # technical info
     mail_server_id = fields.Many2one('ir.mail_server', 'Outgoing mail server')
     # survey
@@ -69,31 +69,34 @@ class SurveyInvite(models.TransientModel):
 
     @api.depends('partner_ids', 'survey_id')
     def _compute_existing_partner_ids(self):
-        existing_answers = self.survey_id.user_input_ids
-        self.existing_partner_ids = existing_answers.mapped('partner_id') & self.partner_ids
+        for wizard in self:
+            existing_answers = self.survey_id.user_input_ids
+            wizard.existing_partner_ids = existing_answers.mapped('partner_id') & wizard.partner_ids._origin
 
     @api.depends('emails', 'survey_id')
     def _compute_existing_emails(self):
-        emails = list(set(emails_split.split(self.emails or "")))
-        existing_emails = self.survey_id.mapped('user_input_ids.email')
-        self.existing_emails = '\n'.join(email for email in emails if email in existing_emails)
+        for wizard in self:
+            emails = list(set(emails_split.split(wizard.emails or "")))
+            existing_emails = wizard.survey_id.mapped('user_input_ids.email')
+            wizard.existing_emails = '\n'.join(email for email in emails if email in existing_emails)
 
     @api.depends('existing_partner_ids', 'existing_emails')
     def _compute_existing_text(self):
-        existing_text = False
-        if self.existing_partner_ids:
-            existing_text = '%s: %s.' % (
-                _('The following customers have already received an invite'),
-                ', '.join(self.mapped('existing_partner_ids.name'))
-            )
-        if self.existing_emails:
-            existing_text = '%s\n' % existing_text if existing_text else ''
-            existing_text += '%s: %s.' % (
-                _('The following emails have already received an invite'),
-                self.existing_emails
-            )
+        for wizard in self:
+            existing_text = False
+            if wizard.existing_partner_ids:
+                existing_text = '%s: %s.' % (
+                    _('The following customers have already received an invite'),
+                    ', '.join(wizard.mapped('existing_partner_ids.name'))
+                )
+            if wizard.existing_emails:
+                existing_text = '%s\n' % existing_text if existing_text else ''
+                existing_text += '%s: %s.' % (
+                    _('The following emails have already received an invite'),
+                    wizard.existing_emails
+                )
 
-        self.existing_text = existing_text
+            self.existing_text = existing_text
 
     @api.depends('survey_id.access_token')
     def _compute_survey_start_url(self):
@@ -169,13 +172,23 @@ class SurveyInvite(models.TransientModel):
     # ------------------------------------------------------
 
     def _prepare_answers(self, partners, emails):
-        answers = self.env['survey.user_input']
         existing_answers = self.env['survey.user_input'].search([
             '&', ('survey_id', '=', self.survey_id.id),
             '|',
             ('partner_id', 'in', partners.ids),
             ('email', 'in', emails)
         ])
+        partners_done, emails_done, answers = self._get_done_partners_emails(existing_answers)
+
+        for new_partner in partners - partners_done:
+            answers |= self.survey_id._create_answer(partner=new_partner, check_attempts=False, **self._get_answers_values())
+        for new_email in [email for email in emails if email not in emails_done]:
+            answers |= self.survey_id._create_answer(email=new_email, check_attempts=False, **self._get_answers_values())
+
+        return answers
+
+    def _get_done_partners_emails(self, existing_answers):
+        answers = self.env['survey.user_input']
         partners_done = self.env['res.partner']
         emails_done = []
         if existing_answers:
@@ -194,13 +207,7 @@ class SurveyInvite(models.TransientModel):
                     answers |= next(existing_answer for existing_answer in
                         existing_answers.sorted(lambda answer: answer.create_date, reverse=True)
                         if existing_answer.email == email_done)
-
-        for new_partner in partners - partners_done:
-            answers |= self.survey_id._create_answer(partner=new_partner, check_attempts=False, **self._get_answers_values())
-        for new_email in [email for email in emails if email not in emails_done]:
-            answers |= self.survey_id._create_answer(email=new_email, check_attempts=False, **self._get_answers_values())
-
-        return answers
+        return (partners_done, emails_done, answers)
 
     def _get_answers_values(self):
         return {

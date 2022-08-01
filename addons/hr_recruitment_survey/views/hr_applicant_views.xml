@@ -7,7 +7,7 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='source_id']" position="after">
                 <field name="survey_id" invisible="1"/>
-                <field name="response_id" invisible="1"/>
+                <field name="response_ids" invisible="1"/>
             </xpath>
         </field>
     </record>
@@ -26,7 +26,7 @@
                     icon="fa-pencil-square-o"
                     type="object"
                     help="See interview report"
-                    attrs="{'invisible':['|',('survey_id','=',False),('response_id','=',False)]}">
+                    attrs="{'invisible':['|',('survey_id','=',False),('response_ids','=',False)]}">
                     <div class="o_field_widget o_stat_info">
                         <span class="o_stat_text">Consult</span>
                         <span class="o_stat_text">Interview</span>
@@ -35,8 +35,7 @@
             </xpath>
             <xpath expr="//field[@name='job_id']" position="before">
                 <field name="survey_id" invisible="1"/>
-                <field name="response_id" invisible="1"/>
-                <field name="response_state" invisible="1"/>
+                <field name="response_ids" invisible="1"/>
             </xpath>
         </field>
     </record>

@@ -27,6 +27,8 @@
                                 }"
                                 placeholder="Add a list of email recipients (separated by commas, semicolons or line breaks). They will not be converted into contacts."/>
                         </group>
+                        <field name="existing_partner_ids" invisible="1"/>
+                        <field name="existing_emails" invisible="1"/>
                         <div col="2" class="alert alert-warning" role="alert"
                             attrs="{'invisible': ['|', ('survey_access_mode', '=', 'public'), ('existing_text', '=', False)]}">
                             <field name="existing_text"/>
@@ -38,8 +40,6 @@
                                     <p attrs="{'invisible': [('existing_mode', '!=', 'new')]}">Customers will receive a new token and be able to completely retake the survey.</p>
                                 </div>
                             </group>
-                            <field name="existing_partner_ids" invisible="1"/>
-                            <field name="existing_emails" invisible="1"/>
                         </div>
                         <group col="2">
                             <field name="subject" placeholder="Subject..."/>
