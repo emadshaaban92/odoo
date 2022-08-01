@@ -329,6 +329,47 @@ def distribute_not(domain):
 
     return result
 
+def remove_domain_leaf(domain, fields_to_remove):
+    """ Make the provided domain insensitive to the fields provided in fields_to_remove. Fields that are part of
+    `fields_to_remove` are replaced by either a `FALSE_LEAF` or a `TRUE_LEAF` in order to ensure the evaluation of the
+    complete domain.
+
+    :param domain: The domain to process.
+    :param fields_to_remove: List of fields the domain has to be insensitive to.
+    :return: The insensitive domain.
+    """
+    def _process_leaf(elements, index, operator, new_domain):
+        leaf = elements[index]
+        if len(leaf) == 3:
+            if leaf[0] in fields_to_remove:
+                if operator == AND_OPERATOR:
+                    new_domain.append(TRUE_LEAF)
+                elif operator == OR_OPERATOR:
+                    new_domain.append(FALSE_LEAF)
+            else:
+                new_domain.append(leaf)
+            return 1
+        elif len(leaf) == 1 and leaf in DOMAIN_OPERATORS:
+            # Special case to avoid OR ('|') that can never resolve to true
+            if leaf == OR_OPERATOR \
+                    and len(elements[index + 1]) == 3 and len(elements[index + 2]) == 3 \
+                    and elements[index + 1][0] in fields_to_remove and elements[index + 2][0] in fields_to_remove:
+                new_domain.append(TRUE_LEAF)
+                return 3
+            new_domain.append(leaf)
+            if leaf[0] == NOT_OPERATOR:
+                return 1 + _process_leaf(elements, index + 1, AND_OPERATOR, new_domain)
+            first_leaf_skip = _process_leaf(elements, index + 1, leaf, new_domain)
+            second_leaf_skip = _process_leaf(elements, index + 1 + first_leaf_skip, leaf, new_domain)
+            return 1 + first_leaf_skip + second_leaf_skip
+        return 0
+
+    if len(domain) == 0:
+        return domain
+    new_domain = []
+    _process_leaf(normalize_domain(domain), 0, AND_OPERATOR, new_domain)
+    return new_domain
+
 
 # --------------------------------------------------
 # Generic leaf manipulation
