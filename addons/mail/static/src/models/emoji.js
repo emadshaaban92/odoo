@@ -21,7 +21,7 @@ registerModel({
             readonly: true, //Test
         }),
         emojiCategories: many('EmojiCategory', {
-            inverse: 'allEmojis',
+            inverse: 'allEmojis', //Dummy comment
         }),
         emojiRegistry: one('EmojiRegistry', {
             compute: '_computeEmojiRegistry',
