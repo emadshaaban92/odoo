@@ -18,7 +18,7 @@ registerModel({
     },
     fields: {
         description: attr({
-            readonly: true,
+            readonly: true, //Test
         }),
         emojiCategories: many('EmojiCategory', {
             inverse: 'allEmojis',
