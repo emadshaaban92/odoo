@@ -13,7 +13,9 @@ Thai accounting chart and localization.
     """,
     'author': 'Almacom',
     'website': 'http://almacom.co.th/',
-    'depends': ['account'],
+    'depends': [
+        'account_debit_note',
+    ],
     'data': [
         'data/account_tax_group_data.xml',
         'data/l10n_th_chart_data.xml',
@@ -22,6 +24,10 @@ Thai accounting chart and localization.
         'data/account_tax_report_data.xml',
         'data/account_tax_template_data.xml',
         'data/account_chart_template_data.xml',
+        'views/account_report.xml',
+        'views/report_invoice.xml',
+        'views/report_cash_voucher_templates.xml',
+        # 'data/res.country.state.csv',
     ],
     'demo': [
         'demo/demo_company.xml',
