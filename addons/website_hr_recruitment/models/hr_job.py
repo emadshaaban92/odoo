@@ -8,7 +8,12 @@ from odoo.tools.translate import html_translate
 
 class Job(models.Model):
     _name = 'hr.job'
-    _inherit = ['hr.job', 'website.seo.metadata', 'website.published.multi.mixin']
+    _inherit = [
+        'hr.job',
+        'website.seo.metadata',
+        'website.published.multi.mixin',
+        'website.searchable.mixin',
+    ]
 
     @mute_logger('odoo.addons.base.models.ir_qweb')
     def _get_default_description(self):

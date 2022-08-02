@@ -48,6 +48,8 @@
                 <div class="row flex-column">
                     <t t-if="not jobs">
                         <div class="col">
+                            <div t-if="search" class="alert alert-warning p-3 mx-lg-4" role="alert">
+                                <h5 class="text-center">No results found for '<span t-out="search"/>'.</h5>
                             </div>
                             <div class="alert alert-info p-3 mx-lg-4" groups="hr_recruitment.group_hr_recruitment_manager">
                                 <div class="text-center text-muted">
@@ -61,6 +63,12 @@
                             </div>
                         </div>
                     </t>
+                    <t t-elif="search and original_search">
+                        <div class="alert alert-info mx-3 mb-4 p-3" role="alert">
+                            <h5 class="text-center">No results found for '<span t-out="original_search"/>'. Showing results for '<span t-out="search"/>'.</h5>
+                            <t t-set="search" t-value="original_search"/>
+                        </div>
+                    </t>
                     <div t-foreach="jobs" t-as="job" class="col-lg mb32">
                         <div t-attf-class="card #{not job.website_published and 'o_jobs_unpublished'}">
                             <a t-attf-href="/jobs/detail/#{ slug(job) }" t-attf-class="text-decoration-none text-reset">
@@ -71,6 +79,12 @@
                         </div>
                     </div>
                 </div>
+            </div>
+            <!-- Pager -->
+            <div class='navbar mb-3 w-100'>
+                <t t-call="website.pager">
+                    <t t-set="classname" t-valuef="mx-auto"/>
+                </t>
             </div>
         </div>
     </div>
@@ -668,9 +682,12 @@
     <t t-set="opt_jobs_filter_countries" t-value="is_view_active('website_hr_recruitment.job_filter_by_countries')"/>
     <t t-set="opt_jobs_filter_departments" t-value="is_view_active('website_hr_recruitment.job_filter_by_departments')"/>
     <t t-set="opt_jobs_filter_offices" t-value="is_view_active('website_hr_recruitment.job_filter_by_offices')"/>
+    <t t-set="opt_jobs_filter_employment_type" t-value="is_view_active('website_hr_recruitment.job_filter_by_employment_type')"/>
     <t t-set="opt_jobs_search_bar" t-value="is_view_active('website_hr_recruitment.job_search_bar')"/>
     <!-- Filters -->
     <ul class="o_jobs_topbar_filters flex-md-nowrap nav py-2 py-md-0 ps-lg-3"/>
+    <!-- Search bar -->
+    <div t-if="opt_jobs_search_bar" class="o_jobs_topbar_search_bar d-flex align-items-center justify-content-end w-md-100 w-lg-25 me-2 me-lg-0 ps-lg-2"/>
 </template>
 
 <!-- Filter - Countries -->
@@ -849,7 +866,8 @@
     </xpath>
 </template>
 
-<template id="job_right_side_bar" inherit_id="website_hr_recruitment.index" active="True" name="Right Side Bar">
+<!-- Right Side Bar -->
+<template id="job_right_side_bar" inherit_id="website_hr_recruitment.content" active="True">
     <xpath expr="//div[@id='jobs_grid']" position="after">
         <div class="col-lg-4 oe_structure oe_empty" id="jobs_grid_right">
             <section class="">

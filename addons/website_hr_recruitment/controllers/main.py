@@ -3,12 +3,15 @@
 
 from odoo import http, _
 from odoo.addons.http_routing.models.ir_http import slug
+from odoo.osv.expression import AND
 from odoo.http import request
 from odoo.tools.misc import groupby
 from werkzeug.exceptions import NotFound
 
 
 class WebsiteHrRecruitment(http.Controller):
+    _jobs_per_page = 12
+
     def sitemap_jobs(env, rule, qs):
         if not qs or qs.lower() in '/jobs':
             yield {'loc': '/jobs'}
@@ -63,8 +66,13 @@ class WebsiteHrRecruitment(http.Controller):
             if country_code:
                 countries_ = Country.search([('code', '=', country_code)])
                 country = countries_[0] if countries_ else None
-                if not any(j for j in jobs if j.address_id and j.address_id.country_id == country):
-                    country = False
+                if country:
+                    country_count = Jobs.search_count(AND([
+                        request.website.website_domain(),
+                        [('address_id.country_id', '=', country.id)]
+                    ]))
+                    if not country_count:
+                        country = False
 
         options = {
             'displayDescription': True,
