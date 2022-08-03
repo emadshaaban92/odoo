@@ -47,6 +47,7 @@ PROJECT_TASK_READABLE_FIELDS = {
     'allow_milestones',
     'milestone_id',
     'has_late_and_unreached_milestone',
+    'is_recurrence_template',
 }
 
 PROJECT_TASK_WRITABLE_FIELDS = {
@@ -1243,10 +1244,11 @@ class Task(models.Model):
     recurrence_id = fields.Many2one('project.task.recurrence', copy=False)
     recurrence_update = fields.Selection([
         ('this', 'This task'),
-        ('subsequent', 'This and following tasks'),
-        ('all', 'All tasks'),
+        ('subsequent', 'This and future tasks'),
     ], default='this', store=False)
     recurrence_message = fields.Char(string='Next Recurrencies', compute='_compute_recurrence_message')
+    is_recurrence_template = fields.Boolean(search="_search_is_recurrence_template", compute='_compute_is_recurrence_template')
+    is_ancestor_recurrent = fields.Boolean(string="Recurrent Ancestor", related='ancestor_id.recurring_task')
 
     repeat_interval = fields.Integer(string='Repeat Every', default=1, compute='_compute_repeat', readonly=False)
     repeat_unit = fields.Selection([
@@ -1335,6 +1337,28 @@ class Task(models.Model):
     @property
     def SELF_WRITABLE_FIELDS(self):
         return PROJECT_TASK_WRITABLE_FIELDS
+
+    def _compute_is_recurrence_template(self):
+        task_template_ids = {
+            res['task_template_id'][0] for res in
+            self.env['project.task.recurrence'].sudo()._read_group(
+                [('task_template_id', '!=', False), ('id', 'in', self.recurrence_id.ids)],
+                ['task_template_id'], ['task_template_id']
+            )
+        }
+        for task in self:
+            task.is_recurrence_template = task.id in task_template_ids
+
+    def _search_is_recurrence_template(self, operator, value):
+        if operator not in ['=', '!=']:
+            raise NotImplementedError('This operator %s is not supported in this search method.' % operator)
+        task_template_ids = [
+            res['task_template_id'][0] for res in
+            self.env['project.task.recurrence'].sudo()._read_group(
+                [('task_template_id', '!=', False)], ['task_template_id'], ['task_template_id']
+            )
+        ]
+        return [('id', 'in' if (operator == '=') == value else 'not in', task_template_ids)]
 
     @api.depends('project_id.analytic_account_id')
     def _compute_analytic_account_id(self):
@@ -1958,6 +1982,7 @@ class Task(models.Model):
         if is_portal_user:
             self.check_access_rights('create')
         default_stage = dict()
+        recurrences = self.env['project.task.recurrence']
         for vals in vals_list:
             if is_portal_user:
                 self._ensure_fields_are_accessible(vals.keys(), operation='write', check_group_user=False)
@@ -1996,10 +2021,13 @@ class Task(models.Model):
             # recurrence
             rec_fields = vals.keys() & self._get_recurrence_fields()
             if rec_fields and vals.get('recurring_task') is True:
+                if vals.get('parent_id'):
+                    raise ValidationError(_('A subtask cannot be recurrent.'))
                 rec_values = {rec_field: vals[rec_field] for rec_field in rec_fields}
                 rec_values['next_recurrence_date'] = fields.Datetime.today()
                 recurrence = self.env['project.task.recurrence'].create(rec_values)
                 vals['recurrence_id'] = recurrence.id
+                recurrences += recurrence
         # The sudo is required for a portal user as the record creation
         # requires the read access on other models, as mail.template
         # in order to compute the field tracking
@@ -2029,6 +2057,8 @@ class Task(models.Model):
                 task.message_subscribe(follower.partner_id.ids, follower.subtype_ids.ids)
             if current_partner not in task.message_partner_ids:
                 task.message_subscribe(current_partner.ids)
+        for recurrence in recurrences:
+            recurrence._create_task(task_from=recurrence.task_ids[-1])
         return tasks
 
     def write(self, vals):
@@ -2045,8 +2075,6 @@ class Task(models.Model):
             raise UserError(_("Sorry. You can't set a task as its parent task."))
         if 'active' in vals and not vals.get('active') and any(self.mapped('recurrence_id')):
             vals['recurring_task'] = False
-        if 'recurrence_id' in vals and vals.get('recurrence_id') and any(not task.active for task in self):
-            raise UserError(_('Archived tasks cannot be recurring. Please unarchive the task first.'))
         # stage change: update date_last_stage_update
         if 'stage_id' in vals:
             if not 'project_id' in vals and self.filtered(lambda t: not t.project_id):
@@ -2061,29 +2089,29 @@ class Task(models.Model):
 
         # recurrence fields
         rec_fields = vals.keys() & self._get_recurrence_fields()
+        task_for_recurrence = {}
         if rec_fields:
             rec_values = {rec_field: vals[rec_field] for rec_field in rec_fields}
             for task in self:
                 if task.recurrence_id:
                     task.recurrence_id.write(rec_values)
                 elif vals.get('recurring_task'):
+                    if task.parent_id or vals.get('parent_id'):
+                        raise ValidationError(_('A subtask cannot be recurrent.'))
                     rec_values['next_recurrence_date'] = fields.Datetime.today()
                     recurrence = self.env['project.task.recurrence'].create(rec_values)
                     task.recurrence_id = recurrence.id
+                    task_for_recurrence[recurrence] = task
 
         if 'recurring_task' in vals and not vals.get('recurring_task'):
             self.recurrence_id.unlink()
 
         tasks = self
         recurrence_update = vals.pop('recurrence_update', 'this')
-        if recurrence_update != 'this':
-            recurrence_domain = []
-            if recurrence_update == 'subsequent':
-                for task in self:
-                    recurrence_domain = expression.OR([recurrence_domain, ['&', ('recurrence_id', '=', task.recurrence_id.id), ('create_date', '>=', task.create_date)]])
-            else:
-                recurrence_domain = [('recurrence_id', 'in', self.recurrence_id.ids)]
-            tasks |= self.env['project.task'].search(recurrence_domain)
+        if recurrence_update == 'subsequent':
+            for task in self:
+                recurrent_task = task.ancestor_id if task.ancestor_id.recurring_task else task
+                task_for_recurrence[recurrent_task.recurrence_id] = recurrent_task
 
         # The sudo is required for a portal user as the record update
         # requires the write access on others models, as rating.rating
@@ -2119,19 +2147,20 @@ class Task(models.Model):
                 task.display_project_id = task.project_id
 
         self._task_message_auto_subscribe_notify({task: task.user_ids - old_user_ids[task] - self.env.user for task in self})
+        for recurrence, task in task_for_recurrence.items():
+            recurrence._create_task(task_from=task)
         return result
+
+    def unlink_task_and_subtasks_recursively(self):
+        if self.child_ids:
+            self.child_ids.unlink_task_and_subtasks_recursively()
+        self.unlink()
 
     def update_date_end(self, stage_id):
         project_task_type = self.env['project.task.type'].browse(stage_id)
         if project_task_type.fold:
             return {'date_end': fields.Datetime.now()}
         return {'date_end': False}
-
-    @api.ondelete(at_uninstall=False)
-    def _unlink_except_recurring(self):
-        if any(self.mapped('recurrence_id')):
-            # TODO: show a dialog to stop the recurrence
-            raise UserError(_('You cannot delete recurring tasks. Please disable the recurrence first.'))
 
     # ---------------------------------------------------
     # Subtasks
@@ -2588,14 +2617,21 @@ class Task(models.Model):
         else:
             return action
 
-    def action_stop_recurrence(self):
-        tasks = self.env['project.task'].with_context(active_test=False).search([('recurrence_id', 'in', self.recurrence_id.ids)])
-        tasks.write({'recurring_task': False})
-        self.recurrence_id.unlink()
+    def action_address_recurrence(self, target, mode):
+        """
+        :param target: the occurences to be targetted (this or subsequent)
+        :param mode: the mode of the action (archive or delete)
+        """
+        if target != 'this':
+            self.recurrence_id.unlink()
 
-    def action_continue_recurrence(self):
-        self.recurrence_id = False
-        self.recurring_task = False
+        if mode == 'archive':
+            self.write({
+                'recurrence_id': False,
+                'active': False,
+            })
+        else:
+            self.unlink()
 
     # ---------------------------------------------------
     # Rating business
