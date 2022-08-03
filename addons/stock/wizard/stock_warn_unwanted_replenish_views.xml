@@ -10,7 +10,7 @@
                 The quantity you want to order might already have been ordered and delayed past the forecasted date.<br/> 
                 It's recommended to verify first the Forecasted report for the following product(s) before reordering.
                 </p>
-                <field name="stock_orderpoint_ids" nolabel="1" no_create="1" delete="0">
+                <field name="stock_orderpoint_ids" nolabel="1" no_create="1" delete="0" options="{'link': false, 'unlink': false}">
                     <tree decoration-warning="unwanted_replenish" editable="top" no_open="1" delete="0" create="0" default_order="unwanted_replenish, product_id">
                         <field name="active" invisible="1"/>
                         <field name="unwanted_replenish" invisible="1"/>
