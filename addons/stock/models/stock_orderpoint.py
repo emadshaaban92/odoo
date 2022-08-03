@@ -11,7 +11,7 @@ from odoo import SUPERUSER_ID, _, api, fields, models, registry
 from odoo.addons.stock.models.stock_rule import ProcurementException
 from odoo.exceptions import RedirectWarning, UserError, ValidationError
 from odoo.osv import expression
-from odoo.tools import float_compare, frozendict, split_every
+from odoo.tools import float_compare, float_is_zero, frozendict, split_every
 
 _logger = logging.getLogger(__name__)
 
@@ -94,8 +94,10 @@ class StockWarehouseOrderpoint(models.Model):
         help="Consider product forecast these many days in the future upon product replenishment, set to 0 for just-in-time.\n"
              "The value depends on the type of the route (Buy or Manufacture)")
 
+    unwanted_replenish = fields.Boolean('Unwanted Replenish', compute="_compute_unwanted_replenish")
+
     _sql_constraints = [
-        ('qty_multiple_check', 'CHECK( qty_multiple >= 0 )', 'Qty Multiple must be greater than or equal to zero.'),
+        ('qty_multiple_check', 'CHECK( qty_multiple >= 0 )', 'Qty Multipnew_qty_to_order > 0le must be greater than or equal to zero.'),
         ('product_location_check', 'unique (product_id, location_id, company_id)', 'A replenishment rule already exists for this product on this location.'),
     ]
 
@@ -169,6 +171,15 @@ class StockWarehouseOrderpoint(models.Model):
                 ], limit=1)
             orderpoint.location_id = warehouse.lot_stock_id.id
 
+    @api.depends('product_id', 'qty_to_order', 'product_max_qty')
+    def _compute_unwanted_replenish(self):
+        for orderpoint in self:
+            if float_is_zero(orderpoint.qty_to_order, precision_rounding=orderpoint.product_uom.rounding):
+                orderpoint.unwanted_replenish = False
+            else:
+                after_replenish_qty = orderpoint.product_id.with_context(company_id=orderpoint.company_id.id, location=orderpoint.location_id.id).virtual_available + orderpoint.qty_to_order
+                orderpoint.unwanted_replenish = float_compare(after_replenish_qty, orderpoint.product_max_qty, precision_rounding=orderpoint.product_uom.rounding) > 0
+
     @api.onchange('product_id')
     def _onchange_product_id(self):
         if self.product_id:
@@ -213,6 +224,22 @@ class StockWarehouseOrderpoint(models.Model):
         return action
 
     def action_replenish(self):
+        # prevent Reordering too much
+        if not(self.env.context.get('force_unwanted_replenish')):
+            orderpoints_with_too_much_replenishment = any(orderpoint.unwanted_replenish for orderpoint in self)
+            ctx = dict(self.env.context or {})
+            if orderpoints_with_too_much_replenishment:
+                ctx['default_stock_orderpoint_ids'] = [orderpoint.id for orderpoint in self]
+                return {
+                    'name': _('Forecasted quantity is higher than max quantity'),
+                    'type': 'ir.actions.act_window',
+                    'view_mode': 'form',
+                    'views': [(False, 'form')],
+                    'res_model': 'stock.warn.unwanted.replenish',
+                    'target': 'new',
+                    'context': ctx,
+                }
+
         now = datetime.now()
         try:
             self._procure_orderpoint_confirm(company_id=self.env.company)

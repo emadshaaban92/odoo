@@ -9,11 +9,13 @@ export class StockOrderpointListController extends ListController {
             context: this.props.context,
         });
         if (action) {
-            await this.actionService.doAction(action);
+            return this.actionService.doAction(action);
         }
-        return this.actionService.doAction('stock.action_replenishment', {
-            stackPosition: 'replaceCurrentAction',
-        });
+        else {
+            return this.actionService.doAction('stock.action_replenishment', {
+                stackPosition: 'replaceCurrentAction',
+            });
+        }
     }
 
     async onClickSnooze() {

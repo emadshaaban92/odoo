@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_stock_warn_unwanted_replenish" model="ir.ui.view">
+        <field name="name">stock.warn.unwanted.replenish.view.form</field>
+        <field name="model">stock.warn.unwanted.replenish</field>
+        <field name="arch" type="xml">
+            <form string="Forecasted quantity is higher than max quantity">
+                <p>
+                Reordering now could lead to a situation where you end up with unwanted stock.<br/> 
+                The quantity you want to order might already have been ordered and delayed past the forecasted date.<br/> 
+                It's recommended to verify first the Forecasted report for the following product(s) before reordering.
+                </p>
+                <field name="stock_orderpoint_ids" nolabel="1" no_create="1" delete="0">
+                    <tree decoration-warning="unwanted_replenish" editable="top" no_open="1" delete="0" create="0" default_order="unwanted_replenish, product_id">
+                        <field name="active" invisible="1"/>
+                        <field name="unwanted_replenish" invisible="1"/>
+                        <field name="company_id" invisible="1"/>
+                        <field name="product_category_id" invisible="1"/>
+                        <field name="product_tmpl_id" invisible="1"/>
+                        <field name="product_id" options="{'no_create': True, 'no_open': True}" attrs="{'readonly': [('product_id', '!=', False)]}" force_save="1"/>
+                        <field name="location_id" options="{'no_create': True}" groups="stock.group_stock_multi_locations"/>
+                        <field name="warehouse_id" options="{'no_create': True}" groups="stock.group_stock_multi_warehouses" optional="hide"/>
+                        <field name="qty_on_hand" force_save="1"/>
+                        <field name="qty_forecast" force_save="1"/>
+                        <button name="action_product_forecast_report" type="object" icon="fa-area-chart" title="Forecast Report" attrs="{'invisible': [('id', '=', False)]}"/>
+                        <field name="visibility_days" optional="hidden"/>
+                        <field name="route_id" options="{'no_create': True, 'no_open': True}"/>
+                        <button name="action_stock_replenishment_info" type="object" icon="fa-info-circle" title="Replenishment Information" attrs="{'invisible': [('id', '=', False)]}"/>
+                        <field name="trigger" optional="hide"/>
+                        <field name="group_id" optional="hide" groups="stock.group_adv_location"/>
+                        <field name="product_min_qty" optional="show"/>
+                        <field name="product_max_qty" optional="show"/>
+                        <field name="qty_multiple" optional="hide"/>
+                        <field name="qty_to_order"/>
+                        <field name="product_uom_name" string="UoM" groups="uom.group_uom"/>
+                        <field name="company_id" optional="hide" readonly="1" groups="base.group_multi_company"/>
+                    </tree>
+                </field>
+                <footer>
+                    <button name="action_validate_all" string="Validate All Orders" type="object" class="btn-primary" />
+                    <button name="action_validate_correct" string="Validate Correct Orders" type="object" class="btn-primary"/>
+                    <button name="action_validate_recompute" string="Recompute and Validate Orders" type="object" class="btn-primary"/>
+                    <button string="Discard" special="cancel" data-hotkey="z" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>
