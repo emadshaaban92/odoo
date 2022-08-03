@@ -6,8 +6,17 @@ var SurveyPreloadImageMixin = require('survey.preload_image_mixin');
 var SurveySessionChart = require('survey.session_chart');
 var SurveySessionTextAnswers = require('survey.session_text_answers');
 var SurveySessionLeaderBoard = require('survey.session_leaderboard');
-var core = require('web.core');
-var _t = core._t;
+const { _t } = require('web.core');
+
+const nextPageTooltips = {
+    startScreen: _t('Start'),
+    nextQuestion: _t('Next Questions'),
+    userInputs: _t('Show Results'),
+    results: _t('Show Correct Answer(s)'),
+    leaderboard: _t('Show Leaderboard'),
+    leaderboardFinal: _t('Show Final Leaderboard'),
+    closingWords: _t('Closing Words')
+};
 
 publicWidget.registry.SurveySessionManage = publicWidget.Widget.extend(SurveyPreloadImageMixin, {
     selector: '.o_survey_session_manage',
@@ -178,6 +187,11 @@ publicWidget.registry.SurveySessionManage = publicWidget.Widget.extend(SurveyPre
         }
 
         this.currentScreen = screenToDisplay;
+        // To avoid a flicker, we do not update the tooltip when going to the next question,
+        // as it will be done in "_setupCurrentScreen"
+        if (!['question', 'nextQuestion'].includes(screenToDisplay)) {
+            this._updateNextScreenTooltip();
+        }
     },
 
     /**
@@ -213,6 +227,11 @@ publicWidget.registry.SurveySessionManage = publicWidget.Widget.extend(SurveyPre
         }
 
         this.currentScreen = screenToDisplay;
+        // To avoid a flicker, we do not update the tooltip when going to the next question,
+        // as it will be done in "_setupCurrentScreen"
+        if (!['question', 'nextQuestion'].includes(screenToDisplay)) {
+            this._updateNextScreenTooltip();
+        }
     },
 
     /**
@@ -623,6 +642,7 @@ publicWidget.registry.SurveySessionManage = publicWidget.Widget.extend(SurveyPre
         this.$('.o_survey_session_navigation_previous').toggleClass('d-none', !!this.isFirstQuestion);
 
         this._setShowInputs(this.currentScreen === 'userInputs');
+        this._updateNextScreenTooltip();
     },
 
     /**
@@ -655,6 +675,27 @@ publicWidget.registry.SurveySessionManage = publicWidget.Widget.extend(SurveyPre
         if (this.resultsChart) {
             this.resultsChart.setShowAnswers(showAnswers);
             this.resultsChart.updateChart();
+        }
+    },
+    /**
+     * @private
+     * Updates the tooltip for current page (on right arrow icon for 'Next' content).
+     * this method will be called on Clicking of Next and Previous Arrow to show the
+     * tooltip for the Next Content.
+     */
+    _updateNextScreenTooltip() {
+        let tooltip;
+        if (this.currentScreen === 'startScreen') {
+            tooltip = nextPageTooltips['startScreen'];
+        } else if (this.isLastQuestion && !this.isScoredQuestion && !this.sessionShowLeaderboard) {
+            tooltip = nextPageTooltips['closingWords'];
+        } else {
+            const nextScreen = this._getNextScreen();
+            tooltip = nextPageTooltips[nextScreen];
+        }
+        const sessionNavigationNextEl = this.el.querySelector('.o_survey_session_navigation_next_label');
+        if (sessionNavigationNextEl && tooltip) {
+            sessionNavigationNextEl.textContent = tooltip;
         }
     }
 });

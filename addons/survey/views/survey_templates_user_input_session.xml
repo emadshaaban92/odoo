@@ -46,7 +46,10 @@
                         </h2>
                     </div>
                     <a role="button"
-                        class="fw-bold fa fa-chevron-right o_survey_session_navigation o_survey_session_navigation_next p-3" />
+                        class="o_survey_session_navigation o_survey_session_navigation_next p-3">
+                        <span class="o_survey_session_navigation_next_label me-1">Start</span>
+                        <i class="fw-bold fa fa-chevron-right"/>
+                    </a>
                 </div>
             </div>
         </t>
@@ -109,7 +112,10 @@
                     <div t-field="survey.description_done"/>
                 </div>
                 <a role="button"
-                    class="fw-bold fa fa-chevron-right o_survey_session_navigation o_survey_session_navigation_next p-3" />
+                    class="o_survey_session_navigation o_survey_session_navigation_next p-3">
+                    <span class="o_survey_session_navigation_next_label me-1"/>
+                    <i class="fw-bold fa fa-chevron-right"/>
+                </a>
                 <a role="button"
                     class="fw-bold fa fa-chevron-left o_survey_session_navigation o_survey_session_navigation_previous p-3" />
                 <div class="o_survey_session_results flex-column flex-grow-1 mx-5">
