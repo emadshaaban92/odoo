@@ -164,8 +164,8 @@ QUnit.test('list activity widget: open dropdown', async function (assert) {
         activity_summary: 'Call with Al',
         activity_type_id: mailActivityTypeId2,
     });
-
     const views = {
+
         'res.users,false,list': '<list><field name="activity_ids" widget="list_activity"/></list>',
     };
     const { openView } = await start({
