@@ -830,7 +830,7 @@
                                 </div>
                             </group>
                         </group>
-                        <notebook>
+                        <notebook onPageUpdate="() => this.saveOnTabChange()">
                             <page id="invoice_tab"
                                   name="invoice_tab"
                                   string="Invoice Lines"

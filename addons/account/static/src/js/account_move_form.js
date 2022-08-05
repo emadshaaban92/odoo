@@ -1,53 +1,33 @@
 /** @odoo-module **/
 
-import FormController from 'web.FormController';
-import FormRenderer from 'web.FormRenderer';
-import FormView from 'web.FormView';
-import view_registry from 'web.view_registry';
+import { registry } from "@web/core/registry";
+import { formView } from "@web/views/form/form_view";
+import { FormCompiler } from "@web/views/form/form_compiler";
+import { FormRenderer } from "@web/views/form/form_renderer";
 
-var AccountMoveFormController = FormController.extend({
-    custom_events: _.extend({}, FormController.prototype.custom_events, {
-        save_on_tab_switch: '_saveOnTabSwitch',
-    }),
-    _saveOnTabSwitch: async function(event) {
-        let tabName = event.data.originalEvent.target.name
-        await this.saveRecord(this.handle, {
-            stayInEdit: true,
-        });
-        await this.reload();
-        $(`[name='${tabName}']`).tab('show');
-    },
-});
-
-var AccountMoveFormRenderer = FormRenderer.extend({
-    _renderTagNotebook: function (node) {
-        var self = this;
-        var $result = this._super.apply(this, arguments);
-        var $nav_items = $result.find('ul.nav-tabs li.nav-item').slice(0, 2);
-        _.each($nav_items, (nav_item) => {
-            $(nav_item).find('a').on('show.bs.tab', function (event) {
-                if (self.state.isDirty()) {
-                    event.preventDefault();
-                    self.trigger_up('save_on_tab_switch', {originalEvent: event});
-                }
+export class AccountMoveFormRenderer extends FormRenderer {
+    async saveOnTabChange() {
+        if (this.props.record.mode === "edit" && this.props.record.isDirty) {
+            await this.props.record.save({
+                stayInEdition: true,
             });
-        })
-        return $result
-    },
-});
-
-var AccountMoveFormView = FormView.extend({
-    config: _.extend({}, FormView.prototype.config, {
-        Controller: AccountMoveFormController,
-        Renderer: AccountMoveFormRenderer,
-    }),
-
-});
-
-view_registry.add('account_move_form', AccountMoveFormView);
-
-export {
-    AccountMoveFormController,
-    AccountMoveFormRenderer,
-    AccountMoveFormView,
+        }
+    }
 }
+export class AccountMoveFormCompiler extends FormCompiler {
+    compileNotebook(el, params) {
+        let noteBook = super.compileNotebook(...arguments);
+        if (el.hasAttribute("onPageUpdate")) {
+            noteBook.setAttribute("onPageUpdate", el.getAttribute("onPageUpdate"));
+        }
+        return noteBook;
+    }
+}
+
+const AccountMoveFormView = {
+    ...formView,
+    Renderer: AccountMoveFormRenderer,
+    Compiler: AccountMoveFormCompiler,
+};
+
+registry.category("views").add("account_move_form", AccountMoveFormView);
