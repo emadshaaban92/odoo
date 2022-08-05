@@ -9,6 +9,7 @@ from psycopg2.errorcodes import UNIQUE_VIOLATION
 from odoo import http
 from odoo.exceptions import AccessError, UserError
 from odoo.http import request
+from odoo.osv.expression import OR, AND
 from odoo.tools import consteq, file_open
 from odoo.tools.misc import get_lang
 from odoo.tools.translate import _
@@ -443,10 +444,22 @@ class DiscussController(http.Controller):
 
     @http.route('/mail/thread/messages', methods=['POST'], type='json', auth='user')
     def mail_thread_messages(self, thread_model, thread_id, max_id=None, min_id=None, limit=30, **kwargs):
+        # Need a sudo because mail.mail has different ACL than mail.message
+        filtered_ids = request.env['mail.message'].sudo().search(
+            AND([
+                [('res_id', '=', int(thread_id))],
+                [('model', '=', thread_model)],
+                [('message_type', '!=', 'user_notification')],
+                # Exclude messages not sent because of a permanent failure: blacklisted, duplicated or opted out
+                # Assume that theses failure types only apply in mass_mail mode
+                # In other modes, such message are displayed but notifications may show sending errors (red envelops)
+                OR([
+                    [('mail_ids', '=', False)],  # Not all mail.message have a related mail.mail (ex.: internal msg)
+                    [('mail_ids.failure_type', 'not in', ('mail_bl', 'mail_optout', 'mail_dup'))],
+                ]),
+            ])).ids
         messages = request.env['mail.message']._message_fetch(domain=[
-            ('res_id', '=', int(thread_id)),
-            ('model', '=', thread_model),
-            ('message_type', '!=', 'user_notification'),
+            ('id', 'in', filtered_ids),
         ], max_id=max_id, min_id=min_id, limit=limit)
         if not request.env.user._is_public():
             messages.set_message_done()
