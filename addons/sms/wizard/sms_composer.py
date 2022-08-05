@@ -237,12 +237,14 @@ class SendSMS(models.TransientModel):
         records = records if records is not None else self._get_records()
 
         sms_record_values = self._prepare_mass_sms_values(records)
-        sms_all = self._prepare_mass_sms(records, sms_record_values)
 
-        if sms_all and self.mass_keep_log and records and issubclass(type(records), self.pool['mail.thread']):
+        if sms_record_values and self.mass_keep_log and records and issubclass(type(records), self.pool['mail.thread']):
             log_values = self._prepare_mass_log_values(records, sms_record_values)
-            records._message_log_batch(**log_values)
+            mail_messages = records._message_log_batch(**log_values)
+            for mail_message in mail_messages:
+                sms_record_values[mail_message.res_id]['mail_message_id'] = mail_message.id
 
+        sms_all = self._prepare_mass_sms(records, sms_record_values)
         if sms_all and self.mass_force_send:
             sms_all.filtered(lambda sms: sms.state == 'outgoing').send(auto_commit=False, raise_exception=False)
             return self.env['sms.sms'].sudo().search([('id', 'in', sms_all.ids)])

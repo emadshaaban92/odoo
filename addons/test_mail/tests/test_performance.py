@@ -1059,7 +1059,7 @@ class TestMailComplexPerformance(BaseMailPerformance):
         rec1 = rec.with_context(active_test=False)      # to see inactive records
         self.assertEqual(rec1.message_partner_ids, self.partners | self.env.user.partner_id | self.user_portal.partner_id)
 
-        with self.assertQueryCount(__system__=19, employee=20):
+        with self.assertQueryCount(__system__=20, employee=21):
             rec.write({
                 'name': 'Test2',
                 'customer_id': customer_id,

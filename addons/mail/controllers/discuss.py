@@ -9,7 +9,7 @@ from psycopg2.errorcodes import UNIQUE_VIOLATION
 from odoo import http
 from odoo.exceptions import AccessError, UserError
 from odoo.http import request
-from odoo.osv.expression import OR, AND
+from odoo.osv.expression import AND, OR
 from odoo.tools import consteq, file_open
 from odoo.tools.misc import get_lang
 from odoo.tools.translate import _
@@ -442,6 +442,22 @@ class DiscussController(http.Controller):
         thread = request.env[thread_model].with_context(active_test=False).search([('id', '=', thread_id)])
         return thread._get_mail_thread_data(request_list)
 
+    def _mail_thread_messages_filter(self):
+        """Allows to refine mail.message query to filter further the message returned in the chatter.
+
+        The primary goal is to exclude messages with permanent sending failure to avoid to confuse the user (tricking
+        him to believe it was sent).
+
+        :return list: filter domain on mail.message
+        """
+        # Exclude mail messages not sent because of a permanent failure: blacklisted, duplicated or opted out
+        # Assume that these failure types only apply in mass_mail mode
+        # In other modes, such message are displayed but notifications may show sending errors (red envelops)
+        return OR([
+            [('mail_ids', '=', False)],  # Not all mail.message have a related mail.mail (ex.: internal msg)
+            [('mail_ids.failure_type', 'not in', ('mail_bl', 'mail_optout', 'mail_dup'))],
+        ])
+
     @http.route('/mail/thread/messages', methods=['POST'], type='json', auth='user')
     def mail_thread_messages(self, thread_model, thread_id, max_id=None, min_id=None, limit=30, **kwargs):
         # Need a sudo because mail.mail has different ACL than mail.message
@@ -450,13 +466,7 @@ class DiscussController(http.Controller):
                 [('res_id', '=', int(thread_id))],
                 [('model', '=', thread_model)],
                 [('message_type', '!=', 'user_notification')],
-                # Exclude messages not sent because of a permanent failure: blacklisted, duplicated or opted out
-                # Assume that theses failure types only apply in mass_mail mode
-                # In other modes, such message are displayed but notifications may show sending errors (red envelops)
-                OR([
-                    [('mail_ids', '=', False)],  # Not all mail.message have a related mail.mail (ex.: internal msg)
-                    [('mail_ids.failure_type', 'not in', ('mail_bl', 'mail_optout', 'mail_dup'))],
-                ]),
+                self._mail_thread_messages_filter(),
             ])).ids
         messages = request.env['mail.message']._message_fetch(domain=[
             ('id', 'in', filtered_ids),
