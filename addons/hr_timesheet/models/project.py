@@ -21,6 +21,7 @@ PROJECT_TASK_READABLE_FIELDS = {
     'subtask_planned_hours',
     'timesheet_ids',
     'total_hours_spent',
+    'remaining_hours_percentage',
 }
 
 class Project(models.Model):

@@ -12,11 +12,13 @@ class ReportProjectTaskUser(models.Model):
     remaining_hours = fields.Float('Remaining Hours', readonly=True)
     progress = fields.Float('Progress', group_operator='avg', readonly=True)
     overtime = fields.Float(readonly=True)
+    total_hours_spent = fields.Float("Total Hours", help="Time spent on this task, including its sub-tasks.")
 
     def _select(self):
         select_to_append = """,
                 (t.effective_hours * 100) / NULLIF(t.planned_hours, 0) as progress,
                 t.effective_hours as hours_effective,
+                t.total_hours_spent as total_hours_spent,
                 t.planned_hours - t.effective_hours - t.subtask_effective_hours as remaining_hours,
                 NULLIF(t.planned_hours, 0) as hours_planned,
                 t.overtime as overtime
@@ -28,7 +30,8 @@ class ReportProjectTaskUser(models.Model):
                 t.effective_hours,
                 t.subtask_effective_hours,
                 t.planned_hours,
-                t.overtime
+                t.overtime,
+                t.total_hours_spent
         """
         return super(ReportProjectTaskUser, self)._group_by() + group_by_append
 

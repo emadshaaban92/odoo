@@ -57,6 +57,9 @@
                 <field name="user_ids" position="after">
                     <field name="hours_effective" optional="hide" widget="float_time"/>
                     <field name="progress" optional="hide" widget="progressbar"/>
+                    <field name="remaining_hours" optional="hide"/>
+                    <field name="total_hours_spent" optional="hide"/>
+                    <field name="hours_planned" optional="hide"/>
                 </field>
             </field>
         </record>

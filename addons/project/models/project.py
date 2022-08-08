@@ -47,6 +47,7 @@ PROJECT_TASK_READABLE_FIELDS = {
     'allow_milestones',
     'milestone_id',
     'has_late_and_unreached_milestone',
+    'date_last_stage_update',
 }
 
 PROJECT_TASK_WRITABLE_FIELDS = {
