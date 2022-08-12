@@ -990,7 +990,7 @@ tour.stepUtils.autoExpandMoreButtons('.o_control_panel .breadcrumb:contains("the
     position: 'bottom',
 }, {
     edition: "enterprise",
-    trigger: 'div[name=bank_statement_create_button] > a[data-name=create_bank_statement]',
+    trigger: 'div[name=bank_statement_create_button] > a[name=create_bank_statement]',
     content: _t('Create a new bank statement'),
     position: 'bottom',
 }, {
