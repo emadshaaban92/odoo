@@ -21,22 +21,18 @@ class SaleOrder(models.Model):
     timesheet_total_duration = fields.Integer("Timesheet Total Duration", compute='_compute_timesheet_total_duration', help="Total recorded duration, expressed in the encoding UoM, and rounded to the unit")
 
     def _compute_timesheet_ids(self):
-        timesheet_groups = self.env['account.analytic.line'].sudo().read_group(
-            [('so_line', 'in', self.mapped('order_line').ids), ('project_id', '!=', False)],
-            ['so_line', 'ids:array_agg(id)'],
-            ['so_line'])
-        timesheets_per_sol = {group['so_line'][0]: (group['ids'], group['so_line_count']) for group in timesheet_groups}
-
+        timesheets_per_so = {
+            group['order_id'][0]: (group['ids'], group['order_id_count'])
+            for group in self.env['account.analytic.line'].sudo()._read_group(
+                [('order_id', 'in', self.ids), ('project_id', '!=', False)],
+                ['order_id', 'ids:array_agg(id)'],
+                ['order_id']
+            )
+        }
         for order in self:
-            timesheet_ids = []
-            timesheet_count = 0
-            for sale_line_id in order.order_line.filtered('is_service').ids:
-                list_timesheet_ids, count = timesheets_per_sol.get(sale_line_id, ([], 0))
-                timesheet_ids.extend(list_timesheet_ids)
-                timesheet_count += count
-
-            order.update({
-                'timesheet_ids': self.env['account.analytic.line'].browse(timesheet_ids),
+            timesheet_ids, timesheet_count = timesheets_per_so.get(order, (False, 0))
+            order.write({
+                'timesheet_ids': timesheet_ids,
                 'timesheet_count': timesheet_count,
             })
 
