@@ -3952,14 +3952,6 @@ class BaseModel(metaclass=MetaModel):
         check_company = False
         for field, value in field_values.items():
             if field.inverse:
-                if field.type in ('one2many', 'many2many'):
-                    # The written value is a list of commands that must applied
-                    # on the field's current value. Because the field is
-                    # protected while being written, the field's current value
-                    # will not be computed and default to an empty recordset. So
-                    # make sure the field's value is in cache before writing, in
-                    # order to avoid an inconsistent update.
-                    self[field.name]
                 determine_inverses[field.inverse].append(field)
             if field.relational or self.pool.field_inverses[field]:
                 relational_names.append(field.name)
