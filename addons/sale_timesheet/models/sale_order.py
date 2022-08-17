@@ -19,6 +19,7 @@ class SaleOrder(models.Model):
     project_id = fields.Many2one(domain="[('pricing_type', '!=', 'employee_rate'), ('analytic_account_id', '!=', False), ('company_id', '=', company_id)]")
     timesheet_encode_uom_id = fields.Many2one('uom.uom', related='company_id.timesheet_encode_uom_id')
     timesheet_total_duration = fields.Integer("Timesheet Total Duration", compute='_compute_timesheet_total_duration', help="Total recorded duration, expressed in the encoding UoM, and rounded to the unit")
+    show_hours_recorded_button = fields.Boolean(compute="_compute_show_hours_recorded_button")
 
     def _compute_timesheet_ids(self):
         timesheet_groups = self.env['account.analytic.line'].sudo().read_group(
@@ -72,6 +73,21 @@ class SaleOrder(models.Model):
                 # We want to display only one time the warning for each SOL
                 upsellable_lines.write({'has_displayed_warning_upsell': True})
 
+    def _compute_show_hours_recorded_button(self):
+        orders_to_check = self.filtered(lambda l: l.state not in ['draft', 'sent'])
+        list_order = self.env['sale.order.line']._read_group([('order_id', 'in', orders_to_check.ids)], ['product_id:array_agg(product_id)'], ['order_id'], lazy=False)
+        dict_order = {}
+        sol_product_ids = set()
+        for order in list_order:
+            product_set = set(order['product_id'])
+            dict_order[order['order_id'][0]] = product_set
+            sol_product_ids.update(product_set)
+        domain = [('id', 'in', list(sol_product_ids)), ('type', '=', 'service'), '|', ('service_type', 'not in', ['milestones', 'manual']), ('invoice_policy', '!=', 'delivery')]
+        products_service_prepaid_or_timesheet = self.env['product.product'].search(domain)
+        product_ids = set(products_service_prepaid_or_timesheet.ids)
+        for order in self:
+            order.show_hours_recorded_button = order in orders_to_check and not product_ids.isdisjoint(dict_order[order.id])
+
     def _get_prepaid_service_lines_to_upsell(self):
         """ Retrieve all sols which need to display an upsell activity warning in the SO
 
@@ -94,22 +110,34 @@ class SaleOrder(models.Model):
 
     def action_view_timesheet(self):
         self.ensure_one()
+        if not self.order_line:
+            return {'type': 'ir.actions.act_window_close'}
+
         action = self.env["ir.actions.actions"]._for_xml_id("sale_timesheet.timesheet_action_from_sales_order")
         action['context'] = {
             'search_default_billable_timesheet': True
         }  # erase default filters
-        if self.order_line:
-            tasks = self.order_line.task_id._filter_access_rules_python('write')
-            if tasks:
-                action['context']['default_task_id'] = tasks[0].id
-            else:
-                projects = self.order_line.project_id._filter_access_rules_python('write')
-                if projects:
-                    action['context']['default_project_id'] = projects[0].id
-        if self.timesheet_count > 0:
-            action['domain'] = [('so_line', 'in', self.order_line.ids)]
+
+        tasks = self.order_line.task_id._filter_access_rules_python('write')
+        if tasks:
+            action['context']['default_task_id'] = tasks[0].id
         else:
-            action = {'type': 'ir.actions.act_window_close'}
+            projects = self.order_line.project_id._filter_access_rules_python('write')
+            if projects:
+                action['context']['default_project_id'] = projects[0].id
+            elif self.project_ids:
+                action['context']['default_project_id'] = self.project_ids[0].id
+
+            action['domain'] = [('so_line', 'in', self.order_line.ids)]
+
+        action['help'] = [_("""
+                        <p class="o_view_nocontent_smiling_face">
+                            No activities found. Let's start a new one!
+                        </p><p>
+                            Track your working hours by projects every day and invoice this time to your customers.
+                        </p>
+                    """)]
+
         return action
 
     def _create_invoices(self, grouped=False, final=False, date=None):
