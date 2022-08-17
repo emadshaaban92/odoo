@@ -34,24 +34,40 @@ class MailRenderMixin(models.AbstractModel):
 
         :return: updated html
         """
+        def get_match_label(re_match):
+            # [3] = '' if no valid <img>
+            if not re_match[3]:
+                return re_match[6].strip()  # text before closing tag
+            img_alt_match = re.search(tools.NON_EMPTY_IMAGE_ALT_REGEX, re_match[3])
+            if img_alt_match:
+                img_label = (img_alt_match[3] or img_alt_match[2]).strip()  # depending on quoting char
+            else:
+                img_label = re_match[4].split('/')[-1]  # image filename
+            return '[media] ' + img_label
+
         base_url = base_url or self.env['ir.config_parameter'].sudo().get_param('web.base.url')
         short_schema = base_url + '/r/'
-        for match in set(re.findall(tools.HTML_TAG_URL_REGEX, html)):
-            long_url = match[1]
+
+        matches = []
+        for match in set(re.findall(tools.HTML_TAG_URL_WITH_OPTIONAL_IMAGE_REGEX, html)):
+            matches.append((match, get_match_label(match)))
+
+        # Sorting is necessary to have the one(s) without label processed last
+        for match, label in sorted(matches, key=lambda re_match: re_match[1], reverse=True):
+            long_url = match[2]
             # Don't shorten already-shortened links
             if long_url.startswith(short_schema):
                 continue
             # Don't shorten urls present in blacklist (aka to skip list)
             if blacklist and any(s in long_url for s in blacklist):
                 continue
-            label = (match[3] or '').strip()
 
             create_vals = dict(link_tracker_vals, url=unescape(long_url), label=unescape(label))
             link = self.env['link.tracker'].search_or_create(create_vals)
             if link.short_url:
                 # `str` manipulation required to support replacing "&" characters, common in urls
-                new_href = match[0].replace(long_url, link.short_url)
-                html = html.replace(markupsafe.Markup(match[0]), markupsafe.Markup(new_href))
+                new_fragment = match[0].replace(long_url, link.short_url, 1)
+                html = html.replace(markupsafe.Markup(match[0]), markupsafe.Markup(new_fragment))
 
         return html
 

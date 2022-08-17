@@ -259,8 +259,25 @@ def html_sanitize(src, silent=True, sanitize_tags=True, sanitize_attributes=Fals
 URL_REGEX = r'(\bhref=[\'"](?!mailto:|tel:|sms:)([^\'"]+)[\'"])'
 TEXT_URL_REGEX = r'https?://[\w@:%.+&~#=/-]+(?:\?\S+)?'
 # retrieve inner content of the link
-HTML_TAG_URL_REGEX = URL_REGEX + r'([^<>]*>([^<>]+)<\/)?'
+TEXT_BEFORE_CLOSING_TAG_REGEX = r'([^<>]*>([^<>]+)</)?'
+HTML_TAG_URL_REGEX = re.compile(URL_REGEX + TEXT_BEFORE_CLOSING_TAG_REGEX)
 HTML_TAGS_REGEX = re.compile('<.*?>')
+
+# Assumes that an absolute link does not start with `/`, `#`, or `.` and has 2+ characters.
+# Difficult to do more in order to support different protocols, local URIs, etc.
+URL_ABSOLUTE_REGEX = URL_REGEX.replace(r'([^\'"]+)', r'([^\'"#./][^\'"]+)')
+NO_TAG_LIMIT = r'[^<>]*'
+ABSOLUTE_SRC_CAPTURE_REGEX = r'''\bsrc=["']([\w@:%.+&~#=/-]+)["']'''
+QUOTED_NON_EMPTY_TEXT = r'("([^"]+)"|\'([^\']+)\')'
+# See web_editor's convert_inline.js classToStyle
+_MAGIC_TAGS = r'''<p class=["']o_outlook_hack["'][^>]*>|<!--\[if mso]>'''
+HTML_TAG_URL_WITH_OPTIONAL_IMAGE_REGEX = re.compile(
+    rf'({URL_ABSOLUTE_REGEX}'
+    rf'({NO_TAG_LIMIT}>{NO_TAG_LIMIT}(?:{_MAGIC_TAGS})?'
+    rf'<img\b{NO_TAG_LIMIT}{ABSOLUTE_SRC_CAPTURE_REGEX}{NO_TAG_LIMIT})?'
+    rf'{TEXT_BEFORE_CLOSING_TAG_REGEX})'
+)
+NON_EMPTY_IMAGE_ALT_REGEX = re.compile(rf'\balt={QUOTED_NON_EMPTY_TEXT}')
 HTML_NEWLINES_REGEX = re.compile('<(div|p|br|tr)[^>]*>|\n')
 
 

@@ -69,61 +69,110 @@ class TestMailRenderMixin(common.TransactionCase):
         self.assertRegex(created_short_url, "{base_url}/r/[\\w]+".format(base_url=self.base_url))
 
         new_content = self.env["mail.render.mixin"]._shorten_links(
-            'Reusing this old <a href="{old_short_url}">link</a> with a new <a href="https://odoo.com">one</a>'
-            .format(old_short_url=created_short_url),
-            {}
-        )
+            f'Reusing this old <a href="{created_short_url}">link</a> with a new <a href="https://odoo.com">one</a>', {})
+
         expected = re.compile(
-            'Reusing this old <a href="{old_short_url}">link</a> with a new <a href="{base_url}/r/[\\w]+">one</a>'
-            .format(old_short_url=created_short_url, base_url=self.base_url)
-        )
+            rf'Reusing this old <a href="{created_short_url}">link</a> with a new <a href="{self.base_url}/r/\w+">one</a>')
         self.assertRegex(new_content, expected)
 
     def test_shorten_links_html_including_base_url(self):
-        content = (
-            'This is a link: <a href="https://www.worldcommunitygrid.org">https://www.worldcommunitygrid.org</a><br/>\n'
-            'This is another: <a href="{base_url}/web#debug=1&more=2">{base_url}</a><br/>\n'
-            'And a third: <a href="{base_url}">Here</a>\n'
-            'And a forth: <a href="{base_url}">Here</a>\n'
-            'And a fifth: <a href="{base_url}">Here too</a>\n'
-            'And a last, more complex: <a href="https://boinc.berkeley.edu/forum_thread.php?id=14544&postid=106833">There!</a>'
-            .format(base_url=self.base_url)
-        )
-        expected_pattern = re.compile(
-            'This is a link: <a href="{base_url}/r/[\\w]+">https://www.worldcommunitygrid.org</a><br/>\n'
-            'This is another: <a href="{base_url}/r/[\\w]+">{base_url}</a><br/>\n'
-            'And a third: <a href="{base_url}/r/([\\w]+)">Here</a>\n'
-            'And a forth: <a href="{base_url}/r/([\\w]+)">Here</a>\n'
-            'And a fifth: <a href="{base_url}/r/([\\w]+)">Here too</a>\n'
-            'And a last, more complex: <a href="{base_url}/r/([\\w]+)">There!</a>'
-            .format(base_url=self.base_url)
-        )
+        content = f"""
+This is a link: <a href="https://www.worldcommunitygrid.org">https://www.worldcommunitygrid.org</a><br/>
+This is another: <a href="{self.base_url}/web#debug=1&more=2">{self.base_url}</a><br/>
+And a third: <a href="{self.base_url}">Here</a>
+And a forth: <a href="{self.base_url}">Here</a>
+And a last, more complex: <a href="https://boinc.berkeley.edu/forum_thread.php?id=14544&postid=106833">There!</a>"""
+
+        expected_pattern = re.compile(rf"""
+This is a link: <a href="{self.base_url}/r/\w+">https://www.worldcommunitygrid.org</a><br/>
+This is another: <a href="{self.base_url}/r/\w+">{self.base_url}</a><br/>
+And a third: <a href="{self.base_url}/r/(\w+)">Here</a>
+And a forth: <a href="{self.base_url}/r/(\w+)">Here</a>
+And a last, more complex: <a href="{self.base_url}/r/(\w+)">There!</a>""")
+
         new_content = self.env["mail.render.mixin"]._shorten_links(content, {})
 
         self.assertRegex(new_content, expected_pattern)
         matches = expected_pattern.search(new_content).groups()
         # 3rd and 4th lead to the same short_url
         self.assertEqual(matches[0], matches[1])
-        # 5th has different label but should currently lead to the same link
-        self.assertEqual(matches[1], matches[2])
+
+    def test_shorten_links_html_different_labels(self):
+        # Covers multiple additions from web_editor's convert_inline.js classToStyle
+        content = """
+There is a <a href="https://www.odoo.com">logo.png</a> here,
+<a href="https://www.odoo.com">there</a>, and in this
+<a href="https://www.odoo.com"><!--[if mso]><img src="https://www.odoo.com/logo.png" alt="image" style="1"/><![endif]-->
+<!--[if !mso]><!--><img src="https://www.odoo.com/logo.png" style="2" alt="image"/><!--<![endif]--></a>
+and also <a href="https://www.odoo.com">
+    <p class="o_outlook_hack" style="text-align: center; margin: 0px;"><img src="https://www.odoo.com/logo.png" fakealt="image3" alt="image2's trouble"></img></p>
+</a>
+Single/Nested quotes are not <a href="https://www.odoo.com"><img src='https://www.odoo.com/logo.png' alt='"scary"'/></a>
+Nor escaped <a href="https://www.odoo.com"> blurp <img src="https://www.odoo.com/logo.png" alt="ins \' ide"></a>
+Without matched label because inside tags are a pain and rare: <a href="https://www.odoo.com"><em>here</em></a>
+Without alt, filename is used: <a href="https://www.odoo.com"><img src="https://www.odoo.com/logo.png"></a>
+And here is the same: <a href="https://www.odoo.com"><img src="https://www.odoo.com/logo.png"></a>"""
+
+        expected_pattern = re.compile(rf"""
+There is a <a href="{self.base_url}/r/(\w+)+">logo.png</a> here,
+<a href="{self.base_url}/r/(\w+)+">there</a>, and in this
+<a href="{self.base_url}/r/(\w+)+"><!--\[if mso]><img src="https://www.odoo.com/logo.png" alt="image" style="1"/><!\[endif]-->
+<!--\[if !mso]><!--><img src="https://www.odoo.com/logo.png" style="2" alt="image"/><!--<!\[endif]--></a>
+and also <a href="{self.base_url}/r/(\w+)+">
+    <p class="o_outlook_hack" style="text-align: center; margin: 0px;"><img src="https://www.odoo.com/logo.png" fakealt="image3" alt="image2's trouble"></img></p>
+</a>
+Single/Nested quotes are not <a href="{self.base_url}/r/(\w+)+"><img src='https://www.odoo.com/logo.png' alt='"scary"'/></a>
+Nor escaped <a href="{self.base_url}/r/(\w+)+"> blurp <img src="https://www.odoo.com/logo.png" alt="ins \' ide"></a>
+Without matched label because inside tags are a pain and rare: <a href="{self.base_url}/r/(\w+)+"><em>here</em></a>
+Without alt, filename is used: <a href="{self.base_url}/r/(\w+)+"><img src="https://www.odoo.com/logo.png"></a>
+And here is the same: <a href="{self.base_url}/r/(\w+)+"><img src="https://www.odoo.com/logo.png"></a>""")
+
+        new_content = self.env["mail.render.mixin"]._shorten_links(content, {})
+
+        self.assertRegex(new_content, expected_pattern)
+
+        trackers_to_find = [
+            [("url", "=", "https://www.odoo.com"), ("label", "=", "logo.png")],
+            [("url", "=", "https://www.odoo.com"), ("label", "=", "there")],
+            [("url", "=", "https://www.odoo.com"), ("label", "=", "[media] image")],
+            [("url", "=", "https://www.odoo.com"), ("label", "=", "[media] image2's trouble")],
+            [("url", "=", "https://www.odoo.com"), ("label", "=", '[media] "scary"')],
+            [("url", "=", "https://www.odoo.com"), ("label", "=", "[media] ins ' ide")],
+            [("url", "=", "https://www.odoo.com"), ("label", "=", "")],
+            [("url", "=", "https://www.odoo.com"), ("label", "=", "[media] logo.png")],
+        ]
+        for tracker_to_find in trackers_to_find:
+            self.assertTrue(self.env["link.tracker"].search(tracker_to_find),
+                            f"Tracker labeled {tracker_to_find[1][2]} was not found.")
+
+        matches = expected_pattern.search(new_content).groups()
+
+        def assert_different_shortcode(idx1, idx2):
+            self.assertNotEqual(
+                matches[idx1], matches[idx2],
+                f"Different labels {trackers_to_find[idx1][1][2]} and {trackers_to_find[idx2][1][2]} should have different short codes.")
+
+        # Making sure that no replacement of the wrong line has been performed with the other
+        for idx in range(len(trackers_to_find) - 2):
+            assert_different_shortcode(idx, idx+1)
+        self.assertNotEqual(matches[0], matches[7])
+        self.assertEqual(matches[7], matches[8], "Links to the same image without alt should be covered by the same tracker.")
 
     def test_shorten_links_text_including_base_url(self):
-        content = (
-            'This is a link: https://www.worldcommunitygrid.org\n'
-            'This is another: {base_url}/web#debug=1&more=2\n'
-            'A third: {base_url}\n'
-            'A forth: {base_url}\n'
-            'And a last, with question mark: https://boinc.berkeley.edu/forum_thread.php?id=14544&postid=106833'
-            .format(base_url=self.base_url)
-        )
-        expected_pattern = re.compile(
-            'This is a link: {base_url}/r/[\\w]+\n'
-            'This is another: {base_url}/r/[\\w]+\n'
-            'A third: {base_url}/r/([\\w]+)\n'
-            'A forth: {base_url}/r/([\\w]+)\n'
-            'And a last, with question mark: {base_url}/r/([\\w]+)'
-            .format(base_url=self.base_url)
-        )
+        content = f"""
+This is a link: https://www.worldcommunitygrid.org
+This is another: {self.base_url}/web#debug=1&more=2
+A third: {self.base_url}
+A forth: {self.base_url}
+And a last, with question mark: https://boinc.berkeley.edu/forum_thread.php?id=14544&postid=106833"""
+
+        expected_pattern = re.compile(rf"""
+This is a link: {self.base_url}/r/\w+
+This is another: {self.base_url}/r/\w+
+A third: {self.base_url}/r/(\w+)
+A forth: {self.base_url}/r/(\w+)
+And a last, with question mark: {self.base_url}/r/(\w+)""")
+
         new_content = self.env["mail.render.mixin"]._shorten_links_text(content, {})
 
         self.assertRegex(new_content, expected_pattern)
@@ -137,15 +186,11 @@ class TestMailRenderMixin(common.TransactionCase):
         created_short_url_match = re.search(TEXT_URL_REGEX, old_content)
         self.assertIsNotNone(created_short_url_match)
         created_short_url = created_short_url_match[0]
-        self.assertRegex(created_short_url, "{base_url}/r/[\\w]+".format(base_url=self.base_url))
+        self.assertRegex(created_short_url, rf"{self.base_url}/r/\w+")
 
         new_content = self.env["mail.render.mixin"]._shorten_links_text(
-            'Reusing this old link {old_short_url} with a new one, https://odoo.com</a>'
-            .format(old_short_url=created_short_url),
-            {}
-        )
+            f'Reusing this old link {created_short_url} with a new one, https://odoo.com</a>', {})
+
         expected = re.compile(
-            'Reusing this old link {old_short_url} with a new one, {base_url}/r/[\\w]+'
-            .format(old_short_url=created_short_url, base_url=self.base_url)
-        )
+            rf'Reusing this old link {created_short_url} with a new one, {self.base_url}/r/\w+')
         self.assertRegex(new_content, expected)
