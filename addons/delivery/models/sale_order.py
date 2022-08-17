@@ -51,9 +51,15 @@ class SaleOrder(models.Model):
         to_delete.unlink()
 
     def set_delivery_line(self, carrier, amount):
+        # Prevent set of the carrier when generating return picking
+        # (we have no integration of returns for now)
         self._remove_delivery_line()
         for order in self:
             order.carrier_id = carrier.id
+            if order.state in ('sale', 'done'):
+                pending_deliverys = order.picking_ids.filtered(
+                    lambda p: p.state not in ('done', 'cancel') and not p.move_ids.origin_returned_move_id)
+                pending_deliverys.carrier_id = carrier.id
             order._create_delivery_line(carrier, amount)
         return True
 
