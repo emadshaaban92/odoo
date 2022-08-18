@@ -48,6 +48,8 @@ class Project(models.Model):
     remaining_hours = fields.Float(compute='_compute_remaining_hours', string='Remaining Invoiced Time', compute_sudo=True)
     is_project_overtime = fields.Boolean('Project in Overtime', compute='_compute_remaining_hours', search='_search_is_project_overtime', compute_sudo=True)
     allocated_hours = fields.Float(string='Allocated Hours')
+    effective_hours = fields.Float(compute='_compute_remaining_hours', compute_sudo=True)
+    timesheets_progress = fields.Float(compute='_compute_remaining_hours', string='Timesheets Progress', compute_sudo=True)
 
     def _compute_encode_uom_in_days(self):
         self.encode_uom_in_days = self.env.company.timesheet_encode_uom_id == self.env.ref('uom.product_uom_day')
@@ -94,7 +96,7 @@ class Project(models.Model):
             arch = self.env['account.analytic.line']._apply_time_label(arch, related_model=self._name)
         return arch, view
 
-    @api.depends('allow_timesheets', 'timesheet_ids')
+    @api.depends('allow_timesheets', 'timesheet_ids.unit_amount', 'allocated_hours')
     def _compute_remaining_hours(self):
         timesheets_read_group = self.env['account.analytic.line']._read_group(
             [('project_id', 'in', self.ids)],
@@ -105,6 +107,8 @@ class Project(models.Model):
         for project in self:
             project.remaining_hours = project.allocated_hours - timesheet_time_dict.get(project.id, 0)
             project.is_project_overtime = project.remaining_hours < 0
+            project.effective_hours = round(timesheet_time_dict.get(project.id, 0.0), 2)
+            project.timesheets_progress = (project.effective_hours * 100) / float(project.allocated_hours) if project.allocated_hours > 0 else 0
 
     @api.model
     def _search_is_project_overtime(self, operator, value):

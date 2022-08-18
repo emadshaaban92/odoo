@@ -260,7 +260,11 @@
             <field name="inherit_id" ref="project.view_project"/>
             <field name="arch" type="xml">
                 <xpath expr="//field[@name='date']" position="after">
-                    <field name="allocated_hours" widget="timesheet_uom_no_toggle" optional="show" attrs="{'invisible' : [('allocated_hours', '=', 0)]}"/>
+                    <field name="allow_timesheets" invisible="1"/>
+                    <field name="allocated_hours" widget="timesheet_uom_no_toggle" optional="show" attrs="{'invisible' : ['|', ('allocated_hours', '=', 0), ('allow_timesheets', '=', False)]}"/>
+                    <field name="effective_hours" widget="timesheet_uom_no_toggle" attrs="{'invisible': [('allow_timesheets', '=', False)]}" optional="hide"/>
+                    <field name="remaining_hours" widget="timesheet_uom_no_toggle" attrs="{'invisible': ['|', ('allow_timesheets', '=', False), ('allocated_hours', '=', 0)]}" optional="hide"/>
+                    <field name="timesheets_progress" widget="progressbar" attrs="{'invisible': [('allow_timesheets', '=', False)]}" optional="hide"/>
                 </xpath>
             </field>
         </record>
@@ -274,11 +278,11 @@
                 <field name="company_id" position="after">
                     <field name="allow_subtasks" invisible="1"/>
                     <field name="progress" invisible="1"/>
-                    <field name="planned_hours" widget="timesheet_uom_no_toggle" sum="Initially Planned Hours" optional="hide"/>
-                    <field name="effective_hours" widget="timesheet_uom" sum="Effective Hours" optional="hide"/>
+                    <field name="planned_hours" widget="timesheet_uom_no_toggle" sum="Initially Planned Hours" attrs="{'invisible' : [('planned_hours', '=', 0)]}" optional="hide"/>
+                    <field name="effective_hours" widget="timesheet_uom" sum="Effective Hours" attrs="{'invisible' : [('effective_hours', '=', 0)]}" optional="hide"/>
                     <field name="subtask_effective_hours" widget="timesheet_uom" attrs="{'invisible' : [('allow_subtasks', '=', False)]}" optional="hide"/>
-                    <field name="total_hours_spent" widget="timesheet_uom" attrs="{'invisible' : [('allow_subtasks', '=', False)]}" optional="hide"/>
-                    <field name="remaining_hours" widget="timesheet_uom" sum="Remaining Hours" optional="hide" decoration-danger="progress &gt;= 100" decoration-warning="progress &gt;= 80 and progress &lt; 100"/>
+                    <field name="total_hours_spent" widget="timesheet_uom" attrs="{'invisible' : ['|', ('allow_subtasks', '=', False), ('total_hours_spent', '=', 0)]}" optional="hide"/>
+                    <field name="remaining_hours" widget="timesheet_uom" sum="Remaining Hours" attrs="{'invisible' : [('planned_hours', '=', 0)]}" optional="hide" decoration-danger="progress &gt;= 100" decoration-warning="progress &gt;= 80 and progress &lt; 100"/>
                     <field name="progress" widget="progressbar" optional="hide" groups="hr_timesheet.group_hr_timesheet_user" attrs="{'invisible' : [('planned_hours', '=', 0)]}"/>
                 </field>
             </field>

@@ -102,3 +102,8 @@ class ProjectMilestone(models.Model):
 
     def _get_data_list(self):
         return [ms._get_data() for ms in self]
+
+    def name_get(self):
+        if not self._context.get('display_milestone_deadline'):
+            return super().name_get()
+        return [(milestone.id, f'{milestone.name} - {milestone.deadline}') for milestone in self]
