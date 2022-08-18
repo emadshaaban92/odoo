@@ -3378,7 +3378,7 @@ td {
     align-items: center;
 }
 
-.pos .pos-topheader .pos-search-bar,
+.pos .rightpane-header .pos-search-bar,
 .pos .partnerlist-screen .pos-search-bar {
     display: flex;
     align-items: center;
@@ -3389,13 +3389,13 @@ td {
     transition: all linear 150ms;
 }
 
-.pos .pos-topheader .pos-search-bar:focus-within,
+.pos .rightpane-header .pos-search-bar:focus-within,
 .pos .partnerlist-screen .pos-search-bar:focus-within {
     box-shadow: 0px 0px 0px 2px rgb(153, 153, 255) inset;
     color: rgb(153, 153, 255);
 }
 
-.pos .pos-topheader .pos-search-bar input,
+.pos .rightpane-header .pos-search-bar input,
 .pos .partnerlist-screen .pos-search-bar input {
     flex-grow: 1;
     padding: 0 5px;
@@ -3406,13 +3406,13 @@ td {
     color: #63717f;
 }
 
-.pos .pos-topheader .pos-search-bar i,
+.pos .rightpane-header .pos-search-bar i,
 .pos .partnerlist-screen .pos-search-bar i {
     cursor: pointer;
     transition: color linear 150ms;
 }
 
-.pos .pos-topheader .pos-search-bar i:active,
+.pos .rightpane-header .pos-search-bar i:active,
 .pos .partnerlist-screen .pos-search-bar i:active {
     color: purple;
 }
