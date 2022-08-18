@@ -1250,25 +1250,18 @@ class Field(MetaField('DummyField', (object,), {})):
             # discard recomputation of self on records
             records.env.remove_to_compute(self, records)
 
-        protected_ids = []
-        new_ids = []
-        other_ids = []
-        for record_id in records._ids:
-            if record_id in records.env._protected.get(self, ()):
-                protected_ids.append(record_id)
-            elif not record_id:
-                new_ids.append(record_id)
-            else:
-                other_ids.append(record_id)
-
-        if protected_ids:
+        protected_records = records.env.filter_protected(self, records)
+        if protected_records:
             # records being computed: no business logic, no recomputation
-            protected_records = records.browse(protected_ids)
             self.write(protected_records, value)
+            records = records - protected_records
 
-        if new_ids:
+        if not records:
+            return
+
+        new_records = records.browse([id_ for id_ in records._ids if not id_])
+        if new_records:
             # new records: no business logic
-            new_records = records.browse(new_ids)
             with records.env.protecting(records.pool.field_computed.get(self, [self]), records):
                 if self.relational:
                     new_records.modified([self.name], before=True)
@@ -1277,12 +1270,13 @@ class Field(MetaField('DummyField', (object,), {})):
 
             if self.inherited:
                 # special case: also assign parent records if they are new
-                parents = records[self.related.split('.')[0]]
+                parents = new_records[self.related.split('.')[0]]
                 parents.filtered(lambda r: not r.id)[self.name] = value
 
-        if other_ids:
+            records = records - new_records
+
+        if records:
             # base case: full business logic
-            records = records.browse(other_ids)
             write_value = self.convert_to_write(value, records)
             records.write({self.name: write_value})
 
