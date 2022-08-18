@@ -606,7 +606,7 @@ publicWidget.registry.SurveyFormWidget = publicWidget.Widget.extend(SurveyPreloa
         } else {
             var $errorTarget = this.$('.o_survey_error');
             $errorTarget.removeClass("d-none");
-            this._scrollToError($errorTarget);
+            dom.scrollTo($errorTarget[0]);
         }
     },
 
@@ -1166,24 +1166,10 @@ publicWidget.registry.SurveyFormWidget = publicWidget.Widget.extend(SurveyPreloa
         _.each(errorKeys, function (key) {
             self.$("#" + key + '>.o_survey_question_error').append($('<p>', {text: errors[key]})).addClass("slide_in");
             if (errorKeys[0] === key) {
-                self._scrollToError(self.$('.js_question-wrapper#' + key));
+                dom.scrollTo(self.$('.js_question-wrapper#' + key)[0]);
             }
         });
     },
-
-    _scrollToError: function ($target) {
-        var scrollLocation = $target.offset().top;
-        var navbarHeight = $('.o_main_navbar').height();
-        if (navbarHeight) {
-            // In overflow auto, scrollLocation of target can be negative if target is out of screen (up side)
-            scrollLocation = scrollLocation >= 0 ? scrollLocation - navbarHeight : scrollLocation + navbarHeight;
-        }
-        var scrollinside = $("#wrapwrap").scrollTop();
-        $('#wrapwrap').animate({
-            scrollTop: scrollinside + scrollLocation
-        }, 500);
-    },
-
     /**
     * Clean all form errors in order to clean DOM before a new validation
     */
