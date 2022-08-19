@@ -4,7 +4,7 @@ import { IS_RECORD, registry } from '@mail/model/model_core';
 import { ModelField } from '@mail/model/model_field';
 import { ModelIndexAnd } from '@mail/model/model_index_and';
 import { ModelIndexXor } from '@mail/model/model_index_xor';
-import { FieldCommand, unlinkAll } from '@mail/model/model_field_command';
+import { FieldCommand, insert, set, unlinkAll } from '@mail/model/model_field_command';
 import { RelationSet } from '@mail/model/model_field_relation_set';
 import { Listener } from '@mail/model/model_listener';
 import { followRelations } from '@mail/model/model_utils';
@@ -137,7 +137,8 @@ export class ModelManager {
         /**
          * Create the messaging singleton record.
          */
-        this.models['Messaging'].insert(values);
+        const messaging = this.models['Messaging'].insert();
+        this._update(messaging, values, { allowWriteReadonly: true });
         this.messagingCreatedPromise.resolve();
         await this.messaging.start();
         this.messagingInitializedPromise.resolve();
@@ -160,7 +161,7 @@ export class ModelManager {
             const entry = this._listenersObservingAllByModel.get(model);
             const info = {
                 listener,
-                reason: `all() - ${model}`,
+                reason: this.isDebug && `all() - ${model}`,
             };
             if (entry.has(listener)) {
                 entry.get(listener).push(info);
@@ -224,14 +225,14 @@ export class ModelManager {
      * @returns {Record|undefined}
      */
     findFromIdentifyingData(model, data = {}) {
-        const data2 = { ...data };
         for (const fieldName of model.__identifyingFieldNames) {
-            const field = model.__fieldMap[fieldName];
-            if (data2[field.fieldName] === undefined && field.default !== undefined) {
-                data2[field.fieldName] = field.default;
+            const field = model.__fieldMap.get(fieldName);
+            if (data[field.fieldName] === undefined && field.default !== undefined) {
+                data[field.fieldName] = field.default;
             }
         }
-        const record = model.__recordsIndex.findRecord(this._preInsertIdentifyingFieldsFromData(model, data2));
+        this._preInsertIdentifyingFieldsFromData(model, data);
+        const record = model.__recordsIndex.findRecord(data);
         if (!record) {
             return;
         }
@@ -243,7 +244,7 @@ export class ModelManager {
             const entry = this._listenersObservingRecord.get(record);
             const info = {
                 listener,
-                reason: `findFromIdentifyingData record - ${record}`,
+                reason: this.isDebug && `findFromIdentifyingData record - ${record}`,
             };
             if (entry.has(listener)) {
                 entry.get(listener).push(info);
@@ -380,6 +381,7 @@ export class ModelManager {
                 data2[field.fieldName] = field.default;
             }
         }
+        data2.model2 = { name: model.name };
         return data2;
     }
 
@@ -550,80 +552,6 @@ export class ModelManager {
 
     /**
      * @private
-     * @throws {Error} in case some fields are not correct.
-     */
-    _checkProcessedFieldsOnModels() {
-        for (const model of Object.values(this.models)) {
-            switch (model.identifyingMode) {
-                case 'and':
-                    break;
-                case 'xor':
-                    if (model.__identifyingFieldNames.size === 0) {
-                        throw new Error(`No identifying fields has been specified for 'xor' identifying mode on ${model}`);
-                    }
-                    break;
-                default:
-                    throw new Error(`Unsupported identifying mode "${model.identifyingMode}" on ${model}. Must be one of 'and' or 'xor'.`);
-            }
-            for (const field of model.__fieldList) {
-                const fieldName = field.fieldName;
-                if (!(['attribute', 'relation'].includes(field.fieldType))) {
-                    throw new Error(`${field} on ${model} has unsupported type ${field.fieldType}.`);
-                }
-                if (field.compute && field.related) {
-                    throw new Error(`${field} on ${model} cannot be a related and compute field at the same time.`);
-                }
-                if (field.fieldType === 'attribute') {
-                    continue;
-                }
-                if (!field.relationType) {
-                    throw new Error(`${field} on ${model} must define a relation type in "relationType".`);
-                }
-                if (!(['many', 'one'].includes(field.relationType))) {
-                    throw new Error(`${field} on ${model} has invalid relation type "${field.relationType}".`);
-                }
-                if (!field.inverse) {
-                    throw new Error(`${field} on ${model} must define an inverse relation name in "inverse".`);
-                }
-                if (!field.to) {
-                    throw new Error(`${field} on ${model} must define a model name in "to" (1st positional parameter of relation field helpers).`);
-                }
-                const relatedModel = this.models[field.to];
-                if (!relatedModel) {
-                    throw new Error(`${field} on ${model} defines a relation to model(${field.to}), but there is no model registered with this name.`);
-                }
-                const inverseField = relatedModel.__fieldMap[field.inverse];
-                if (!inverseField) {
-                    throw new Error(`${field} on ${model} defines its inverse as field(${field.inverse}) on ${relatedModel}, but it does not exist.`);
-                }
-                if (inverseField.inverse !== fieldName) {
-                    throw new Error(`The name of ${field} on ${model} does not match with the name defined in its inverse ${inverseField} on ${relatedModel}.`);
-                }
-                if (![model.name, 'Record'].includes(inverseField.to)) {
-                    throw new Error(`${field} on ${model} has its inverse ${inverseField} on ${relatedModel} referring to an invalid model (model(${inverseField.to})).`);
-                }
-            }
-            for (const identifyingField of model.__identifyingFieldNames) {
-                const field = model.__fieldMap[identifyingField];
-                if (!field) {
-                    throw new Error(`Identifying field "${identifyingField}" is not a field on ${model}.`);
-                }
-                if (field.to) {
-                    if (field.relationType !== 'one') {
-                        throw new Error(`Identifying field "${identifyingField}" on ${model} has a relation of type "${field.relationType}" but identifying field is only supported for "one".`);
-                    }
-                    const relatedModel = this.models[field.to];
-                    const inverseField = relatedModel.__fieldMap[field.inverse];
-                    if (!inverseField.isCausal) {
-                        throw new Error(`Identifying field "${identifyingField}" on ${model} has an inverse "${field.inverse}" not declared as "isCausal" on ${relatedModel}.`);
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * @private
      * @param {Object} model
      * @returns {Record}
      */
@@ -641,13 +569,13 @@ export class ModelManager {
             // change in dependencies of compute, related and "on change".
             __listeners: [],
             // Field values of record.
-            __values: {},
+            __values: new Map(),
             [IS_RECORD]: true,
         });
         const record = owl.markRaw(!this.isDebug ? nonProxyRecord : new Proxy(nonProxyRecord, {
             get: function getFromProxy(record, prop) {
                 if (
-                    !model.__fieldMap[prop] &&
+                    !model.__fieldMap.has(prop) &&
                     !['_super', 'then', 'localId'].includes(prop) &&
                     typeof prop !== 'symbol' &&
                     !(prop in record)
@@ -659,10 +587,9 @@ export class ModelManager {
         }));
         // Ensure X2many relations are Set initially (other fields can stay undefined).
         for (const field of model.__fieldList) {
-            record.__values[field.fieldName] = undefined;
             if (field.fieldType === 'relation') {
                 if (field.relationType === 'many') {
-                    record.__values[field.fieldName] = new RelationSet(record, field);
+                    record.__values.set(field.fieldName, new RelationSet(record, field));
                 }
             }
         }
@@ -670,9 +597,6 @@ export class ModelManager {
             this._listenersObservingRecord.set(record, new Map());
         }
         this._listenersObservingFieldOfRecord.set(record, new Map());
-        for (const field of model.__fieldList) {
-            this._listenersObservingFieldOfRecord.get(record).set(field, new Map());
-        }
         /**
          * Register record.
          */
@@ -694,14 +618,14 @@ export class ModelManager {
         for (const [listener, infoList] of this._listenersObservingAllByModel.get(model)) {
             this._markListenerToNotify(listener, {
                 listener,
-                reason: `_create: allByModel - ${record}`,
+                reason: this.isDebug && `_create: allByModel - ${record}`,
                 infoList,
             });
         }
         for (const [listener, infoList] of this._listenersObservingRecord.get(record)) {
             this._markListenerToNotify(listener, {
                 listener,
-                reason: `_create: record - ${record}`,
+                reason: this.isDebug && `_create: record - ${record}`,
                 infoList,
             });
         }
@@ -713,7 +637,9 @@ export class ModelManager {
      * @param {Record} record
      */
     _delete(record) {
-        this._ensureNoLockingListener();
+        if (this.isDebug) {
+            this._ensureNoLockingListener();
+        }
         const model = record.constructor;
         if (!record.exists()) {
             throw Error(`Cannot delete already deleted record ${record}.`);
@@ -742,14 +668,14 @@ export class ModelManager {
         for (const [listener, infoList] of this._listenersObservingRecord.get(record)) {
             this._markListenerToNotify(listener, {
                 listener,
-                reason: `_delete: record - ${record}`,
+                reason: this.isDebug && `_delete: record - ${record}`,
                 infoList,
             });
         }
         for (const [listener, infoList] of this._listenersObservingAllByModel.get(model)) {
             this._markListenerToNotify(listener, {
                 listener,
-                reason: `_delete: allByModel - ${record}`,
+                reason: this.isDebug && `_delete: allByModel - ${record}`,
                 infoList,
             });
         }
@@ -818,7 +744,7 @@ export class ModelManager {
             for (const listener of listeners) {
                 listener.onChange({
                     listener,
-                    reason: `first call on ${record}`,
+                    reason: this.isDebug && `first call on ${record}`,
                 });
             }
         }
@@ -871,7 +797,7 @@ export class ModelManager {
                 record.__listeners.push(listener);
                 listener.onChange({
                     listener,
-                    reason: `first call on ${record}`,
+                    reason: this.isDebug && `first call on ${record}`,
                 });
                 if (!record.exists()) {
                     break; // onChange might have deleted the record, other onChange shouldn't be executed
@@ -936,11 +862,34 @@ export class ModelManager {
          * relational field definitions have an inverse.
          */
         this._processDeclaredFieldsOnModels();
-        /**
-         * Check that all model fields are correct, notably one relation
-         * should have matching reversed relation.
-         */
-        this._checkProcessedFieldsOnModels();
+        // Create Model and Model.Field records.
+        this.models['Model'].insert(Object.values(this.models).map(model => {
+            return {
+                identifyingMode: model.identifyingMode,
+                modelFields: model.__fieldList.map(field => {
+                    return {
+                        compute: field.compute,
+                        default: set(field.default),
+                        identifying: field.identifying,
+                        inverses: field.inverse ? insert({
+                            model: {
+                                name: field.to,
+                            },
+                            name: field.inverse,
+                        }) : undefined,
+                        isCausal: field.isCausal,
+                        name: field.fieldName,
+                        readonly: field.readonly,
+                        related: field.related,
+                        relationType: field.relationType,
+                        required: field.required,
+                        sort: field.sort,
+                        type: field.fieldType,
+                    };
+                }),
+                name: model.name,
+            };
+        }));
     }
 
     /**
@@ -951,12 +900,15 @@ export class ModelManager {
      * @returns {Record[]}
      */
     _insert(model, dataList, options = {}) {
-        this._ensureNoLockingListener();
+        if (this.isDebug) {
+            this._ensureNoLockingListener();
+        }
         const records = [];
         for (const data of dataList) {
             let record = this.findFromIdentifyingData(model, data);
             if (!record) {
-                const data2 = this._preInsertIdentifyingFieldsFromData(model, this._addDefaultData(model, data));
+                const data2 = this._addDefaultData(model, data);
+                this._preInsertIdentifyingFieldsFromData(model, data2);
                 record = this._create(model);
                 model.__recordsIndex.addRecord(record, data2);
                 this._update(record, data2, { ...options, allowWriteReadonly: true });
@@ -1027,10 +979,10 @@ export class ModelManager {
      * @param {ModelField} field
      */
     _markRecordFieldAsChanged(record, field) {
-        for (const [listener, infoList] of this._listenersObservingFieldOfRecord.get(record).get(field)) {
+        for (const [listener, infoList] of this._listenersObservingFieldOfRecord.get(record).get(field) || []) {
             this._markListenerToNotify(listener, {
                 listener,
-                reason: `_update: ${field} of ${record}`,
+                reason: this.isDebug && `_update: ${field} of ${record}`,
                 infoList,
             });
         }
@@ -1082,23 +1034,18 @@ export class ModelManager {
      * and to replace them by corresponding "replace" commands.
      *
      * @param {Object} model
-     * @param {Object} [data={}]
-     * @returns {Object}
+     * @param {Object} data
      */
     _preInsertIdentifyingFieldsFromData(model, data) {
-        const data2 = { ...data };
-        for (const [fieldName, value] of Object.entries(data2)) {
-            const field = model.__fieldMap[fieldName];
-            if (!field) {
-                throw new Error(`"${fieldName}" is not a field on "${model}".`);
+        for (const fieldName of model.__identifyingFieldNames) {
+            if (data[fieldName] === undefined) {
+                return;
             }
+            const field = model.__fieldMap.get(fieldName);
             if (!field.to) {
                 continue;
             }
-            if (!field.identifying) {
-                continue;
-            }
-            const commands = field.convertToFieldCommandList(value);
+            const commands = field.convertToFieldCommandList(data[fieldName]);
             if (commands.length !== 1) {
                 throw new Error(`Identifying field "${model}/${fieldName}" should receive a single command.`);
             }
@@ -1119,9 +1066,8 @@ export class ModelManager {
                 throw new Error(`Identifying field "${model}/${fieldName}" should receive a single data object.`);
             }
             const [record] = this._insert(this.models[field.to], [command._value]);
-            data2[fieldName] = record;
+            data[fieldName] = record;
         }
-        return data2;
     }
 
     /**
@@ -1205,28 +1151,32 @@ export class ModelManager {
          */
         for (const model of Object.values(this.models)) {
             // Object with fieldName/field as key/value pair, for quick access.
-            model.__fieldMap = model.__combinedFields;
+            model.__fieldMap = new Map(Object.entries(model.__combinedFields));
             // List of all fields, for iterating.
-            model.__fieldList = Object.values(model.__fieldMap);
+            model.__fieldList = [...model.__fieldMap.values()];
             model.__requiredFieldsList = model.__fieldList.filter(
                 field => field.required
             );
             model.__identifyingFieldNames = new Set();
-            for (const [fieldName, field] of Object.entries(model.__fieldMap)) {
+            for (const [fieldName, field] of model.__fieldMap) {
                 if (field.identifying) {
                     model.__identifyingFieldNames.add(fieldName);
                 }
                 // Add field accessors.
                 Object.defineProperty(model.prototype, fieldName, {
                     get: function getFieldValue() { // this is bound to record
-                        const field = model.__fieldMap[fieldName];
                         if (this.modelManager._listeners.size) {
-                            if (!this.modelManager._listenersObservingRecord.has(this)) {
-                                this.modelManager._listenersObservingRecord.set(this, new Map());
+                            let entryRecord = this.modelManager._listenersObservingRecord.get(this);
+                            if (!entryRecord) {
+                                entryRecord = new Map();
+                                this.modelManager._listenersObservingRecord.set(this, entryRecord);
                             }
-                            const entryRecord = this.modelManager._listenersObservingRecord.get(this);
-                            const reason = `getField - ${field} of ${this}`;
-                            const entryField = this.modelManager._listenersObservingFieldOfRecord.get(this).get(field);
+                            const reason = this.modelManager.isDebug && `getField - ${field} of ${this}`;
+                            let entryField = this.modelManager._listenersObservingFieldOfRecord.get(this).get(field);
+                            if (!entryField) {
+                                entryField = new Map();
+                                this.modelManager._listenersObservingFieldOfRecord.get(this).set(field, entryField);
+                            }
                             for (const listener of this.modelManager._listeners) {
                                 listener.lastObservedRecords.add(this);
                                 const info = { listener, reason };
@@ -1263,32 +1213,21 @@ export class ModelManager {
      * @returns {boolean} whether any value changed for the current record
      */
     _update(record, data, options = {}) {
-        this._ensureNoLockingListener();
-        if (!record.exists()) {
+        if (this.isDebug) {
+            this._ensureNoLockingListener();
+        }
+        if (this.isDebug && !record.exists()) {
             throw Error(`Cannot update already deleted record ${record}.`);
         }
         const { allowWriteReadonly = false } = options;
         const model = record.constructor;
         let hasChanged = false;
-        const sortedFieldNames = Object.keys(data);
-        sortedFieldNames.sort((a, b) => {
-            // Always update identifying fields first because updating other relational field will
-            // trigger update of inverse field, which will require this identifying fields to be set
-            // beforehand to properly detect whether this is already linked or not on the inverse.
-            if (model.__identifyingFieldNames.has(a) && !model.__identifyingFieldNames.has(b)) {
-                return -1;
-            }
-            if (!model.__identifyingFieldNames.has(a) && model.__identifyingFieldNames.has(b)) {
-                return 1;
-            }
-            return 0;
-        });
-        for (const fieldName of sortedFieldNames) {
+        for (const fieldName of Object.keys(data)) {
             if (data[fieldName] === undefined) {
                 // `undefined` should have the same effect as not passing the field
                 continue;
             }
-            const field = model.__fieldMap[fieldName];
+            const field = model.__fieldMap.get(fieldName);
             if (!field) {
                 throw new Error(`Cannot create/update record with data unrelated to a field. (record: "${record}", non-field attempted update: "${fieldName}")`);
             }
