@@ -182,21 +182,22 @@ class HrEmployeePrivate(models.Model):
             return super(HrEmployeePrivate, self).name_get()
         return self.env['hr.employee.public'].browse(self.ids).name_get()
 
-    def _read(self, fields):
+    def search(self, domain, field_names=(), offset=0, limit=None, order=None):
         if self.check_access_rights('read', raise_exception=False):
-            return super(HrEmployeePrivate, self)._read(fields)
+            return super().search(domain, field_names, offset, limit, order)
 
         # HACK: retrieve publicly available values from hr.employee.public and
         # copy them to the cache of self; non-public data will be missing from
         # cache, and interpreted as an access error
-        self.flush_recordset(fields)
-        public = self.env['hr.employee.public'].browse(self._ids)
-        public.read(fields)
-        for fname in fields:
+        self.flush_model(field_names)
+        public = self.env['hr.employee.public'].search(domain, field_names, offset, limit, order)
+        employees = self.browse(public._ids)
+        for fname in field_names:
             values = self.env.cache.get_values(public, public._fields[fname])
             if self._fields[fname].translate:
                 values = [(value.copy() if value else None) for value in values]
-            self.env.cache.update_raw(self, self._fields[fname], values)
+            self.env.cache.update_raw(employees, self._fields[fname], values)
+        return employees
 
     @api.model
     def _cron_check_work_permit_validity(self):

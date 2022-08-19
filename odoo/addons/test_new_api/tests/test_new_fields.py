@@ -2642,28 +2642,27 @@ class TestFields(TransactionCaseWithUserDemo):
         self.env.invalidate_all()
 
         with self.assertQueries(["""
-            SELECT
-                "test_new_api_prefetch"."id" AS "id",
-                "test_new_api_prefetch"."name"->>'en_US' AS "name",
-                "test_new_api_prefetch"."description"->>'en_US' AS "description",
-                "test_new_api_prefetch"."html_description"->>'en_US' AS "html_description",
-                "test_new_api_prefetch"."create_uid" AS "create_uid",
-                "test_new_api_prefetch"."create_date" AS "create_date",
-                "test_new_api_prefetch"."write_uid" AS "write_uid",
-                "test_new_api_prefetch"."write_date" AS "write_date"
+            SELECT "test_new_api_prefetch"."id",
+                   "test_new_api_prefetch"."name"->>'en_US',
+                   "test_new_api_prefetch"."description"->>'en_US',
+                   "test_new_api_prefetch"."html_description"->>'en_US',
+                   "test_new_api_prefetch"."create_uid",
+                   "test_new_api_prefetch"."create_date",
+                   "test_new_api_prefetch"."write_uid",
+                   "test_new_api_prefetch"."write_date"
             FROM "test_new_api_prefetch"
-            WHERE "test_new_api_prefetch".id IN %s
+            WHERE ("test_new_api_prefetch"."id" IN %s)
         """]):
             records.mapped('name')  # fetch all fields with prefetch=True
 
         with self.assertQueries(["""
             SELECT
-                "test_new_api_prefetch"."id" AS "id",
-                "test_new_api_prefetch"."harry" AS "harry",
-                "test_new_api_prefetch"."hermione" AS "hermione",
-                "test_new_api_prefetch"."ron" AS "ron"
+                "test_new_api_prefetch"."id",
+                "test_new_api_prefetch"."harry",
+                "test_new_api_prefetch"."hermione",
+                "test_new_api_prefetch"."ron"
             FROM "test_new_api_prefetch"
-            WHERE "test_new_api_prefetch".id IN %s
+            WHERE ("test_new_api_prefetch"."id" IN %s)
         """]):
             records.mapped('harry')  # fetch all fields with prefetch='Harry Potter'
             records.mapped('hermione')  # fetched already
@@ -2671,11 +2670,11 @@ class TestFields(TransactionCaseWithUserDemo):
 
         with self.assertQueries(["""
             SELECT
-                "test_new_api_prefetch"."id" AS "id",
-                "test_new_api_prefetch"."hansel" AS "hansel",
-                "test_new_api_prefetch"."gretel" AS "gretel"
+                "test_new_api_prefetch"."id",
+                "test_new_api_prefetch"."hansel",
+                "test_new_api_prefetch"."gretel"
             FROM "test_new_api_prefetch"
-            WHERE "test_new_api_prefetch".id IN %s
+            WHERE ("test_new_api_prefetch"."id" IN %s)
         """]):
             records.mapped('hansel')  # fetch all fields with prefetch='Hansel and Gretel'
             records.mapped('gretel')  # fetched already
@@ -3691,10 +3690,10 @@ def select(model, *fnames):
     """ Return the expected query string to SELECT the given columns. """
     table = model._table
     terms = ", ".join(
-        f'"{table}"."{fname}" AS "{fname}"'
+        f'"{table}"."{fname}"'
         for fname in ['id'] + list(fnames)
     )
-    return f'SELECT {terms} FROM "{table}" WHERE "{table}".id IN %s'
+    return f'SELECT {terms} FROM "{table}" WHERE ("{table}"."id" IN %s)'
 
 
 def insert(model, *fnames, rowcount=1):
@@ -4213,14 +4212,20 @@ class TestModifiedPerformance(common.TransactionCase):
 
         self.modified_line_a_child.price
         with self.assertQueries(["""
-        SELECT "test_new_api_modified_line"."id" AS "id", "test_new_api_modified_line"."modified_id" AS "modified_id",
-               "test_new_api_modified_line"."quantity" AS "quantity", "test_new_api_modified_line"."price" AS "price",
-               "test_new_api_modified_line"."parent_id" AS "parent_id", "test_new_api_modified_line"."create_uid" AS "create_uid",
-               "test_new_api_modified_line"."create_date" AS "create_date", "test_new_api_modified_line"."write_uid" AS "write_uid",
-               "test_new_api_modified_line"."write_date" AS "write_date"
-         FROM "test_new_api_modified_line"
-        WHERE "test_new_api_modified_line".id IN %s
-        """] * 2, flush=False):
+            SELECT "test_new_api_modified_line"."id",
+                   "test_new_api_modified_line"."modified_id",
+                   "test_new_api_modified_line"."quantity",
+                   "test_new_api_modified_line"."parent_id",
+                   "test_new_api_modified_line"."create_uid",
+                   "test_new_api_modified_line"."create_date"
+            FROM "test_new_api_modified_line"
+            WHERE ("test_new_api_modified_line"."id" IN %s)
+        """, """
+            SELECT "test_new_api_modified_line"."id",
+                   "test_new_api_modified_line"."parent_id"
+            FROM "test_new_api_modified_line"
+            WHERE ("test_new_api_modified_line"."id" IN %s)
+        """], flush=False):
             # Two requests:
             # - one for fetch modified_line_a_child_child data (invalidate just before)
             # - one because modified_line_a_child.parent_id (invalidate just before because we invalidate inverse in `_invalidate_cache`,

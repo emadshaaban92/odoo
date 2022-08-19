@@ -195,6 +195,8 @@ class MetaModel(api.Meta):
 
         if '__init__' in attrs and len(inspect.signature(attrs['__init__']).parameters) != 4:
             _logger.warning("The method %s.__init__ doesn't match the new signature in module %s", name, attrs.get('__module__'))
+        if callable(attrs.get('_read')):
+            warnings.warn(f"{self.__module__}.{self.__name__}: method BaseModel._read() has been replaced by BaseModel._fetch_query()")
 
         if not attrs.get('_register', True):
             return
@@ -1502,22 +1504,34 @@ class BaseModel(metaclass=MetaModel):
 
     @api.model
     @api.returns('self')
-    def search(self, domain, offset=0, limit=None, order=None):
-        """ search(domain[, offset=0][, limit=None][, order=None])
+    def search(self, domain, field_names=(), offset=0, limit=None, order=None):
+        """ search(domain[, field_names=()][, offset=0][, limit=None][, order=None])
 
-        Searches for records based on the ``domain``
-        :ref:`search domain <reference/orm/domains>`.
+        Search for the records that satisfy the given ``domain``
+        :ref:`search domain <reference/orm/domains>`, and fetch the given fields
+        to the cache.  This method performs both with a minimal number of SQL
+        queries.
 
         :param domain: :ref:`A search domain <reference/orm/domains>`. Use an empty
                      list to match all records.
+        :param field_names: a collection of field names to fetch
         :param int offset: number of results to ignore (default: none)
         :param int limit: maximum number of records to return (default: all)
         :param str order: sort string
         :returns: at most ``limit`` records matching the search criteria
         :raise AccessError: if user is not allowed to access requested information
         """
+        # first determine a query that satisfies the domain and access rules
         query = self._search(domain, offset=offset, limit=limit, order=order or self._order)
-        return self.browse(query)
+
+        if query.is_empty():
+            # optimization: don't execute the query at all
+            return self.browse()
+
+        if field_names:
+            field_names = self.check_field_access_rights('read', field_names)
+
+        return self._fetch_query(query, field_names)
 
     #
     # display_name, name_get, name_create, name_search
@@ -2974,7 +2988,12 @@ class BaseModel(metaclass=MetaModel):
                     f = self._fields[dotname.split('.')[0]]
                     if f.prefetch is True and (not f.groups or self.user_has_groups(f.groups)):
                         stored_fields.add(f.name)
-        self._read(stored_fields)
+
+        if stored_fields:
+            self.fetch(stored_fields)
+        else:
+            self.check_access_rights('read')
+            self.check_access_rule('read')
 
         return self._read_format(fnames=fields, load=load)
 
@@ -3140,103 +3159,117 @@ class BaseModel(metaclass=MetaModel):
                 fnames.append(field.name)
         else:
             fnames = [field.name]
-        self._read(fnames)
+        self.fetch(fnames)
 
-    def _read(self, field_names):
-        """ Read the given fields of the records in ``self`` from the database,
-            and store them in cache. Skip fields that are not stored.
-
-            :param field_names: list of field names to read
+    def fetch(self, field_names):
+        """ Make sure the given fields are in memory for the records in ``self``,
+        by fetching what is necessary from the database.  Non-stored fields are
+        ignored.
         """
         if not self:
             return
-        self.check_access_rights('read')
 
-        # determine columns fields and those with their own read() method
-        column_fields = []
-        other_fields = []
-        translated_field_names = []
-        for name in field_names:
-            if name == 'id':
-                continue
-            field = self._fields.get(name)
-            if not field:
-                _logger.warning("%s._read() with unknown field %r", self._name, name)
-                continue
-            if field.base_field.store and field.base_field.column_type:
-                column_fields.append(field)
-            elif field.store and not field.column_type:
-                # non-column fields: for the sake of simplicity, we ignore inherited fields
-                other_fields.append(field)
-            if field.store and field.translate:
-                translated_field_names.append(field.name)
+        cache = self.env.cache
+        has_columns = False
+        fnames_to_fetch = []
+        for field_name in field_names:
+            field = self._fields[field_name]
+            if field.store and any(cache.get_missing_ids(self, field)):
+                fnames_to_fetch.append(field_name)
+                has_columns = has_columns or field.column_type
 
-            if field.type == 'properties':
-                # force calling fields.read for properties field because
-                # we want to read all relational properties in batch
-                # (and check their existence in batch as well)
-                other_fields.append(field)
+        if not fnames_to_fetch:
+            return
 
-        if column_fields:
-            cr, context = self.env.cr, self.env.context
-
-            # If a read() follows a write(), we must flush the updates that have
-            # an impact on checking security rules, as they are injected into
-            # the query.  However, we don't need to flush the fields to fetch,
-            # as explained below when putting values in cache.
-
-            # Since only one language translation is fetched from database,
-            # we must flush these translated fields before read
-            # E.g. in database, the {'en_US': 'English'},
-            # write record.with_context(lang='en_US').name = 'English2'
-            # then record.with_context(lang='fr_FR').name => cache miss => _read
-            # 'English2'should is flushed before query as it is the fallback of empty 'fr_FR'
-            if translated_field_names:
-                self.flush_recordset(translated_field_names)
-            self._flush_search([], order='id')
-
-            # make a query object for selecting ids, and apply security rules to it
-            query = Query(cr, self._table, self._table_query)
-            self._apply_ir_rules(query, 'read')
-
-            # the query may involve several tables: we need fully-qualified names
-            def qualify(field):
-                qname = self._inherits_join_calc(self._table, field.name, query)
-                if field.type == 'binary' and (
-                        context.get('bin_size') or context.get('bin_size_' + field.name)):
-                    # PG 9.2 introduces conflicting pg_size_pretty(numeric) -> need ::cast
-                    qname = f'pg_size_pretty(length({qname})::bigint)'
-                return f'{qname} AS "{field.name}"'
-
-            # selected fields are: 'id' followed by column_fields
-            qual_names = [qualify(field) for field in [self._fields['id']] + column_fields]
-
-            # determine the actual query to execute (last parameter is added below)
-            query.add_where(f'"{self._table}".id IN %s')
-            query_str, params = query.select(*qual_names)
-
-            result = []
-            for sub_ids in cr.split_for_in_conditions(self.ids):
-                cr.execute(query_str, params + [sub_ids])
-                result += cr.fetchall()
+        # first determine a query that satisfies the domain and access rules
+        if has_columns:
+            query = self.with_context(active_test=False)._search([('id', 'in', self.ids)])
         else:
+            self.check_access_rights('read')
             try:
                 self.check_access_rule('read')
             except MissingError:
-                # Method _read() should never raise a MissingError, but method
+                # Method fetch() should never raise a MissingError, but method
                 # check_access_rule() can, because it must read fields on self.
                 # So we restrict 'self' to existing records (to avoid an extra
                 # exists() at the end of the method).
                 self = self.exists()
                 self.check_access_rule('read')
+            query = self._as_query()
 
-            result = [(id_,) for id_ in self._ids]
+        # fetch the fields
+        fnames_to_fetch = self.check_field_access_rights('read', fnames_to_fetch)
+        fetched = self._fetch_query(query, fnames_to_fetch)
 
-        fetched = self.browse()
-        if result:
-            # result = [(id1, a1, b1), (id2, a2, b2), ...]
+        # possibly raise exception for the records that could not be read
+        if fetched != self:
+            forbidden = (self - fetched).exists()
+            if forbidden:
+                raise self.env['ir.rule']._make_access_error('read', forbidden)
+
+    def _fetch_query(self, query, field_names):
+        """ Fetch the given fields from the given query, put them in cache, and
+        return the fetched records.
+        """
+        stored_fields = OrderedSet()
+        for name in field_names:
+            if name == 'id':
+                continue
+            field = self._fields.get(name)
+            if not field:
+                raise ValueError("Invalid field %r on model %r" % (name, self._name))
+            if field.store:
+                stored_fields.add(field)
+            elif field.compute:
+                # optimization: fetch direct field dependencies
+                for dotname in self.pool.field_depends[field]:
+                    f = self._fields[dotname.split('.')[0]]
+                    if f.store and (not f.groups or self.user_has_groups(f.groups)):
+                        stored_fields.add(f)
+
+        # determine columns fields and those with their own read() method
+        column_fields = []
+        other_fields = []
+        translated_field_names = []
+        for field in stored_fields:
+            if field.column_type:
+                column_fields.append(field)
+            else:
+                other_fields.append(field)
+            if field.translate:
+                translated_field_names.append(field.name)
+            if field.type == 'properties':
+                # force calling fields.read for properties field in order to
+                # read all relational properties in batch
+                other_fields.append(field)
+
+        if translated_field_names:
+            self.flush_model(translated_field_names)
+
+        context = self.env.context
+
+        if column_fields:
+            # the query may involve several tables: we need fully-qualified names
+            select_terms = [f'"{self._table}"."id"']
+            for field in column_fields:
+                qname = self._inherits_join_calc(self._table, field.name, query)
+                if field.type == 'binary' and (
+                        context.get('bin_size') or context.get('bin_size_' + field.name)):
+                    # PG 9.2 introduces conflicting pg_size_pretty(numeric) -> need ::cast
+                    qname = f'pg_size_pretty(length({qname})::bigint)'
+                select_terms.append(qname)
+
+            # select the given columns from the rows in the query
+            query_str, params = query.select(*select_terms)
+            self.env.cr.execute(query_str, params)
+            rows = self.env.cr.fetchall()
+
+            if not rows:
+                return self.browse()
+
+            # rows = [(id1, a1, b1), (id2, a2, b2), ...]
             # column_values = [(id1, id2, ...), (a1, a2, ...), (b1, b2, ...)]
-            column_values = zip(*result)
+            column_values = zip(*rows)
             ids = next(column_values)
             fetched = self.browse(ids)
 
@@ -3248,25 +3281,15 @@ class BaseModel(metaclass=MetaModel):
                 # store values in cache, but without overwriting
                 self.env.cache.insert_missing(fetched, field, values)
 
-            # process non-column fields
+        else:
+            fetched = self.browse(query)
+
+        # process non-column fields
+        if fetched:
             for field in other_fields:
                 field.read(fetched)
 
-        # possibly raise exception for the records that could not be read
-        missing = self - fetched
-        if missing:
-            extras = fetched - self
-            if extras:
-                raise AccessError(_(
-                    "Database fetch misses ids (%(missing)s) and has extra ids (%(extra)s),"
-                    " may be caused by a type incoherence in a previous request",
-                    missing=missing._ids,
-                    extra=extras._ids,
-                ))
-            # mark non-existing records in missing
-            forbidden = missing.exists()
-            if forbidden:
-                raise self.env['ir.rule']._make_access_error('read', forbidden)
+        return fetched
 
     def get_metadata(self):
         """Return some metadata about the given records.
@@ -6462,7 +6485,7 @@ class BaseModel(metaclass=MetaModel):
                 fnames = [subname
                           for subname in subnames
                           if lines._fields[subname].base_field.store]
-                lines._read(fnames)
+                lines.fetch(fnames)
                 # copy the cache of lines to their corresponding new records;
                 # this avoids computing computed stored fields on new_lines
                 new_lines = lines.browse(map(NewId, line_ids))
