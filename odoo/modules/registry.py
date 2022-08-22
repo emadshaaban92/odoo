@@ -317,12 +317,18 @@ class Registry(Mapping):
                     computed[field] = group = groups[field.compute]
                     group.append(field)
             for fields in groups.values():
+                if len(fields) < 2:
+                    continue
                 if len({field.compute_sudo for field in fields}) > 1:
-                    _logger.warning("%s: inconsistent 'compute_sudo' for computed fields: %s",
-                                    model_name, ", ".join(field.name for field in fields))
+                    fnames = ", ".join(field.name for field in fields)
+                    warnings.warn(f"{model_name}: inconsistent 'compute_sudo' for computed fields {fnames}")
                 if len({field.precompute for field in fields}) > 1:
-                    _logger.warning("%s: inconsistent 'precompute' for computed fields: %s",
-                                    model_name, ", ".join(field.name for field in fields))
+                    fnames = ", ".join(field.name for field in fields)
+                    warnings.warn(f"{model_name}: inconsistent 'precompute' for computed fields {fnames}")
+                if len({field.store for field in fields}) > 1:
+                    fnames1 = ", ".join(field.name for field in fields if not field.store)
+                    fnames2 = ", ".join(field.name for field in fields if field.store)
+                    warnings.warn(f"{model_name}: inconsistent 'store' for computed fields: accessing {fnames1} may recompute {fnames2}")
         return computed
 
     @lazy_property
