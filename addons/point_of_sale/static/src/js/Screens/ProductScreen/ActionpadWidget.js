@@ -3,13 +3,14 @@ odoo.define('point_of_sale.ActionpadWidget', function(require) {
 
     const PosComponent = require('point_of_sale.PosComponent');
     const Registries = require('point_of_sale.Registries');
+    const ControlButtonsMixin = require('point_of_sale.ControlButtonsMixin');
 
     /**
      * @props partner
      * @emits click-partner
      * @emits click-pay
      */
-    class ActionpadWidget extends PosComponent {
+    class ActionpadWidget extends ControlButtonsMixin(PosComponent) {
         get isLongName() {
             return this.props.partner && this.props.partner.name.length > 10;
         }

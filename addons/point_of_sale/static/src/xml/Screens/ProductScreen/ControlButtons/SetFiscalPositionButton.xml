@@ -2,11 +2,11 @@
 <templates id="template" xml:space="preserve">
 
     <t t-name="SetFiscalPositionButton" owl="1">
-        <div class="control-button o_fiscal_position_button">
+        <button class="button control-button fw-bold">
             <i class="fa fa-book" role="img" aria-label="Set fiscal position"
                title="Set fiscal position" />
             <t t-esc='currentFiscalPositionName' />
-        </div>
+        </button>
     </t>
 
 </templates>

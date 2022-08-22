@@ -2,11 +2,10 @@
 <templates id="template" xml:space="preserve">
 
     <t t-name="DiscountButton" owl="1">
-        <span class="control-button js_discount">
+        <button class="button control-button fw-bold">
             <i class="fa fa-tag"></i>
-            <span> </span>
-            <span>Discount</span>
-        </span>
+            Discount
+        </button>
     </t>
 
 </templates>

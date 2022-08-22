@@ -2,7 +2,7 @@ odoo.define('point_of_sale.SetPricelistButton', function(require) {
     'use strict';
 
     const PosComponent = require('point_of_sale.PosComponent');
-    const ProductScreen = require('point_of_sale.ProductScreen');
+    const ActionpadWidget = require('point_of_sale.ActionpadWidget');
     const { useListener } = require("@web/core/utils/hooks");
     const Registries = require('point_of_sale.Registries');
 
@@ -46,7 +46,7 @@ odoo.define('point_of_sale.SetPricelistButton', function(require) {
     }
     SetPricelistButton.template = 'SetPricelistButton';
 
-    ProductScreen.addControlButton({
+    ActionpadWidget.addControlButton({
         component: SetPricelistButton,
         condition: function() {
             return this.env.pos.config.use_pricelist && this.env.pos.pricelists.length > 1;

@@ -29,29 +29,10 @@
                     <t t-esc="props.actionName" />
                 </button>
                 <div class="actionpad-actions-extra w-50">
-                    <div class="col d-flex flex-row">
-                        <button class="button position-relative d-block w-100 align-middle rounded-0 fw-bold">
-                            Action 1
-                        </button>
-                        <button class="button position-relative d-block w-100 align-middle rounded-0 fw-bold">
-                            Action 2
-                        </button>
-                    </div>
-                    <div class="col d-flex flex-row">
-                        <button class="button position-relative d-block w-100 align-middle rounded-0 fw-bold">
-                            Action 3
-                        </button>
-                        <button class="button position-relative d-block w-100 align-middle rounded-0 fw-bold">
-                            Action 4
-                        </button>
-                    </div>
-                    <div class="col d-flex flex-row">
-                        <button class="button position-relative d-block w-100 align-middle rounded-0 fw-bold">
-                            Action 5
-                        </button>
-                        <button class="button position-relative d-block w-100 align-middle rounded-0 fw-bold">
-                            More
-                        </button>
+                    <div class="col d-flex flex-row flex-wrap">
+                        <t t-foreach="controlButtons" t-as="cb" t-key="cb.name">
+                            <t t-component="cb.component" t-key="cb.name"/>
+                        </t>
                     </div>
                 </div>
             </div>

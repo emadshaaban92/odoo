@@ -9,7 +9,7 @@
     border-color: $border-color;
     transition: all 150ms linear;
     padding: 4px 10px;
-    
+
     &:hover {
         background-color: $o-gray-200;
     }
@@ -40,4 +40,9 @@
     .actionpad .button.pay {
         height: calc(var(--btn-height-size) * 2);
     }
+}
+
+.actionpad .button.control-button {
+    flex-grow: 1;
+    flex-basis: 50%;
 }
