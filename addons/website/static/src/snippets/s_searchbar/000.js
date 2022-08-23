@@ -33,7 +33,6 @@ publicWidget.registry.searchBar = publicWidget.Widget.extend({
      */
     start: function () {
         this.$input = this.$('.search-query');
-        this.$searchGroup = this.$('.input-group');
 
         this.searchType = this.$input.data('searchType');
         this.order = this.$('.o_search_order_by').val();
@@ -150,6 +149,7 @@ publicWidget.registry.searchBar = publicWidget.Widget.extend({
         }
 
         const $prevMenu = this.$menu;
+        this.$el.toggleClass('dropdown show', !!res);
         if (res && this.limit) {
             const results = res['results'];
             let template = 'website.s_searchbar.autocomplete';
@@ -166,7 +166,6 @@ publicWidget.registry.searchBar = publicWidget.Widget.extend({
                 widget: this,
             }));
             this.$menu.css('min-width', this.autocompleteMinWidth);
-            this.$searchGroup[0].dataset['bsToggle'] = 'dropdown';
 
             // Handle the case where the searchbar is in a mega menu by making
             // it position:fixed and forcing its size. Note: this could be the
@@ -202,7 +201,6 @@ publicWidget.registry.searchBar = publicWidget.Widget.extend({
             });
         }
 
-        this.$el.toggleClass('dropdown show', !!res);
         if ($prevMenu) {
             $prevMenu.remove();
         }
