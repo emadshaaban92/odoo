@@ -4,6 +4,7 @@ odoo.define('mass_mailing.wysiwyg', function (require) {
 var Wysiwyg = require('web_editor.wysiwyg');
 var MassMailingSnippetsMenu = require('mass_mailing.snippets.editor');
 const {closestElement} = require('@web_editor/js/editor/odoo-editor/src/OdooEditor');
+const { _t } = require('web.core');
 
 const MassMailingWysiwyg = Wysiwyg.extend({
     //--------------------------------------------------------------------------
@@ -43,7 +44,9 @@ const MassMailingWysiwyg = Wysiwyg.extend({
         const linkCommands = commands.filter(command => command.name === 'Link' || command.name === 'Button');
         for (const linkCommand of linkCommands) {
             // Don't open the dialog: use the link tools.
-            linkCommand.callback = () => this.toggleLinkTools({forceDialog: false});
+            if (linkCommand.name === _t('Link')) {
+                linkCommand.callback = () => this.toggleLinkTools({forceDialog: false});
+            }
             // Remove the command if the selection is within a background-image.
             const superIsDisabled = linkCommand.isDisabled;
             linkCommand.isDisabled = () => {
