@@ -235,20 +235,41 @@ publicWidget.registry.searchBar = publicWidget.Widget.extend({
      * @private
      */
     _onKeydown: function (ev) {
+        const focusedEl = this.$menu && this.$menu[0].querySelector('.o_focus');
         switch (ev.which) {
             case $.ui.keyCode.ESCAPE:
                 this._render();
                 break;
             case $.ui.keyCode.UP:
             case $.ui.keyCode.DOWN:
-                ev.preventDefault();
+            case $.ui.keyCode.TAB:
                 if (this.$menu) {
-                    let $element = ev.which === $.ui.keyCode.UP ? this.$menu.children().last() : this.$menu.children().first();
-                    $element.focus();
+                    const elements = [null, ...this.$menu[0].querySelectorAll('.dropdown-item')];
+                    const currentIndex = elements.indexOf(focusedEl);
+                    const delta = (ev.which === $.ui.keyCode.UP) || (ev.which === $.ui.keyCode.TAB && ev.originalEvent.shiftKey) ? elements.length - 1 : 1;
+                    const nextIndex = (currentIndex + delta) % elements.length;
+                    const element = elements[nextIndex];
+                    if (focusedEl) {
+                        focusedEl.classList.remove('o_focus');
+                    }
+                    if (element) {
+                        element.classList.add('o_focus');
+                    }
+                    if (ev.which === $.ui.keyCode.TAB) {
+                        if (element) {
+                            ev.preventDefault();
+                        } else {
+                            elements[ev.originalEvent.shiftKey ? 1 : elements.length - 1].focus();
+                        }
+                    }
                 }
                 break;
             case $.ui.keyCode.ENTER:
                 this.limit = 0; // prevent autocomplete
+                if (focusedEl) {
+                    focusedEl.click();
+                    ev.preventDefault();
+                }
                 break;
         }
     },
