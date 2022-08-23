@@ -5,6 +5,7 @@ odoo.define('point_of_sale.InvoiceButton', function (require) {
     const { isConnectionError } = require('point_of_sale.utils');
     const PosComponent = require('point_of_sale.PosComponent');
     const Registries = require('point_of_sale.Registries');
+    const TicketScreen = require('point_of_sale.TicketScreen');
 
     class InvoiceButton extends PosComponent {
         setup() {
@@ -134,6 +135,14 @@ odoo.define('point_of_sale.InvoiceButton', function (require) {
         }
     }
     InvoiceButton.template = 'InvoiceButton';
+
+    TicketScreen.addControlButton({
+        component: InvoiceButton,
+        condition: function () {
+            return true;
+        },
+    });
+
     Registries.Component.add(InvoiceButton);
 
     return InvoiceButton;

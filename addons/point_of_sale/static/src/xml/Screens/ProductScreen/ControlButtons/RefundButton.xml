@@ -2,10 +2,10 @@
 <templates id="template" xml:space="preserve">
 
     <t t-name="point_of_sale.RefundButton" owl="1">
-        <div class="control-button">
+        <button class="button control-button">
             <i class="fa fa-undo" role="img" aria-label="Refund" title="Refund" />
             Refund
-        </div>
+        </button>
     </t>
 
 </templates>

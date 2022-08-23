@@ -2,11 +2,10 @@
 <templates id="template" xml:space="preserve">
 
     <t t-name="GiftCardButton" owl="1">
-        <span class="control-button">
+        <button class="button control-button">
             <i class="fa fa-gift"></i>
-            <span> </span>
-            <span>Gift Card</span>
-        </span>
+            Gift Card
+        </button>
     </t>
 
 </templates>

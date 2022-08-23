@@ -5,12 +5,13 @@ odoo.define('point_of_sale.TicketScreen', function (require) {
     const Registries = require('point_of_sale.Registries');
     const IndependentToOrderScreen = require('point_of_sale.IndependentToOrderScreen');
     const NumberBuffer = require('point_of_sale.NumberBuffer');
+    const ControlButtonsMixin = require('point_of_sale.ControlButtonsMixin');
     const { useListener } = require("@web/core/utils/hooks");
     const { parse } = require('web.field_utils');
 
     const { onMounted, onWillUnmount, useState } = owl;
 
-    class TicketScreen extends IndependentToOrderScreen {
+    class TicketScreen extends ControlButtonsMixin(IndependentToOrderScreen) {
         setup() {
             super.setup();
             useListener('close-screen', this._onCloseScreen);

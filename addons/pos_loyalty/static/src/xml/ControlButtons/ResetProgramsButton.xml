@@ -2,11 +2,10 @@
 <templates id="template" xml:space="preserve">
 
     <t t-name="ResetProgramsButton" owl="1">
-        <span class="control-button">
+        <button class="button control-button">
             <i class="fa fa-star"></i>
-            <span> </span>
-            <span>Reset Programs</span>
-        </span>
+            Reset Programs
+        </button>
     </t>
 
 </templates>

@@ -2,11 +2,10 @@
 <templates id="template" xml:space="preserve">
 
     <t t-name="PrintBillButton" owl="1">
-        <span class="control-button order-printbill">
+        <button class="button control-button">
             <i class="fa fa-print"></i>
-            <span> </span>
-            <span>Bill</span>
-        </span>
+            Bill
+        </button>
     </t>
 
 </templates>

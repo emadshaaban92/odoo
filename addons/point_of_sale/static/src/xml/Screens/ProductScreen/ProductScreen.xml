@@ -10,18 +10,8 @@
                         <div class="subpads d-flex flex-column">
                             <t t-set="_actionName">Payment</t>
                             <NumpadWidget activeMode="env.pos.numpadMode" />
-                            <ActionpadWidget partner="partner" actionName="_actionName" onSwitchPane.bind="switchPane" />
+                            <ActionpadWidget partner="partner" actionName="_actionName" onSwitchPane.bind="switchPane" controlButtons="controlButtons"/>
                         </div>
-                        <!-- <div class="control-buttons">
-                            <t t-if="env.isMobile and controlButtons.length > 3">
-                                <div class="control-button" t-on-click="_displayAllControlPopup">More...</div>
-                            </t>
-                            <t t-else="">
-                                <t t-foreach="controlButtons" t-as="cb" t-key="cb.name">
-                                    <t t-component="cb.component" t-key="cb.name"/>
-                                </t>
-                            </t>
-                        </div> -->
                     </div>
                 </div>
                 <div class="rightpane w-100 h-100 d-flex flex-column flex-grow-1 flex-basis-25 bg-300 text-700" t-if="!env.isMobile || state.mobile_pane === 'right'">

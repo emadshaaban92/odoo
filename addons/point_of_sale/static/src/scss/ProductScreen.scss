@@ -65,33 +65,17 @@
 /*  ********* The control buttons ********* */
 
 .pos .control-buttons {
-    display: -webkit-flex;
     display: flex;
-    -webkit-flex-flow: row wrap;
     flex-flow: row wrap;
-    padding: 8px 16px 0px 11px;
-    margin-bottom: -6px;
 }
 .pos .popup-control-buttons .control-buttons {
     flex-direction: column;
 }
 .pos .control-button {
-    -webkit-flex-grow: 1;
-    flex-grow: 1;
-    background: #e2e2e2;
-    border: solid 1px #bfbfbf;
-    display: inline-block;
-    line-height: 38px;
-    min-width: 80px;
-    text-align: center;
-    border-radius: 3px;
-    padding: 0px 10px;
-    font-size: 18px;
-    margin-left: 6px;
-    margin-bottom: 6px;
-    cursor: pointer;
-    overflow: hidden;
-    transition: all linear 150ms;
+  flex-grow: 1;
+  flex-basis: 50%;
+  font-weight: bold;
+  overflow: hidden;
 }
 .pos .control-button:hover {
     background: #efefef;
@@ -139,4 +123,3 @@
     cursor: default;
     color: inherit;
 }
-

@@ -2,10 +2,10 @@
 <templates id="template" xml:space="preserve">
 
     <t t-name="SetSaleOrderButton" owl="1">
-        <div class="control-button o_sale_order_button">
+        <button class="button control-button">
             <i class="fa fa-link" role="img" aria-label="Set Sale Order"
                title="Set Sale Order" /> Quotation/Order
-        </div>
+        </button>
     </t>
 
 </templates>

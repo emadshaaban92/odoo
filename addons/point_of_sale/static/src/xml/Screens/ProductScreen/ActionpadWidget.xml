@@ -29,30 +29,27 @@
                     <t t-esc="props.actionName" />
                 </button>
                 <div class="actionpad-actions-extra w-50">
-                    <div class="col d-flex flex-row">
-                        <button class="button position-relative d-block w-100 align-middle rounded-0 fw-bold">
-                            Action 1
-                        </button>
-                        <button class="button position-relative d-block w-100 align-middle rounded-0 fw-bold">
-                            Action 2
-                        </button>
-                    </div>
-                    <div class="col d-flex flex-row">
-                        <button class="button position-relative d-block w-100 align-middle rounded-0 fw-bold">
-                            Action 3
-                        </button>
-                        <button class="button position-relative d-block w-100 align-middle rounded-0 fw-bold">
-                            Action 4
-                        </button>
-                    </div>
-                    <div class="col d-flex flex-row">
-                        <button class="button position-relative d-block w-100 align-middle rounded-0 fw-bold">
-                            Action 5
-                        </button>
-                        <button class="button position-relative d-block w-100 align-middle rounded-0 fw-bold">
-                            More
-                        </button>
-                    </div>
+
+                  <div t-if="props.controlButtons" class="control-buttons">
+                      <t t-set="maxDisplayed" t-value="6"/>
+                      <t t-set="displayMore" t-value="props.controlButtons.length > maxDisplayed"/>
+                      <t t-foreach="props.controlButtons" t-as="cb" t-key="cb.name">
+                          <t t-if="maxDisplayed > 1 || !displayMore">
+                              <t t-component="cb.component" t-key="cb.name" order="props.order"/>
+                          </t>
+                          <t t-else="">
+                              <button class="button control-button">More</button>
+                              <t t-if="maxDisplayed ===1">
+                                  <button class="button control-button">More</button>
+                              </t>
+                              <t t-if="maxDisplayed > 1">
+                                  <t t-component="cb.component" t-key="cb.name"/>
+                              </t>
+                          </t>
+
+                          <t t-set="maxDisplayed" t-value="maxDisplayed - 1"/>
+                      </t>
+                  </div>
                 </div>
             </div>
             <button t-if="env.isMobile" class="button back-button" t-on-click="props.onSwitchPane">

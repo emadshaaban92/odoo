@@ -4,6 +4,7 @@ odoo.define('point_of_sale.ReprintReceiptButton', function (require) {
     const { useListener } = require("@web/core/utils/hooks");
     const PosComponent = require('point_of_sale.PosComponent');
     const Registries = require('point_of_sale.Registries');
+    const TicketScreen = require('point_of_sale.TicketScreen');
 
     class ReprintReceiptButton extends PosComponent {
         setup() {
@@ -16,6 +17,14 @@ odoo.define('point_of_sale.ReprintReceiptButton', function (require) {
         }
     }
     ReprintReceiptButton.template = 'ReprintReceiptButton';
+
+    TicketScreen.addControlButton({
+        component: ReprintReceiptButton,
+        condition: function () {
+            return true;
+        },
+    });
+
     Registries.Component.add(ReprintReceiptButton);
 
     return ReprintReceiptButton;
