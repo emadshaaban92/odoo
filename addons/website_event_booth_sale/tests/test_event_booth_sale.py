@@ -13,7 +13,7 @@ class TestWebsiteEventBoothSale(HttpCase):
 
     def setUp(self):
         super().setUp()
-        self.env['ir.config_parameter'].sudo().set_param('account.show_line_subtotals_tax_selection', 'tax_included')
+        self.env.company.show_line_subtotals_tax_selection = 'tax_included'
         self.tax = self.env['account.tax'].sudo().create({
             'name': 'Tax 10',
             'amount': 10,

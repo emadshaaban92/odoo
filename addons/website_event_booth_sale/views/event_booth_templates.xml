@@ -6,16 +6,16 @@
             <t t-if="booth_category.price">
                 <span t-field="booth_category.price_reduce" class="fw-normal text-muted"
                       t-options="{'widget': 'monetary', 'display_currency': website.pricelist_id.currency_id}"
-                      groups="account.group_show_line_subtotals_tax_excluded"/>
+                      t-if="env.company.show_line_subtotals_tax_selection == 'tax_excluded'"/>
                 <span t-field="booth_category.price_reduce_taxinc" class="fw-normal text-muted"
                       t-options="{'widget': 'monetary', 'display_currency': website.pricelist_id.currency_id}"
-                      groups="account.group_show_line_subtotals_tax_included"/>
+                      t-if="env.company.show_line_subtotals_tax_selection == 'tax_included'"/>
             </t>
             <span t-else="" class="fw-normal text-muted">Free</span>
         </xpath>
         <xpath expr="//input[@name='booth_category_id']" position="attributes">
             <attribute name="t-att-data-price">
-                (booth_category.price_reduce_taxinc if env.user.has_group('account.group_show_line_subtotals_tax_included')
+                (booth_category.price_reduce_taxinc if env.company.show_line_subtotals_tax_selection == 'tax_included'
                 else booth_category.price_reduce) or '0'</attribute>
         </xpath>
         <xpath expr="//div[@name='booth_registration_submit']" position="before">
