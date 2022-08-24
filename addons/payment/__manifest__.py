@@ -32,7 +32,6 @@
         'wizards/payment_onboarding_views.xml',
         'wizards/payment_refund_wizard_views.xml',
     ],
-    'auto_install': True,
     'assets': {
         'web.assets_frontend': [
             'payment/static/src/scss/portal_payment.scss',
