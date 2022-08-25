@@ -1,0 +1,15 @@
+custom_header {
+    display: block !important;
+    height: 1600px;
+    page-break-before: always;
+    background: #aaaaaa;
+}
+section {
+    display: block;
+    color: red !important;
+    page-break-before: always;
+}
+custom_footer {
+    page-break-before: always;
+    background: #aaaaaa;
+}

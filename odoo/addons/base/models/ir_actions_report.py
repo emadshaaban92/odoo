@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
+import base64
 import io
 import json
 import logging
@@ -8,17 +9,20 @@ import os
 import re
 import subprocess
 import tempfile
+import urllib.parse
 
 from collections import OrderedDict
 from collections.abc import Iterable
 from contextlib import closing
 
+import werkzeug
 from lxml import etree
 from markupsafe import Markup
 from PIL import Image, ImageFile
 from PyPDF2 import PdfFileWriter, PdfFileReader, utils
 from reportlab.graphics.barcode import createBarcodeDrawing
 
+import odoo
 from odoo import api, fields, models, tools, SUPERUSER_ID, _
 from odoo.exceptions import UserError, AccessError
 from odoo.tools.safe_eval import safe_eval, time
@@ -384,6 +388,58 @@ class IrActionsReport(models.Model):
 
         return bodies, res_ids, header, footer, specific_paperformat_args
 
+    def _inline_assets(self, document):
+        """
+        Find and replace urls to local assets (css/js/img) by data urls
+        to prevent wkhtmltopdf from requesting us as it would require
+        an extra http worker
+        """
+        root = lxml.html.fromstring(document)
+        base_url = self.env['ir.config_parameter'].sudo().get_param('web.base_url', '')
+        base_netloc = urllib.parse.urlparse(base_url).netloc
+
+        wsgi_client = werkzeug.test.Client(
+            application=odoo.http.root,
+            response_wrapper=werkzeug.wrappers.Response,
+        )
+        if request and request.db:
+            wsgi_client.set_cookie('session_id', 'request.session.sid', httponly=True)
+
+        replaced_urls = set()
+        for node in root.xpath('//link[@href] | //script[@src] | //img[@src]'):
+            urlstr = node.attrib['href' if node.tag == 'link' else 'src']
+            url = urllib.parse.urlparse(urlstr)
+            if urlstr in replaced_urls:
+                _logger.debug("skipped %s..., inlined already", urlstr)
+                continue
+            if url.scheme not in ('http', 'https', ''):
+                _logger.debug("skipped %s..., protocol not supported", urlstr[:32])
+                continue
+            if url.netloc not in (base_netloc, ''):
+                _logger.debug("skipped %s, external url", urlstr)
+                continue
+
+            # Request the document right away using this same worker
+            response = wsgi_client.get(f'{url.path}?{url.query}', follow_redirects=True)
+
+            if response.status_code not in (200, 204):
+                _logger.warning("couldn't download %s [%s], skipped", url.path, response.status_code)
+                continue
+
+            data = 'data:{content_type};base64,{content}'.format(
+                content_type=response.headers['Content-Type'].replace(' ', ''),
+                content=base64.b64encode(response.get_data()).decode()
+            )
+
+            # string replace instead of etree manipulation because
+            # exporting the etree to text wrongly escape "<" and ">" in
+            # inlined javascript
+            document = document.replace(urlstr, data)
+            replaced_urls.add(urlstr)
+            _logger.debug("inlined %s", url.path)
+
+        return document
+
     @api.model
     def _run_wkhtmltopdf(
             self,
@@ -419,12 +475,14 @@ class IrActionsReport(models.Model):
         files_command_args = []
         temporary_files = []
         if header:
+            header = self._inline_assets(header)
             head_file_fd, head_file_path = tempfile.mkstemp(suffix='.html', prefix='report.header.tmp.')
             with closing(os.fdopen(head_file_fd, 'wb')) as head_file:
                 head_file.write(header.encode())
             temporary_files.append(head_file_path)
             files_command_args.extend(['--header-html', head_file_path])
         if footer:
+            footer = self._inline_assets(footer)
             foot_file_fd, foot_file_path = tempfile.mkstemp(suffix='.html', prefix='report.footer.tmp.')
             with closing(os.fdopen(foot_file_fd, 'wb')) as foot_file:
                 foot_file.write(footer.encode())
@@ -433,6 +491,7 @@ class IrActionsReport(models.Model):
 
         paths = []
         for i, body in enumerate(bodies):
+            body = self._inline_assets(body)
             prefix = '%s%d.' % ('report.body.tmp.', i)
             body_file_fd, body_file_path = tempfile.mkstemp(suffix='.html', prefix=prefix)
             with closing(os.fdopen(body_file_fd, 'wb')) as body_file:
@@ -690,7 +749,8 @@ class IrActionsReport(models.Model):
             # This scenario happens when you want to print a PDF report for the first time, as the
             # assets are not in cache and must be generated. To workaround this issue, we manually
             # commit the writes in the `ir.attachment` table. It is done thanks to a key in the context.
-            if not config['test_enable']:
+
+            if not config["test_enable"]:
                 additional_context['commit_assetsbundle'] = True
 
             html = self.with_context(**additional_context)._render_qweb_html(report_ref, res_ids_wo_stream, data=data)[0]
@@ -787,10 +847,6 @@ class IrActionsReport(models.Model):
         if isinstance(res_ids, int):
             res_ids = [res_ids]
         data.setdefault('report_type', 'pdf')
-        # In case of test environment without enough workers to perform calls to wkhtmltopdf,
-        # fallback to render_html.
-        if (tools.config['test_enable'] or tools.config['test_file']) and not self.env.context.get('force_report_rendering'):
-            return self._render_qweb_html(report_ref, res_ids, data=data)
 
         collected_streams = self._render_qweb_pdf_prepare_streams(report_ref, data, res_ids=res_ids)
 
