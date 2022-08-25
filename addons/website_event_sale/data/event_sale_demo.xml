@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo><data>
+    <!-- ****** Price list ****** -->
+    <record id="list0_item_sport_event" model="product.pricelist.item">
+        <field name="base">list_price</field>
+        <field name="applied_on">0_product_variant</field>
+        <field name="pricelist_id" ref="product.list0"/>
+        <field name="product_id" ref="event_sale.product_product_sport_event"/>
+        <field name="price_discount">10</field>
+        <field name="min_quantity">2</field>
+        <field name="compute_price">formula</field>
+    </record>
+</data></odoo>
