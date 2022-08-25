@@ -6,7 +6,7 @@
         <field name="arch" type="xml">
             <tree editable="bottom" sample="1">
                 <field name="sequence" widget="handle"/>
-                <field name="name"/>
+                <field name="name" placeholder="e.g. To Do"/>
                 <field name="mail_template_id" optional="hide" context="{'default_model': 'project.project'}"/>
                 <field name="fold" optional="show"/>
             </tree>

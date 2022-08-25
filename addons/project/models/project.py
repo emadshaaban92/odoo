@@ -416,6 +416,7 @@ class Project(models.Model):
     milestone_count = fields.Integer(compute='_compute_milestone_count', groups='project.group_project_milestone')
     milestone_count_reached = fields.Integer(compute='_compute_milestone_reached_count', groups='project.group_project_milestone')
     is_milestone_exceeded = fields.Boolean(compute="_compute_is_milestone_exceeded", search='_search_is_milestone_exceeded')
+    is_milestone_due_today = fields.Boolean(store=False, search="_search_is_milestone_due_today")
 
     _sql_constraints = [
         ('project_date_greater', 'check(date >= date_start)', "The project's start date must be before its end date.")
@@ -526,6 +527,26 @@ class Project(models.Model):
              WHERE M.is_reached IS false
                AND P.allow_milestones IS true
                AND M.deadline < CAST(now() AS date)
+        """
+        if (operator == '=' and value is True) or (operator == '!=' and value is False):
+            operator_new = 'inselect'
+        else:
+            operator_new = 'not inselect'
+        return [('id', operator_new, (query, ()))]
+
+    @api.model
+    def _search_is_milestone_due_today(self, operator, value):
+        if not isinstance(value, bool):
+            raise ValueError(_('Invalid value: %s') % value)
+        if operator not in ['=', '!=']:
+            raise ValueError(_('Invalid operator: %s') % operator)
+
+        query = """
+            SELECT P.id
+              FROM project_project P
+         LEFT JOIN project_milestone M ON P.id = M.project_id
+             WHERE M.is_reached IS false
+               AND M.deadline = CAST(now() AS date)
         """
         if (operator == '=' and value is True) or (operator == '!=' and value is False):
             operator_new = 'inselect'
@@ -925,8 +946,8 @@ class Project(models.Model):
                 icon = 'frown-o text-danger'
             buttons.append({
                 'icon': icon,
-                'text': _lt('Satisfaction'),
-                'number': f'{round(100 * self.rating_avg_percentage, 2)} %',
+                'text': _lt('Average Rating'),
+                'number': f'{round(self.rating_avg, 1)}/5',
                 'action_type': 'object',
                 'action': 'action_view_all_rating',
                 'show': self.rating_active,

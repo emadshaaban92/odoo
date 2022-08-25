@@ -45,9 +45,23 @@ class Project(models.Model):
         help="Total number of time (in the proper UoM) recorded in the project, rounded to the unit.")
     encode_uom_in_days = fields.Boolean(compute='_compute_encode_uom_in_days')
     is_internal_project = fields.Boolean(compute='_compute_is_internal_project', search='_search_is_internal_project')
-    remaining_hours = fields.Float(compute='_compute_remaining_hours', string='Remaining Invoiced Time', compute_sudo=True)
+    remaining_hours = fields.Float(compute='_compute_remaining_hours', store=True, string='Remaining Invoiced Time', compute_sudo=True)
+    remaining_hours_percentage = fields.Float(store=False, search='_search_remaining_hours_percentage')
     is_project_overtime = fields.Boolean('Project in Overtime', compute='_compute_remaining_hours', search='_search_is_project_overtime', compute_sudo=True)
     allocated_hours = fields.Float(string='Allocated Hours')
+
+    def _search_remaining_hours_percentage(self, operator, value):
+        if operator not in OPERATOR_MAPPING:
+            raise NotImplementedError('This operator %s is not supported in this search method.' % operator)
+        query = f"""
+         SELECT P.id
+            FROM {self._table} as P
+         LEFT JOIN project_task T ON P.id = T.project_id
+             WHERE T.planned_hours IS NOT NULl
+        GROUP BY P.id
+            HAVING SUM(T.remaining_hours) / SUM(T.planned_hours) {operator} %s
+            """
+        return [('id', 'inselect', (query, (value,)))]
 
     def _compute_encode_uom_in_days(self):
         self.encode_uom_in_days = self.env.company.timesheet_encode_uom_id == self.env.ref('uom.product_uom_day')

@@ -382,6 +382,7 @@
                 </filter>
                 <filter name="late_milestones" position="before">
                     <filter string="Projects in Overtime" name="projects_in_overtime" domain="[('is_project_overtime', '=', True)]"/>
+                    <filter string="Projects Soon in Overtime" name="projects_soon_in_overtime" domain="[('remaining_hours_percentage', '&lt;=', 0.25), ('remaining_hours_percentage', '&gt;=', 0.0)]"/>
                 </filter>
             </field>
         </record>
