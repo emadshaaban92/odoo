@@ -11,7 +11,7 @@ class DataRecycleRecord(models.Model):
     _description = 'Recycling Record'
 
     active = fields.Boolean('Active', default=True)
-    name = fields.Char('Record Name', compute='_compute_values', compute_sudo=True)
+    name = fields.Char('Record Name', compute='_compute_values', store=True)
     recycle_model_id = fields.Many2one('data_recycle.model', string='Recycle Model', ondelete='cascade')
 
     res_id = fields.Integer('Record ID', index=True)
