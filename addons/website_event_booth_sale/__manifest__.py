@@ -12,6 +12,9 @@ Use the e-commerce to sell your event booths.
     'data': [
         'views/event_booth_templates.xml',
     ],
+    'demo': [
+        'data/event_booth_sale_demo.xml',
+    ],
     'auto_install': True,
     'assets': {
         'web.assets_frontend': [
