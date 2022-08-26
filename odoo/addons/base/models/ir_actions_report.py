@@ -18,12 +18,14 @@ import tempfile
 import subprocess
 import re
 import json
+import werkzeug.exceptions
 
 from lxml import etree
 from contextlib import closing
 from distutils.version import LooseVersion
 from reportlab.graphics.barcode import createBarcodeDrawing
 from PyPDF2 import PdfFileWriter, PdfFileReader, utils
+from urllib.parse import urlparse
 from collections import OrderedDict
 from collections.abc import Iterable
 from PIL import Image, ImageFile
@@ -329,6 +331,34 @@ class IrActionsReport(models.Model):
 
         return command_args
 
+    def _inline_links(self, head_node):
+        if not request:
+            return
+
+        for node in head_node:
+            if node.tag != 'link' or node.attrib.get('type') != 'text/css':
+                continue
+            url = urlparse(node.attrib.get('href'), '')
+            if url.netloc != '' or not url.path.startswith('/web/content/'):
+                continue
+
+            try:
+                _, args = self.env['ir.http'].routing_map().bind_to_environ(request.httprequest.environ).match(url.path)
+            except werkzeug.exceptions.HTTPException as e:
+                continue
+
+            allowed_args = {
+                'xmlid', 'model', 'id', 'field', 'unique', 'filename', 'filename_field', 'download',
+                'mimetype', 'access_token',
+            }
+
+            status, headers, content = request.env['ir.http'].binary_content(
+                **{key: args[key] for key in args if key in allowed_args}
+            )
+            if status != 200:
+                content = b''
+            node.attrib['href'] = b'data:text/css;base64,'+content
+
     def _prepare_html(self, html):
         '''Divide and recreate the header/footer html by merging all found in html.
         The bodies are extracted and added to a list. Then, extract the specific_paperformat_args.
@@ -384,6 +414,10 @@ class IrActionsReport(models.Model):
                 if not layout_sections or node.get('data-oe-lang') == self.env.lang:
                     layout_sections = layout_with_lang
             body = layout_with_lang._render(dict(subst=False, body=lxml.html.tostring(node), base_url=base_url, report_xml_id=self.xml_id))
+            body_root = lxml.html.fromstring(body)
+            self._inline_links(body_root.find('head'))
+            body_root.attrib['style'] = 'height: 0' # stripped by fromstring
+            body = lxml.html.tostring(body_root)
             bodies.append(body)
             if node.get('data-oe-model') == self.model:
                 res_ids.append(int(node.get('data-oe-id', 0)))
@@ -402,7 +436,16 @@ class IrActionsReport(models.Model):
                 specific_paperformat_args[attribute[0]] = attribute[1]
 
         header = (layout_sections or layout)._render(dict(subst=True, body=lxml.html.tostring(header_node), base_url=base_url))
+        header_root = lxml.html.fromstring(header)
+        self._inline_links(header_root.find('head'))
+        header_root.attrib['style'] = 'height: 0' # stripped by fromstring
+        header = lxml.html.tostring(header_root)
+
         footer = (layout_sections or layout)._render(dict(subst=True, body=lxml.html.tostring(footer_node), base_url=base_url))
+        footer_root = lxml.html.fromstring(footer)
+        self._inline_links(footer_root.find('head'))
+        footer_root.attrib['style'] = 'height: 0' # stripped by fromstring
+        footer = lxml.html.tostring(footer_root)
 
         return bodies, res_ids, header, footer, specific_paperformat_args
 
