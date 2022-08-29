@@ -69,6 +69,15 @@ web_dashboard/static/tests/legacy/**/*
 web_cohort/static/src/legacy/**/*
 web_cohort/static/tests/legacy/**/*
 
+# web_gantt
+# whitelist new code
+!web_gantt
+!web_gantt/**/*
+
+# blacklist legacy
+web_gantt/static/src/legacy/**/*
+web_gantt/static/tests/legacy/**/*
+
 # web_map
 # whitelist new code
 !web_map
