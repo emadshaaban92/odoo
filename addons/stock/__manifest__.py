@@ -109,9 +109,7 @@
         'web.assets_backend': [
             'stock/static/src/**/*.js',
             'stock/static/src/**/*.xml',
-            'stock/static/src/scss/stock_forecasted.scss',
-            'stock/static/src/scss/forecast_widget.scss',
-            'stock/static/src/scss/stock_empty_screen.scss',
+            'stock/static/src/scss/*.scss',
             'stock/static/src/views/**/*',
         ],
         'web.assets_frontend': [
