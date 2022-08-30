@@ -23,6 +23,7 @@ const LinkTools = Link.extend({
         'change .link-custom-color-border input': '_onChangeCustomBorderWidth',
         'keypress .link-custom-color-border input': '_onKeyPressCustomBorderWidth',
         'click we-select [name="link_border_style"] we-button': '_onBorderStyleSelectOption',
+        'change input[name="label"]': '_onLabelInputChange',
     }),
 
     /**
@@ -31,8 +32,7 @@ const LinkTools = Link.extend({
     init: function (parent, options, editable, data, $button, link) {
         this._link = link;
         this._observer = new MutationObserver(() =>{
-            this._setLinkContent = false;
-            this._observer.disconnect();
+            this._updateLabelInput();
         });
         this._observer.observe(this._link, {subtree: true, childList: true, characterData: true});
         this._super(parent, options, editable, data, $button, this._link);
@@ -352,6 +352,14 @@ const LinkTools = Link.extend({
         this.$button.removeClass('active');
         this.options.wysiwyg.odooEditor.observerActive("hint_classes");
     },
+    /**
+     * Updates the label input with the DOM content of the link.
+     *
+     * @private
+     */
+    _updateLabelInput() {
+        this.el.querySelector('#o_link_dialog_label_input').value = this.linkEl.textContent;
+    },
 
     //--------------------------------------------------------------------------
     // Handlers
@@ -415,6 +423,19 @@ const LinkTools = Link.extend({
             $target.siblings('we-button').removeClass("active");
             this.options.wysiwyg.odooEditor.historyStep();
         }
+    },
+    /**
+     * Updates the DOM content of the link with the input value.
+     *
+     * @private
+     * @param {Event} ev
+     */
+    _onLabelInputChange(ev) {
+        const data = this._getData();
+        if (data === null) {
+            return;
+        }
+        this._updateLinkContent(this.$link, data);
     },
 });
 

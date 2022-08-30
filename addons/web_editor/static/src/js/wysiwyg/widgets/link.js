@@ -31,8 +31,6 @@ const Link = Widget.extend({
             title: _t("Link to"),
         }, this.options));
 
-        this._setLinkContent = true;
-
         this.data = data || {};
         this.isButton = this.data.isButton;
         this.$button = $button;
@@ -461,7 +459,7 @@ const Link = Widget.extend({
      * @param {boolean} force
      */
     _updateLinkContent($link, linkInfos, { force = false } = {}) {
-        if (force || (this._setLinkContent && (linkInfos.content !== this.data.originalText || linkInfos.url !== this.data.url))) {
+        if (force || (linkInfos.content !== this.data.originalText || linkInfos.url !== this.data.url)) {
             if (linkInfos.content === this.data.originalText) {
                 $link.html(this.data.originalHTML);
             } else if (linkInfos.content && linkInfos.content.length) {
