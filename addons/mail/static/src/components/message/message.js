@@ -5,13 +5,9 @@ import { useUpdate } from '@mail/component_hooks/use_update';
 import { useUpdateToModel } from '@mail/component_hooks/use_update_to_model';
 import { registerMessagingComponent } from '@mail/utils/messaging_component';
 
-import { _lt } from 'web.core';
 import Popover from "web.Popover";
 
 const { Component, useRef } = owl;
-
-const READ_MORE = _lt("Read More");
-const READ_LESS = _lt("Read Less");
 
 export class Message extends Component {
 
@@ -204,7 +200,7 @@ export class Message extends Component {
             const $readMoreLess = $('<a>', {
                 class: 'o_Message_readMoreLess d-block',
                 href: '#',
-                text: READ_MORE,
+                text: this.messageView.readMoreText,
             }).insertBefore(group[0]);
 
             // Toggle All next nodes
@@ -217,7 +213,7 @@ export class Message extends Component {
                     $child.hide();
                     $child.toggle(!isReadMore);
                 }
-                $readMoreLess.text(isReadMore ? READ_MORE : READ_LESS);
+                $readMoreLess.text(isReadMore ? this.messageView.readMoreText : this.messageView.readLessText);
             };
             $readMoreLess.click(e => {
                 e.preventDefault();
