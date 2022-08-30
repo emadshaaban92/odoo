@@ -60,6 +60,46 @@ registerModel({
             }
         },
         /**
+         * Until we have our own implementation of the /web/static/lib/pdfjs/web/viewer.{html,js,css}
+         * (currently based on Firefox), this method allows us to hide the buttons that we do not want:
+         * * "Open File"
+         * * "View Bookmark"
+         * * "Print" (Hidden on mobile device like Android, iOS, ...)
+         * * "Download" (Hidden on mobile device like Android, iOS, ...)
+         *
+         * @link https://mozilla.github.io/pdf.js/getting_started/
+         *
+         * @param {Element} rootElement
+         */
+        hidePDFJSButtons(rootElement) {
+            const cssStyle = document.createElement("style");
+            cssStyle.rel = "stylesheet";
+            cssStyle.innerHTML = `button#secondaryOpenFile.secondaryToolbarButton, button#openFile.toolbarButton,
+        a#secondaryViewBookmark.secondaryToolbarButton, a#viewBookmark.toolbarButton {
+        display: none !important;
+        }`;
+            if (this.device.isMobileDevice) {
+                cssStyle.innerHTML = `${cssStyle.innerHTML}
+        button#secondaryDownload.secondaryToolbarButton, button#download.toolbarButton,
+        button#secondaryPrint.secondaryToolbarButton, button#print.toolbarButton{
+        display: none !important;
+        }`;
+            }
+            const iframe = rootElement.tagName === 'IFRAME' ? rootElement : rootElement.querySelector('iframe');
+            if (iframe) {
+                if (!iframe.dataset.hideButtons) {
+                    iframe.dataset.hideButtons = 'true';
+                    iframe.addEventListener('load', event => {
+                        if (iframe.contentDocument && iframe.contentDocument.head) {
+                            iframe.contentDocument.head.appendChild(cssStyle);
+                        }
+                    });
+                }
+            } else {
+                console.warn('No IFRAME found');
+            }
+        },
+        /**
          * Display a notification to the user.
          *
          * @param {Object} params

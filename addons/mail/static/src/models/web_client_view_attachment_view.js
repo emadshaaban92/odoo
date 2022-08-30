@@ -3,8 +3,6 @@
 import { registerModel } from '@mail/model/model_core';
 import { attr, one } from '@mail/model/model_field';
 
-import { hidePDFJSButtons } from '@web/legacy/js/libs/pdfjs';
-
 registerModel({
     name: 'WebClientViewAttachmentView',
     recordMethods: {
@@ -26,7 +24,7 @@ registerModel({
         },
         onComponentUpdate() {
             if (this.iframeViewerPdfRef.el) {
-                hidePDFJSButtons(this.iframeViewerPdfRef.el);
+                this.messaging.hidePDFJSButtons(this.iframeViewerPdfRef.el);
             }
             this.component.trigger('preview_attachment_validation');
         },
