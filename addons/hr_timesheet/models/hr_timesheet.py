@@ -122,6 +122,11 @@ class AccountAnalyticLine(models.Model):
         for line in self:
             line.department_id = line.employee_id.department_id
 
+    def _check_can_write(self, values):
+        # If it's a basic user then check if the timesheet is his own.
+        if not (self.user_has_groups('hr_timesheet.group_hr_timesheet_approver') or self.env.su) and any(self.env.user.id != analytic_line.user_id.id for analytic_line in self):
+            raise AccessError(_("You cannot access timesheets that are not yours."))
+
     @api.model_create_multi
     def create(self, vals_list):
         # Before creating a timesheet, we need to put a valid employee_id in the vals
@@ -198,9 +203,7 @@ class AccountAnalyticLine(models.Model):
         return lines
 
     def write(self, values):
-        # If it's a basic user then check if the timesheet is his own.
-        if not (self.user_has_groups('hr_timesheet.group_hr_timesheet_approver') or self.env.su) and any(self.env.user.id != analytic_line.user_id.id for analytic_line in self):
-            raise AccessError(_("You cannot access timesheets that are not yours."))
+        self._check_can_write(values)
 
         values = self._timesheet_preprocess(values)
         if values.get('employee_id'):
