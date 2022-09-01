@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<odoo>
+
+    <template id="milestone_deadline_sale_project_inherit" inherit_id="project.milestone_deadline">
+        <xpath expr="//t[contains(@t-if, 'deadline')]" position="before">
+            <t t-if="milestone['quantity_percentage'] &gt; 0">
+                <t t-if="milestone['sale_line_name']">
+                    <span class="text-muted">(<t t-out="milestone['sale_line_name']"/> - <t t-out="100 * milestone['quantity_percentage']"/>%)</span>
+                </t>
+                <t t-else="">
+                    <span class="text-muted">(<t t-out="100 * milestone['quantity_percentage']"/>%)</span>
+                </t>
+            </t>
+        </xpath>
+    </template>
+
+</odoo>

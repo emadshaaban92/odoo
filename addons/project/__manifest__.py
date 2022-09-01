@@ -26,6 +26,8 @@
         'data/digest_data.xml',
         'report/project_report_views.xml',
         'report/project_task_burndown_chart_report_views.xml',
+        'report/project_update_report_templates.xml',
+        'report/project_update_report.xml',
         'views/analytic_views.xml',
         'views/digest_views.xml',
         'views/rating_rating_views.xml',

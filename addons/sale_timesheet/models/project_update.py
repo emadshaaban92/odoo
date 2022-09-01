@@ -14,15 +14,17 @@ class ProjectUpdate(models.Model):
         template_values = super(ProjectUpdate, self)._get_template_values(project)
         services = self._get_services_values(project)
         profitability = self._get_profitability_values(project)
+        show_profitability = bool(profitability and profitability.get('analytic_account_id') and (profitability.get('costs') or profitability.get('revenues')))
         show_sold = template_values['project'].allow_billable and len(services.get('data', [])) > 0
         return {
             **template_values,
             'show_sold': show_sold,
-            'show_profitability': bool(profitability),
-            'show_activities': template_values['show_activities'] or show_sold or bool(profitability),
+            'show_profitability': show_profitability,
+            'show_activities': template_values['show_activities'] or show_profitability or show_sold,
             'services': services,
             'profitability': profitability,
             'format_value': lambda value, is_hour: str(round(value, 2)) if not is_hour else format_duration(value),
+            'profitability_labels': project._get_profitability_labels(),
         }
 
     @api.model
@@ -79,15 +81,30 @@ class ProjectUpdate(models.Model):
         if not (self.user_has_groups('project.group_project_manager') and costs_revenues):
             return {}
         profitability_items = project._get_profitability_items(False)
+        for revenue in profitability_items['revenues']['data']:
+            revenue['invoiced_formatted'] = format_amount(self.env, revenue['invoiced'], project.currency_id)
+            revenue['to_invoice_formatted'] = format_amount(self.env, revenue['to_invoice'], project.currency_id)
+            revenue['expected_revenue_formatted'] = format_amount(self.env, revenue['invoiced'] + revenue['to_invoice'], project.currency_id)
+
+        for cost in profitability_items['costs']['data']:
+            cost['billed_formatted'] = format_amount(self.env, cost['billed'], project.currency_id)
+            cost['to_bill_formatted'] = format_amount(self.env, cost['to_bill'], project.currency_id)
+            cost['expected_cost_formatted'] = format_amount(self.env, cost['billed'] - cost['to_bill'], project.currency_id)
+
         costs = sum(profitability_items['costs']['total'].values())
         revenues = sum(profitability_items['revenues']['total'].values())
         margin = revenues + costs
         return {
+            'total_invoiced_formatted': format_amount(self.env, profitability_items['revenues']['total']['invoiced'], project.currency_id),
+            'total_to_invoice_formatted': format_amount(self.env, profitability_items['revenues']['total']['to_invoice'], project.currency_id),
+            'total_cost_billed_formatted': format_amount(self.env, profitability_items['costs']['total']['billed'], project.currency_id),
+            'total_cost_to_billed_formatted': format_amount(self.env, profitability_items['costs']['total']['to_bill'], project.currency_id),
             'analytic_account_id': project.analytic_account_id,
             'costs': costs,
             'costs_formatted': format_amount(self.env, -costs, project.currency_id),
             'revenues': revenues,
             'revenues_formatted': format_amount(self.env, revenues, project.currency_id),
+            'profitability_items': profitability_items,
             'margin': margin,
             'margin_formatted': format_amount(self.env, margin, project.currency_id),
             'margin_percentage': formatLang(self.env,
