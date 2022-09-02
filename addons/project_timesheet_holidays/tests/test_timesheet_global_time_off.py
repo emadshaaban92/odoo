@@ -38,6 +38,13 @@ class TestTimesheetGlobalTimeOff(common.TransactionCase):
             'attendance_ids': attendance_ids,
         })
 
+        self.part_time_calendar2 = self.env['resource.calendar'].create({
+            'name': 'Night Watch',
+            'company_id': self.test_company.id,
+            'hours_per_day': 6,
+            'attendance_ids': attendance_ids,
+        })
+
         self.full_time_employee = self.env['hr.employee'].create({
             'name': 'John Doe',
             'company_id': self.test_company.id,
@@ -54,6 +61,12 @@ class TestTimesheetGlobalTimeOff(common.TransactionCase):
             'name': 'Jane Doe',
             'company_id': self.test_company.id,
             'resource_calendar_id': self.part_time_calendar.id,
+        })
+
+        self.part_time_employee2 = self.env['hr.employee'].create({
+            'name': 'Jon Show',
+            'company_id': self.test_company.id,
+            'resource_calendar_id': self.part_time_calendar2.id,
         })
 
     # This tests that timesheets are created for every employee with the same calendar
@@ -175,3 +188,92 @@ class TestTimesheetGlobalTimeOff(common.TransactionCase):
         # The standard calendar is for 8 hours/day from 8 to 12 and from 13 to 17.
         # So we need to check that the timesheets don't have more than 8 hours per day.
         self.assertEqual(leave_task.effective_hours, 80)
+
+    def _get_timesheets_by_employee(self, leave_task):
+        timesheets_by_employee = defaultdict(lambda: self.env['account.analytic.line'])
+        for timesheet in leave_task.timesheet_ids:
+            timesheets_by_employee[timesheet.employee_id] |= timesheet
+        return timesheets_by_employee
+
+    def test_timesheet_creation_for_global_time_off_wo_calendar(self):
+        leave_start_datetime = datetime(2021, 1, 4, 7, 0, 0, 0)  # This is a monday
+        leave_end_datetime = datetime(2021, 1, 8, 18, 0, 0, 0)  # This is a friday
+
+        global_time_off = self.env['resource.calendar.leaves'].with_company(self.test_company).create({
+            'name': 'Test',
+            'calendar_id': False,
+            'date_from': leave_start_datetime,
+            'date_to': leave_end_datetime,
+        })
+
+        leave_task = self.test_company.leave_timesheet_task_id
+        timesheets_by_employee = self._get_timesheets_by_employee(leave_task)
+        # 5 Timesheets for full time employees and 4 Timesheets for part time employees should have been created
+        self.assertEqual(len(timesheets_by_employee.get(self.part_time_employee)), 4)
+        self.assertEqual(len(timesheets_by_employee.get(self.part_time_employee2)), 4)
+        self.assertEqual(len(timesheets_by_employee.get(self.full_time_employee)), 5)
+        self.assertEqual(len(timesheets_by_employee.get(self.full_time_employee_2)), 5)
+        # 8 hours/day for full time calendar employees and 6 hours/day for part time calendar employees.
+        # So it should add to 2(full time employees)*5(leave days)*8(hours per day) + 2(part time employees)*4(leave days)*6(hours per day).
+        self.assertEqual(leave_task.effective_hours, 128)
+
+
+        # Now we set the calendar_id. The timesheets should be deleted from other calendars.
+        global_time_off.calendar_id = self.test_company.resource_calendar_id.id
+        timesheets_by_employee = self._get_timesheets_by_employee(leave_task)
+
+        self.assertFalse(timesheets_by_employee.get(self.part_time_employee), False)
+        self.assertFalse(timesheets_by_employee.get(self.part_time_employee2), False)
+        self.assertEqual(len(timesheets_by_employee.get(self.full_time_employee)), 5)
+        self.assertEqual(len(timesheets_by_employee.get(self.full_time_employee_2)), 5)
+        self.assertEqual(leave_task.effective_hours, 80)
+
+    def test_timesheet_creation_for_global_time_off_in_differant_company(self):
+        leave_start_datetime = datetime(2021, 1, 4, 7, 0, 0, 0)  # This is a monday
+        leave_end_datetime = datetime(2021, 1, 8, 18, 0, 0, 0)  # This is a friday
+
+        new_company = self.env['res.company'].create({
+            'name': 'Winterfell',
+        })
+
+        self.env['resource.calendar.leaves'].with_company(new_company).create({
+            'name': 'Test',
+            'calendar_id': False,
+            'date_from': leave_start_datetime,
+            'date_to': leave_end_datetime,
+        })
+
+        leave_task = self.test_company.leave_timesheet_task_id
+        timesheets_by_employee = self._get_timesheets_by_employee(leave_task)
+        # Should no create timesheet if leave is in differant company then employees
+        self.assertFalse(timesheets_by_employee.get(self.part_time_employee, False))
+        self.assertFalse(timesheets_by_employee.get(self.full_time_employee, False))
+        # Should not add any timsheets in other companies
+        self.assertEqual(leave_task.effective_hours, 0)
+
+    def test_timesheet_creation_for_global_time_off_wo_calendar_in_batch(self):
+
+        self.env['resource.calendar.leaves'].with_company(self.test_company).create([{
+            'name': "Easter Monday",
+            'calendar_id': False,
+            'date_from': datetime(2022, 4, 18, 5, 0, 0),
+            'date_to': datetime(2022, 4, 18, 18, 0, 0),
+            'resource_id': False,
+            'time_type': "leave",
+        }, {
+            'name': "Ascension Day",
+            'calendar_id': False,
+            'date_from': datetime(2022, 4, 26, 5, 0, 0),
+            'date_to': datetime(2022, 4, 26, 18, 0, 0),
+        }])
+
+        # 2 Timesheets for 2 global leaves should have been created for current companies all calendar employees
+        leave_task = self.test_company.leave_timesheet_task_id
+        timesheets_by_employee = self._get_timesheets_by_employee(leave_task)
+
+        self.assertEqual(len(timesheets_by_employee.get(self.part_time_employee)), 2)
+        self.assertEqual(len(timesheets_by_employee.get(self.part_time_employee2)), 2)
+        self.assertEqual(len(timesheets_by_employee.get(self.full_time_employee)), 2)
+        self.assertEqual(len(timesheets_by_employee.get(self.full_time_employee_2)), 2)
+        # Total hours should be 2(part time employees)*6(hour per day)*2(leaves days) + 2(full time employees)*8(hour per day)*2(leaves days)
+        self.assertEqual(leave_task.effective_hours, 56)

@@ -36,6 +36,13 @@ class AccountAnalyticLine(models.Model):
     order_id = fields.Many2one(related='so_line.order_id', store=True, readonly=True, index=True)
     is_so_line_edited = fields.Boolean("Is Sales Order Item Manually Edited")
     allow_billable = fields.Boolean(related="project_id.allow_billable")
+    remaining_hours_so = fields.Float(compute="_compute_remaining_hours_so")
+    remaining_hours_available = fields.Boolean(related="so_line.remaining_hours_available")
+
+    @api.depends('task_id')
+    def _compute_remaining_hours_so(self):
+        for timesheet in self:
+            timesheet.remaining_hours_so = timesheet.task_id.remaining_hours_so
 
     @api.depends('project_id.commercial_partner_id', 'task_id.commercial_partner_id')
     def _compute_commercial_partner(self):
