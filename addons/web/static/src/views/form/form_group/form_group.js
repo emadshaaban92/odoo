@@ -44,30 +44,35 @@ export class InnerGroup extends Group {
         let currentRow = [];
         let reservedSpace = 0;
 
+        function pushCurrentRow() {
+            rows.push(currentRow);
+            currentRow = [];
+            reservedSpace = 0;
+        }
+
         // Dispatch items across table rows
         const items = this.getItems();
         while (items.length) {
             const [slotName, slot] = items.shift();
-            const { newline, itemSpan, subType, Component, props } = slot;
-            if (newline) {
-                rows.push(currentRow);
-                currentRow = [];
-                reservedSpace = 0;
+            const { newlineBefore, newlineAfter, itemSpan, subType, Component, props } = slot;
+            if (newlineBefore) {
+                pushCurrentRow();
             }
 
             const fullItemSpan = itemSpan || 1;
 
             if (fullItemSpan + reservedSpace > maxCols) {
-                rows.push(currentRow);
-                currentRow = [];
-                reservedSpace = 0;
+                pushCurrentRow();
             }
 
             const isVisible = !("isVisible" in slot) || slot.isVisible;
             currentRow.push({ name: slotName, subType, itemSpan, props, isVisible, Component });
             reservedSpace += itemSpan || 1;
+            if (newlineAfter) {
+                pushCurrentRow();
+            }
         }
-        rows.push(currentRow);
+        pushCurrentRow();
 
         // Compute the relative size of non-label cells
         // The aim is for cells containing business data to occupy as much space as possible

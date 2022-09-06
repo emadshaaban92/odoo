@@ -281,11 +281,14 @@ export class FormCompiler extends ViewCompiler {
             append(formGroup, titleSlot);
         }
 
-        let forceNewline = false;
+        let forceNewlineBefore = false;
+        let forceNewlineAfter = false;
         for (const child of el.children) {
             if (getTag(child, true) === "newline") {
-                forceNewline = true;
+                forceNewlineBefore = true;
                 continue;
+            } else if(getTag(child, true) === "separator") {
+                forceNewlineAfter = true;
             }
 
             const invisible = getModifier(child, "invisible");
@@ -299,11 +302,18 @@ export class FormCompiler extends ViewCompiler {
                 sequence: sequence++,
                 "t-slot-scope": "scope",
             });
+            if (getTag(child, true) === "separator") {
+                mainSlot.setAttribute("subType", "'separator'");
+            }
             let itemSpan = parseInt(child.getAttribute("colspan") || "1", 10);
 
-            if (forceNewline) {
-                mainSlot.setAttribute("newline", true);
-                forceNewline = false;
+            if (forceNewlineBefore) {
+                mainSlot.setAttribute("newlineBefore", true);
+                forceNewlineBefore = false;
+            }
+            if (forceNewlineAfter) {
+                mainSlot.setAttribute("newlineAfter", true);
+                forceNewlineAfter = false;
             }
 
             let slotContent;
