@@ -69,7 +69,8 @@ class ResourceCalendarLeaves(models.Model):
                     if date_to > utc.localize(leave.date_from) and date_from < utc.localize(leave.date_to):
                         tmp_start = max(date_from, utc.localize(leave.date_from))
                         tmp_end = min(date_to, utc.localize(leave.date_to))
-                        results[leave.id][tmp_start.date()] += (tmp_end - tmp_start).total_seconds() / 3600
+                        leave_id = leave.id
+                        results[leave_id][tmp_start.date()] += (tmp_end - tmp_start).total_seconds() / 3600
                 results[leave.id] = sorted(results[leave.id].items())
         return results
 
