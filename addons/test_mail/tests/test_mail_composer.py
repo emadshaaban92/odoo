@@ -994,32 +994,85 @@ class TestComposerResultsMass(TestMailComposer):
 
     @users('employee')
     @mute_logger('odoo.tests', 'odoo.addons.mail.models.mail_mail', 'odoo.models.unlink')
-    def test_mail_composer_document_based(self):
-        """ Tests a document-based mass mailing with the same address mails
-        This should be allowed and not considered as duplicate in this context
+    def test_mail_composer_duplicates(self):
+        """ Ensures emails sent to the same recipient multiple times
+            are only sent when they are not duplicates
         """
-        self.test_records.write({
-            'customer_id': False,
-            'email_from': 'duplicate.email@test.example.com',
-        })
         self.template.write({
-            'auto_delete': False,  # keep sent emails to check content
-            'email_to': '{{ object.email_from }}',
+            'auto_delete': False,
+            'body_html': '<p>Common Body</p>',
+            'email_to': 'test@test.lan',
+            'subject': 'Common Subject',
             'partner_to': '',
         })
-        # launch composer in mass mode
-        composer_form = Form(self.env['mail.compose.message'].with_context(
-            self._get_web_context(self.test_records, add_web=True,
-                                  default_template_id=self.template.id)
-        ))
-        composer = composer_form.save()
+        # Guarantee points of variation
+        self.test_records[0].write({'name': 'A'})
+        self.test_records[1].write({'name': 'B'})
+
+        def get_composer():
+            composer_form = Form(self.env['mail.compose.message'].with_context(
+                self._get_web_context(self.test_records, add_web=True,
+                                      default_template_id=self.template.id)
+            ))
+            return composer_form.save()
+
+        composer = get_composer()
+        # no difference
         with self.mock_mail_gateway(mail_unlink_sent=False), self.mock_mail_app():
-            composer.with_context(mailing_document_based=False)._action_send_mail()
+            composer._action_send_mail()
         self.assertEqual(len(self._mails), 1, 'Should have sent 1 email, and skipped a duplicate.')
 
+        composer = get_composer()
+        # different subject
+        self.template.write({
+            'body_html': '<p>Common Body</p>',
+            'report_name': None,
+            'report_template': None,
+            'subject': '{{ object.name }}',
+        })
+        composer._onchange_template_id_wrapper()
         with self.mock_mail_gateway(mail_unlink_sent=False), self.mock_mail_app():
-            composer.with_context(mailing_document_based=True)._action_send_mail()
-        self.assertEqual(len(self._mails), 2, 'Should have sent 2 emails.')
+            composer._action_send_mail()
+        self.assertEqual(len(self._mails), 2, 'Should have sent all emails, different subjects')
+
+        composer = get_composer()
+        # different body
+        self.template.write({
+            'body_html': '<p><t t-esc="object.name"></t></p>',
+            'report_name': None,
+            'report_template': None,
+            'subject': 'Common Subject',
+        })
+        composer._onchange_template_id_wrapper()
+        with self.mock_mail_gateway(mail_unlink_sent=False), self.mock_mail_app():
+            composer._action_send_mail()
+        self.assertEqual(len(self._mails), 2, 'Should have sent all emails, different bodies')
+
+        composer = get_composer()
+        # different attachments
+        self.template.write({
+            'subject': 'Common Subject',
+            'report_name': '{{ object.name }}',
+            'report_template': self.test_report.id,
+            'body_html': '<p>Common Body</p>',
+        })
+        composer._onchange_template_id_wrapper()
+        with self.mock_mail_gateway(mail_unlink_sent=False), self.mock_mail_app():
+            composer._action_send_mail()
+        self.assertEqual(len(self._mails), 2, 'Should have sent all emails, different attachments')
+
+        composer = get_composer()
+        # different all
+        self.template.write({
+            'body_html': '<p><t t-esc="object.name"></t></p>',
+            'report_name': '{{ object.name }}',
+            'report_template': self.test_report.id,
+            'subject': '{{ object.name }}',
+        })
+        composer._onchange_template_id_wrapper()
+        with self.mock_mail_gateway(mail_unlink_sent=False), self.mock_mail_app():
+            composer._action_send_mail()
+        self.assertEqual(len(self._mails), 2, 'Should have sent all emails, every similarity check should have failed')
 
     @users('employee')
     @mute_logger('odoo.models.unlink', 'odoo.addons.mail.models.mail_mail')

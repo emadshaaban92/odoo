@@ -486,9 +486,15 @@ class MailComposer(models.TransientModel):
         recipients_info = self._process_recipient_values(mail_values_dict)
         blacklist_ids = self._get_blacklist_record_ids(mail_values_dict)
         optout_emails = self._get_optout_emails(mail_values_dict)
-        done_emails = self._get_done_emails(mail_values_dict)
-        # in case of an invoice e.g.
-        mailing_document_based = self.env.context.get('mailing_document_based')
+        done_emails = self._get_done_emails(mail_values_dict) or []
+        sent_emails = {}  # distinct emails sent to each address as {email_address: [{subject, body}]}
+
+        def are_same_mail(mail_values_1, mail_values_2):
+            important_fields = ('attachment_ids', 'subject', 'body')
+            # lazy eval to avoid comparing body if not necessary
+            are_fields_equal = lambda field_name: mail_values_1.get(field_name) == mail_values_2.get(field_name)
+            are_all_fields_equal = map(are_fields_equal, important_fields)
+            return all(are_all_fields_equal)
 
         for record_id, mail_values in mail_values_dict.items():
             recipients = recipients_info[record_id]
@@ -511,7 +517,7 @@ class MailComposer(models.TransientModel):
             elif optout_emails and mail_to in optout_emails:
                 mail_values['state'] = 'cancel'
                 mail_values['failure_type'] = 'mail_optout'
-            elif done_emails and mail_to in done_emails and not mailing_document_based:
+            elif mail_to in done_emails:
                 mail_values['state'] = 'cancel'
                 mail_values['failure_type'] = 'mail_dup'
             # void of falsy values -> error
@@ -521,8 +527,19 @@ class MailComposer(models.TransientModel):
             elif not mail_to_normalized or not email_re.findall(mail_to):
                 mail_values['state'] = 'cancel'
                 mail_values['failure_type'] = 'mail_email_invalid'
-            elif done_emails is not None and not mailing_document_based:
-                done_emails.append(mail_to)
+            elif mail_to in sent_emails.keys():
+                # lazy eval avoids checking more than necessary
+                was_sent = lambda compared_mail_values: are_same_mail(mail_values, compared_mail_values)
+                was_ever_sent = map(was_sent, sent_emails[mail_to])
+                if any(was_ever_sent):
+                    mail_values['state'] = 'cancel'
+                    mail_values['failure_type'] = 'mail_dup'
+                else:
+                    sent_emails[mail_to].append(mail_values)
+            else:
+                sent_emails[mail_to] = [mail_values]
+
+        done_emails += sent_emails.keys()
 
         return mail_values_dict
 
