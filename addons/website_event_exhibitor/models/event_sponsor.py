@@ -189,8 +189,7 @@ class Sponsor(models.Model):
         super(Sponsor, self)._compute_website_url()
         for sponsor in self:
             if sponsor.id:  # avoid to perform a slug on a not yet saved record in case of an onchange.
-                base_url = sponsor.event_id.get_base_url()
-                sponsor.website_url = '%s/event/%s/exhibitor/%s' % (base_url, slug(sponsor.event_id), slug(sponsor))
+                sponsor.website_url = f'/event/{slug(sponsor.event_id)}/exhibitor/{slug(sponsor)}'
 
     # ------------------------------------------------------------
     # CRUD

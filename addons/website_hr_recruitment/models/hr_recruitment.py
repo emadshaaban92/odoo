@@ -6,6 +6,7 @@ from werkzeug import urls
 from odoo import api, fields, models, _
 from odoo.tools import mute_logger
 from odoo.tools.translate import html_translate
+from odoo.addons.http_routing.models.ir_http import slug
 
 
 class RecruitmentSource(models.Model):
@@ -64,7 +65,7 @@ class Job(models.Model):
     def _compute_website_url(self):
         super(Job, self)._compute_website_url()
         for job in self:
-            job.website_url = "/jobs/detail/%s" % job.id
+            job.website_url = f"/jobs/detail/{slug(job)}"
 
     def set_open(self):
         self.write({'website_published': False})

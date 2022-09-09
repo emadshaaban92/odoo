@@ -33,8 +33,7 @@ class EventMeetingRoom(models.Model):
         super(EventMeetingRoom, self)._compute_website_url()
         for meeting_room in self:
             if meeting_room.id:
-                base_url = meeting_room.event_id.get_base_url()
-                meeting_room.website_url = '%s/event/%s/meeting_room/%s' % (base_url, slug(meeting_room.event_id), slug(meeting_room))
+                meeting_room.website_url = f'/event/{slug(meeting_room.event_id)}/meeting_room/{slug(meeting_room)}'
 
     @api.model_create_multi
     def create(self, values_list):
