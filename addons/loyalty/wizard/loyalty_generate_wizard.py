@@ -73,3 +73,8 @@ class LoyaltyGenerateWizard(models.TransientModel):
                 coupon_create_vals.append(wizard._get_coupon_values(partner))
         self.env['loyalty.card'].create(coupon_create_vals)
         return True
+
+    @api.onchange('valid_until')
+    def onchange_valid_until(self):
+        if self.valid_until and self.valid_until < fields.Date.today():
+            return {'warning': {'message': _('The Valid Until must not be prior to the current date')}}

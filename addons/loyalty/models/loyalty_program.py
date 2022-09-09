@@ -534,3 +534,8 @@ class LoyaltyProgram(models.Model):
                 })]
             },
         }
+
+    @api.onchange('date_to')
+    def onchange_validity(self):
+        if self.date_to and self.date_to < fields.Date.today():
+            return {'warning': {'message': _('The validity date must not be prior to the current date')}}
