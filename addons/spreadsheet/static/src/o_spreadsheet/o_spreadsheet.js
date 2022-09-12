@@ -216,7 +216,6 @@
         }
     }
 
-    const CANVAS_SHIFT = 0.5;
     // Colors
     const BACKGROUND_GRAY_COLOR = "#f5f5f5";
     const BACKGROUND_HEADER_COLOR = "#F8F9FA";
@@ -235,7 +234,7 @@
     const MIN_COL_WIDTH = 5;
     const HEADER_HEIGHT = 26;
     const HEADER_WIDTH = 48;
-    const TOPBAR_HEIGHT = 63;
+    const TOPBAR_HEIGHT = 64;
     const BOTTOMBAR_HEIGHT = 36;
     const DEFAULT_CELL_WIDTH = 96;
     const DEFAULT_CELL_HEIGHT = 23;
@@ -2961,6 +2960,29 @@
         sequence: 40,
     });
 
+    const ERROR_TOOLTIP_HEIGHT = 40;
+    const ERROR_TOOLTIP_WIDTH = 180;
+    class ErrorToolTip extends owl.Component {
+    }
+    ErrorToolTip.size = { width: ERROR_TOOLTIP_WIDTH, height: ERROR_TOOLTIP_HEIGHT };
+    ErrorToolTip.template = "o-spreadsheet-ErrorToolTip";
+    ErrorToolTip.components = {};
+    const ErrorToolTipPopoverBuilder = {
+        onHover: (position, getters) => {
+            const cell = getters.getCell(getters.getActiveSheetId(), position.col, position.row);
+            if ((cell === null || cell === void 0 ? void 0 : cell.evaluated.type) === CellValueType.error &&
+                cell.evaluated.error.logLevel > CellErrorLevel.silent) {
+                return {
+                    isOpen: true,
+                    props: { text: cell.evaluated.error.message },
+                    Component: ErrorToolTip,
+                    cellCorner: "TopRight",
+                };
+            }
+            return { isOpen: false };
+        },
+    };
+
     /**
      * This file is largely inspired by owl 1.
      * `css` tag has been removed from owl 2 without workaround to manage css.
@@ -3041,37 +3063,6 @@
         sheet.setAttribute("component", id);
         document.head.appendChild(sheet);
     }
-
-    const ERROR_TOOLTIP_HEIGHT = 40;
-    const ERROR_TOOLTIP_WIDTH = 180;
-    css /* scss */ `
-  .o-error-tooltip {
-    font-size: 13px;
-    background-color: white;
-    border-left: 3px solid red;
-    padding: 10px;
-  }
-`;
-    class ErrorToolTip extends owl.Component {
-    }
-    ErrorToolTip.size = { width: ERROR_TOOLTIP_WIDTH, height: ERROR_TOOLTIP_HEIGHT };
-    ErrorToolTip.template = "o-spreadsheet-ErrorToolTip";
-    ErrorToolTip.components = {};
-    const ErrorToolTipPopoverBuilder = {
-        onHover: (position, getters) => {
-            const cell = getters.getCell(getters.getActiveSheetId(), position.col, position.row);
-            if ((cell === null || cell === void 0 ? void 0 : cell.evaluated.type) === CellValueType.error &&
-                cell.evaluated.error.logLevel > CellErrorLevel.silent) {
-                return {
-                    isOpen: true,
-                    props: { text: cell.evaluated.error.message },
-                    Component: ErrorToolTip,
-                    cellCorner: "TopRight",
-                };
-            }
-            return { isOpen: false };
-        },
-    };
 
     function getMenuChildren(node, env) {
         const children = [];
@@ -3250,32 +3241,10 @@
     //------------------------------------------------------------------------------
     css /* scss */ `
   .o-menu {
-    background-color: white;
-    padding: 5px 0px;
     .o-menu-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
       box-sizing: border-box;
       height: ${MENU_ITEM_HEIGHT}px;
-      padding: 4px 16px;
-      cursor: pointer;
-      user-select: none;
 
-      .o-menu-item-name {
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-      }
-
-      &.o-menu-root {
-        display: flex;
-        justify-content: space-between;
-      }
-      .o-menu-item-icon {
-        margin-top: auto;
-        margin-bottom: auto;
-      }
       .o-icon {
         width: 10px;
       }
@@ -3464,49 +3433,25 @@
     const LINK_TOOLTIP_HEIGHT = 43;
     const LINK_TOOLTIP_WIDTH = 220;
     css /* scss */ `
+  .cursor-pointer {
+    cursor: pointer;
+  }
   .o-link-tool {
-    font-size: 13px;
-    background-color: white;
-    box-shadow: 0 1px 4px 3px rgba(60, 64, 67, 0.15);
-    padding: 6px 12px;
-    border-radius: 4px;
-    display: flex;
-    justify-content: space-between;
-
     img {
-      margin-right: 3px;
       width: 16px;
       height: 16px;
     }
 
     a.o-link {
       color: #01666b;
-      text-decoration: none;
-      flex-grow: 2;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
-    a.o-link:hover {
-      text-decoration: none;
-      color: #001d1f;
-      cursor: pointer;
-    }
-  }
-  .o-link-icon {
-    float: right;
-    padding-left: 4%;
-    .o-icon {
-      height: 16px;
+    a.o-link:hover,
+    .o-link-icon:hover {
+      color: #000;
     }
   }
   .o-link-icon .o-icon {
-    padding-top: 3px;
     height: 13px;
-  }
-  .o-link-icon:hover {
-    cursor: pointer;
-    color: #000;
   }
 `;
     class LinkDisplay extends owl.Component {
@@ -3657,72 +3602,11 @@
     const LINK_EDITOR_HEIGHT = 180;
     css /* scss */ `
   .o-link-editor {
-    font-size: 13px;
-    background-color: white;
-    box-shadow: 0 1px 4px 3px rgba(60, 64, 67, 0.15);
-    padding: ${PADDING}px;
-    display: flex;
-    flex-direction: column;
-    border-radius: 4px;
-    .o-section {
-      .o-section-title {
-        font-weight: bold;
-        color: dimgrey;
-        margin-bottom: 5px;
-      }
-    }
-    .o-buttons {
-      padding-left: 16px;
-      padding-top: 16px;
-      padding-bottom: 16px;
-      text-align: right;
-      .o-button {
-        border: 1px solid lightgrey;
-        padding: 0px 20px 0px 20px;
-        border-radius: 4px;
-        font-weight: 500;
-        font-size: 14px;
-        height: 30px;
-        line-height: 16px;
-        background: white;
-        margin-right: 8px;
-        &:hover:enabled {
-          background-color: rgba(0, 0, 0, 0.08);
-        }
-      }
-      .o-button:enabled {
-        cursor: pointer;
-      }
-      .o-button:last-child {
-        margin-right: 0px;
-      }
-    }
     input {
+      outline: 0;
       box-sizing: border-box;
-      width: 100%;
-      border-radius: 4px;
-      padding: 4px 23px 4px 10px;
-      border: none;
-      height: 24px;
-      border: 1px solid lightgrey;
-    }
-    .o-link-url {
-      position: relative;
-      flex-grow: 1;
-      button {
-        position: absolute;
-        right: 0px;
-        top: 0px;
-        border: none;
-        height: 20px;
-        width: 20px;
-        background-color: #fff;
-        margin: 2px 3px 1px 0px;
-        padding: 0px 1px 0px 0px;
-      }
-      button:hover {
-        cursor: pointer;
-      }
+      border: 0;
+      border-bottom: 1px solid grey;
     }
   }
 `;
@@ -5474,44 +5358,12 @@
     css /* scss */ `
   .o-selection {
     .o-selection-input {
-      display: flex;
-      flex-direction: row;
-
       input {
-        padding: 4px 6px;
-        border-radius: 4px;
-        box-sizing: border-box;
-        flex-grow: 2;
-      }
-      input:focus {
-        outline: none;
-      }
-      input.o-required,
-      input.o-focused {
-        border-width: 2px;
-        padding: 3px 5px;
-      }
-      input.o-focused {
-        border-color: ${SELECTION_BORDER_COLOR};
+        border: 0;
+        border-bottom: 1px solid gray;
       }
       input.o-invalid {
-        border-color: red;
-      }
-      button.o-btn {
-        background: transparent;
-        border: none;
-        color: #333;
-        cursor: pointer;
-      }
-      button.o-btn-action {
-        margin: 8px 1px;
-        border-radius: 4px;
-        background: transparent;
-        border: 1px solid #dadce0;
-        color: #188038;
-        font-weight: bold;
-        font-size: 14px;
-        height: 25px;
+        border-bottom: 1px solid red;
       }
     }
   }
@@ -5760,6 +5612,502 @@
             return expandZoneOnInsertion(zone, executed.dimension === "COL" ? "left" : "top", executed.base, executed.position, executed.quantity);
         }
         return { ...zone };
+    }
+
+    // HELPERS
+    function assert(condition, message) {
+        if (!condition()) {
+            throw new Error(message);
+        }
+    }
+    // -----------------------------------------------------------------------------
+    // FORMAT FUNCTIONS
+    // -----------------------------------------------------------------------------
+    const expectNumberValueError = (value) => _lt("The function [[FUNCTION_NAME]] expects a number value, but '%s' is a string, and cannot be coerced to a number.", value);
+    function toNumber(value) {
+        switch (typeof value) {
+            case "number":
+                return value;
+            case "boolean":
+                return value ? 1 : 0;
+            case "string":
+                if (isNumber(value) || value === "") {
+                    return parseNumber(value);
+                }
+                const internalDate = parseDateTime(value);
+                if (internalDate) {
+                    return internalDate.value;
+                }
+                throw new Error(expectNumberValueError(value));
+            default:
+                return 0;
+        }
+    }
+    function strictToNumber(value) {
+        if (value === "") {
+            throw new Error(expectNumberValueError(value));
+        }
+        return toNumber(value);
+    }
+    function toString(value) {
+        switch (typeof value) {
+            case "string":
+                return value;
+            case "number":
+                return value.toString();
+            case "boolean":
+                return value ? "TRUE" : "FALSE";
+            default:
+                return "";
+        }
+    }
+    const expectBooleanValueError = (value) => _lt("The function [[FUNCTION_NAME]] expects a boolean value, but '%s' is a text, and cannot be coerced to a number.", value);
+    function toBoolean(value) {
+        switch (typeof value) {
+            case "boolean":
+                return value;
+            case "string":
+                if (value) {
+                    let uppercaseVal = value.toUpperCase();
+                    if (uppercaseVal === "TRUE") {
+                        return true;
+                    }
+                    if (uppercaseVal === "FALSE") {
+                        return false;
+                    }
+                    throw new Error(expectBooleanValueError(value));
+                }
+                else {
+                    return false;
+                }
+            case "number":
+                return value ? true : false;
+            default:
+                return false;
+        }
+    }
+    function strictToBoolean(value) {
+        if (value === "") {
+            throw new Error(expectBooleanValueError(value));
+        }
+        return toBoolean(value);
+    }
+    function toJsDate(value) {
+        return numberToJsDate(toNumber(value));
+    }
+    // -----------------------------------------------------------------------------
+    // VISIT FUNCTIONS
+    // -----------------------------------------------------------------------------
+    function visitArgs(args, cellCb, dataCb) {
+        for (let arg of args) {
+            if (Array.isArray(arg)) {
+                // arg is ref to a Cell/Range
+                const lenRow = arg.length;
+                const lenCol = arg[0].length;
+                for (let y = 0; y < lenCol; y++) {
+                    for (let x = 0; x < lenRow; x++) {
+                        cellCb(arg[x][y]);
+                    }
+                }
+            }
+            else {
+                // arg is set directly in the formula function
+                dataCb(arg);
+            }
+        }
+    }
+    function visitAny(args, cb) {
+        visitArgs(args, cb, cb);
+    }
+    function visitNumbers(args, cb) {
+        visitArgs(args, (cellValue) => {
+            if (typeof cellValue === "number") {
+                cb(cellValue);
+            }
+        }, (argValue) => {
+            cb(strictToNumber(argValue));
+        });
+    }
+    // -----------------------------------------------------------------------------
+    // REDUCE FUNCTIONS
+    // -----------------------------------------------------------------------------
+    function reduceArgs(args, cellCb, dataCb, initialValue) {
+        let val = initialValue;
+        for (let arg of args) {
+            if (Array.isArray(arg)) {
+                // arg is ref to a Cell/Range
+                const lenRow = arg.length;
+                const lenCol = arg[0].length;
+                for (let y = 0; y < lenCol; y++) {
+                    for (let x = 0; x < lenRow; x++) {
+                        val = cellCb(val, arg[x][y]);
+                    }
+                }
+            }
+            else {
+                // arg is set directly in the formula function
+                val = dataCb(val, arg);
+            }
+        }
+        return val;
+    }
+    function reduceAny(args, cb, initialValue) {
+        return reduceArgs(args, cb, cb, initialValue);
+    }
+    function reduceNumbers(args, cb, initialValue) {
+        return reduceArgs(args, (acc, ArgValue) => {
+            if (typeof ArgValue === "number") {
+                return cb(acc, ArgValue);
+            }
+            return acc;
+        }, (acc, argValue) => {
+            return cb(acc, strictToNumber(argValue));
+        }, initialValue);
+    }
+    function reduceNumbersTextAs0(args, cb, initialValue) {
+        return reduceArgs(args, (acc, ArgValue) => {
+            if (ArgValue !== undefined && ArgValue !== null) {
+                if (typeof ArgValue === "number") {
+                    return cb(acc, ArgValue);
+                }
+                else if (typeof ArgValue === "boolean") {
+                    return cb(acc, toNumber(ArgValue));
+                }
+                else {
+                    return cb(acc, 0);
+                }
+            }
+            return acc;
+        }, (acc, argValue) => {
+            return cb(acc, toNumber(argValue));
+        }, initialValue);
+    }
+    // -----------------------------------------------------------------------------
+    // CONDITIONAL EXPLORE FUNCTIONS
+    // -----------------------------------------------------------------------------
+    /**
+     * This function allows to visit arguments and stop the visit if necessary.
+     * It is mainly used to bypass argument evaluation for functions like OR or AND.
+     */
+    function conditionalVisitArgs(args, cellCb, dataCb) {
+        for (let arg of args) {
+            if (Array.isArray(arg)) {
+                // arg is ref to a Cell/Range
+                const lenRow = arg.length;
+                const lenCol = arg[0].length;
+                for (let y = 0; y < lenCol; y++) {
+                    for (let x = 0; x < lenRow; x++) {
+                        if (!cellCb(arg[x][y]))
+                            return;
+                    }
+                }
+            }
+            else {
+                // arg is set directly in the formula function
+                if (!dataCb(arg))
+                    return;
+            }
+        }
+    }
+    function conditionalVisitBoolean(args, cb) {
+        return conditionalVisitArgs(args, (ArgValue) => {
+            if (typeof ArgValue === "boolean") {
+                return cb(ArgValue);
+            }
+            if (typeof ArgValue === "number") {
+                return cb(ArgValue ? true : false);
+            }
+            return true;
+        }, (argValue) => {
+            if (argValue !== undefined && argValue !== null) {
+                return cb(strictToBoolean(argValue));
+            }
+            return true;
+        });
+    }
+    function getPredicate(descr, isQuery) {
+        let operator;
+        let operand;
+        let subString = descr.substring(0, 2);
+        if (subString === "<=" || subString === ">=" || subString === "<>") {
+            operator = subString;
+            operand = descr.substring(2);
+        }
+        else {
+            subString = descr.substring(0, 1);
+            if (subString === "<" || subString === ">" || subString === "=") {
+                operator = subString;
+                operand = descr.substring(1);
+            }
+            else {
+                operator = "=";
+                operand = descr;
+            }
+        }
+        if (isNumber(operand)) {
+            operand = toNumber(operand);
+        }
+        else if (operand === "TRUE" || operand === "FALSE") {
+            operand = toBoolean(operand);
+        }
+        const result = { operator, operand };
+        if (typeof operand === "string") {
+            if (isQuery) {
+                operand += "*";
+            }
+            result.regexp = operandToRegExp(operand);
+        }
+        return result;
+    }
+    function operandToRegExp(operand) {
+        let exp = "";
+        let predecessor = "";
+        for (let char of operand) {
+            if (char === "?" && predecessor !== "~") {
+                exp += ".";
+            }
+            else if (char === "*" && predecessor !== "~") {
+                exp += ".*";
+            }
+            else {
+                if (char === "*" || char === "?") {
+                    //remove "~"
+                    exp = exp.slice(0, -1);
+                }
+                if (["^", ".", "[", "]", "$", "(", ")", "*", "+", "?", "|", "{", "}", "\\"].includes(char)) {
+                    exp += "\\";
+                }
+                exp += char;
+            }
+            predecessor = char;
+        }
+        return new RegExp("^" + exp + "$", "i");
+    }
+    function evaluatePredicate(value, criterion) {
+        const { operator, operand } = criterion;
+        if (value === undefined || operand === undefined) {
+            return false;
+        }
+        if (typeof operand === "number" && operator === "=") {
+            return toString(value) === toString(operand);
+        }
+        if (operator === "<>" || operator === "=") {
+            let result;
+            if (typeof value === typeof operand) {
+                if (typeof value === "string" && criterion.regexp) {
+                    result = criterion.regexp.test(value);
+                }
+                else {
+                    result = value === operand;
+                }
+            }
+            else {
+                result = false;
+            }
+            return operator === "=" ? result : !result;
+        }
+        if (typeof value === typeof operand) {
+            switch (operator) {
+                case "<":
+                    return value < operand;
+                case ">":
+                    return value > operand;
+                case "<=":
+                    return value <= operand;
+                case ">=":
+                    return value >= operand;
+            }
+        }
+        return false;
+    }
+    /**
+     * Functions used especially for predicate evaluation on ranges.
+     *
+     * Take ranges with same dimensions and take predicates, one for each range.
+     * For (i, j) coordinates, if all elements with coordinates (i, j) of each
+     * range correspond to the associated predicate, then the function uses a callback
+     * function with the parameters "i" and "j".
+     *
+     * Syntax:
+     * visitMatchingRanges([range1, predicate1, range2, predicate2, ...], cb(i,j), likeSelection)
+     *
+     * - range1 (range): The range to check against predicate1.
+     * - predicate1 (string): The pattern or test to apply to range1.
+     * - range2: (range, repeatable) ranges to check.
+     * - predicate2 (string, repeatable): Additional pattern or test to apply to range2.
+     *
+     * - cb(i: number, j: number) => void: the callback function.
+     *
+     * - isQuery (boolean) indicates if the comparison with a string should be done as a SQL-like query.
+     * (Ex1 isQuery = true, predicate = "abc", element = "abcde": predicate match the element),
+     * (Ex2 isQuery = false, predicate = "abc", element = "abcde": predicate not match the element).
+     * (Ex3 isQuery = true, predicate = "abc", element = "abc": predicate match the element),
+     * (Ex4 isQuery = false, predicate = "abc", element = "abc": predicate match the element).
+     */
+    function visitMatchingRanges(args, cb, isQuery = false) {
+        const countArg = args.length;
+        if (countArg % 2 === 1) {
+            throw new Error(_lt(`Function [[FUNCTION_NAME]] expects criteria_range and criterion to be in pairs.`));
+        }
+        const dimRow = args[0].length;
+        const dimCol = args[0][0].length;
+        let predicates = [];
+        for (let i = 0; i < countArg - 1; i += 2) {
+            const criteriaRange = args[i];
+            if (!Array.isArray(criteriaRange) ||
+                criteriaRange.length !== dimRow ||
+                criteriaRange[0].length !== dimCol) {
+                throw new Error(_lt(`Function [[FUNCTION_NAME]] expects criteria_range to have the same dimension`));
+            }
+            const description = toString(args[i + 1]);
+            predicates.push(getPredicate(description, isQuery));
+        }
+        for (let i = 0; i < dimRow; i++) {
+            for (let j = 0; j < dimCol; j++) {
+                let validatedPredicates = true;
+                for (let k = 0; k < countArg - 1; k += 2) {
+                    const criteriaValue = args[k][i][j];
+                    const criterion = predicates[k / 2];
+                    validatedPredicates = evaluatePredicate(criteriaValue, criterion);
+                    if (!validatedPredicates) {
+                        break;
+                    }
+                }
+                if (validatedPredicates) {
+                    cb(i, j);
+                }
+            }
+        }
+    }
+    // -----------------------------------------------------------------------------
+    // COMMON FUNCTIONS
+    // -----------------------------------------------------------------------------
+    /**
+     * Perform a dichotomic search and return the index of the nearest match less than
+     * or equal to the target. If all values in the range are greater than the target,
+     * -1 is returned.
+     * If the range is not in sorted order, an incorrect value might be returned.
+     *
+     * Example:
+     * - [3, 6, 10], 3 => 0
+     * - [3, 6, 10], 6 => 1
+     * - [3, 6, 10], 9 => 1
+     * - [3, 6, 10], 42 => 2
+     * - [3, 6, 10], 2 => -1
+     * - [3, undefined, 6, undefined, 10], 9 => 2
+     * - [3, 6, undefined, undefined, undefined, 10], 2 => -1
+     */
+    function dichotomicPredecessorSearch(range, target) {
+        if (target === null) {
+            return -1;
+        }
+        const targetType = typeof target;
+        let valMin = undefined;
+        let valMinIndex = undefined;
+        let indexLeft = 0;
+        let indexRight = range.length - 1;
+        if (typeof range[indexLeft] === targetType && target < range[indexLeft]) {
+            return -1;
+        }
+        if (typeof range[indexRight] === targetType && range[indexRight] <= target) {
+            return indexRight;
+        }
+        let indexMedian;
+        let currentIndex;
+        let currentVal;
+        let currentType;
+        while (indexRight - indexLeft >= 0) {
+            indexMedian = Math.ceil((indexLeft + indexRight) / 2);
+            currentIndex = indexMedian;
+            currentVal = range[currentIndex];
+            currentType = typeof currentVal;
+            // 1 - linear search to find value with the same type
+            while (indexLeft <= currentIndex && targetType !== currentType) {
+                currentIndex--;
+                currentVal = range[currentIndex];
+                currentType = typeof currentVal;
+            }
+            // 2 - check if value match
+            if (currentType === targetType && currentVal <= target) {
+                if (valMin === undefined ||
+                    valMin < currentVal ||
+                    (valMin === currentVal && valMinIndex < currentIndex)) {
+                    valMin = currentVal;
+                    valMinIndex = currentIndex;
+                }
+            }
+            // 3 - give new indexs for the Binary search
+            if (currentType === targetType && currentVal > target) {
+                indexRight = currentIndex - 1;
+            }
+            else {
+                indexLeft = indexMedian + 1;
+            }
+        }
+        // note that valMinIndex could be 0
+        return valMinIndex !== undefined ? valMinIndex : -1;
+    }
+    /**
+     * Perform a dichotomic search and return the index of the nearest match more than
+     * or equal to the target. If all values in the range are smaller than the target,
+     * -1 is returned.
+     * If the range is not in sorted order, an incorrect value might be returned.
+     *
+     * Example:
+     * - [10, 6, 3], 3 => 2
+     * - [10, 6, 3], 6 => 1
+     * - [10, 6, 3], 9 => 0
+     * - [10, 6, 3], 42 => -1
+     * - [10, 6, 3], 2 => 2
+     * - [10, undefined, 6, undefined, 3], 9 => 0
+     * - [10, 6, undefined, undefined, undefined, 3], 2 => 5
+     */
+    function dichotomicSuccessorSearch(range, target) {
+        const targetType = typeof target;
+        let valMax;
+        let valMaxIndex = undefined;
+        let indexLeft = 0;
+        let indexRight = range.length - 1;
+        if (typeof range[indexLeft] === targetType && target > range[indexLeft]) {
+            return -1;
+        }
+        if (typeof range[indexRight] === targetType && range[indexRight] > target) {
+            return indexRight;
+        }
+        let indexMedian;
+        let currentIndex;
+        let currentVal;
+        let currentType;
+        while (indexRight - indexLeft >= 0) {
+            indexMedian = Math.ceil((indexLeft + indexRight) / 2);
+            currentIndex = indexMedian;
+            currentVal = range[currentIndex];
+            currentType = typeof currentVal;
+            // 1 - linear search to find value with the same type
+            while (indexLeft <= currentIndex && targetType !== currentType) {
+                currentIndex--;
+                currentVal = range[currentIndex];
+                currentType = typeof currentVal;
+            }
+            // 2 - check if value match
+            if (currentType === targetType && currentVal >= target) {
+                if (valMax === undefined ||
+                    valMax > currentVal ||
+                    (valMax === currentVal && valMaxIndex > currentIndex)) {
+                    valMax = currentVal;
+                    valMaxIndex = currentIndex;
+                }
+            }
+            // 3 - give new indexs for the Binary search
+            if (currentType === targetType && currentVal <= target) {
+                indexRight = currentIndex - 1;
+            }
+            else {
+                indexLeft = indexMedian + 1;
+            }
+        }
+        // note that valMaxIndex could be 0
+        return valMaxIndex !== undefined ? valMaxIndex : -1;
     }
 
     /**
@@ -6032,37 +6380,33 @@
     // Scorecard
     // ---------------------------------------------------------------------------
     function getBaselineText(baseline, keyValue, baselineMode) {
-        const baselineEvaluated = baseline === null || baseline === void 0 ? void 0 : baseline.evaluated;
-        if (!baseline || baselineEvaluated === undefined) {
+        if (!baseline) {
             return "";
         }
-        else if (baselineMode === "text" ||
-            (keyValue === null || keyValue === void 0 ? void 0 : keyValue.type) !== CellValueType.number ||
-            baselineEvaluated.type !== CellValueType.number) {
+        else if (baselineMode === "text" || !isNumber(keyValue) || !isNumber(baseline.content)) {
             return baseline.formattedValue;
         }
         else {
-            let diff = (keyValue === null || keyValue === void 0 ? void 0 : keyValue.value) - baselineEvaluated.value;
+            let diff = toNumber(keyValue) - toNumber(baseline.content);
             if (baselineMode === "percentage") {
-                diff = (diff / baselineEvaluated.value) * 100;
+                diff = (diff / toNumber(baseline.content)) * 100;
             }
-            let baselineStr = Math.abs(parseFloat(diff.toFixed(2))).toLocaleString();
+            const baselineValue = Math.abs(parseFloat(diff.toFixed(2)));
+            let baselineStr = baselineValue.toLocaleString();
             if (baselineMode === "percentage") {
                 baselineStr += "%";
             }
             else if (baseline.format) {
-                baselineStr = formatValue(diff, baseline.format);
+                baselineStr = formatValue(baselineValue, baseline.format);
             }
             return baselineStr;
         }
     }
     function getBaselineColor(baseline, baselineMode, keyValue, colorUp, colorDown) {
-        if (baselineMode === "text" ||
-            (baseline === null || baseline === void 0 ? void 0 : baseline.type) !== CellValueType.number ||
-            (keyValue === null || keyValue === void 0 ? void 0 : keyValue.type) !== CellValueType.number) {
+        if (baselineMode === "text" || !isNumber(baseline) || !isNumber(keyValue)) {
             return undefined;
         }
-        const diff = keyValue.value - baseline.value;
+        const diff = toNumber(keyValue) - toNumber(baseline);
         if (diff > 0) {
             return colorUp;
         }
@@ -6072,12 +6416,10 @@
         return undefined;
     }
     function getBaselineArrowDirection(baseline, keyValue, baselineMode) {
-        if (baselineMode === "text" ||
-            (baseline === null || baseline === void 0 ? void 0 : baseline.type) !== CellValueType.number ||
-            (keyValue === null || keyValue === void 0 ? void 0 : keyValue.type) !== CellValueType.number) {
+        if (baselineMode === "text" || !isNumber(baseline) || !isNumber(keyValue)) {
             return "neutral";
         }
-        const diff = keyValue.value - baseline.value;
+        const diff = toNumber(keyValue) - toNumber(baseline);
         if (diff > 0) {
             return "up";
         }
@@ -7370,13 +7712,14 @@
             const baselineZone = chart.baseline.zone;
             baselineCell = getters.getCell(chart.baseline.sheetId, baselineZone.left, baselineZone.top);
         }
+        const baselineValue = (baselineCell === null || baselineCell === void 0 ? void 0 : baselineCell.content) || "";
         const background = getters.getBackgroundOfSingleCellChart(chart.background, chart.keyValue);
         return {
             title: chart.title,
             keyValue: formattedKeyValue || keyValue,
-            baselineDisplay: getBaselineText(baselineCell, keyValueCell === null || keyValueCell === void 0 ? void 0 : keyValueCell.evaluated, chart.baselineMode),
-            baselineArrow: getBaselineArrowDirection(baselineCell === null || baselineCell === void 0 ? void 0 : baselineCell.evaluated, keyValueCell === null || keyValueCell === void 0 ? void 0 : keyValueCell.evaluated, chart.baselineMode),
-            baselineColor: getBaselineColor(baselineCell === null || baselineCell === void 0 ? void 0 : baselineCell.evaluated, chart.baselineMode, keyValueCell === null || keyValueCell === void 0 ? void 0 : keyValueCell.evaluated, chart.baselineColorUp, chart.baselineColorDown),
+            baselineDisplay: getBaselineText(baselineCell, keyValue, chart.baselineMode),
+            baselineArrow: getBaselineArrowDirection(baselineValue, keyValue, chart.baselineMode),
+            baselineColor: getBaselineColor(baselineValue, chart.baselineMode, keyValue, chart.baselineColorUp, chart.baselineColorDown),
             baselineDescr: chart.baselineDescr,
             fontColor: chartFontColor(background),
             background,
@@ -7398,13 +7741,8 @@
     const GRADIENT_HEIGHT = PICKER_WIDTH - 50;
     css /* scss */ `
   .o-color-picker {
-    position: absolute;
-    top: calc(100% + 5px);
     z-index: ${ComponentsImportance.ColorPicker};
-    box-shadow: 1px 2px 5px 2px rgba(51, 51, 51, 0.15);
-    background-color: white;
     padding: ${PICKER_PADDING}px 0px;
-    line-height: 1.2;
     width: ${GRADIENT_WIDTH + 2 * PICKER_PADDING}px;
 
     .o-color-picker-section-name {
@@ -7420,12 +7758,7 @@
     .o-color-picker-line-item {
       width: ${ITEM_EDGE_LENGTH}px;
       height: ${ITEM_EDGE_LENGTH}px;
-      margin: 0px;
-      border-radius: 50px;
       border: ${ITEM_BORDER_WIDTH}px solid #666666;
-      padding: 0px;
-      font-size: 16px;
-      background: white;
       &:hover {
         background-color: rgba(0, 0, 0, 0.08);
         outline: 1px solid gray;
@@ -7433,16 +7766,7 @@
       }
     }
     .o-buttons {
-      padding: 6px;
-      display: flex;
       .o-cancel {
-        margin: 0px ${ITEM_HORIZONTAL_MARGIN}px;
-        border: ${ITEM_BORDER_WIDTH}px solid #c0c0c0;
-        width: 100%;
-        padding: 5px;
-        font-size: 14px;
-        background: white;
-        border-radius: 4px;
         &:hover:enabled {
           background-color: rgba(0, 0, 0, 0.08);
         }
@@ -7450,9 +7774,6 @@
     }
     .o-add-button {
       border: ${ITEM_BORDER_WIDTH}px solid #c0c0c0;
-      padding: 4px;
-      background: white;
-      border-radius: 4px;
       &:hover:enabled {
         background-color: rgba(0, 0, 0, 0.08);
       }
@@ -7462,21 +7783,8 @@
       margin-top: ${MENU_SEPARATOR_PADDING}px;
       margin-bottom: ${MENU_SEPARATOR_PADDING}px;
     }
-    input {
-      box-sizing: border-box;
-      width: 100%;
-      border-radius: 4px;
-      padding: 4px 23px 4px 10px;
-      height: 24px;
-      border: 1px solid #c0c0c0;
-      margin: 0 2px 0 0;
-    }
-    input.o-wrong-color {
-      border-color: red;
-    }
     .o-custom-selector {
       padding: ${LINE_HORIZONTAL_PADDING}px;
-      position: relative;
       .o-gradient {
         background: linear-gradient(to bottom, hsl(0 100% 0%), transparent, hsl(0 0% 100%)),
           linear-gradient(
@@ -7501,20 +7809,10 @@
       }
       .o-custom-input-preview {
         padding: 2px ${LINE_VERTICAL_PADDING}px;
-        display: flex;
       }
       .o-custom-input-buttons {
         padding: 2px ${LINE_VERTICAL_PADDING}px;
-        text-align: right;
       }
-      .o-color-preview {
-        border: 1px solid #c0c0c0;
-        border-radius: 4px;
-        width: 100%;
-      }
-    }
-    &.right {
-      left: 0;
     }
     &.left {
       right: 0;
@@ -7524,9 +7822,7 @@
     }
   }
   .o-magnifier-glass {
-    position: absolute;
     border: ${ITEM_BORDER_WIDTH}px solid #c0c0c0;
-    border-radius: 50%;
     width: 30px;
     height: 30px;
   }
@@ -7669,47 +7965,6 @@
     GaugeChartConfigPanel.template = "o-spreadsheet-GaugeChartConfigPanel";
     GaugeChartConfigPanel.components = { SelectionInput };
 
-    css /* scss */ `
-  .o-gauge-color-set {
-    .o-gauge-color-set-color-button {
-      display: inline-block;
-      border: 1px solid #dadce0;
-      border-radius: 4px;
-      cursor: pointer;
-      padding: 1px 2px;
-    }
-    .o-gauge-color-set-color-button:hover {
-      background-color: rgba(0, 0, 0, 0.08);
-    }
-    table {
-      table-layout: fixed;
-      margin-top: 2%;
-      display: table;
-      text-align: left;
-      font-size: 12px;
-      line-height: 18px;
-      width: 100%;
-    }
-    th.o-gauge-color-set-colorPicker {
-      width: 8%;
-    }
-    th.o-gauge-color-set-text {
-      width: 40%;
-    }
-    th.o-gauge-color-set-value {
-      width: 22%;
-    }
-    th.o-gauge-color-set-type {
-      width: 30%;
-    }
-    input,
-    select {
-      width: 100%;
-      height: 100%;
-      box-sizing: border-box;
-    }
-  }
-`;
     class GaugeChartDesignPanel extends owl.Component {
         constructor() {
             super(...arguments);
@@ -7938,37 +8193,6 @@
         design: ScorecardChartDesignPanel,
     });
 
-    css /* scss */ `
-  .o-chart {
-    .o-panel {
-      display: flex;
-      .o-panel-element {
-        flex: 1 0 auto;
-        padding: 8px 0px;
-        text-align: center;
-        cursor: pointer;
-        border-right: 1px solid darkgray;
-        &.inactive {
-          background-color: ${BACKGROUND_HEADER_COLOR};
-          border-bottom: 1px solid darkgray;
-        }
-        .fa {
-          margin-right: 4px;
-        }
-      }
-      .o-panel-element:last-child {
-        border-right: none;
-      }
-    }
-
-    .o-with-color-picker {
-      position: relative;
-    }
-    .o-with-color-picker > span {
-      border-bottom: 4px solid;
-    }
-  }
-`;
     class ChartPanel extends owl.Component {
         get figureId() {
             return this.props.figureId;
@@ -8107,18 +8331,9 @@
 
     css /* scss */ `
   .o-icon-picker {
-    position: absolute;
     z-index: ${ComponentsImportance.IconPicker};
-    box-shadow: 1px 2px 5px 2px rgba(51, 51, 51, 0.15);
-    background-color: white;
-    padding: 2px 1px;
-  }
-  .o-cf-icon-line {
-    display: flex;
-    padding: 3px 6px;
   }
   .o-icon-picker-item {
-    margin: 0px 2px;
     &:hover {
       background-color: rgba(0, 0, 0, 0.08);
       outline: 1px solid gray;
@@ -8141,270 +8356,51 @@
 
     // TODO vsc: add ordering of rules
     css /* scss */ `
-  label {
-    vertical-align: middle;
-  }
-  .o_cf_radio_item {
-    margin-right: 10%;
-  }
-  .radio input:checked {
-    color: #e9ecef;
-    border-color: #00a09d;
-    background-color: #00a09d;
-  }
-  .o-cf-editor {
-    border-bottom: solid;
-    border-color: lightgrey;
-  }
   .o-cf {
+    .o-cf-iconset-value {
+      margin-right: 3rem;
+    }
     .o-cf-type-selector {
       *,
       ::after,
       ::before {
         box-sizing: border-box;
       }
-      margin-top: 10px;
-      display: flex;
-    }
-    .o-section-subtitle:first-child {
-      margin-top: 0px;
-    }
-    .o-cf-cursor-ptr {
-      cursor: pointer;
     }
     .o-cf-preview {
-      background-color: #fff;
-      border-bottom: 1px solid #ccc;
-      display: flex;
       height: 60px;
-      padding: 10px;
-      position: relative;
-      &:hover {
-        background-color: rgba(0, 0, 0, 0.08);
-      }
       &:not(:hover) .o-cf-delete-button {
         display: none;
       }
-      .o-cf-preview-image {
-        border: 1px solid lightgrey;
+      .o-cf-preview-image,
+      .o-cf-preview-icon {
         height: 50px;
-        line-height: 50px;
-        margin-right: 15px;
-        margin-top: 3px;
-        position: absolute;
-        text-align: center;
         width: 50px;
       }
-      .o-cf-preview-icon {
-        border: 1px solid lightgrey;
-        position: absolute;
-        height: 50px;
-        line-height: 50px;
-        margin-right: 15px;
-        margin-top: 3px;
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
-      }
       .o-cf-preview-description {
-        left: 65px;
-        margin-bottom: auto;
-        margin-right: 8px;
-        margin-top: auto;
-        position: relative;
         width: 142px;
         .o-cf-preview-description-rule {
-          margin-bottom: 4px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          font-weight: 600;
-          color: #303030;
           max-height: 2.8em;
-          line-height: 1.4em;
-        }
-        .o-cf-preview-range {
-          text-overflow: ellipsis;
-          font-size: 12px;
-          overflow: hidden;
         }
       }
-      .o-cf-delete {
-        color: dimgrey;
-        left: 90%;
-        top: 39%;
-        position: absolute;
-      }
-      .o-cf-reorder {
-        color: gray;
-        left: 90%;
-        position: absolute;
-        height: 100%;
-        width: 10%;
-      }
-      .o-cf-reorder-button:hover {
-        cursor: pointer;
-        background-color: rgba(0, 0, 0, 0.08);
-      }
-      .o-cf-reorder-button-up {
-        width: 15px;
-        height: 20px;
-        padding: 5px;
-        padding-top: 0px;
-      }
+      .o-cf-reorder-button-up,
       .o-cf-reorder-button-down {
         width: 15px;
         height: 20px;
-        bottom: 20px;
-        padding: 5px;
-        padding-top: 0px;
-        position: absolute;
       }
-    }
-    .o-cf-ruleEditor {
-      font-size: 12px;
-      line-height: 1.5;
-      .o-selection-cf {
-        margin-bottom: 3%;
-      }
-      .o-cell-content {
-        font-size: 12px;
-        font-weight: 500;
-        padding: 0 12px;
-        margin: 0;
-        line-height: 35px;
-      }
-    }
-    .o-cf-btn-link {
-      font-size: 14px;
-      padding: 20px 24px 11px 24px;
-      height: 44px;
-      cursor: pointer;
-      text-decoration: none;
-    }
-    .o-cf-btn-link:hover {
-      color: #003a39;
-      text-decoration: none;
-    }
-    .o-cf-error {
-      color: red;
-      margin-top: 10px;
-    }
-  }
-  .o-cf-cell-is-rule {
-    .o-cf-preview-line {
-      border: 1px solid darkgrey;
-      padding: 10px;
-    }
-    .o-cell-is-operator {
-      margin-bottom: 5px;
-      width: 96%;
-    }
-    .o-cell-is-value {
-      margin-bottom: 5px;
-      width: 96%;
-    }
-    .o-color-picker {
-      pointer-events: all;
     }
   }
   .o-cf-color-scale-editor {
     .o-threshold {
-      display: flex;
-      flex-direction: horizontal;
-      select {
-        width: 100%;
-      }
       .o-threshold-value {
-        margin-left: 2%;
-        width: 20%;
         min-width: 0px; // input overflows in Firefox otherwise
       }
-      .o-threshold-value:disabled {
-        background-color: #edebed;
-      }
-    }
-    .o-cf-preview-gradient {
-      border: 1px solid darkgrey;
-      padding: 10px;
-      border-radius: 4px;
     }
   }
   .o-cf-iconset-rule {
-    font-size: 12;
-    .o-cf-iconsets {
-      display: flex;
-      justify-content: space-between;
-      .o-cf-iconset {
-        border: 1px solid #dadce0;
-        border-radius: 4px;
-        display: inline-flex;
-        padding: 5px 8px;
-        width: 25%;
-        cursor: pointer;
-        justify-content: space-between;
-        .o-cf-icon {
-          display: inline;
-          margin-left: 1%;
-          margin-right: 1%;
-        }
-        svg {
-          vertical-align: baseline;
-        }
-      }
-      .o-cf-iconset:hover {
-        background-color: rgba(0, 0, 0, 0.08);
-      }
-    }
-    .o-inflection {
-      .o-cf-icon-button {
-        display: inline-block;
-        border: 1px solid #dadce0;
-        border-radius: 4px;
-        cursor: pointer;
-        padding: 1px 2px;
-      }
-      .o-cf-icon-button:hover {
-        background-color: rgba(0, 0, 0, 0.08);
-      }
-      table {
-        table-layout: fixed;
-        margin-top: 2%;
-        display: table;
-        text-align: left;
-        font-size: 12px;
-        line-height: 18px;
-        width: 100%;
-      }
-      th.o-cf-iconset-icons {
-        width: 8%;
-      }
-      th.o-cf-iconset-text {
-        width: 28%;
-      }
-      th.o-cf-iconset-operator {
-        width: 14%;
-      }
-      th.o-cf-iconset-type {
-        width: 28%;
-      }
-      th.o-cf-iconset-value {
-        width: 26%;
-      }
-      input,
-      select {
-        width: 100%;
-        height: 100%;
-        box-sizing: border-box;
-      }
-    }
-    .o-cf-iconset-reverse {
-      margin-bottom: 2%;
-      margin-top: 2%;
-      .o-cf-label {
-        display: inline-block;
-        vertical-align: bottom;
-        margin-bottom: 2px;
-      }
+    .o-cf-iconset:hover,
+    .o-cf-icon-button:hover {
+      background-color: rgba(0, 0, 0, 0.08);
     }
   }
 `;
@@ -8786,13 +8782,6 @@
     ConditionalFormattingPanel.template = "o-spreadsheet-ConditionalFormattingPanel";
     ConditionalFormattingPanel.components = { SelectionInput, IconPicker, ColorPicker };
 
-    css /* scss */ `
-  .o-custom-currency {
-    .o-format-proposals {
-      color: black;
-    }
-  }
-`;
     class CustomCurrencyPanel extends owl.Component {
         setup() {
             this.availableCurrencies = [];
@@ -8927,35 +8916,8 @@
 
     css /* scss */ `
   .o-find-and-replace {
-    .o-far-item {
-      display: block;
-      .o-far-checkbox {
-        display: inline-block;
-        .o-far-input {
-          vertical-align: middle;
-        }
-        .o-far-label {
-          position: relative;
-          top: 1.5px;
-          padding-left: 4px;
-        }
-      }
-    }
-    outline: none;
-    height: 100%;
-    .o-input-search-container {
-      display: flex;
-      .o-input-with-count {
-        flex-grow: 1;
-        width: auto;
-      }
-      .o-input-without-count {
-        width: 100%;
-      }
-      .o-input-count {
-        width: fit-content;
-        padding: 4 0 4 4;
-      }
+    .o-far-label {
+      top: 1.5px;
     }
   }
 `;
@@ -9101,33 +9063,13 @@
     const LINE_HEIGHT = 1.2;
     css /* scss */ `
   div.o-scorecard {
-    user-select: none;
-    background-color: white;
-    display: flex;
-    flex-direction: column;
     box-sizing: border-box;
 
-    .o-scorecard-content {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      justify-content: center;
-      text-align: center;
-    }
-
-    .o-title-text {
-      text-align: left;
+    .o-title-text,
+    .o-key-text,
+    .o-baseline-text {
       height: ${LINE_HEIGHT + "em"};
       line-height: ${LINE_HEIGHT + "em"};
-      overflow: hidden;
-      white-space: nowrap;
-    }
-
-    .o-key-text {
-      line-height: ${LINE_HEIGHT + "em"};
-      height: ${LINE_HEIGHT + "em"};
-      overflow: hidden;
-      white-space: nowrap;
     }
 
     .o-cf-icon {
@@ -9139,15 +9081,8 @@
       padding-right: 3px;
     }
 
-    .o-baseline-text {
-      line-height: ${LINE_HEIGHT + "em"};
-      height: ${LINE_HEIGHT + "em"};
-      overflow: hidden;
-      white-space: nowrap;
-
-      .o-baseline-text-description {
-        white-space: pre;
-      }
+    .o-baseline-text-description {
+      white-space: pre;
     }
   }
 `;
@@ -9317,27 +9252,11 @@
     // STYLE
     // -----------------------------------------------------------------------------
     css /* scss */ `
-  .o-chart-container {
-    width: 100%;
-    height: 100%;
-    position: relative;
-
-    .o-chart-menu {
-      right: 0px;
-      display: none;
-      position: absolute;
-      padding: 5px;
-    }
-
-    .o-chart-menu-item {
-      cursor: pointer;
-    }
-  }
   .o-figure.active:focus,
   .o-figure:hover {
     .o-chart-container {
       .o-chart-menu {
-        display: flex;
+        display: flex !important;
       }
     }
   }
@@ -9515,28 +9434,15 @@
   .o-autofill {
     height: 6px;
     width: 6px;
-    border: 1px solid white;
-    position: absolute;
     background-color: #1a73e8;
 
     .o-autofill-handler {
-      position: absolute;
       height: ${AUTOFILL_EDGE_LENGTH}px;
       width: ${AUTOFILL_EDGE_LENGTH}px;
 
       &:hover {
         cursor: crosshair;
       }
-    }
-
-    .o-autofill-nextvalue {
-      position: absolute;
-      background-color: #ffffff;
-      border: 1px solid black;
-      padding: 5px;
-      font-size: 12px;
-      pointer-events: none;
-      white-space: nowrap;
     }
   }
 `;
@@ -9616,13 +9522,9 @@
 
     css /* scss */ `
   .o-client-tag {
-    position: absolute;
     border-top-left-radius: 4px;
     border-top-right-radius: 4px;
     font-size: ${DEFAULT_FONT_SIZE};
-    color: white;
-    opacity: 0;
-    pointer-events: none;
   }
 `;
     class ClientTag extends owl.Component {
@@ -9811,502 +9713,6 @@
             previousArgOptional = current.optional;
             previousArgDefault = current.default;
         }
-    }
-
-    // HELPERS
-    function assert(condition, message) {
-        if (!condition()) {
-            throw new Error(message);
-        }
-    }
-    // -----------------------------------------------------------------------------
-    // FORMAT FUNCTIONS
-    // -----------------------------------------------------------------------------
-    const expectNumberValueError = (value) => _lt("The function [[FUNCTION_NAME]] expects a number value, but '%s' is a string, and cannot be coerced to a number.", value);
-    function toNumber(value) {
-        switch (typeof value) {
-            case "number":
-                return value;
-            case "boolean":
-                return value ? 1 : 0;
-            case "string":
-                if (isNumber(value) || value === "") {
-                    return parseNumber(value);
-                }
-                const internalDate = parseDateTime(value);
-                if (internalDate) {
-                    return internalDate.value;
-                }
-                throw new Error(expectNumberValueError(value));
-            default:
-                return 0;
-        }
-    }
-    function strictToNumber(value) {
-        if (value === "") {
-            throw new Error(expectNumberValueError(value));
-        }
-        return toNumber(value);
-    }
-    function toString(value) {
-        switch (typeof value) {
-            case "string":
-                return value;
-            case "number":
-                return value.toString();
-            case "boolean":
-                return value ? "TRUE" : "FALSE";
-            default:
-                return "";
-        }
-    }
-    const expectBooleanValueError = (value) => _lt("The function [[FUNCTION_NAME]] expects a boolean value, but '%s' is a text, and cannot be coerced to a number.", value);
-    function toBoolean(value) {
-        switch (typeof value) {
-            case "boolean":
-                return value;
-            case "string":
-                if (value) {
-                    let uppercaseVal = value.toUpperCase();
-                    if (uppercaseVal === "TRUE") {
-                        return true;
-                    }
-                    if (uppercaseVal === "FALSE") {
-                        return false;
-                    }
-                    throw new Error(expectBooleanValueError(value));
-                }
-                else {
-                    return false;
-                }
-            case "number":
-                return value ? true : false;
-            default:
-                return false;
-        }
-    }
-    function strictToBoolean(value) {
-        if (value === "") {
-            throw new Error(expectBooleanValueError(value));
-        }
-        return toBoolean(value);
-    }
-    function toJsDate(value) {
-        return numberToJsDate(toNumber(value));
-    }
-    // -----------------------------------------------------------------------------
-    // VISIT FUNCTIONS
-    // -----------------------------------------------------------------------------
-    function visitArgs(args, cellCb, dataCb) {
-        for (let arg of args) {
-            if (Array.isArray(arg)) {
-                // arg is ref to a Cell/Range
-                const lenRow = arg.length;
-                const lenCol = arg[0].length;
-                for (let y = 0; y < lenCol; y++) {
-                    for (let x = 0; x < lenRow; x++) {
-                        cellCb(arg[x][y]);
-                    }
-                }
-            }
-            else {
-                // arg is set directly in the formula function
-                dataCb(arg);
-            }
-        }
-    }
-    function visitAny(args, cb) {
-        visitArgs(args, cb, cb);
-    }
-    function visitNumbers(args, cb) {
-        visitArgs(args, (cellValue) => {
-            if (typeof cellValue === "number") {
-                cb(cellValue);
-            }
-        }, (argValue) => {
-            cb(strictToNumber(argValue));
-        });
-    }
-    // -----------------------------------------------------------------------------
-    // REDUCE FUNCTIONS
-    // -----------------------------------------------------------------------------
-    function reduceArgs(args, cellCb, dataCb, initialValue) {
-        let val = initialValue;
-        for (let arg of args) {
-            if (Array.isArray(arg)) {
-                // arg is ref to a Cell/Range
-                const lenRow = arg.length;
-                const lenCol = arg[0].length;
-                for (let y = 0; y < lenCol; y++) {
-                    for (let x = 0; x < lenRow; x++) {
-                        val = cellCb(val, arg[x][y]);
-                    }
-                }
-            }
-            else {
-                // arg is set directly in the formula function
-                val = dataCb(val, arg);
-            }
-        }
-        return val;
-    }
-    function reduceAny(args, cb, initialValue) {
-        return reduceArgs(args, cb, cb, initialValue);
-    }
-    function reduceNumbers(args, cb, initialValue) {
-        return reduceArgs(args, (acc, ArgValue) => {
-            if (typeof ArgValue === "number") {
-                return cb(acc, ArgValue);
-            }
-            return acc;
-        }, (acc, argValue) => {
-            return cb(acc, strictToNumber(argValue));
-        }, initialValue);
-    }
-    function reduceNumbersTextAs0(args, cb, initialValue) {
-        return reduceArgs(args, (acc, ArgValue) => {
-            if (ArgValue !== undefined && ArgValue !== null) {
-                if (typeof ArgValue === "number") {
-                    return cb(acc, ArgValue);
-                }
-                else if (typeof ArgValue === "boolean") {
-                    return cb(acc, toNumber(ArgValue));
-                }
-                else {
-                    return cb(acc, 0);
-                }
-            }
-            return acc;
-        }, (acc, argValue) => {
-            return cb(acc, toNumber(argValue));
-        }, initialValue);
-    }
-    // -----------------------------------------------------------------------------
-    // CONDITIONAL EXPLORE FUNCTIONS
-    // -----------------------------------------------------------------------------
-    /**
-     * This function allows to visit arguments and stop the visit if necessary.
-     * It is mainly used to bypass argument evaluation for functions like OR or AND.
-     */
-    function conditionalVisitArgs(args, cellCb, dataCb) {
-        for (let arg of args) {
-            if (Array.isArray(arg)) {
-                // arg is ref to a Cell/Range
-                const lenRow = arg.length;
-                const lenCol = arg[0].length;
-                for (let y = 0; y < lenCol; y++) {
-                    for (let x = 0; x < lenRow; x++) {
-                        if (!cellCb(arg[x][y]))
-                            return;
-                    }
-                }
-            }
-            else {
-                // arg is set directly in the formula function
-                if (!dataCb(arg))
-                    return;
-            }
-        }
-    }
-    function conditionalVisitBoolean(args, cb) {
-        return conditionalVisitArgs(args, (ArgValue) => {
-            if (typeof ArgValue === "boolean") {
-                return cb(ArgValue);
-            }
-            if (typeof ArgValue === "number") {
-                return cb(ArgValue ? true : false);
-            }
-            return true;
-        }, (argValue) => {
-            if (argValue !== undefined && argValue !== null) {
-                return cb(strictToBoolean(argValue));
-            }
-            return true;
-        });
-    }
-    function getPredicate(descr, isQuery) {
-        let operator;
-        let operand;
-        let subString = descr.substring(0, 2);
-        if (subString === "<=" || subString === ">=" || subString === "<>") {
-            operator = subString;
-            operand = descr.substring(2);
-        }
-        else {
-            subString = descr.substring(0, 1);
-            if (subString === "<" || subString === ">" || subString === "=") {
-                operator = subString;
-                operand = descr.substring(1);
-            }
-            else {
-                operator = "=";
-                operand = descr;
-            }
-        }
-        if (isNumber(operand)) {
-            operand = toNumber(operand);
-        }
-        else if (operand === "TRUE" || operand === "FALSE") {
-            operand = toBoolean(operand);
-        }
-        const result = { operator, operand };
-        if (typeof operand === "string") {
-            if (isQuery) {
-                operand += "*";
-            }
-            result.regexp = operandToRegExp(operand);
-        }
-        return result;
-    }
-    function operandToRegExp(operand) {
-        let exp = "";
-        let predecessor = "";
-        for (let char of operand) {
-            if (char === "?" && predecessor !== "~") {
-                exp += ".";
-            }
-            else if (char === "*" && predecessor !== "~") {
-                exp += ".*";
-            }
-            else {
-                if (char === "*" || char === "?") {
-                    //remove "~"
-                    exp = exp.slice(0, -1);
-                }
-                if (["^", ".", "[", "]", "$", "(", ")", "*", "+", "?", "|", "{", "}", "\\"].includes(char)) {
-                    exp += "\\";
-                }
-                exp += char;
-            }
-            predecessor = char;
-        }
-        return new RegExp("^" + exp + "$", "i");
-    }
-    function evaluatePredicate(value, criterion) {
-        const { operator, operand } = criterion;
-        if (value === undefined || operand === undefined) {
-            return false;
-        }
-        if (typeof operand === "number" && operator === "=") {
-            return toString(value) === toString(operand);
-        }
-        if (operator === "<>" || operator === "=") {
-            let result;
-            if (typeof value === typeof operand) {
-                if (typeof value === "string" && criterion.regexp) {
-                    result = criterion.regexp.test(value);
-                }
-                else {
-                    result = value === operand;
-                }
-            }
-            else {
-                result = false;
-            }
-            return operator === "=" ? result : !result;
-        }
-        if (typeof value === typeof operand) {
-            switch (operator) {
-                case "<":
-                    return value < operand;
-                case ">":
-                    return value > operand;
-                case "<=":
-                    return value <= operand;
-                case ">=":
-                    return value >= operand;
-            }
-        }
-        return false;
-    }
-    /**
-     * Functions used especially for predicate evaluation on ranges.
-     *
-     * Take ranges with same dimensions and take predicates, one for each range.
-     * For (i, j) coordinates, if all elements with coordinates (i, j) of each
-     * range correspond to the associated predicate, then the function uses a callback
-     * function with the parameters "i" and "j".
-     *
-     * Syntax:
-     * visitMatchingRanges([range1, predicate1, range2, predicate2, ...], cb(i,j), likeSelection)
-     *
-     * - range1 (range): The range to check against predicate1.
-     * - predicate1 (string): The pattern or test to apply to range1.
-     * - range2: (range, repeatable) ranges to check.
-     * - predicate2 (string, repeatable): Additional pattern or test to apply to range2.
-     *
-     * - cb(i: number, j: number) => void: the callback function.
-     *
-     * - isQuery (boolean) indicates if the comparison with a string should be done as a SQL-like query.
-     * (Ex1 isQuery = true, predicate = "abc", element = "abcde": predicate match the element),
-     * (Ex2 isQuery = false, predicate = "abc", element = "abcde": predicate not match the element).
-     * (Ex3 isQuery = true, predicate = "abc", element = "abc": predicate match the element),
-     * (Ex4 isQuery = false, predicate = "abc", element = "abc": predicate match the element).
-     */
-    function visitMatchingRanges(args, cb, isQuery = false) {
-        const countArg = args.length;
-        if (countArg % 2 === 1) {
-            throw new Error(_lt(`Function [[FUNCTION_NAME]] expects criteria_range and criterion to be in pairs.`));
-        }
-        const dimRow = args[0].length;
-        const dimCol = args[0][0].length;
-        let predicates = [];
-        for (let i = 0; i < countArg - 1; i += 2) {
-            const criteriaRange = args[i];
-            if (!Array.isArray(criteriaRange) ||
-                criteriaRange.length !== dimRow ||
-                criteriaRange[0].length !== dimCol) {
-                throw new Error(_lt(`Function [[FUNCTION_NAME]] expects criteria_range to have the same dimension`));
-            }
-            const description = toString(args[i + 1]);
-            predicates.push(getPredicate(description, isQuery));
-        }
-        for (let i = 0; i < dimRow; i++) {
-            for (let j = 0; j < dimCol; j++) {
-                let validatedPredicates = true;
-                for (let k = 0; k < countArg - 1; k += 2) {
-                    const criteriaValue = args[k][i][j];
-                    const criterion = predicates[k / 2];
-                    validatedPredicates = evaluatePredicate(criteriaValue, criterion);
-                    if (!validatedPredicates) {
-                        break;
-                    }
-                }
-                if (validatedPredicates) {
-                    cb(i, j);
-                }
-            }
-        }
-    }
-    // -----------------------------------------------------------------------------
-    // COMMON FUNCTIONS
-    // -----------------------------------------------------------------------------
-    /**
-     * Perform a dichotomic search and return the index of the nearest match less than
-     * or equal to the target. If all values in the range are greater than the target,
-     * -1 is returned.
-     * If the range is not in sorted order, an incorrect value might be returned.
-     *
-     * Example:
-     * - [3, 6, 10], 3 => 0
-     * - [3, 6, 10], 6 => 1
-     * - [3, 6, 10], 9 => 1
-     * - [3, 6, 10], 42 => 2
-     * - [3, 6, 10], 2 => -1
-     * - [3, undefined, 6, undefined, 10], 9 => 2
-     * - [3, 6, undefined, undefined, undefined, 10], 2 => -1
-     */
-    function dichotomicPredecessorSearch(range, target) {
-        if (target === null) {
-            return -1;
-        }
-        const targetType = typeof target;
-        let valMin = undefined;
-        let valMinIndex = undefined;
-        let indexLeft = 0;
-        let indexRight = range.length - 1;
-        if (typeof range[indexLeft] === targetType && target < range[indexLeft]) {
-            return -1;
-        }
-        if (typeof range[indexRight] === targetType && range[indexRight] <= target) {
-            return indexRight;
-        }
-        let indexMedian;
-        let currentIndex;
-        let currentVal;
-        let currentType;
-        while (indexRight - indexLeft >= 0) {
-            indexMedian = Math.ceil((indexLeft + indexRight) / 2);
-            currentIndex = indexMedian;
-            currentVal = range[currentIndex];
-            currentType = typeof currentVal;
-            // 1 - linear search to find value with the same type
-            while (indexLeft <= currentIndex && targetType !== currentType) {
-                currentIndex--;
-                currentVal = range[currentIndex];
-                currentType = typeof currentVal;
-            }
-            // 2 - check if value match
-            if (currentType === targetType && currentVal <= target) {
-                if (valMin === undefined ||
-                    valMin < currentVal ||
-                    (valMin === currentVal && valMinIndex < currentIndex)) {
-                    valMin = currentVal;
-                    valMinIndex = currentIndex;
-                }
-            }
-            // 3 - give new indexs for the Binary search
-            if (currentType === targetType && currentVal > target) {
-                indexRight = currentIndex - 1;
-            }
-            else {
-                indexLeft = indexMedian + 1;
-            }
-        }
-        // note that valMinIndex could be 0
-        return valMinIndex !== undefined ? valMinIndex : -1;
-    }
-    /**
-     * Perform a dichotomic search and return the index of the nearest match more than
-     * or equal to the target. If all values in the range are smaller than the target,
-     * -1 is returned.
-     * If the range is not in sorted order, an incorrect value might be returned.
-     *
-     * Example:
-     * - [10, 6, 3], 3 => 2
-     * - [10, 6, 3], 6 => 1
-     * - [10, 6, 3], 9 => 0
-     * - [10, 6, 3], 42 => -1
-     * - [10, 6, 3], 2 => 2
-     * - [10, undefined, 6, undefined, 3], 9 => 0
-     * - [10, 6, undefined, undefined, undefined, 3], 2 => 5
-     */
-    function dichotomicSuccessorSearch(range, target) {
-        const targetType = typeof target;
-        let valMax;
-        let valMaxIndex = undefined;
-        let indexLeft = 0;
-        let indexRight = range.length - 1;
-        if (typeof range[indexLeft] === targetType && target > range[indexLeft]) {
-            return -1;
-        }
-        if (typeof range[indexRight] === targetType && range[indexRight] > target) {
-            return indexRight;
-        }
-        let indexMedian;
-        let currentIndex;
-        let currentVal;
-        let currentType;
-        while (indexRight - indexLeft >= 0) {
-            indexMedian = Math.ceil((indexLeft + indexRight) / 2);
-            currentIndex = indexMedian;
-            currentVal = range[currentIndex];
-            currentType = typeof currentVal;
-            // 1 - linear search to find value with the same type
-            while (indexLeft <= currentIndex && targetType !== currentType) {
-                currentIndex--;
-                currentVal = range[currentIndex];
-                currentType = typeof currentVal;
-            }
-            // 2 - check if value match
-            if (currentType === targetType && currentVal >= target) {
-                if (valMax === undefined ||
-                    valMax > currentVal ||
-                    (valMax === currentVal && valMaxIndex > currentIndex)) {
-                    valMax = currentVal;
-                    valMaxIndex = currentIndex;
-                }
-            }
-            // 3 - give new indexs for the Binary search
-            if (currentType === targetType && currentVal <= target) {
-                indexRight = currentIndex - 1;
-            }
-            else {
-                indexLeft = indexMedian + 1;
-            }
-        }
-        // note that valMaxIndex could be 0
-        return valMaxIndex !== undefined ? valMaxIndex : -1;
     }
 
     // -----------------------------------------------------------------------------
@@ -16941,26 +16347,8 @@
     // -----------------------------------------------------------------------------
     css /* scss */ `
   .o-autocomplete-dropdown {
-    pointer-events: auto;
-    background-color: #fff;
     & > div:hover {
       background-color: #f2f2f2;
-    }
-    .o-autocomplete-value-focus {
-      background-color: rgba(0, 0, 0, 0.08);
-    }
-
-    & > div {
-      display: flex;
-      flex-direction: column;
-      padding: 1px 0 5px 5px;
-      .o-autocomplete-description {
-        padding: 0 0 0 5px;
-        font-size: 11px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
     }
   }
 `;
@@ -17164,57 +16552,6 @@
         }
     }
 
-    // -----------------------------------------------------------------------------
-    // Formula Assistant component
-    // -----------------------------------------------------------------------------
-    css /* scss */ `
-  .o-formula-assistant {
-    white-space: normal;
-    background-color: #fff;
-    .o-formula-assistant-head {
-      background-color: #f2f2f2;
-      padding: 10px;
-    }
-    .o-formula-assistant-core {
-      padding: 0px 0px 10px 0px;
-      margin: 10px;
-      border-bottom: 1px solid gray;
-    }
-    .o-formula-assistant-arg {
-      padding: 0px 10px 10px 10px;
-      display: flex;
-      flex-direction: column;
-    }
-    .o-formula-assistant-arg-description {
-      font-size: 85%;
-    }
-    .o-formula-assistant-focus {
-      div:first-child,
-      span {
-        color: purple;
-        text-shadow: 0px 0px 1px purple;
-      }
-      div:last-child {
-        color: black;
-      }
-    }
-    .o-formula-assistant-gray {
-      color: gray;
-    }
-  }
-  .o-formula-assistant-container {
-    user-select: none;
-  }
-  .o-formula-assistant-event-none {
-    pointer-events: none;
-  }
-  .o-formula-assistant-event-auto {
-    pointer-events: auto;
-  }
-  .o-formula-assistant-transparency {
-    opacity: 0.3;
-  }
-`;
     class FunctionDescriptionProvider extends owl.Component {
         constructor() {
             super(...arguments);
@@ -17266,22 +16603,11 @@
     };
     css /* scss */ `
   .o-composer-container {
-    padding: 0;
-    margin: 0;
-    border: 0;
     z-index: ${ComponentsImportance.Composer};
-    flex-grow: 1;
-    max-height: inherit;
     .o-composer {
       caret-color: black;
-      padding-left: 3px;
-      padding-right: 3px;
-      word-break: break-all;
       &:focus {
         outline: none;
-      }
-      &.unfocusable {
-        pointer-events: none;
       }
       span {
         white-space: pre;
@@ -17291,16 +16617,6 @@
         }
       }
     }
-    .o-composer-assistant {
-      position: absolute;
-      margin: 4px;
-      pointer-events: none;
-    }
-  }
-
-  /* Custom css to highlight topbar composer on focus */
-  .o-topbar-toolbar .o-composer-container:focus-within {
-    border: 1px solid ${SELECTION_BORDER_COLOR};
   }
 `;
     class Composer extends owl.Component {
@@ -17717,7 +17033,6 @@
   div.o-grid-composer {
     z-index: ${ComponentsImportance.Composer};
     box-sizing: border-box;
-    position: absolute;
     border: ${COMPOSER_BORDER_WIDTH}px solid ${SELECTION_BORDER_COLOR};
   }
 `;
@@ -17818,13 +17133,6 @@
     const ACTIVE_BORDER_WIDTH = 2;
     const MIN_FIG_SIZE = 80;
     css /*SCSS*/ `
-  .o-figure-wrapper {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-  }
-
   div.o-figure {
     box-sizing: content-box;
     position: absolute;
@@ -18355,10 +17663,7 @@
     }
     css /* scss */ `
   .o-col-resizer {
-    position: absolute;
-    top: 0;
     left: ${HEADER_WIDTH}px;
-    right: 0;
     height: ${HEADER_HEIGHT}px;
     &.o-dragging {
       cursor: grabbing;
@@ -18368,20 +17673,15 @@
     }
     .dragging-col-line {
       top: ${HEADER_HEIGHT}px;
-      position: absolute;
       width: 2px;
       height: 10000px;
-      background-color: black;
     }
     .dragging-col-shadow {
       top: ${HEADER_HEIGHT}px;
-      position: absolute;
       height: 10000px;
-      background-color: black;
       opacity: 0.1;
     }
     .o-handle {
-      position: absolute;
       height: ${HEADER_HEIGHT}px;
       width: 4px;
       cursor: e-resize;
@@ -18389,8 +17689,6 @@
     }
     .dragging-resizer {
       top: ${HEADER_HEIGHT}px;
-      position: absolute;
-      margin-left: 2px;
       width: 1px;
       height: 10000px;
       background-color: ${SELECTION_BORDER_COLOR};
@@ -18398,9 +17696,6 @@
     .o-unhide {
       width: ${UNHIDE_ICON_EDGE_LENGTH}px;
       height: ${UNHIDE_ICON_EDGE_LENGTH}px;
-      position: absolute;
-      overflow: hidden;
-      border-radius: 2px;
       top: calc(${HEADER_HEIGHT}px / 2 - ${UNHIDE_ICON_EDGE_LENGTH}px / 2);
     }
     .o-unhide:hover {
@@ -18532,12 +17827,8 @@
     ColResizer.template = "o-spreadsheet-ColResizer";
     css /* scss */ `
   .o-row-resizer {
-    position: absolute;
     top: ${HEADER_HEIGHT}px;
-    left: 0;
-    right: 0;
     width: ${HEADER_WIDTH}px;
-    height: 100%;
     &.o-dragging {
       cursor: grabbing;
     }
@@ -18546,20 +17837,15 @@
     }
     .dragging-row-line {
       left: ${HEADER_WIDTH}px;
-      position: absolute;
       width: 10000px;
       height: 2px;
-      background-color: black;
     }
     .dragging-row-shadow {
       left: ${HEADER_WIDTH}px;
-      position: absolute;
       width: 10000px;
-      background-color: black;
       opacity: 0.1;
     }
     .o-handle {
-      position: absolute;
       height: 4px;
       width: ${HEADER_WIDTH}px;
       cursor: n-resize;
@@ -18567,8 +17853,6 @@
     }
     .dragging-resizer {
       left: ${HEADER_WIDTH}px;
-      position: absolute;
-      margin-top: 2px;
       width: 10000px;
       height: 1px;
       background-color: ${SELECTION_BORDER_COLOR};
@@ -18576,9 +17860,6 @@
     .o-unhide {
       width: ${UNHIDE_ICON_EDGE_LENGTH}px;
       height: ${UNHIDE_ICON_EDGE_LENGTH}px;
-      position: absolute;
-      overflow: hidden;
-      border-radius: 2px;
       left: calc(${HEADER_WIDTH}px - ${UNHIDE_ICON_EDGE_LENGTH}px - 2px);
     }
     .o-unhide > svg {
@@ -18754,7 +18035,6 @@
 
     css /* scss */ `
   .o-border {
-    position: absolute;
     &:hover {
       cursor: grab;
     }
@@ -18797,10 +18077,8 @@
 
     css /* scss */ `
   .o-corner {
-    position: absolute;
     height: 6px;
     width: 6px;
-    border: 1px solid white;
   }
   .o-corner-nw,
   .o-corner-se {
@@ -19101,8 +18379,6 @@
     // -----------------------------------------------------------------------------
     css /* scss */ `
   .o-grid {
-    position: relative;
-    overflow: hidden;
     background-color: ${BACKGROUND_GRAY_COLOR};
 
     > canvas {
@@ -19114,35 +18390,26 @@
       }
     }
     .o-scrollbar {
-      position: absolute;
-      overflow: auto;
       z-index: ${ComponentsImportance.ScrollBar};
       background-color: ${BACKGROUND_GRAY_COLOR};
 
       &.vertical {
-        right: 0;
         bottom: ${SCROLLBAR_WIDTH$1}px;
         width: ${SCROLLBAR_WIDTH$1}px;
         overflow-x: hidden;
       }
       &.horizontal {
-        bottom: 0;
         height: ${SCROLLBAR_WIDTH$1}px;
         right: ${SCROLLBAR_WIDTH$1}px;
         overflow-y: hidden;
       }
       &.corner {
-        right: 0px;
-        bottom: 0px;
         height: ${SCROLLBAR_WIDTH$1}px;
         width: ${SCROLLBAR_WIDTH$1}px;
-        border-top: 1px solid #e2e3e3;
-        border-left: 1px solid #e2e3e3;
       }
     }
 
     .o-grid-overlay {
-      position: absolute;
       outline: none;
     }
   }
@@ -19305,12 +18572,10 @@
         }
         get vScrollbarStyle() {
             return `
-      ${this.env.isDashboard() ? "width: 0px;" : ""}
       top: ${this.env.isDashboard() ? 0 : HEADER_HEIGHT}px;`;
         }
         get hScrollbarStyle() {
             return `
-      ${this.env.isDashboard() ? "width: 0px;" : ""}
       left: ${this.env.isDashboard() ? 0 : HEADER_WIDTH}px;`;
         }
         get cellPopover() {
@@ -19354,9 +18619,8 @@
             return this.gridEl.getBoundingClientRect();
         }
         resizeGrid() {
-            const scrollBarWidth = this.env.isDashboard() ? 0 : SCROLLBAR_WIDTH$1;
-            const currentHeight = this.gridEl.clientHeight - scrollBarWidth;
-            const currentWidth = this.gridEl.clientWidth - scrollBarWidth;
+            const currentHeight = this.gridEl.clientHeight - SCROLLBAR_WIDTH$1;
+            const currentWidth = this.gridEl.clientWidth - SCROLLBAR_WIDTH$1;
             const { height: viewportHeight, width: viewportWidth } = this.env.model.getters.getViewportDimensionWithHeaders();
             if (currentHeight != viewportHeight || currentWidth !== viewportWidth) {
                 this.env.model.dispatch("RESIZE_VIEWPORT", {
@@ -19429,13 +18693,7 @@
             canvas.width = width * dpr;
             canvas.height = height * dpr;
             canvas.setAttribute("style", `width:${width}px;height:${height}px;`);
-            // Imagine each pixel as a large square. The whole-number coordinates (0, 1, 2…)
-            // are the edges of the squares. If you draw a one-unit-wide line between whole-number
-            // coordinates, it will overlap opposite sides of the pixel square, and the resulting
-            // line will be drawn two pixels wide. To draw a line that is only one pixel wide,
-            // you need to shift the coordinates by 0.5 perpendicular to the line's direction.
-            // http://diveintohtml5.info/canvas.html#pixel-madness
-            ctx.translate(-CANVAS_SHIFT, -CANVAS_SHIFT);
+            ctx.translate(-0.5, -0.5);
             ctx.scale(dpr, dpr);
             this.env.model.drawGrid(renderingContext);
         }
@@ -29769,7 +29027,7 @@
             const sheetId = this.getters.getActiveSheetId();
             // white background
             ctx.fillStyle = "#ffffff";
-            ctx.fillRect(0, 0, width + CANVAS_SHIFT, height + CANVAS_SHIFT);
+            ctx.fillRect(0, 0, width, height);
             // background grid
             const { right, left, top, bottom } = viewport;
             if (!this.getters.getGridLinesVisibility(sheetId) || this.getters.isDashboard()) {
@@ -32535,63 +31793,25 @@
     // -----------------------------------------------------------------------------
     css /* scss */ `
   .o-spreadsheet-bottom-bar {
-    background-color: ${BACKGROUND_GRAY_COLOR};
     padding-left: ${HEADER_WIDTH}px;
-    display: flex;
-    align-items: center;
-    font-size: 15px;
-    border-top: 1px solid lightgrey;
-    overflow: hidden;
-
-    .o-add-sheet,
-    .o-list-sheets {
-      margin-right: 5px;
-    }
 
     .o-add-sheet.disabled {
       cursor: not-allowed;
     }
 
-    .o-sheet-item {
-      display: flex;
-      align-items: center;
-      padding: 5px;
-      cursor: pointer;
-      &:hover {
-        background-color: rgba(0, 0, 0, 0.08);
-      }
-    }
-
-    .o-all-sheets {
-      display: flex;
-      align-items: center;
-      max-width: 80%;
-      overflow: hidden;
+    .o-sheet-item:hover {
+      background-color: rgba(0, 0, 0, 0.08);
     }
 
     .o-sheet {
-      color: #666;
-      padding: 0 15px;
-      padding-right: 10px;
       height: ${BOTTOMBAR_HEIGHT}px;
       line-height: ${BOTTOMBAR_HEIGHT}px;
-      user-select: none;
-      white-space: nowrap;
-      border-left: 1px solid #c1c1c1;
 
       &:last-child {
-        border-right: 1px solid #c1c1c1;
-      }
-
-      &.active {
-        color: #484;
-        background-color: #ffffff;
-        box-shadow: 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+        border-right: 1px solid #dee2e6;
       }
 
       .o-sheet-icon {
-        margin-left: 5px;
-
         &:hover {
           background-color: rgba(0, 0, 0, 0.08);
         }
@@ -32599,27 +31819,9 @@
     }
 
     .o-selection-statistic {
-      background-color: #ffffff;
-      margin-left: auto;
-      font-size: 14px;
-      margin-right: 20px;
-      padding: 4px 8px;
-      color: #333;
-      border-radius: 3px;
-      box-shadow: 0 1px 3px 1px rgba(60, 64, 67, 0.15);
-      user-select: none;
-      cursor: pointer;
       &:hover {
         background-color: rgba(0, 0, 0, 0.08);
       }
-    }
-
-    .fade-enter-active {
-      transition: opacity 0.5s;
-    }
-
-    .fade-enter {
-      opacity: 0;
     }
   }
 `;
@@ -32747,198 +31949,21 @@
 
     css /* scss */ `
   .o-sidePanel {
-    display: flex;
-    flex-direction: column;
-    overflow-x: hidden;
-    background-color: white;
-    border: 1px solid darkgray;
     user-select: none;
-    .o-sidePanelHeader {
-      padding: 6px;
-      height: 30px;
-      background-color: ${BACKGROUND_HEADER_COLOR};
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid darkgray;
-      border-top: 1px solid darkgray;
-      font-weight: bold;
-      .o-sidePanelTitle {
-        font-weight: bold;
-        padding: 5px 10px;
-        color: dimgrey;
-      }
-      .o-sidePanelClose {
-        font-size: 1.5rem;
-        padding: 5px 10px;
-        cursor: pointer;
-        &:hover {
-          background-color: WhiteSmoke;
-        }
-      }
+    .o-with-color > span,
+    .o-with-color-picker > span {
+      border-bottom: 4px solid;
     }
-    .o-sidePanelBody {
-      overflow: auto;
-      width: 100%;
-      height: 100%;
-
-      .o-section {
-        padding: 16px;
-
-        .o-section-title {
-          font-weight: bold;
-          color: dimgrey;
-          margin-bottom: 5px;
-        }
-
-        .o-section-subtitle {
-          color: dimgrey;
-          font-weight: 500;
-          font-size: 12px;
-          line-height: 14px;
-          margin: 8px 0 4px 0;
-        }
-
-        .o-subsection-left {
-          display: inline-block;
-          width: 47%;
-          margin-right: 3%;
-        }
-
-        .o-subsection-right {
-          display: inline-block;
-          width: 47%;
-          margin-left: 3%;
-        }
-      }
-    }
-
-    .o-sidepanel-error {
-      color: red;
-      margin-top: 10px;
-    }
-
-    .o-sidePanelButtons {
-      padding: 16px;
-      text-align: right;
-    }
-
-    .o-sidePanelButton {
-      border: 1px solid lightgrey;
-      padding: 0px 20px 0px 20px;
-      border-radius: 4px;
-      font-weight: 500;
-      font-size: 14px;
-      height: 30px;
-      line-height: 16px;
-      background: white;
-      margin-right: 8px;
-      &:hover:enabled {
-        background-color: rgba(0, 0, 0, 0.08);
-      }
-    }
-    .o-sidePanelButton:enabled {
-      cursor: pointer;
-    }
-    .o-sidePanelButton:last-child {
-      margin-right: 0px;
-    }
-
-    .o-input {
-      color: #666666;
-      border-radius: 4px;
-      min-width: 0px;
-      padding: 4px 6px;
-      box-sizing: border-box;
-      line-height: 1;
-      width: 100%;
-      height: 28px;
-      .o-type-selector {
-        background-position: right 5px top 11px;
-      }
-    }
-    input.o-required,
-    select.o-required {
-      border-color: #4c4c4c;
-    }
-    input.o-optional,
-    select.o-optional {
-      border: 1px solid #a9a9a9;
-    }
-    input.o-invalid {
-      border-color: red;
-    }
-    select.o-input {
-      background-color: white;
-      text-align: left;
-    }
-
-    .o-inflection {
-      .o-inflection-icon-button {
-        display: inline-block;
-        border: 1px solid #dadce0;
-        border-radius: 4px;
-        cursor: pointer;
-        padding: 1px 2px;
-      }
-      .o-inflection-icon-button:hover {
-        background-color: rgba(0, 0, 0, 0.08);
-      }
-      table {
-        table-layout: fixed;
-        margin-top: 2%;
-        display: table;
-        text-align: left;
-        font-size: 12px;
-        line-height: 18px;
-        width: 100%;
-      }
-      th.o-inflection-iconset-icons {
-        width: 8%;
-      }
-      th.o-inflection-iconset-text {
-        width: 28%;
-      }
-      th.o-inflection-iconset-operator {
-        width: 14%;
-      }
-      th.o-inflection-iconset-type {
-        width: 28%;
-      }
-      th.o-inflection-iconset-value {
-        width: 26%;
-      }
-      input,
-      select {
-        width: 100%;
-        height: 100%;
-        box-sizing: border-box;
-      }
-    }
-
+    overflow-x: hidden;
     .o-dropdown {
-      position: relative;
       .o-dropdown-content {
-        position: absolute;
         top: calc(100% + 5px);
-        left: 0;
         z-index: ${ComponentsImportance.Dropdown};
-        box-shadow: 1px 2px 5px 2px rgba(51, 51, 51, 0.15);
-        background-color: #f6f6f6;
-
-        .o-dropdown-item {
-          padding: 7px 10px;
-        }
         .o-dropdown-item:hover {
           background-color: rgba(0, 0, 0, 0.08);
         }
         .o-dropdown-line {
-          display: flex;
-          padding: 3px 6px;
           .o-line-item {
-            width: 16px;
-            height: 16px;
-            margin: 1px 3px;
             &:hover {
               background-color: rgba(0, 0, 0, 0.08);
             }
@@ -32946,41 +31971,10 @@
         }
       }
     }
-
     .o-tools {
-      color: #333;
-      font-size: 13px;
-      cursor: default;
-      display: flex;
-
-      .o-tool {
-        display: flex;
-        align-items: center;
-        margin: 2px;
-        padding: 0 3px;
-        border-radius: 2px;
-      }
-
       .o-tool.active,
       .o-tool:not(.o-disabled):hover {
         background-color: rgba(0, 0, 0, 0.08);
-      }
-
-      .o-with-color > span {
-        border-bottom: 4px solid;
-        height: 16px;
-        margin-top: 2px;
-      }
-      .o-with-color {
-        .o-line-item:hover {
-          outline: 1px solid gray;
-        }
-      }
-      .o-border {
-        .o-line-item {
-          padding: 4px;
-          margin: 1px;
-        }
       }
     }
   }
@@ -33053,78 +32047,23 @@
     // -----------------------------------------------------------------------------
     css /* scss */ `
   .o-spreadsheet-topbar {
-    background-color: white;
-    line-height: 1.2;
-    display: flex;
-    flex-direction: column;
-    font-size: 13px;
-    line-height: 1.2;
-    user-select: none;
-
     .o-topbar-top {
-      border-bottom: 1px solid #e0e2e4;
-      display: flex;
-      padding: 2px 10px;
-      justify-content: space-between;
-
       /* Menus */
       .o-topbar-topleft {
-        display: flex;
-        .o-topbar-menu {
-          padding: 4px 6px;
-          margin: 0 2px;
-          cursor: pointer;
-        }
-
         .o-topbar-menu:hover,
         .o-topbar-menu-active {
           background-color: #f1f3f4;
-          border-radius: 2px;
         }
-      }
-
-      .o-topbar-topright {
-        display: flex;
-        justify-content: flex-end;
       }
     }
     /* Toolbar + Cell Content */
     .o-topbar-toolbar {
-      border-bottom: 1px solid #e0e2e4;
-      display: flex;
-
-      .o-readonly-toolbar {
-        display: flex;
-        align-items: center;
-        background-color: ${BACKGROUND_HEADER_COLOR};
-        padding-left: 18px;
-        padding-right: 18px;
-      }
       .o-composer-container {
-        height: 34px;
-        border: 1px solid #e0e2e4;
         margin-top: -1px;
-        margin-bottom: -1px;
       }
 
       /* Toolbar */
       .o-toolbar-tools {
-        display: flex;
-        flex-shrink: 0;
-        margin-left: 16px;
-        color: #333;
-        cursor: default;
-
-        .o-tool {
-          display: flex;
-          align-items: center;
-          margin: 2px;
-          padding: 0 3px;
-          border-radius: 2px;
-          cursor: pointer;
-          min-width: fit-content;
-        }
-
         .o-tool.active,
         .o-tool:not(.o-disabled):hover {
           background-color: #f1f3f4;
@@ -33142,60 +32081,21 @@
           }
         }
 
-        .o-border-dropdown {
-          padding: 4px;
-        }
-
-        .o-divider {
-          display: inline-block;
-          border-right: 1px solid #e0e2e4;
-          width: 0;
-          margin: 0 6px;
-        }
-
-        .o-disabled {
-          opacity: 0.6;
-        }
-
         .o-dropdown {
-          position: relative;
-
-          .o-text-icon {
-            height: 100%;
-            line-height: 30px;
-          }
-
           .o-text-options > div {
-            line-height: 26px;
-            padding: 3px 12px;
             &:hover {
               background-color: rgba(0, 0, 0, 0.08);
             }
           }
 
           .o-dropdown-content {
-            position: absolute;
-            top: calc(100% + 5px);
-            left: 0;
             z-index: ${ComponentsImportance.Dropdown};
-            box-shadow: 1px 2px 5px 2px rgba(51, 51, 51, 0.15);
-            background-color: white;
-
-            .o-dropdown-item {
-              padding: 7px 10px;
-            }
-
             .o-dropdown-item:hover {
               background-color: rgba(0, 0, 0, 0.08);
             }
 
             .o-dropdown-line {
-              display: flex;
-              margin: 1px;
-
               .o-line-item {
-                padding: 4px;
-
                 &:hover {
                   background-color: rgba(0, 0, 0, 0.08);
                 }
@@ -33203,13 +32103,8 @@
             }
 
             &.o-format-tool {
-              padding: 5px 0;
               width: 250px;
-              font-size: 12px;
               > div {
-                padding: 0 20px;
-                white-space: nowrap;
-
                 &.active:before {
                   content: "✓";
                   font-weight: bold;
@@ -33220,17 +32115,6 @@
             }
           }
         }
-      }
-
-      /* Cell Content */
-      .o-toolbar-cell-content {
-        font-size: 12px;
-        font-weight: 500;
-        padding: 0 12px;
-        margin: 0;
-        line-height: 34px;
-        white-space: nowrap;
-        user-select: text;
       }
     }
   }
@@ -33434,6 +32318,7 @@
   .o-spreadsheet {
     position: relative;
     display: grid;
+    grid-template-rows: 64px auto 37px;
     grid-template-columns: auto 350px;
     * {
       font-family: "Roboto", "RobotoDraft", Helvetica, Arial, sans-serif;
@@ -33445,7 +32330,23 @@
       box-sizing: content-box;
     }
   }
-
+  .o-input {
+    outline: 0;
+    .o-type-selector {
+      background-position: right 5px top 11px;
+    }
+  }
+  input.o-required,
+  select.o-required {
+    border-color: #4c4c4c;
+  }
+  input.o-optional,
+  select.o-optional {
+    border-bottom: 1px solid #a9a9a9;
+  }
+  input:focus {
+    outline: none;
+  }
   .o-two-columns {
     grid-column: 1 / 3;
   }
@@ -33465,12 +32366,6 @@
 `;
     const t = (s) => s;
     class Spreadsheet extends owl.Component {
-        getStyle() {
-            if (this.env.isDashboard()) {
-                return `grid-template-rows: auto;`;
-            }
-            return `grid-template-rows: ${TOPBAR_HEIGHT}px auto ${BOTTOMBAR_HEIGHT + 1}px`;
-        }
         setup() {
             var _a, _b;
             (_b = (_a = this.props).exposeSpreadsheet) === null || _b === void 0 ? void 0 : _b.call(_a, this);
@@ -37556,8 +36451,8 @@
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-09-09T12:45:57.973Z';
-    exports.__info__.hash = 'a5236ad';
+    exports.__info__.date = '2022-09-12T09:55:33.643Z';
+    exports.__info__.hash = 'be961a0';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
