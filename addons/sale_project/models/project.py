@@ -112,7 +112,7 @@ class Project(models.Model):
         return action
 
     def action_profitability_items(self, section_name, domain=None, res_id=False):
-        if section_name in ['service_revenues', 'other_revenues']:
+        if section_name in ['service_revenues', 'materials']:
             view_types = ['list', 'kanban', 'form']
             action = {
                 'name': _('Sales Order Items'),
@@ -171,6 +171,16 @@ class Project(models.Model):
         if len(invoice_ids) == 1:
             action['views'] = [[False, 'form']]
             action['res_id'] = invoice_ids[0]
+        return action
+
+    def action_aal(self, domain=None, res_id=False):
+        self.ensure_one()
+        action = self.env["ir.actions.actions"]._for_xml_id("analytic.account_analytic_line_action_entries")
+        action['domain'] = domain if domain else []
+        if res_id:
+            action['views'] = [(view_id, view_type) for view_id, view_type in action['views'] if view_type == 'form'] or [(False, 'form')]
+            action['view_mode'] = 'form'
+            action['res_id'] = res_id
         return action
 
     # ----------------------------
@@ -304,16 +314,20 @@ class Project(models.Model):
         return {
             **super()._get_profitability_labels(),
             'service_revenues': _lt('Other Services'),
-            'other_revenues': _lt('Materials'),
+            'materials': _lt('Materials'),
             'other_invoice_revenues': _lt('Other Revenues'),
+            'other_revenues': _lt('Other Revenues'),
+            'other_costs': _lt('Other Costs'),
         }
 
     def _get_profitability_sequence_per_invoice_type(self):
         return {
             **super()._get_profitability_sequence_per_invoice_type(),
             'service_revenues': 6,
-            'other_revenues': 7,
+            'materials': 7,
             'other_invoice_revenues': 8,
+            'other_revenues': 12,
+            'other_costs': 13,
         }
 
     def _get_service_policy_to_invoice_type(self):
@@ -371,20 +385,20 @@ class Project(models.Model):
                         'ordered_prepaid')
                 for product_id, (amount_to_invoice, amount_invoiced, sol_ids) in sols_per_product.items():
                     if product_id in product_ids:
-                        invoice_type = service_policy_to_invoice_type.get(service_policy, 'other_revenues')
+                        invoice_type = service_policy_to_invoice_type.get(service_policy, 'materials')
                         revenue = revenues_dict.setdefault(invoice_type, {'invoiced': 0.0, 'to_invoice': 0.0})
                         revenue['to_invoice'] += amount_to_invoice
                         total_to_invoice += amount_to_invoice
                         revenue['invoiced'] += amount_invoiced
                         total_invoiced += amount_invoiced
-                        if display_sol_action and invoice_type in ['service_revenues', 'other_revenues']:
+                        if display_sol_action and invoice_type in ['service_revenues', 'materials']:
                             revenue.setdefault('record_ids', []).extend(sol_ids)
 
             if display_sol_action:
-                section_name = 'other_revenues'
-                other_revenues = revenues_dict.get(section_name, {})
+                section_name = 'materials'
+                materials = revenues_dict.get(section_name, {})
                 sale_order_items = self.env['sale.order.line'] \
-                    .browse(other_revenues.pop('record_ids', [])) \
+                    .browse(materials.pop('record_ids', [])) \
                     ._filter_access_rules_python('read')
                 if sale_order_items:
                     if sale_order_items:
@@ -396,7 +410,9 @@ class Project(models.Model):
                             'type': 'object',
                             'args': json.dumps(args),
                         }
-                        other_revenues['action'] = action_params
+                        if len(sale_order_items) == 1:
+                            action_params['res_id'] = sale_order_items.id
+                        materials['action'] = action_params
         sequence_per_invoice_type = self._get_profitability_sequence_per_invoice_type()
         return {
             'data': [{'id': invoice_type, 'sequence': sequence_per_invoice_type[invoice_type], **vals} for invoice_type, vals in revenues_dict.items()],
@@ -459,6 +475,50 @@ class Project(models.Model):
                     },
                 }
         return {'data': [], 'total': {'invoiced': 0.0, 'to_invoice': 0.0}}
+    def _get_aal_domain(self):
+        """
+            Taking only the aal where the sale_line_ids is not enough, for some invoices are related to the project, but not the sales order.
+            Those invoices are already computed in the revenues section, and therefore should not be taken into account. The only way to sort the invoices out
+            is with the move lines.
+        """
+        move_line_ids_no_sol = list(self.env['account.move.line']._search([('sale_line_ids', '=', False)]))
+        return [('account_id', '=', self.analytic_account_id.id), ('move_line_id', 'in', move_line_ids_no_sol + [False])]
+
+    def _get_items_from_aal(self, with_action=True):
+        def get_action(record_ids):
+            args = [[('id', 'in', record_ids)]]
+            if len(record_ids) == 1:
+                args.append(record_ids[0])
+            return {'name': 'action_aal', 'type': 'object', 'args': json.dumps(args)}
+
+        domain = self._get_aal_domain()
+        aal_other_search = self.env['account.analytic.line'].search_read(domain, ['id', 'amount'])
+        if not aal_other_search:
+            return None
+        total_revenues = total_costs = 0.0
+        cost_ids = revenue_ids = []
+        for aal in aal_other_search:
+            aal_amount = aal['amount']
+            if aal_amount < 0.0:
+                total_costs += aal_amount
+                cost_ids.append(aal['id'])
+            else:
+                total_revenues += aal_amount
+                revenue_ids.append(aal['id'])
+        costs_action = None
+        revenues_action = None
+        # The account.groupe_account_readonly is set in the account_accountant module. There's no bridge between this module and the sale_project.
+        # Therefore we add this security check-up here because the use case can not be made without the accounting module.
+        if with_action and len(self) == 1 and self.user_has_groups('account.group_account_readonly'):
+            costs_action = get_action(cost_ids)
+            revenues_action = get_action(revenue_ids)
+
+        # we dont know what part of the numbers has already been billed or not, so we have no choice but to put everything under the billed/invoiced columns.
+        # The to bill/to invoice ones will simply remain equal to 0
+        return {
+            'revenues': {'id': 'other_revenues', 'sequence': 12, 'invoiced': total_revenues, 'to_invoice': 0.0, 'action': revenues_action},
+            'costs': {'id': 'other_costs', 'sequence': 13, 'billed': total_costs, 'to_bill': 0.0, 'action': costs_action},
+        }
 
     def _get_profitability_items(self, with_action=True):
         profitability_items = super()._get_profitability_items(with_action)
@@ -468,6 +528,22 @@ class Project(models.Model):
             with_action,
         )
         revenues = profitability_items['revenues']
+        # The items from aal are only computed if there is only one project linked to the so, otherwise, we'd have to show the same extra cost/revenues on all project linked.
+        # which is inaccurate.
+        items_from_aal = None
+        if self.allow_billable and len(self.analytic_account_id.project_ids) == 1:
+            items_from_aal = self._get_items_from_aal(with_action)
+        if items_from_aal:
+            costs = profitability_items['costs']
+            # we modify the 'to_bill/to_invoice' section too, because in case there are no sales order, but only manual lines,
+            # we still need to have the 0 values for those section in the view
+            costs['data'] += [items_from_aal['costs']]
+            costs['total']['to_bill'] += items_from_aal['costs']['to_bill']
+            costs['total']['billed'] += items_from_aal['costs']['billed']
+            revenues['data'] += [items_from_aal['revenues']]
+            revenues['total']['to_invoice'] += items_from_aal['revenues']['to_invoice']
+            revenues['total']['invoiced'] += items_from_aal['revenues']['invoiced']
+
         revenues['data'] += revenue_items_from_sol['data']
         revenues['total']['to_invoice'] += revenue_items_from_sol['total']['to_invoice']
         revenues['total']['invoiced'] += revenue_items_from_sol['total']['invoiced']

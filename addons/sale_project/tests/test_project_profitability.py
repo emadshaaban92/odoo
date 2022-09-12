@@ -54,9 +54,49 @@ class TestProjectProfitabilityCommon(Common):
         })
         cls.sale_order.action_confirm()
 
+        cls.analytic_account_nb = cls.env['account.analytic.account'].create({
+            'name': 'Project non billable AA',
+            'code': 'AA-123456',
+            'plan_id': cls.analytic_plan.id,
+        })
+
+        cls.project_non_billable = cls.env['project.project'].with_context(tracking_disable=True).create({
+            'name': "Non Billable Project",
+            'analytic_account_id': cls.analytic_account_nb.id,
+            'allow_billable': False,
+            'partner_id': False,
+        })
+
 
 @tagged('-at_install', 'post_install')
 class TestSaleProjectProfitability(TestProjectProfitabilityCommon, TestSaleCommon):
+
+    def test_profitability_of_non_billable_project(self):
+        """ Test no data is found for the project profitability since the project is not billable
+            even if it is linked to a sale order items.
+        """
+        # Adding an extra cost/revenue to make sure those are not computed either.
+        self.env['account.analytic.line'].create([{
+            'name': 'other revenues line',
+            'account_id': self.project_non_billable.analytic_account_id.id,
+            'amount': 100,
+        }, {
+            'name': 'other costs line',
+            'account_id': self.project_non_billable.analytic_account_id.id,
+            'amount': -100,
+        }])
+        self.assertFalse(self.project_non_billable.allow_billable)
+        self.assertDictEqual(
+            self.project_non_billable._get_profitability_items(False),
+            self.project_profitability_items_empty,
+        )
+        self.project_non_billable.write({'sale_line_id': self.sale_order.order_line[0].id})
+        self.assertDictEqual(
+            self.project_non_billable._get_profitability_items(False),
+            self.project_profitability_items_empty,
+            "Even if the project has a sale order item linked, the project profitability should not be computed since it is not billable."
+        )
+
     def test_project_profitability(self):
         self.assertFalse(self.project.allow_billable, 'The project should be non billable.')
         self.assertDictEqual(
@@ -81,11 +121,29 @@ class TestSaleProjectProfitability(TestProjectProfitabilityCommon, TestSaleCommo
             'invoice_type="billable_manual" if sale_timesheet is installed otherwise it is equal to "service_revenues"')
         sequence_per_invoice_type = self.project._get_profitability_sequence_per_invoice_type()
         self.assertIn('service_revenues', sequence_per_invoice_type)
+
+        #we're adding extra cost and extra revenues to the analytic account
+        self.env['account.analytic.line'].create([{
+            'name': 'other revenues line',
+            'account_id': self.project.analytic_account_id.id,
+            'amount': 100,
+        }, {
+            'name': 'other costs line',
+            'account_id': self.project.analytic_account_id.id,
+            'amount': -100,
+        }])
         self.assertDictEqual(
             self.project._get_profitability_items(False),
             {
                 'revenues': {
                     'data': [
+                        {   #action = None if the accounting module is not installed. For without the module, the use case can not be made
+                            'id': 'other_revenues',
+                            'sequence': 12,
+                            'invoiced': 100.0,
+                            'to_invoice': 0.0,
+                            'action': None
+                        },
                         {
                             # id should be equal to "billable_manual" if "sale_timesheet" module is installed otherwise "service_revenues"
                             'id': invoice_type,
@@ -96,12 +154,12 @@ class TestSaleProjectProfitability(TestProjectProfitabilityCommon, TestSaleCommo
                     ],
                     'total': {
                         'to_invoice': self.delivery_service_order_line.untaxed_amount_to_invoice,
-                        'invoiced': self.delivery_service_order_line.untaxed_amount_invoiced,
+                        'invoiced': self.delivery_service_order_line.untaxed_amount_invoiced+100,
                     },
                 },
-                'costs': {
-                    'data': [],
-                    'total': {'billed': 0.0, 'to_bill': 0.0},
+                'costs': {  # only the other_costs section is present because we have no purchase orders.
+                    'data': [{'id': 'other_costs', 'sequence': 13, 'billed': -100.0, 'to_bill': 0.0, 'action': None}],
+                    'total': {'billed': -100.0, 'to_bill': 0.0},
                 },
             }
         )
@@ -133,6 +191,13 @@ class TestSaleProjectProfitability(TestProjectProfitabilityCommon, TestSaleCommo
                 'revenues': {
                     'data': [
                         {
+                            'id': 'other_revenues',
+                            'sequence': 12,
+                            'invoiced': 100.0,
+                            'to_invoice': 0.0,
+                            'action': None
+                        },
+                        {
                             'id': invoice_type,
                             'sequence': sequence_per_invoice_type[invoice_type],
                             'to_invoice': 0.0,
@@ -141,12 +206,12 @@ class TestSaleProjectProfitability(TestProjectProfitabilityCommon, TestSaleCommo
                     ],
                     'total': {
                         'to_invoice': 0.0,
-                        'invoiced': self.delivery_service_order_line.untaxed_amount_invoiced,
+                        'invoiced': self.delivery_service_order_line.untaxed_amount_invoiced+100,
                     },
                 },
-                'costs': {
-                    'data': [],
-                    'total': {'billed': 0.0, 'to_bill': 0.0},
+                'costs': {  # only the other_costs section is present because we have no purchase orders.
+                    'data': [{'id': 'other_costs', 'sequence': 13, 'billed': -100.0, 'to_bill': 0.0, 'action': None}],
+                    'total': {'billed': -100.0, 'to_bill': 0.0},
                 },
             }
         )
@@ -175,26 +240,33 @@ class TestSaleProjectProfitability(TestProjectProfitabilityCommon, TestSaleCommo
                 'revenues': {
                     'data': [
                         {
+                            'id': 'other_revenues',
+                            'sequence': 12,
+                            'invoiced': 100.0,
+                            'to_invoice': 0.0,
+                            'action': None
+                        },
+                        {
                             'id': invoice_type,
                             'sequence': sequence_per_invoice_type[invoice_type],
                             'to_invoice': sum(service_sols.mapped('untaxed_amount_to_invoice')),
                             'invoiced': sum(service_sols.mapped('untaxed_amount_invoiced')),
                         },
                         {
-                            'id': 'other_revenues',
-                            'sequence': sequence_per_invoice_type['other_revenues'],
+                            'id': 'materials',
+                            'sequence': sequence_per_invoice_type['materials'],
                             'to_invoice': material_order_line.untaxed_amount_to_invoice,
                             'invoiced': material_order_line.untaxed_amount_invoiced,
                         },
                     ],
                     'total': {
                         'to_invoice': sum(service_sols.mapped('untaxed_amount_to_invoice')) + material_order_line.untaxed_amount_to_invoice,
-                        'invoiced': sum(service_sols.mapped('untaxed_amount_invoiced')) + material_order_line.untaxed_amount_invoiced,
+                        'invoiced': sum(service_sols.mapped('untaxed_amount_invoiced')) + material_order_line.untaxed_amount_invoiced+100,
                     },
                 },
-                'costs': {  # no cost because we have no purchase orders.
-                    'data': [],
-                    'total': {'billed': 0.0, 'to_bill': 0.0},
+                'costs': {  # only the other_costs section is present because we have no purchase orders.
+                    'data': [{'id': 'other_costs', 'sequence': 13, 'billed': -100.0, 'to_bill': 0.0, 'action': None}],
+                    'total': {'billed': -100.0, 'to_bill': 0.0},
                 },
             },
         )
@@ -211,31 +283,58 @@ class TestSaleProjectProfitability(TestProjectProfitabilityCommon, TestSaleCommo
                 'revenues': {
                     'data': [
                         {
+                            'id': 'other_revenues',
+                            'sequence': 12,
+                            'invoiced': 100.0,
+                            'to_invoice': 0.0,
+                            'action': None
+                        },
+                        {
                             'id': invoice_type,
                             'sequence': sequence_per_invoice_type[invoice_type],
                             'to_invoice': sum(service_sols.mapped('untaxed_amount_to_invoice')),
                             'invoiced': manual_service_order_line.untaxed_amount_invoiced,
                         },
                         {
-                            'id': 'other_revenues',
-                            'sequence': sequence_per_invoice_type['other_revenues'],
+                            'id': 'materials',
+                            'sequence': sequence_per_invoice_type['materials'],
                             'to_invoice': material_order_line.untaxed_amount_to_invoice,
                             'invoiced': material_order_line.untaxed_amount_invoiced,
                         },
                     ],
                     'total': {
                         'to_invoice': sum(service_sols.mapped('untaxed_amount_to_invoice')) + material_order_line.untaxed_amount_to_invoice,
-                        'invoiced': manual_service_order_line.untaxed_amount_invoiced + material_order_line.untaxed_amount_invoiced,
+                        'invoiced': manual_service_order_line.untaxed_amount_invoiced + material_order_line.untaxed_amount_invoiced+100,
                     },
                 },
-                'costs': {  # no cost because we have no purchase orders.
-                    'data': [],
-                    'total': {'billed': 0.0, 'to_bill': 0.0},
+                'costs': {  # only the other_costs section is present because we have no purchase orders.
+                    'data': [{'id': 'other_costs', 'sequence': 13, 'billed': -100.0, 'to_bill': 0.0, 'action': None}],
+                    'total': {'billed': -100.0, 'to_bill': 0.0},
                 },
             },
         )
 
         self.sale_order._action_cancel()
+        self.assertDictEqual(
+            self.project._get_profitability_items(False),
+            {
+                # even if the sale order is canceled, if some expenses/revenues were added manually to the account, those lines must appear in the project profitabilty panel
+                'revenues': {
+                    'data': [
+                        {'id': 'other_revenues', 'sequence': 12, 'invoiced': 100.0, 'to_invoice': 0.0, 'action': None}],
+                    'total': {'to_invoice': 0.0, 'invoiced': 100},
+                },
+                'costs': {
+                    'data': [{'id': 'other_costs', 'sequence': 13, 'billed': -100.0, 'to_bill': 0.0, 'action': None}],
+                    'total': {'billed': -100.0, 'to_bill': 0.0},
+                },
+            },
+        )
+        # adding a project to the analytic account must cancel the other_cost/revenues part of the profitability panel
+        self.env['project.project'].create({
+            'name': 'extra Project',
+            'analytic_account_id': self.project.analytic_account_id.id,
+        })
         self.assertDictEqual(
             self.project._get_profitability_items(False),
             self.project_profitability_items_empty,

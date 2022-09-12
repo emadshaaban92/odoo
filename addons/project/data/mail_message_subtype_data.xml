@@ -37,7 +37,7 @@
         <field name="default" eval="False"/>
     </record>
     <record id="mt_task_dependency_change" model="mail.message.subtype">
-        <field name="name">Task Dependency Changes</field>
+        <field name="name">Task Dependencies Closed</field>
         <field name="res_model">project.task</field>
         <field name="default" eval="False"/>
         <field name="hidden" eval="True"/>
@@ -99,7 +99,7 @@
         <field name="relation_field">project_id</field>
     </record>
     <record id="mt_project_task_dependency_change" model="mail.message.subtype">
-        <field name="name">Task Dependency Changes</field>
+        <field name="name">Task Dependencies Closed</field>
         <field name="sequence">15</field>
         <field name="res_model">project.project</field>
         <field name="default" eval="False"/>

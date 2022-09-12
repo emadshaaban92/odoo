@@ -103,32 +103,128 @@ class TestTaskDependencies(TestProjectCommon):
             'depend_on_ids': [Command.link(self.task_2.id)]
         })
         self.cr.precommit.clear()
-        # Check that changing a dependency tracked field in task_2 logs a message in task_1.
-        self.task_2.write({'date_deadline': date(1983, 3, 1)}) # + 1 message in task_1 and task_2
+        # Check that changing a dependency tracked field in task_2 does not log a message in task_1.
+        self.task_2.write({'date_deadline': date(1983, 3, 1)}) # + 0 message in task_1 and 1 in task_2
         self.flush_tracking()
-        self.assertEqual(len(self.task_1.message_ids), 1,
-            'Changing the deadline on task 2 should have logged a message in task 1.')
+        self.assertEqual(len(self.task_1.message_ids), 0,
+            'Changing the deadline on task 2 should not have logged a message in task 1.')
 
         # Check that changing a dependency tracked field in task_1 does not log a message in task_2.
-        self.task_1.date_deadline = date(2020, 1, 2) # + 1 message in task_1
+        self.task_1.date_deadline = date(2020, 1, 2) # + 1 message in task_1 and 0 in task_2
         self.flush_tracking()
+        self.assertEqual(len(self.task_1.message_ids), 1,
+            'Changing the deadline on task 1 should have logged a message in task 1.')
         self.assertEqual(len(self.task_2.message_ids), 1,
             'Changing the deadline on task 1 should not have logged a message in task 2.')
 
         # Check that changing a field that is not tracked at all on task 2 does not impact task 1.
         self.task_2.color = 100 # no new message
         self.flush_tracking()
-        self.assertEqual(len(self.task_1.message_ids), 2,
+        self.assertEqual(len(self.task_1.message_ids), 1,
             'Changing the color on task 2 should not have logged a message in task 1 since it is not tracked.')
 
-        # Check that changing multiple fields does not log more than one message.
-        self.task_2.write({
-            'date_deadline': date(2020, 1, 1),
-            'kanban_state': 'blocked',
-        }) # + 1 message in task_1 and task_2
+    def test_tracking_stage_dependencies(self):
+        """
+            this test ensure that the stage modification from blocking tasks are correctly sending notifications to their parent when necessary.
+            When all blocking task of a task are in a folded stage, log a notification.
+            When a blocking tasking is reopened, and all the other blocking tasks of the parents are closed, log a notification.
+        """
+        # Enable the company setting
+        self.env['res.config.settings'].create({
+            'group_project_task_dependencies': True
+        }).execute()
+        # adds stages to the project
+        stages = dev, validation, done, cancel = self.env['project.task.type'].create([{
+            'sequence': 1,
+            'name': 'Dev',
+            'fold': False,
+        }, {
+            'sequence': 2,
+            'name': 'Validation',
+            'fold': False,
+        }, {
+            'sequence': 29,
+            'name': 'Done',
+            'fold': True,
+        }, {
+            'sequence': 30,
+            'name': 'Cancel',
+            'fold': True,
+        }])
+        self.project_pigs.write(
+            {'type_ids': [Command.link(stage_id) for stage_id in stages.ids]})
+        child_tasks = child_task_1, child_task_2, child_task_3 = self.env['project.task'].create([{
+            'name': 'child_task_%s' % i,
+            'user_ids': self.user_projectuser,
+            'project_id': self.project_pigs.id,
+            'stage_id': dev.id,
+        } for i in range(1, 4)])
+        parent_task_1, parent_task_2, parent_task_3 = self.env['project.task'].create([{
+            'name': 'parent_task_%s' % (i + 1),
+            'user_ids': self.user_projectuser,
+            'project_id': self.project_pigs.id,
+            'stage_id': dev.id,
+            'depend_on_ids': depend_on_ids,
+        } for i, depend_on_ids in enumerate([child_task_1, child_tasks, child_tasks])])
+        self.cr.precommit.clear()
+
+        # Close the task 1. This ensures that when one task is blocking many tasks, only the parent tasks with all their blocking tasks done get a log message.
+        child_task_1.write({'stage_id': done.id})
         self.flush_tracking()
-        self.assertEqual(len(self.task_1.message_ids), 3,
-            'Changing multiple fields on task 2 should only log one message in task 1.')
+        self.assertEqual(len(parent_task_1.message_ids), 2, 'Changing the stage of child_task_1 to a folded stage should have logged a message in parent_task_1.')
+        self.assertEqual(parent_task_1.message_ids[0].body, "<p>This task is ready to be worked on, as all of its blocking tasks have now been closed.</p>", 'Wrong message')
+        self.assertEqual(len(parent_task_2.message_ids), 1, 'Changing the stage of child_task_1 to a folded stage should not have logged a message in parent_task_2.')
+        self.assertEqual(len(parent_task_3.message_ids), 1, 'Changing the stage of child_task_1 to a folded stage should not have logged a message in parent_task_3.')
+
+        # Close the task 2. This ensures that when a task depends on many tasks, only the last blocking task logs a chat message.
+        child_task_2.write({'stage_id': done.id})
+        self.flush_tracking()
+        self.assertEqual(len(parent_task_1.message_ids), 2, 'Changing the stage of child_task_2 should not have logged a message in parent_task_1.')
+        self.assertEqual(len(parent_task_2.message_ids), 1, 'Changing the stage of child_task_2 to a folded stage should not have logged a message in parent_task_2.')
+        self.assertEqual(len(parent_task_3.message_ids), 1, 'Changing the stage of child_task_2 to a folded stage should not have logged a message in parent_task_3.')
+
+        # Change the stage of task 3. This ensure that when a task is moved from one stage to another, no message is logged on the parent if the new stage is not a
+        # folded stage and the parent task was not yet ready to be worked on.
+        child_task_3.write({'stage_id': validation.id})
+        self.flush_tracking()
+        self.assertEqual(len(parent_task_1.message_ids), 2, 'Changing the stage of child_task_3 should not have logged a message in parent_task_1.')
+        self.assertEqual(len(parent_task_2.message_ids), 1,
+                         'Changing the stage of child_task_3 from a non folded stage to a non folded stage should not have logged a message in parent_task_2.')
+        self.assertEqual(len(parent_task_3.message_ids), 1,
+                         'Changing the stage of child_task_3 from a non folded stage to a non folded stage should not have logged a message in parent_task_3.')
+
+        # Change the stage of task 3. This ensures that when a task is blocking many tasks, the message is logged to all the parent tasks, not just one.
+        child_task_3.write({'stage_id': done.id})
+        self.flush_tracking()
+        self.assertEqual(len(parent_task_1.message_ids), 2, 'Changing the stage of child_task_3 should not have logged a message in parent_task_1.')
+        self.assertEqual(len(parent_task_2.message_ids), 2,
+                         'Changing the stage of child_task_3 from a non folded stage to a folded stage should have logged a message in parent_task_2.')
+        self.assertEqual(parent_task_2.message_ids[0].body, "<p>This task is ready to be worked on, as all of its blocking tasks have now been closed.</p>", 'Wrong message')
+        self.assertEqual(len(parent_task_3.message_ids), 2,
+                         'Changing the stage of child_task_3 from a non folded stage to a folded stage should have logged a message in parent_task_3.')
+        self.assertEqual(parent_task_3.message_ids[0].body, "<p>This task is ready to be worked on, as all of its blocking tasks have now been closed.</p>", 'Wrong message')
+
+        # Change the stage of task 3. This ensure that when a task is moved from one stage to another, no message is logged on the parent if the new stage is a
+        # folded stage and the parent task was already ready to be worked on.
+        child_task_3.write({'stage_id': cancel.id})
+        self.flush_tracking()
+        self.assertEqual(len(parent_task_1.message_ids), 2, 'Changing the stage of child_task_3 should not have logged a message in parent_task_1.')
+        self.assertEqual(len(parent_task_2.message_ids), 2,
+                         'Changing the stage of child_task_3 from a folded stage to a folded stage should not have logged a message in parent_task_2.')
+        self.assertEqual(len(parent_task_3.message_ids), 2,
+                         'Changing the stage of child_task_3 from a folded stage to a folded stage should not have logged a message in parent_task_3.')
+
+        # Change the stage of task 3. This ensure that when a task is moved from one stage to another, a message is logged on the parent if the new stage is not a
+        # folded stage and the parent task was ready to be worked on.
+        child_task_3.write({'stage_id': dev.id})
+        self.flush_tracking()
+        self.assertEqual(len(parent_task_1.message_ids), 2, 'Changing the stage of child_task_1 should not have logged a message in parent_task_1.')
+        self.assertEqual(len(parent_task_2.message_ids), 3,
+                         'Changing the stage of child_task_3 from a folded stage to a non folded stage should have logged a message in parent_task_2.')
+        self.assertEqual(parent_task_2.message_ids[0].body, "<p>This task is no longer ready to be worked on, as task 'child_task_3' has been reopened.</p>", 'Wrong message')
+        self.assertEqual(len(parent_task_3.message_ids), 3,
+                         'Changing the stage of child_task_3 from a folded stage to a non folded stage should have logged a message in parent_task_3.')
+        self.assertEqual(parent_task_3.message_ids[0].body, "<p>This task is no longer ready to be worked on, as task 'child_task_3' has been reopened.</p>", 'Wrong message')
 
     def test_task_dependencies_settings_change(self):
 

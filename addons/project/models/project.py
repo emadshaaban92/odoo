@@ -2279,25 +2279,17 @@ class Task(models.Model):
         if depends_changes and self.allow_task_dependencies and self.user_has_groups('project.group_project_task_dependencies'):
             parent_ids = self.dependent_ids
             if parent_ids:
-                fields_to_ids = self.env['ir.model.fields']._get_ids('project.task')
-                field_ids = [fields_to_ids.get(name) for name in depends_changes]
-                depends_tracking_value_ids = [
-                    tracking_values for tracking_values in tracking_value_ids
-                    if tracking_values[2]['field'] in field_ids
-                ]
-                subtype = self.env['ir.model.data']._xmlid_to_res_id('project.mt_task_dependency_change')
-                # We want to include the original subtype message coming from the child task
-                # for example when the stage changes the message in the chatter starts with 'Stage Changed'
-                child_subtype = self._track_subtype(dict((col_name, initial_values[col_name]) for col_name in changes))
-                child_subtype_info = child_subtype.description or child_subtype.name if child_subtype else False
-                # NOTE: the subtype does not have a description on purpose, otherwise the description would be put
-                #  at the end of the message instead of at the top, we use the name here
-                body = self.env['ir.qweb']._render('project.task_track_depending_tasks', {
-                    'child': self,
-                    'child_subtype': child_subtype_info,
-                })
-                for p in parent_ids:
-                    p.message_post(body=body, subtype_id=subtype, tracking_value_ids=depends_tracking_value_ids)
+                old_stage = initial_values.get('stage_id')
+                log_message = lambda p: p
+                if old_stage.fold and not self.stage_id.fold:
+                    log_message = lambda p: p.message_post(body="This task is no longer ready to be worked on, as task '%s' has been reopened." % self.name)
+                elif not old_stage.fold and self.stage_id.fold:
+                    log_message = lambda p: p.message_post(body="This task is ready to be worked on, as all of its blocking tasks have now been closed.")
+
+                for parent in parent_ids:
+                    if all(task.is_closed and not task.is_blocked for task in parent.depend_on_ids if task != self):
+                        log_message(parent)
+
         return changes, tracking_value_ids
 
     def _track_template(self, changes):
