@@ -2902,7 +2902,7 @@ X[]
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>[]<br></p>',
                         stepFunction: insertLineBreak,
-                        contentAfter: '<p><br>[]<br></p>',
+                        contentAfter: '<p><br class="oe_linebreak">[]<br></p>',
                     });
                     // TODO this cannot actually be tested currently as a
                     // backspace/delete in that case is not even detected
@@ -2923,20 +2923,20 @@ X[]
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>[]abc</p>',
                         stepFunction: insertLineBreak,
-                        contentAfter: '<p><br>[]abc</p>',
+                        contentAfter: '<p><br class="oe_linebreak">[]abc</p>',
                     });
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>[] abc</p>',
                         stepFunction: insertLineBreak,
                         // The space should have been parsed away.
-                        contentAfter: '<p><br>[]abc</p>',
+                        contentAfter: '<p><br class="oe_linebreak">[]abc</p>',
                     });
                 });
                 it('should insert a <br> within text', async () => {
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>ab[]cd</p>',
                         stepFunction: insertLineBreak,
-                        contentAfter: '<p>ab<br>[]cd</p>',
+                        contentAfter: '<p>ab<br class="oe_linebreak">[]cd</p>',
                     });
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>ab []cd</p>',
@@ -2945,7 +2945,7 @@ X[]
                         // space so it is visible (because it's before a
                         // <br>).
                         // JW cAfter: '<p>ab&nbsp;<br>[]cd</p>',
-                        contentAfter: '<p>ab <br>[]cd</p>', // Note: JW seems just wrong here...
+                        contentAfter: '<p>ab <br class="oe_linebreak">[]cd</p>', // Note: JW seems just wrong here...
                     });
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>ab[] cd</p>',
@@ -2953,7 +2953,7 @@ X[]
                         // The space is converted to a non-breaking
                         // space so it is visible (because it's after a
                         // <br>).
-                        contentAfter: '<p>ab<br>[]&nbsp;cd</p>',
+                        contentAfter: '<p>ab<br class="oe_linebreak">[]&nbsp;cd</p>',
                     });
                 });
                 it('should insert a line break (2 <br>) at the end of a paragraph', async () => {
@@ -2962,7 +2962,7 @@ X[]
                         stepFunction: insertLineBreak,
                         // The second <br> is needed to make the first
                         // one visible.
-                        contentAfter: '<p>abc<br>[]<br></p>',
+                        contentAfter: '<p>abc<br class="oe_linebreak">[]<br></p>',
                     });
                 });
             });
@@ -2974,7 +2974,7 @@ X[]
                             await insertLineBreak(editor);
                             await insertLineBreak(editor);
                         },
-                        contentAfter: '<p><br><br>[]<br></p>',
+                        contentAfter: '<p><br class="oe_linebreak"><br class="oe_linebreak">[]<br></p>',
                     });
                     // TODO this cannot actually be tested currently as a
                     // backspace/delete in that case is not even detected
@@ -3006,7 +3006,7 @@ X[]
                             await insertLineBreak(editor);
                             await insertLineBreak(editor);
                         },
-                        contentAfter: '<p><br><br>[]abc</p>',
+                        contentAfter: '<p><br class="oe_linebreak"><br class="oe_linebreak">[]abc</p>',
                     });
                 });
                 it('should insert two <br> within text', async () => {
@@ -3016,7 +3016,7 @@ X[]
                             await insertLineBreak(editor);
                             await insertLineBreak(editor);
                         },
-                        contentAfter: '<p>ab<br><br>[]cd</p>',
+                        contentAfter: '<p>ab<br class="oe_linebreak"><br class="oe_linebreak">[]cd</p>',
                     });
                 });
                 it('should insert two line breaks (3 <br>) at the end of a paragraph', async () => {
@@ -3028,7 +3028,7 @@ X[]
                         },
                         // the last <br> is needed to make the first one
                         // visible.
-                        contentAfter: '<p>abc<br><br>[]<br></p>',
+                        contentAfter: '<p>abc<br class="oe_linebreak"><br class="oe_linebreak">[]<br></p>',
                     });
                 });
             });
@@ -3037,7 +3037,7 @@ X[]
                     await testEditor(BasicEditor, {
                         contentBefore: '<p>abc[]<b>def</b></p>',
                         stepFunction: insertLineBreak,
-                        contentAfter: '<p>abc<br><b>[]def</b></p>',
+                        contentAfter: '<p>abc<br class="oe_linebreak"><b>[]def</b></p>',
                     });
                     await testEditor(BasicEditor, {
                         // That selection is equivalent to []<b>
@@ -3067,7 +3067,7 @@ X[]
                         contentBefore: '<p><b>abc</b>[]def</p>',
                         stepFunction: insertLineBreak,
                         // JW cAfter: '<p><b>abc[]<br></b>def</p>',
-                        contentAfter: '<p><b>abc</b><br>[]def</p>',
+                        contentAfter: '<p><b>abc</b><br class="oe_linebreak">[]def</p>',
                     });
                     await testEditor(BasicEditor, {
                         // That selection is equivalent to </b>[]
@@ -3098,7 +3098,7 @@ X[]
                         contentBefore: '<p>[]<b>abc</b></p>',
                         stepFunction: insertLineBreak,
                         // JW cAfter: '<p><b><br>[]abc</b></p>',
-                        contentAfter: '<p><br><b>[]abc</b></p>',
+                        contentAfter: '<p><br class="oe_linebreak"><b>[]abc</b></p>',
                     });
                     await testEditor(BasicEditor, {
                         // That selection is equivalent to []<b>
@@ -3142,7 +3142,7 @@ X[]
                         // The second <br> is needed to make the first
                         // one visible.
                         // JW cAfter: '<p><b>abc<br>[]<br></b></p>',
-                        contentAfter: '<p><b>abc</b><br>[]<br></p>',
+                        contentAfter: '<p><b>abc</b><br class="oe_linebreak">[]<br></p>',
                     });
                     await testEditor(BasicEditor, {
                         // That selection is equivalent to </b>[]
@@ -3187,13 +3187,13 @@ X[]
                 await testEditor(BasicEditor, {
                     contentBefore: '<p>[ab]cd</p>',
                     stepFunction: insertLineBreak,
-                    contentAfter: '<p><br>[]cd</p>',
+                    contentAfter: '<p><br class="oe_linebreak">[]cd</p>',
                 });
                 // Backward selection
                 await testEditor(BasicEditor, {
                     contentBefore: '<p>]ab[cd</p>',
                     stepFunction: insertLineBreak,
-                    contentAfter: '<p><br>[]cd</p>',
+                    contentAfter: '<p><br class="oe_linebreak">[]cd</p>',
                 });
             });
             it('should delete part of a paragraph, then insert a <br>', async () => {
@@ -3201,13 +3201,13 @@ X[]
                 await testEditor(BasicEditor, {
                     contentBefore: '<p>a[bc]d</p>',
                     stepFunction: insertLineBreak,
-                    contentAfter: '<p>a<br>[]d</p>',
+                    contentAfter: '<p>a<br class="oe_linebreak">[]d</p>',
                 });
                 // Backward selection
                 await testEditor(BasicEditor, {
                     contentBefore: '<p>a]bc[d</p>',
                     stepFunction: insertLineBreak,
-                    contentAfter: '<p>a<br>[]d</p>',
+                    contentAfter: '<p>a<br class="oe_linebreak">[]d</p>',
                 });
             });
             it('should delete the last half of a paragraph, then insert a line break (2 <br>)', async () => {
@@ -3217,7 +3217,7 @@ X[]
                     stepFunction: insertLineBreak,
                     // the second <br> is needed to make the first one
                     // visible.
-                    contentAfter: '<p>ab<br>[]<br></p>',
+                    contentAfter: '<p>ab<br class="oe_linebreak">[]<br></p>',
                 });
                 // Backward selection
                 await testEditor(BasicEditor, {
@@ -3225,7 +3225,7 @@ X[]
                     stepFunction: insertLineBreak,
                     // the second <br> is needed to make the first one
                     // visible.
-                    contentAfter: '<p>ab<br>[]<br></p>',
+                    contentAfter: '<p>ab<br class="oe_linebreak">[]<br></p>',
                 });
             });
             it('should delete all contents of a paragraph, then insert a line break', async () => {
@@ -3233,13 +3233,13 @@ X[]
                 await testEditor(BasicEditor, {
                     contentBefore: '<p>[abcd]</p>',
                     stepFunction: insertLineBreak,
-                    contentAfter: '<p><br>[]<br></p>',
+                    contentAfter: '<p><br class="oe_linebreak">[]<br></p>',
                 });
                 // Backward selection
                 await testEditor(BasicEditor, {
                     contentBefore: '<p>]abcd[</p>',
                     stepFunction: insertLineBreak,
-                    contentAfter: '<p><br>[]<br></p>',
+                    contentAfter: '<p><br class="oe_linebreak">[]<br></p>',
                 });
             });
         });
