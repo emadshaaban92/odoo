@@ -57,21 +57,25 @@ class StockRule(models.Model):
             for production in productions:
                 origin_production = production.move_dest_ids and production.move_dest_ids[0].raw_material_production_id or False
                 orderpoint = production.orderpoint_id
+                subtype_id = self.env['ir.model.data']._xmlid_to_res_id('mail.mt_note')
                 if orderpoint and orderpoint.create_uid.id == SUPERUSER_ID and orderpoint.trigger == 'manual':
                     production.message_post(
                         body=_('This production order has been created from Replenishment Report.'),
                         message_type='comment',
-                        subtype_xmlid='mail.mt_note')
+                        subtype_id=subtype_id
+                    )
                 elif orderpoint:
                     production.message_post_with_view(
                         'mail.message_origin_link',
                         values={'self': production, 'origin': orderpoint},
-                        subtype_id=self.env.ref('mail.mt_note').id)
+                        subtype_id=subtype_id,
+                    )
                 elif origin_production:
                     production.message_post_with_view(
                         'mail.message_origin_link',
                         values={'self': production, 'origin': origin_production},
-                        subtype_id=self.env.ref('mail.mt_note').id)
+                        subtype_id=subtype_id,
+                    )
         return True
 
     @api.model
