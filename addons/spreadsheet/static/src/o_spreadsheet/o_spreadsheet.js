@@ -181,6 +181,7 @@
         CellErrorType["InvalidReference"] = "#REF";
         CellErrorType["BadExpression"] = "#BAD_EXPR";
         CellErrorType["CircularDependency"] = "#CYCLE";
+        CellErrorType["UnknownFunction"] = "#NAME?";
         CellErrorType["GenericError"] = "#ERROR";
     })(CellErrorType || (CellErrorType = {}));
     var CellErrorLevel;
@@ -213,6 +214,11 @@
     class NotAvailableError extends EvaluationError {
         constructor() {
             super(CellErrorType.NotAvailable, _lt("Data not available"), CellErrorLevel.silent);
+        }
+    }
+    class UnknownFunctionError extends EvaluationError {
+        constructor(fctName) {
+            super(CellErrorType.UnknownFunction, _lt('Unknown function: "%s"', fctName));
         }
     }
 
@@ -261,7 +267,7 @@
     const HEADER_FONT_SIZE = 11;
     const DEFAULT_FONT = "'Roboto', arial";
     // Borders
-    const DEFAULT_BORDER_DESC = ["thin", "#000"];
+    const DEFAULT_BORDER_DESC = ["thin", "#000000"];
     const LINK_COLOR = "#01666b";
     const COLORS = [
         "#000000",
@@ -15359,6 +15365,7 @@
         return null;
     }
 
+    const functionRegex = /[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*/;
     const UNARY_OPERATORS_PREFIX = ["-", "+"];
     const UNARY_OPERATORS_POSTFIX = ["%"];
     const ASSOCIATIVE_OPERATORS = ["*", "+", "&"];
@@ -15396,7 +15403,7 @@
         throw new Error(_lt("Unknown token: %s", token.value));
     }
     function parsePrefix(current, tokens) {
-        var _a, _b, _c;
+        var _a, _b, _c, _d;
         switch (current.type) {
             case "DEBUGGER":
                 const next = parseExpression(tokens, 1000);
@@ -15461,6 +15468,9 @@
                 }
                 else {
                     if (current.value) {
+                        if (functionRegex.test(current.value) && ((_d = tokens[0]) === null || _d === void 0 ? void 0 : _d.type) === "LEFT_PAREN") {
+                            throw new UnknownFunctionError(current.value);
+                        }
                         throw new Error(_lt("Invalid formula"));
                     }
                     return { type: "STRING", value: current.value };
@@ -20021,7 +20031,7 @@
      * Cell containing a formula which could not be compiled
      * or a content which could not be parsed.
      */
-    class BadExpressionCell extends AbstractCell {
+    class ErrorCell extends AbstractCell {
         /**
          * @param id
          * @param content Invalid formula string
@@ -20030,7 +20040,7 @@
          */
         constructor(id, content, error, properties) {
             super(id, lazy({
-                value: CellErrorType.BadExpression,
+                value: error.errorType,
                 type: CellValueType.error,
                 error,
             }), properties);
@@ -20129,7 +20139,9 @@
                 return builder.createCell(id, content, properties, sheetId, getters);
             }
             catch (error) {
-                return new BadExpressionCell(id, content, new BadExpressionError(error.message || DEFAULT_ERROR_MESSAGE), properties);
+                return new ErrorCell(id, content, error instanceof EvaluationError
+                    ? error
+                    : new BadExpressionError(error.message || DEFAULT_ERROR_MESSAGE), properties);
             }
         };
     }
@@ -23791,7 +23803,7 @@
                 case "SET_FORMATTING":
                     if (cmd.border) {
                         const target = cmd.target.map((zone) => this.getters.expandZone(cmd.sheetId, zone));
-                        this.setBorders(cmd.sheetId, target, cmd.border);
+                        this.setBorders(cmd.sheetId, target, cmd.border, cmd.borderStyle || DEFAULT_BORDER_DESC[0], cmd.borderColor || DEFAULT_BORDER_DESC[1]);
                     }
                     break;
                 case "CLEAR_FORMATTING":
@@ -23868,6 +23880,13 @@
         // ---------------------------------------------------------------------------
         // Getters
         // ---------------------------------------------------------------------------
+        /**
+         * Get the borders of a cell
+         * @param sheetId Id of the sheet containing the cell
+         * @param col Index of the cell's column
+         * @param row Index of the cell's row
+         * @returns Borders of the cell
+         */
         getCellBorder(sheetId, col, row) {
             var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
             const border = {
@@ -23880,6 +23899,14 @@
                 return null;
             }
             return border;
+        }
+        /**
+         * Return the structure of all borders of a sheet
+         * @param sheetId Id of the sheet that we want to get the borders
+         * @returns All the vertical and horizontal borders of the sheets
+         */
+        getBorders(sheetId) {
+            return this.borders[sheetId];
         }
         // ---------------------------------------------------------------------------
         // Private
@@ -24095,43 +24122,44 @@
          * Set the borders of a zone by computing the borders to add from the given
          * command
          */
-        setBorders(sheetId, zones, command) {
+        setBorders(sheetId, zones, command, style = DEFAULT_BORDER_DESC[0], color = DEFAULT_BORDER_DESC[1]) {
             if (command === "clear") {
                 return this.clearBorders(sheetId, zones);
             }
+            const border = [style, color];
             for (let zone of zones) {
                 if (command === "h" || command === "hv" || command === "all") {
                     for (let row = zone.top + 1; row <= zone.bottom; row++) {
                         for (let col = zone.left; col <= zone.right; col++) {
-                            this.addBorder(sheetId, col, row, { top: DEFAULT_BORDER_DESC });
+                            this.addBorder(sheetId, col, row, { top: border });
                         }
                     }
                 }
                 if (command === "v" || command === "hv" || command === "all") {
                     for (let row = zone.top; row <= zone.bottom; row++) {
                         for (let col = zone.left + 1; col <= zone.right; col++) {
-                            this.addBorder(sheetId, col, row, { left: DEFAULT_BORDER_DESC });
+                            this.addBorder(sheetId, col, row, { left: border });
                         }
                     }
                 }
                 if (command === "left" || command === "all" || command === "external") {
                     for (let row = zone.top; row <= zone.bottom; row++) {
-                        this.addBorder(sheetId, zone.left, row, { left: DEFAULT_BORDER_DESC });
+                        this.addBorder(sheetId, zone.left, row, { left: border });
                     }
                 }
                 if (command === "right" || command === "all" || command === "external") {
                     for (let row = zone.top; row <= zone.bottom; row++) {
-                        this.addBorder(sheetId, zone.right + 1, row, { left: DEFAULT_BORDER_DESC });
+                        this.addBorder(sheetId, zone.right + 1, row, { left: border });
                     }
                 }
                 if (command === "top" || command === "all" || command === "external") {
                     for (let col = zone.left; col <= zone.right; col++) {
-                        this.addBorder(sheetId, col, zone.top, { top: DEFAULT_BORDER_DESC });
+                        this.addBorder(sheetId, col, zone.top, { top: border });
                     }
                 }
                 if (command === "bottom" || command === "all" || command === "external") {
                     for (let col = zone.left; col <= zone.right; col++) {
-                        this.addBorder(sheetId, col, zone.bottom + 1, { top: DEFAULT_BORDER_DESC });
+                        this.addBorder(sheetId, col, zone.bottom + 1, { top: border });
                     }
                 }
             }
@@ -24145,16 +24173,22 @@
             const bordersBottomRight = this.getCellBorder(sheetId, right, bottom);
             this.clearBorders(sheetId, [zone]);
             if (bordersTopLeft === null || bordersTopLeft === void 0 ? void 0 : bordersTopLeft.top) {
-                this.setBorders(sheetId, [{ ...zone, bottom: top }], "top");
+                this.setBorders(sheetId, [{ ...zone, bottom: top }], "top", ...bordersTopLeft.top);
             }
             if (bordersTopLeft === null || bordersTopLeft === void 0 ? void 0 : bordersTopLeft.left) {
-                this.setBorders(sheetId, [{ ...zone, right: left }], "left");
+                this.setBorders(sheetId, [{ ...zone, right: left }], "left", ...bordersTopLeft.left);
             }
-            if ((bordersBottomRight === null || bordersBottomRight === void 0 ? void 0 : bordersBottomRight.bottom) || (bordersTopLeft === null || bordersTopLeft === void 0 ? void 0 : bordersTopLeft.bottom)) {
-                this.setBorders(sheetId, [{ ...zone, top: bottom }], "bottom");
+            if (bordersBottomRight === null || bordersBottomRight === void 0 ? void 0 : bordersBottomRight.bottom) {
+                this.setBorders(sheetId, [{ ...zone, top: bottom }], "bottom", ...bordersBottomRight.bottom);
             }
-            if ((bordersBottomRight === null || bordersBottomRight === void 0 ? void 0 : bordersBottomRight.right) || (bordersTopLeft === null || bordersTopLeft === void 0 ? void 0 : bordersTopLeft.right)) {
-                this.setBorders(sheetId, [{ ...zone, left: right }], "right");
+            else if (bordersTopLeft === null || bordersTopLeft === void 0 ? void 0 : bordersTopLeft.bottom) {
+                this.setBorders(sheetId, [{ ...zone, top: bottom }], "bottom", ...bordersTopLeft.bottom);
+            }
+            if (bordersBottomRight === null || bordersBottomRight === void 0 ? void 0 : bordersBottomRight.right) {
+                this.setBorders(sheetId, [{ ...zone, left: right }], "right", ...bordersBottomRight.right);
+            }
+            else if (bordersTopLeft === null || bordersTopLeft === void 0 ? void 0 : bordersTopLeft.right) {
+                this.setBorders(sheetId, [{ ...zone, left: right }], "right", ...bordersTopLeft.right);
             }
         }
         // ---------------------------------------------------------------------------
@@ -24223,7 +24257,7 @@
             this.export(data);
         }
     }
-    BordersPlugin.getters = ["getCellBorder"];
+    BordersPlugin.getters = ["getCellBorder", "getBorders"];
 
     const nbspRegexp = new RegExp(String.fromCharCode(160), "g");
     /**
@@ -28456,6 +28490,8 @@
                 case "UPDATE_CHART":
                 case "CREATE_CHART":
                 case "ADD_CONDITIONAL_FORMAT":
+                case "SET_BORDER":
+                case "SET_FORMATTING":
                     this.shouldUpdateColors = true;
             }
         }
@@ -28470,8 +28506,7 @@
         getCustomColors() {
             let usedColors = [];
             for (const sheetId of this.getters.getSheetIds()) {
-                const cells = Object.values(this.getters.getCells(sheetId));
-                usedColors = usedColors.concat(this.getColorsFromCells(cells), this.getFormattingColors(sheetId), this.getChartColors(sheetId));
+                usedColors = usedColors.concat(this.getColorsFromCells(sheetId), this.getFormattingColors(sheetId), this.getChartColors(sheetId));
             }
             return sortWithClusters([
                 ...new Set(
@@ -28483,8 +28518,9 @@
                     .map((c) => toHex(c).toLowerCase())),
             ]).filter((color) => !COLORS.includes(color));
         }
-        getColorsFromCells(cells) {
+        getColorsFromCells(sheetId) {
             var _a, _b;
+            const cells = Object.values(this.getters.getCells(sheetId));
             const colors = new Set();
             for (const cell of cells) {
                 if ((_a = cell.style) === null || _a === void 0 ? void 0 : _a.textColor) {
@@ -28492,6 +28528,19 @@
                 }
                 if ((_b = cell.style) === null || _b === void 0 ? void 0 : _b.fillColor) {
                     colors.add(cell.style.fillColor);
+                }
+            }
+            const sheetBorders = this.getters.getBorders(sheetId);
+            if (sheetBorders) {
+                for (const borders of sheetBorders.filter(isDefined$1)) {
+                    for (let cellBorder of borders) {
+                        if (cellBorder === null || cellBorder === void 0 ? void 0 : cellBorder.horizontal) {
+                            colors.add(cellBorder.horizontal[1]);
+                        }
+                        if (cellBorder === null || cellBorder === void 0 ? void 0 : cellBorder.vertical) {
+                            colors.add(cellBorder.vertical[1]);
+                        }
+                    }
                 }
             }
             return [...colors];
@@ -29855,7 +29904,7 @@
             }
         }
         drawBorders(renderingContext) {
-            const { ctx, thinLineWidth } = renderingContext;
+            const { ctx } = renderingContext;
             for (let box of this.boxes) {
                 // fill color
                 let border = box.border;
@@ -29877,11 +29926,52 @@
             }
             function drawBorder([style, color], x1, y1, x2, y2) {
                 ctx.strokeStyle = color;
-                ctx.lineWidth = (style === "thin" ? 2 : 3) * thinLineWidth;
+                switch (style) {
+                    case "medium":
+                        ctx.lineWidth = 2;
+                        x1 = Math.floor(x1) + 0.5;
+                        x2 = Math.floor(x2) + 0.5;
+                        y1 = Math.floor(y1) + 0.5;
+                        y2 = Math.floor(y2) + 0.5;
+                        break;
+                    case "thick":
+                        ctx.lineWidth = 3;
+                        x1 = Math.floor(x1);
+                        x2 = Math.floor(x2);
+                        y1 = Math.floor(y1);
+                        y2 = Math.floor(y2);
+                        break;
+                    case "dashed":
+                        ctx.lineWidth = 1;
+                        x1 = Math.floor(x1);
+                        x2 = Math.floor(x2);
+                        y1 = Math.floor(y1);
+                        y2 = Math.floor(y2);
+                        ctx.setLineDash([1, 3]);
+                        break;
+                    case "dotted":
+                        ctx.lineWidth = 1;
+                        x1 = Math.floor(x1) + (y1 == y2 ? 0.5 : 0);
+                        x2 = Math.floor(x2) + (y1 == y2 ? 0.5 : 0);
+                        y1 = Math.floor(y1) + (x1 == x2 ? 0.5 : 0);
+                        y2 = Math.floor(y2) + (x1 == x2 ? 0.5 : 0);
+                        ctx.setLineDash([1, 1]);
+                        break;
+                    case "thin":
+                    default:
+                        ctx.lineWidth = 1;
+                        x1 = Math.floor(x1);
+                        x2 = Math.floor(x2);
+                        y1 = Math.floor(y1);
+                        y2 = Math.floor(y2);
+                        break;
+                }
                 ctx.beginPath();
                 ctx.moveTo(x1, y1);
                 ctx.lineTo(x2, y2);
                 ctx.stroke();
+                ctx.lineWidth = 1;
+                ctx.setLineDash([]);
             }
         }
         drawTexts(renderingContext) {
@@ -33160,14 +33250,13 @@
           margin-top: 2px;
         }
 
-        .o-with-color {
-          .o-line-item:hover {
-            outline: 1px solid gray;
-          }
-        }
-
         .o-border-dropdown {
           padding: 4px;
+          display: flex;
+        }
+
+        .o-border-dropdown-section {
+          display: block;
         }
 
         .o-divider {
@@ -33257,6 +33346,43 @@
         user-select: text;
       }
     }
+    .o-style-thin {
+      border-bottom: 1px solid #000000;
+      margin-top: 8px;
+      margin-bottom: 6px;
+      width: 60px;
+    }
+    .o-style-medium {
+      border-bottom: 2px solid #000000;
+      margin-top: 8px;
+      margin-bottom: 6px;
+      width: 60px;
+    }
+    .o-style-thick {
+      border-bottom: 3px solid #000000;
+      margin-top: 8px;
+      margin-bottom: 6px;
+      width: 60px;
+    }
+    .o-style-dashed {
+      border-bottom: 1px dashed #000000;
+      margin-top: 8px;
+      margin-bottom: 6px;
+      width: 60px;
+    }
+    .o-style-dotted {
+      border-bottom: 1px dotted #000000;
+      margin-top: 8px;
+      margin-bottom: 6px;
+      width: 60px;
+    }
+    .o-dropdown-border-type {
+      display: flex;
+    }
+    .o-dropdown-border-check {
+      width: 20px;
+      font-size: 16px;
+    }
   }
 `;
     class TopBar extends owl.Component {
@@ -33267,10 +33393,14 @@
             this.customFormats = CUSTOM_FORMATS;
             this.currentFormatName = "automatic";
             this.fontSizes = fontSizes;
+            this.borderStyles = ["thin", "medium", "thick", "dashed", "dotted"];
             this.style = {};
             this.state = owl.useState({
                 menuState: { isOpen: false, position: null, menuItems: [] },
                 activeTool: "",
+                subActiveTool: "",
+                borderStyle: DEFAULT_BORDER_DESC[0],
+                borderColor: DEFAULT_BORDER_DESC[1],
             });
             this.isSelectingMenu = false;
             this.openedEl = null;
@@ -33305,10 +33435,10 @@
             }
             this.closeMenus();
         }
-        toogleStyle(style) {
+        toggleStyle(style) {
             setStyle(this.env, { [style]: !this.style[style] });
         }
-        toogleFormat(formatName) {
+        toggleFormat(formatName) {
             const formatter = FORMATS.find((f) => f.name === formatName);
             const value = (formatter && formatter.value) || "";
             setFormatter(this.env, value);
@@ -33327,6 +33457,11 @@
             this.state.activeTool = isOpen ? "" : tool;
             this.openedEl = isOpen ? null : ev.target;
         }
+        toggleSubTool(tool, ev) {
+            const isOpen = this.state.subActiveTool === tool;
+            this.state.subActiveTool = isOpen ? "" : tool;
+            this.openedEl = isOpen ? null : ev.target;
+        }
         toggleContextMenu(menu, ev) {
             this.closeMenus();
             const { left, top, height } = ev.target.getBoundingClientRect();
@@ -33339,6 +33474,7 @@
         }
         closeMenus() {
             this.state.activeTool = "";
+            this.state.subActiveTool = "";
             this.state.menuState.isOpen = false;
             this.state.menuState.parentMenu = undefined;
             this.isSelectingMenu = false;
@@ -33400,12 +33536,14 @@
                 sheetId: this.env.model.getters.getActiveSheetId(),
                 target: this.env.model.getters.getSelectedZones(),
                 border: command,
+                borderColor: this.state.borderColor,
+                borderStyle: this.state.borderStyle,
             });
         }
         setFormat(ev) {
             const format = ev.target.dataset.format;
             if (format) {
-                this.toogleFormat(format);
+                this.toggleFormat(format);
                 return;
             }
             const custom = ev.target.dataset.custom;
@@ -37580,8 +37718,8 @@
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-09-13T07:37:09.243Z';
-    exports.__info__.hash = 'fd4cd7c';
+    exports.__info__.date = '2022-09-14T08:14:55.535Z';
+    exports.__info__.hash = '9dde900';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
