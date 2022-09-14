@@ -2273,6 +2273,13 @@ options.registry.TopMenuVisibility = VisibilityPageOptionUpdate.extend({
                 onFailure: reject,
             });
         });
+        await new Promise(resolve => {
+            this.trigger_up('action_demand', {
+                actionName: 'toggle_page_option',
+                params: [{name: 'header_text_color', value: ''}],
+                onSuccess: () => resolve(),
+            });
+        });
     },
     /**
      * @override
@@ -2310,7 +2317,7 @@ options.registry.topMenuColor = options.Class.extend({
         await new Promise((resolve, reject) => {
             this.trigger_up('action_demand', {
                 actionName: 'toggle_page_option',
-                params: [{name: 'header_color', value: widgetValue}],
+                params: [{name: params.name, value: widgetValue}],
                 onSuccess: resolve,
                 onFailure: reject,
             });
