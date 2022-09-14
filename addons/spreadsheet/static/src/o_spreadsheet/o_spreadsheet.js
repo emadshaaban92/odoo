@@ -181,6 +181,7 @@
         CellErrorType["InvalidReference"] = "#REF";
         CellErrorType["BadExpression"] = "#BAD_EXPR";
         CellErrorType["CircularDependency"] = "#CYCLE";
+        CellErrorType["UnknownFunction"] = "#NAME?";
         CellErrorType["GenericError"] = "#ERROR";
     })(CellErrorType || (CellErrorType = {}));
     var CellErrorLevel;
@@ -213,6 +214,11 @@
     class NotAvailableError extends EvaluationError {
         constructor() {
             super(CellErrorType.NotAvailable, _lt("Data not available"), CellErrorLevel.silent);
+        }
+    }
+    class UnknownFunctionError extends EvaluationError {
+        constructor(fctName) {
+            super(CellErrorType.UnknownFunction, _lt('Unknown function: "%s"', fctName));
         }
     }
 
@@ -4630,7 +4636,8 @@
                 legendPosition: newLegendPos,
             },
         });
-        env.openSidePanel("ChartPanel", { figureId: id });
+        env.model.dispatch("SELECT_FIGURE", { id });
+        env.openSidePanel("ChartPanel");
     };
     //------------------------------------------------------------------------------
     // Style/Format
@@ -7980,14 +7987,23 @@
 `;
     class ChartPanel extends owl.Component {
         get figureId() {
-            return this.props.figureId;
+            return this.state.figureId;
         }
         setup() {
+            const selectedFigureId = this.env.model.getters.getSelectedFigureId();
+            if (!selectedFigureId) {
+                throw new Error(_lt("Cannot open the chart side panel while no chart are selected"));
+            }
             this.state = owl.useState({
                 panel: "configuration",
+                figureId: selectedFigureId,
             });
-            owl.onWillUpdateProps((nextProps) => {
-                if (!this.env.model.getters.isChartDefined(nextProps.figureId)) {
+            owl.onWillUpdateProps(() => {
+                const selectedFigureId = this.env.model.getters.getSelectedFigureId();
+                if (selectedFigureId && selectedFigureId !== this.state.figureId) {
+                    this.state.figureId = selectedFigureId;
+                }
+                if (!this.env.model.getters.isChartDefined(this.figureId)) {
                     this.props.onCloseSidePanel();
                     return;
                 }
@@ -9365,7 +9381,10 @@
             registry.add("edit", {
                 name: _lt("Edit"),
                 sequence: 1,
-                action: () => this.env.openSidePanel("ChartPanel", { figureId: this.props.figure.id }),
+                action: () => {
+                    this.env.model.dispatch("SELECT_FIGURE", { id: this.props.figure.id });
+                    this.env.openSidePanel("ChartPanel");
+                },
             });
             registry.add("copy", {
                 name: _lt("Copy"),
@@ -9394,7 +9413,7 @@
                         id: this.props.figure.id,
                     });
                     if (this.props.sidePanelIsOpen) {
-                        this.env.toggleSidePanel("ChartPanel", { figureId: this.props.figure.id });
+                        this.env.toggleSidePanel("ChartPanel");
                     }
                     this.props.onFigureDeleted();
                 },
@@ -15359,6 +15378,7 @@
         return null;
     }
 
+    const functionRegex = /[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*/;
     const UNARY_OPERATORS_PREFIX = ["-", "+"];
     const UNARY_OPERATORS_POSTFIX = ["%"];
     const ASSOCIATIVE_OPERATORS = ["*", "+", "&"];
@@ -15396,7 +15416,7 @@
         throw new Error(_lt("Unknown token: %s", token.value));
     }
     function parsePrefix(current, tokens) {
-        var _a, _b, _c;
+        var _a, _b, _c, _d;
         switch (current.type) {
             case "DEBUGGER":
                 const next = parseExpression(tokens, 1000);
@@ -15461,6 +15481,9 @@
                 }
                 else {
                     if (current.value) {
+                        if (functionRegex.test(current.value) && ((_d = tokens[0]) === null || _d === void 0 ? void 0 : _d.type) === "LEFT_PAREN") {
+                            throw new UnknownFunctionError(current.value);
+                        }
                         throw new Error(_lt("Invalid formula"));
                     }
                     return { type: "STRING", value: current.value };
@@ -17907,91 +17930,74 @@
     }
   }
 `;
-    class FiguresContainer extends owl.Component {
+    class FigureComponent extends owl.Component {
         constructor() {
             super(...arguments);
             this.figureRegistry = figureRegistry;
+            this.selectedFigureId = null;
+            this.figureRef = owl.useRef("figure");
             this.dnd = owl.useState({
-                figureId: "",
+                isActive: false,
                 x: 0,
                 y: 0,
                 width: 0,
                 height: 0,
             });
         }
-        getVisibleFigures() {
-            const selectedId = this.env.model.getters.getSelectedFigureId();
-            return this.env.model.getters.getVisibleFigures().map((f) => {
-                let figure = f;
-                // Returns current state of drag&drop figure instead of its stored state
-                if (this.dnd.figureId === f.id) {
-                    figure = {
-                        ...f,
-                        x: this.dnd.x,
-                        y: this.dnd.y,
-                        width: this.dnd.width,
-                        height: this.dnd.height,
-                    };
-                }
-                return {
-                    id: f.id,
-                    isSelected: f.id === selectedId,
-                    figure: figure,
-                };
-            });
+        get displayedFigure() {
+            return this.dnd.isActive ? { ...this.props.figure, ...this.dnd } : this.props.figure;
+        }
+        get isSelected() {
+            return this.env.model.getters.getSelectedFigureId() === this.props.figure.id;
         }
         /** Get the current figure size, which is either the stored figure size of the DnD figure size */
-        getFigureSize(info) {
-            const { figure, isSelected } = info;
-            const target = figure.id === (isSelected && this.dnd.figureId) ? this.dnd : figure;
-            const { width, height } = target;
+        getFigureSize() {
+            const { width, height } = this.displayedFigure;
             return { width, height };
         }
-        getFigureSizeWithBorders(info) {
-            const { width, height } = this.getFigureSize(info);
-            const borders = this.getBorderWidth(info) * 2;
+        getFigureSizeWithBorders() {
+            const { width, height } = this.getFigureSize();
+            const borders = this.getBorderWidth() * 2;
             return { width: width + borders, height: height + borders };
         }
-        getBorderWidth(info) {
-            return info.isSelected ? ACTIVE_BORDER_WIDTH : this.env.isDashboard() ? 0 : BORDER_WIDTH;
+        getBorderWidth() {
+            return this.isSelected ? ACTIVE_BORDER_WIDTH : this.env.isDashboard() ? 0 : BORDER_WIDTH;
         }
-        getFigureStyle(info) {
-            const { width, height } = info.figure;
-            return `width:${width}px;height:${height}px;border-width: ${this.getBorderWidth(info)}px;`;
+        getFigureStyle() {
+            const { width, height } = this.displayedFigure;
+            return `width:${width}px;height:${height}px;border-width: ${this.getBorderWidth()}px;`;
         }
         /** Get the overflow of the figure in the headers of the grid  */
-        getOverflow(info) {
-            const { figure, isSelected } = info;
+        getOverflow() {
             const { offsetX, offsetY } = this.env.model.getters.getActiveViewport();
-            const target = figure.id === (isSelected && this.dnd.figureId) ? this.dnd : figure;
+            const target = this.displayedFigure;
             let x = target.x - offsetX;
             let y = target.y - offsetY;
             const overflowX = this.env.isDashboard() ? 0 : Math.max(0, -x);
             const overflowY = this.env.isDashboard() ? 0 : Math.max(0, -y);
             return { overflowX, overflowY };
         }
-        getContainerStyle(info) {
-            const { figure, isSelected } = info;
+        getContainerStyle() {
             const { offsetX, offsetY } = this.env.model.getters.getActiveViewport();
-            const target = figure.id === (isSelected && this.dnd.figureId) ? this.dnd : figure;
+            const target = this.displayedFigure;
             const x = target.x - offsetX;
             const y = target.y - offsetY;
-            const { width, height } = this.getFigureSizeWithBorders(info);
-            const { overflowX, overflowY } = this.getOverflow(info);
+            const { width, height } = this.getFigureSizeWithBorders();
+            const { overflowX, overflowY } = this.getOverflow();
             if (width < 0 || height < 0) {
                 return `display:none;`;
             }
-            const borderOffset = BORDER_WIDTH - this.getBorderWidth(info);
+            const borderOffset = BORDER_WIDTH - this.getBorderWidth();
             // TODO : remove the +1 once 2951210 is fixed
             return (`top:${y + borderOffset + overflowY + 1}px;` +
                 `left:${x + borderOffset + overflowX}px;` +
                 `width:${width - overflowX}px;` +
                 `height:${height - overflowY}px;` +
-                `z-index: ${ComponentsImportance.Figure + (info.isSelected ? 1 : 0)}`);
+                `z-index: ${ComponentsImportance.Figure + (this.isSelected ? 1 : 0)}`);
         }
-        getAnchorPosition(anchor, info) {
-            const { width, height } = this.getFigureSizeWithBorders(info);
-            const { overflowX, overflowY } = this.getOverflow(info);
+        getAnchorPosition(anchor) {
+            const { width, height } = this.getFigureSizeWithBorders();
+            const { overflowX, overflowY } = this.getOverflow();
             const anchorCenteringOffset = (ANCHOR_SIZE - ACTIVE_BORDER_WIDTH) / 2;
             let x = 0;
             let y = 0;
@@ -18023,22 +18029,21 @@
             return `visibility : ${visibility};top:${y - overflowY}px; left:${x - overflowX}px;`;
         }
         setup() {
-            owl.onMounted(() => {
-                // horrible, but necessary
-                // the following line ensures that we render the figures with the correct
-                // viewport.  The reason is that whenever we initialize the grid
-                // component, we do not know yet the actual size of the viewport, so the
-                // first owl rendering is done with an empty viewport.  Only then we can
-                // compute which figures should be displayed, so we have to force a
-                // new rendering
-                this.render();
+            owl.onPatched(() => {
+                var _a;
+                const selectedFigureId = this.env.model.getters.getSelectedFigureId();
+                if (selectedFigureId === this.props.figure.id && selectedFigureId !== this.selectedFigureId) {
+                    (_a = this.figureRef.el) === null || _a === void 0 ? void 0 : _a.focus();
+                }
+                this.selectedFigureId = selectedFigureId;
             });
         }
-        resize(figure, dirX, dirY, ev) {
+        resize(dirX, dirY, ev) {
+            const figure = this.props.figure;
             ev.stopPropagation();
             const initialX = ev.clientX;
             const initialY = ev.clientY;
-            this.dnd.figureId = figure.id;
+            this.dnd.isActive = true;
             this.dnd.x = figure.x;
             this.dnd.y = figure.y;
             this.dnd.width = figure.width;
@@ -18056,7 +18061,7 @@
                 }
             };
             const onMouseUp = (ev) => {
-                this.dnd.figureId = "";
+                this.dnd.isActive = false;
                 const update = {
                     x: this.dnd.x,
                     y: this.dnd.y,
@@ -18075,7 +18080,8 @@
             };
             startDnd(onMouseMove, onMouseUp);
         }
-        onMouseDown(figure, ev) {
+        onMouseDown(ev) {
+            const figure = this.props.figure;
             if (ev.button > 0 || this.env.model.getters.isReadonly()) {
                 // not main button, probably a context menu
                 return;
@@ -18085,11 +18091,11 @@
                 return;
             }
             if (this.props.sidePanelIsOpen) {
-                this.env.openSidePanel("ChartPanel", { figureId: figure.id });
+                this.env.openSidePanel("ChartPanel");
             }
             const initialX = ev.clientX;
             const initialY = ev.clientY;
-            this.dnd.figureId = figure.id;
+            this.dnd.isActive = true;
             this.dnd.x = figure.x;
             this.dnd.y = figure.y;
             this.dnd.width = figure.width;
@@ -18099,7 +18105,7 @@
                 this.dnd.y = Math.max(figure.y - initialY + ev.clientY, 0);
             };
             const onMouseUp = (ev) => {
-                this.dnd.figureId = "";
+                this.dnd.isActive = false;
                 this.env.model.dispatch("UPDATE_FIGURE", {
                     sheetId: this.env.model.getters.getActiveSheetId(),
                     id: figure.id,
@@ -18109,7 +18115,8 @@
             };
             startDnd(onMouseMove, onMouseUp);
         }
-        onKeyDown(figure, ev) {
+        onKeyDown(ev) {
+            const figure = this.props.figure;
             switch (ev.key) {
                 case "Delete":
                     this.env.model.dispatch("DELETE_FIGURE", {
@@ -18141,8 +18148,28 @@
             }
         }
     }
+    FigureComponent.template = "o-spreadsheet-FigureComponent";
+    FigureComponent.components = {};
+
+    class FiguresContainer extends owl.Component {
+        getVisibleFigures() {
+            return this.env.model.getters.getVisibleFigures();
+        }
+        setup() {
+            owl.onMounted(() => {
+                // horrible, but necessary
+                // the following line ensures that we render the figures with the correct
+                // viewport.  The reason is that whenever we initialize the grid
+                // component, we do not know yet the actual size of the viewport, so the
+                // first owl rendering is done with an empty viewport.  Only then we can
+                // compute which figures should be displayed, so we have to force a
+                // new rendering
+                this.render();
+            });
+        }
+    }
     FiguresContainer.template = "o-spreadsheet-FiguresContainer";
-    FiguresContainer.components = {};
+    FiguresContainer.components = { FigureComponent };
     figureRegistry.add("chart", { Component: ChartFigure, SidePanelComponent: "ChartPanel" });
 
     class AbstractResizer extends owl.Component {
@@ -20021,7 +20048,7 @@
      * Cell containing a formula which could not be compiled
      * or a content which could not be parsed.
      */
-    class BadExpressionCell extends AbstractCell {
+    class ErrorCell extends AbstractCell {
         /**
          * @param id
          * @param content Invalid formula string
@@ -20030,7 +20057,7 @@
          */
         constructor(id, content, error, properties) {
             super(id, lazy({
-                value: CellErrorType.BadExpression,
+                value: error.errorType,
                 type: CellValueType.error,
                 error,
             }), properties);
@@ -20129,7 +20156,9 @@
                 return builder.createCell(id, content, properties, sheetId, getters);
             }
             catch (error) {
-                return new BadExpressionCell(id, content, new BadExpressionError(error.message || DEFAULT_ERROR_MESSAGE), properties);
+                return new ErrorCell(id, content, error instanceof EvaluationError
+                    ? error
+                    : new BadExpressionError(error.message || DEFAULT_ERROR_MESSAGE), properties);
             }
         };
     }
@@ -28135,6 +28164,7 @@
                     id: this.copiedFigure.id,
                 });
             }
+            this.dispatch("SELECT_FIGURE", { id: newId });
         }
         getClipboardContent() {
             return "\t";
@@ -37580,8 +37610,8 @@
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-09-13T07:37:09.243Z';
-    exports.__info__.hash = 'fd4cd7c';
+    exports.__info__.date = '2022-09-14T13:25:57.788Z';
+    exports.__info__.hash = '0a45403';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
