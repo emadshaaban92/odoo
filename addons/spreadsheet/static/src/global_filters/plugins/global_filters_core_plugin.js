@@ -26,8 +26,7 @@ import spreadsheet from "@spreadsheet/o_spreadsheet/o_spreadsheet_extended";
 import CommandResult from "@spreadsheet/o_spreadsheet/cancelled_reason";
 import { checkFiltersTypeValueCombination } from "@spreadsheet/global_filters/helpers";
 
-
-export default class FiltersPlugin extends spreadsheet.CorePlugin {
+export default class GlobalFiltersCorePlugin extends spreadsheet.CorePlugin {
     constructor() {
         super(...arguments);
         /** @type {Object.<string, GlobalFilter>} */
@@ -240,8 +239,8 @@ export default class FiltersPlugin extends spreadsheet.CorePlugin {
     _updateFilterLabelInFormulas(currentLabel, newLabel) {
         const sheetIds = this.getters.getSheetIds();
         currentLabel = currentLabel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        for (let sheetId of sheetIds) {
-            for (let cell of Object.values(this.getters.getCells(sheetId))) {
+        for (const sheetId of sheetIds) {
+            for (const cell of Object.values(this.getters.getCells(sheetId))) {
                 if (cell.isFormula()) {
                     const newContent = cell.content.replace(
                         new RegExp(`FILTER\\.VALUE\\(\\s*"${currentLabel}"\\s*\\)`, "g"),
@@ -277,7 +276,7 @@ export default class FiltersPlugin extends spreadsheet.CorePlugin {
     }
 }
 
-FiltersPlugin.getters = [
+GlobalFiltersCorePlugin.getters = [
     "getGlobalFilter",
     "getGlobalFilters",
     "getGlobalFilterDefaultValue",
