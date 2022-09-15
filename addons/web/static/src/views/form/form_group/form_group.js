@@ -2,9 +2,13 @@
 import { sortBy } from "@web/core/utils/arrays";
 
 class Group extends owl.Component {
-    getItems() {
+    _getItems() {
         const items = Object.entries(this.props.slots).filter(([k, v]) => v.type === "item");
         return sortBy(items, (i) => i[1].sequence);
+    }
+
+    getItems() {
+        return this._getItems();
     }
 
     get allClasses() {
@@ -37,6 +41,9 @@ OuterGroup.defaultProps = {
 };
 
 export class InnerGroup extends Group {
+    getTemplate(subType) {
+        return this.constructor.templates[subType] || this.constructor.templates.default;
+    }
     getRows() {
         const maxCols = this.props.maxCols;
 
@@ -48,7 +55,7 @@ export class InnerGroup extends Group {
         const items = this.getItems();
         while (items.length) {
             const [slotName, slot] = items.shift();
-            const { newline, itemSpan, subType, Component, props } = slot;
+            const { newline, itemSpan } = slot;
             if (newline) {
                 rows.push(currentRow);
                 currentRow = [];
@@ -64,7 +71,7 @@ export class InnerGroup extends Group {
             }
 
             const isVisible = !("isVisible" in slot) || slot.isVisible;
-            currentRow.push({ name: slotName, subType, itemSpan, props, isVisible, Component });
+            currentRow.push({ ...slot, name: slotName, itemSpan, isVisible });
             reservedSpace += itemSpan || 1;
         }
         rows.push(currentRow);
@@ -95,3 +102,8 @@ export class InnerGroup extends Group {
     }
 }
 InnerGroup.template = "web.Form.InnerGroup";
+InnerGroup.templates = {
+    row: "web.Form.InnerGroup.Row",
+    item_component: "web.Form.InnerGroup.Cell.ItemComponent",
+    default: "web.Form.InnerGroup.Cell.default",
+};
