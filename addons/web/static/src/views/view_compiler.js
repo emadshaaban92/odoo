@@ -67,7 +67,7 @@ export function toInterpolatedStringExpression(str) {
  * @param {string} attr
  * @param {string} string
  */
-function appendAttr(el, attr, string) {
+export function appendAttr(el, attr, string) {
     const attrKey = `t-att-${attr}`;
     const attrVal = el.getAttribute(attrKey);
     el.setAttribute(attrKey, appendToStringifiedObject(attrVal, string));
@@ -253,16 +253,12 @@ export class ViewCompiler {
         if (typeof invisible === "boolean" && !params.enableInvisible) {
             return;
         }
-        if (!params.enableInvisible) {
-            let isVisileExpr = `!evalDomainFromRecord(props.record,${JSON.stringify(invisible)})`;
-            if (compiled.hasAttribute("t-if")) {
-                const formerTif = compiled.getAttribute("t-if");
-                isVisileExpr = `( ${formerTif} ) and ${isVisileExpr}`;
-            }
-            compiled.setAttribute("t-if", isVisileExpr);
-        } else {
-            appendAttr(compiled, "class", `o_invisible_modifier:${invisible}`);
+        let isVisileExpr = `!evalDomainFromRecord(props.record,${JSON.stringify(invisible)})`;
+        if (compiled.hasAttribute("t-if")) {
+            const formerTif = compiled.getAttribute("t-if");
+            isVisileExpr = `( ${formerTif} ) and ${isVisileExpr}`;
         }
+        compiled.setAttribute("t-if", isVisileExpr);
         return compiled;
     }
 
