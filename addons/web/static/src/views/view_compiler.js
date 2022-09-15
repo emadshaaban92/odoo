@@ -462,10 +462,10 @@ export function useViewCompiler(ViewCompiler, rawArch, templates, params) {
     const compiledTemplates = templateIds[rawArch];
     const compiler = new ViewCompiler(templates);
     for (const key in templates) {
-        if (!compiledTemplates[key]) {
-            const compiledDoc = compiler.compile(key, params);
-            compiledTemplates[key] = xml`${compiledDoc.outerHTML}`;
-        }
+        //if (!compiledTemplates[key]) {
+        const compiledDoc = compiler.compile(key, params);
+        compiledTemplates[key] = xml`${compiledDoc.outerHTML}`;
+        //}
     }
     return { ...compiledTemplates };
 }

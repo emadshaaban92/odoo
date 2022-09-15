@@ -3026,7 +3026,7 @@
         multiRefSetter,
         shallowEqual,
         toNumber,
-        validateProps,
+        validateProps: () => {},
         LazyValue,
         safeOutput,
         bind,
