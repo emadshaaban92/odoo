@@ -190,13 +190,10 @@ export class FormCompiler extends ViewCompiler {
         const labelsForAttr = el.getAttribute("id") || fieldName;
         const labels = this.getLabels(labelsForAttr);
         const dynamicLabel = (label) => {
-            const formLabel = this.createLabelFromField(
-                fieldId,
-                fieldName,
-                fieldString,
-                label,
-                params
-            );
+            const formLabel = this.createLabelFromField(fieldId, fieldName, fieldString, label, {
+                ...params,
+                currentFieldArchNode: el,
+            });
             if (formLabel) {
                 label.replaceWith(formLabel);
             } else {
