@@ -242,16 +242,20 @@ class MaintenanceEquipment(models.Model):
         maintenance_requests = self.env['maintenance.request'].create(vals)
         return maintenance_requests
 
+    def _get_cron_preventive_requests_filter(self):
+        self.ensure_one()
+        return [('stage_id.done', '=', False),
+                ('equipment_id', '=', self.id),
+                ('maintenance_type', '=', 'preventive'),
+                ('request_date', '=', self.next_action_date)]
+
     @api.model
     def _cron_generate_requests(self):
         """
             Generates maintenance request on the next_action_date or today if none exists
         """
         for equipment in self.search([('period', '>', 0)]):
-            next_requests = self.env['maintenance.request'].search([('stage_id.done', '=', False),
-                                                    ('equipment_id', '=', equipment.id),
-                                                    ('maintenance_type', '=', 'preventive'),
-                                                    ('request_date', '=', equipment.next_action_date)])
+            next_requests = self.env['maintenance.request'].search(equipment._get_cron_preventive_requests_filter())
             if not next_requests:
                 equipment._create_new_request(equipment.next_action_date)
 
@@ -368,11 +372,23 @@ class MaintenanceRequest(models.Model):
             self.activity_update()
         if vals.get('user_id') or vals.get('schedule_date'):
             self.activity_update()
-        if vals.get('equipment_id'):
+        if self._need_new_activity(vals):
             # need to change description of activity also so unlink old and create new activity
             self.activity_unlink(['maintenance.mail_act_maintenance_request'])
             self.activity_update()
         return res
+
+    def _need_new_activity(self, vals):
+        return vals.get('equipment_id')
+
+    def _get_activity_note(self):
+        self.ensure_one()
+        if self.equipment_id:
+            return _(
+                'Request planned for %s',
+                self.equipment_id._get_html_link()
+            )
+        return False
 
     def activity_update(self):
         """ Update maintenance activities based on current record set state.
@@ -385,13 +401,7 @@ class MaintenanceRequest(models.Model):
                 date_deadline=date_dl,
                 new_user_id=request.user_id.id or request.owner_user_id.id or self.env.uid)
             if not updated:
-                if request.equipment_id:
-                    note = _(
-                        'Request planned for %s',
-                        request.equipment_id._get_html_link()
-                    )
-                else:
-                    note = False
+                note = self._get_activity_note()
                 request.activity_schedule(
                     'maintenance.mail_act_maintenance_request',
                     fields.Datetime.from_string(request.schedule_date).date(),
