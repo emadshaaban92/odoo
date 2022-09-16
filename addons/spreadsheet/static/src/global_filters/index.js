@@ -1,10 +1,9 @@
 /** @odoo-module */
 
 import spreadsheet from "@spreadsheet/o_spreadsheet/o_spreadsheet_extended";
-import "@spreadsheet/pivot"; // filter depends on pivot and lists for its getters
-import "@spreadsheet/list"; // filter depends on pivot and lists for its getters
+
 import GlobalFiltersUIPlugin from "./plugins/global_filters_ui_plugin";
-import GlobalFiltersCorePlugin from "./plugins/global_filters_core_plugin";
+import { GlobalFiltersCorePlugin } from "./plugins/global_filters_core_plugin";
 const { inverseCommandRegistry } = spreadsheet.registries;
 
 function identity(cmd) {
@@ -17,6 +16,9 @@ const { corePluginRegistry, uiPluginRegistry } = spreadsheet.registries;
 corePluginRegistry.add("OdooGlobalFiltersCorePlugin", GlobalFiltersCorePlugin);
 uiPluginRegistry.add("OdooGlobalFiltersUIPlugin", GlobalFiltersUIPlugin);
 
+import "@spreadsheet/pivot"; // filter depends on pivot and lists for its getters
+import "@spreadsheet/list"; // filter depends on pivot and lists for its getters
+
 coreTypes.add("ADD_GLOBAL_FILTER");
 coreTypes.add("EDIT_GLOBAL_FILTER");
 coreTypes.add("REMOVE_GLOBAL_FILTER");
@@ -27,9 +29,11 @@ invalidateEvaluationCommands.add("REMOVE_GLOBAL_FILTER");
 invalidateEvaluationCommands.add("SET_GLOBAL_FILTER_VALUE");
 invalidateEvaluationCommands.add("CLEAR_GLOBAL_FILTER_VALUE");
 
+
 readonlyAllowedCommands.add("SET_GLOBAL_FILTER_VALUE");
 readonlyAllowedCommands.add("SET_MANY_GLOBAL_FILTER_VALUE");
 readonlyAllowedCommands.add("CLEAR_GLOBAL_FILTER_VALUE");
+readonlyAllowedCommands.add("UPDATE_OBJECT_DOMAINS");
 
 inverseCommandRegistry
     .add("EDIT_GLOBAL_FILTER", identity)

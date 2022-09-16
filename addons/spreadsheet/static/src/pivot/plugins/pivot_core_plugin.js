@@ -1,6 +1,8 @@
 /** @odoo-module */
 
 /**
+ * @typedef {import("@spreadsheet/global_filters/plugins/global_filters_ui_plugin").FieldMatching} FieldMatching
+ *
  * @typedef {Object} PivotDefinition
  * @property {Array<string>} colGroupBys
  * @property {Array<string>} rowGroupBys
@@ -16,7 +18,10 @@
  * @property {number} id
  * @property {string} dataSourceId
  * @property {PivotDefinition} definition
+ * @property {Object} fieldMatching
+ *
  */
+
 import spreadsheet from "@spreadsheet/o_spreadsheet/o_spreadsheet_extended";
 import { makePivotFormula } from "../pivot_helpers";
 import { getMaxObjectId } from "@spreadsheet/helpers/helpers";
@@ -24,6 +29,7 @@ import { HEADER_STYLE, TOP_LEVEL_STYLE, MEASURE_STYLE } from "@spreadsheet/helpe
 import PivotDataSource from "../pivot_data_source";
 import { SpreadsheetPivotTable } from "../pivot_table";
 import CommandResult from "../../o_spreadsheet/cancelled_reason";
+import { ObjectThatCanBeUsedWithFilters } from "@spreadsheet/global_filters/plugins/global_filters_core_plugin";
 
 const { CorePlugin } = spreadsheet;
 
@@ -33,8 +39,18 @@ export default class PivotCorePlugin extends CorePlugin {
         this.dataSources = config.dataSources;
 
         this.nextId = 1;
-        /** @type {Object.<number, Pivot>} */
+        /** @type {Object.<string, Pivot>} */
         this.pivots = {};
+
+        ObjectThatCanBeUsedWithFilters.push({
+            getObjectIds: () => this.getters.getPivotIds(),
+            getObjectName: (pivotId) => this.getters.getPivotDisplayName(pivotId),
+            getFieldMatching: (pivotId, filterId) => this._getPivotFieldMatching(pivotId, filterId),
+            setFieldMatching: (pivotId, filterId, fieldMatch) => this.dispatch("ADD_PIVOT_DOMAIN", {pivotId, filterId, fieldMatch}),
+            waitForReady: () => this.getPivotsWaitForReady(),
+            getObjectModel: (pivotId) => this.getPivotDefinition(pivotId).model,
+            getObjectFields: (pivotId) => this.getPivotDataSource(pivotId).getFields(),
+        });
     }
 
     allowDispatch(cmd) {
@@ -117,6 +133,9 @@ export default class PivotCorePlugin extends CorePlugin {
                 }
                 break;
             }
+            case "ADD_PIVOT_DOMAIN":
+                this._setPivotFieldMatching(cmd.pivotId, cmd.filterId, cmd.fieldMatch);
+                break;
         }
     }
 
@@ -125,7 +144,7 @@ export default class PivotCorePlugin extends CorePlugin {
     // -------------------------------------------------------------------------
 
     /**
-     * @param {number} id
+     * @param {string} id
      * @returns {PivotDataSource|undefined}
      */
     getPivotDataSource(id) {
@@ -151,6 +170,15 @@ export default class PivotCorePlugin extends CorePlugin {
 
     /**
      * @param {number} id
+     * @returns {string}
+     */
+     getPivotFieldMatch(id) {
+        return this.pivots[id].fieldMatching;
+    }
+
+
+    /**
+     * @param {number} id
      * @returns {Promise<PivotDataSource>}
      */
     async getAsyncPivotDataSource(id) {
@@ -169,7 +197,7 @@ export default class PivotCorePlugin extends CorePlugin {
     }
 
     /**
-     * @param {number} id Id of the pivot
+     * @param {string} id Id of the pivot
      *
      * @returns {PivotDefinition}
      */
@@ -191,7 +219,7 @@ export default class PivotCorePlugin extends CorePlugin {
     /**
      * Retrieve all the pivot ids
      *
-     * @returns {Array<number>}
+     * @returns {Array<string>}
      */
     getPivotIds() {
         return Object.keys(this.pivots);
@@ -213,16 +241,46 @@ export default class PivotCorePlugin extends CorePlugin {
     // -------------------------------------------------------------------------
 
     /**
+     *
+     * @return {Promise[]}
+     */
+    getPivotsWaitForReady() {
+        return this.getPivotIds().map((pivotId) => this.getPivotDataSource(pivotId).loadMetadata());
+    }
+
+    /**
+     * Get the current pivotFieldMatching on a pivot
+     *
+     * @param {string} pivotId
+     * @param {string} filterId
+     */
+    _getPivotFieldMatching(pivotId, filterId) {
+        return this.pivots[pivotId].fieldMatching[filterId];
+    }
+
+    /**
+     * Sets the current pivotFieldMatching on a pivot
+     *
+     * @param {string} pivotId
+     * @param {string} filterId
+     * @param {FieldMatching} fieldMatching
+     */
+    _setPivotFieldMatching(pivotId, filterId, fieldMatching) {
+        this.history.update("pivots", pivotId, "fieldMatching", filterId, fieldMatching);
+    }
+
+    /**
      * @param {number} id
      * @param {PivotDefinition} definition
      * @param {string} dataSourceId
      */
-    _addPivot(id, definition, dataSourceId) {
+    _addPivot(id, definition, dataSourceId, fieldMatching = {}) {
         const pivots = { ...this.pivots };
         pivots[id] = {
             id,
             definition,
             dataSourceId,
+            fieldMatching,
         };
 
         if (!this.dataSources.contains(dataSourceId)) {
@@ -474,4 +532,5 @@ PivotCorePlugin.getters = [
     "getAsyncPivotDataSource",
     "isExistingPivot",
     "getPivotDataSource",
+    "getPivotFieldMatch",
 ];

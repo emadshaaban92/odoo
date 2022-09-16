@@ -3,14 +3,14 @@
     <t t-name="spreadsheet_edition.FilterValue" owl="1">
         <t t-set="filter" t-value="props.filter"/>
         <t t-set="filterValue" t-value="getters.getGlobalFilterValue(filter.id)"/>
-        <div>
-            <input t-if="filter.type === 'text'"
-                type="text"
+        <div t-if="filter.type === 'text'">
+            <input type="text"
                 class="o_input"
                 t-att-placeholder="filter.label"
                 t-att-value="filterValue"
                 t-on-change="(e) => this.onTextInput(filter.id, e.target.value)"/>
         </div>
+         <!-- TODO, fixer encore le style une foix de plus,c 'est chouette de tout faire 2 fois'  le selector  span {width:100%} est override sur l'enfant qui a un truc flex un peu étrange -->
         <span t-if="filter.type === 'relation'">
             <RecordsSelector
                 placeholder="filter.label"

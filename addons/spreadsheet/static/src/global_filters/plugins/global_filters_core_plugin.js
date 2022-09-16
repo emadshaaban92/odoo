@@ -22,11 +22,13 @@
  * @property {string} [modelName] Name of the related model
  */
 
+export const ObjectThatCanBeUsedWithFilters = [];
+
 import spreadsheet from "@spreadsheet/o_spreadsheet/o_spreadsheet_extended";
 import CommandResult from "@spreadsheet/o_spreadsheet/cancelled_reason";
 import { checkFiltersTypeValueCombination } from "@spreadsheet/global_filters/helpers";
 
-export default class GlobalFiltersCorePlugin extends spreadsheet.CorePlugin {
+export class GlobalFiltersCorePlugin extends spreadsheet.CorePlugin {
     constructor() {
         super(...arguments);
         /** @type {Object.<string, GlobalFilter>} */

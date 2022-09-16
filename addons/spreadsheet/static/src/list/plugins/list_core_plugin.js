@@ -5,6 +5,7 @@ import CommandResult from "../../o_spreadsheet/cancelled_reason";
 import { getMaxObjectId } from "../../helpers/helpers";
 import ListDataSource from "../list_data_source";
 import { TOP_LEVEL_STYLE } from "../../helpers/constants";
+import { ObjectThatCanBeUsedWithFilters } from "@spreadsheet/global_filters/plugins/global_filters_core_plugin";
 
 /**
  * @typedef {Object} ListDefinition
@@ -16,15 +17,33 @@ import { TOP_LEVEL_STYLE } from "../../helpers/constants";
  * @property {string} name Name of the list
  * @property {Array<string>} orderBy
  *
+ * @typedef {Object} List
+ * @property {string} id
+ * @property {string} dataSourceId
+ * @property {ListDefinition} definition
+ *
+ * @typedef {import("@spreadsheet/global_filters/plugins/global_filters_ui_plugin").FieldMatching} FieldMatching
  */
+
 export default class ListCorePlugin extends spreadsheet.CorePlugin {
     constructor(getters, history, range, dispatch, config, uuidGenerator) {
         super(getters, history, range, dispatch, config, uuidGenerator);
         this.dataSources = config.dataSources;
 
         this.nextId = 1;
-        /** @type {Object.<number, Pivot>} */
+        /** @type {Object.<string, List>} */
         this.lists = {};
+
+        ObjectThatCanBeUsedWithFilters.push({
+            getObjectIds: () => this.getters.getListIds(),
+            getObjectName: (listId) => this.getters.getPivotDisplayName(listId),
+            getFieldMatching: (listId, filterId) => this._getListFieldMatching(listId, filterId),
+            setFieldMatching: (listId, filterId, fieldMatching) =>
+                this._setListFieldMatching(listId, filterId, fieldMatching),
+            waitForReady: () => this.getListsWaitForReady(),
+            getObjectModel: (listId) => this.getListDefinition(listId).model,
+            getObjectFields: (listId) => this.getListDataSource(listId).getFields(),
+        });
     }
 
     allowDispatch(cmd) {
@@ -121,8 +140,8 @@ export default class ListCorePlugin extends spreadsheet.CorePlugin {
     // -------------------------------------------------------------------------
 
     /**
-     * @param {number} id
-     * @returns {import("@spreadsheet/list/list_data_source").ListDataSource|undefined}
+     * @param {string} id
+     * @returns {import("@spreadsheet/list/list_data_source").default|undefined}
      */
     getListDataSource(id) {
         const dataSourceId = this.lists[id].dataSourceId;
@@ -130,7 +149,7 @@ export default class ListCorePlugin extends spreadsheet.CorePlugin {
     }
 
     /**
-     * @param {number} id
+     * @param {string} id
      * @returns {string}
      */
     getListDisplayName(id) {
@@ -138,7 +157,7 @@ export default class ListCorePlugin extends spreadsheet.CorePlugin {
     }
 
     /**
-     * @param {number} id
+     * @param {string} id
      * @returns {string}
      */
     getListName(id) {
@@ -147,7 +166,15 @@ export default class ListCorePlugin extends spreadsheet.CorePlugin {
 
     /**
      * @param {number} id
-     * @returns {Promise<import("@spreadsheet/list/list_data_source").ListDataSource>}
+     * @returns {string}
+     */
+    getListFieldMatch(id) {
+        return this.lists[id].fieldMatching;
+    }
+
+    /**
+     * @param {string} id
+     * @returns {Promise<import("@spreadsheet/list/list_data_source").default>}
      */
     async getAsyncListDataSource(id) {
         const dataSourceId = this.lists[id].dataSourceId;
@@ -205,12 +232,42 @@ export default class ListCorePlugin extends spreadsheet.CorePlugin {
     // Private
     // ---------------------------------------------------------------------
 
-    _addList(id, definition, dataSourceId, limit) {
+    /**
+     *
+     * @return {Promise[]}
+     */
+    getListsWaitForReady() {
+        return this.getListIds().map((ListId) => this.getListDataSource(ListId).loadMetadata());
+    }
+
+    /**
+     * Get the current pivotFieldMatching on a pivot
+     *
+     * @param {string} listId
+     * @param {string} filterId
+     */
+    _getListFieldMatching(listId, filterId) {
+        return this.lists[listId].fieldMatching[filterId];
+    }
+
+    /**
+     * Sets the current pivotFieldMatching on a pivot
+     *
+     * @param {string} listId
+     * @param {string} filterId
+     * @param {FieldMatching} fieldMatching
+     */
+    _setListFieldMatching(listId, filterId, fieldMatching) {
+        this.history.update("lists", listId, "fieldMatching", filterId, fieldMatching);
+    }
+
+    _addList(id, definition, dataSourceId, limit, fieldMatching = {}) {
         const lists = { ...this.lists };
         lists[id] = {
             id,
             definition,
             dataSourceId,
+            fieldMatching,
         };
 
         if (!this.dataSources.contains(dataSourceId)) {
@@ -365,4 +422,5 @@ ListCorePlugin.getters = [
     "getListName",
     "getNextListId",
     "isExistingList",
+    "getListFieldMatch",
 ];

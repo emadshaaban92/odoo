@@ -1,9 +1,10 @@
 /** @odoo-module */
 
-import { _t } from "web.core";
+import { _t } from "@web/core/l10n/translation";
 import spreadsheet from "@spreadsheet/o_spreadsheet/o_spreadsheet_extended";
 import { getFirstPivotFunction } from "../pivot_helpers";
 import { FILTER_DATE_OPTION, monthsOptions } from "@spreadsheet/assets_backend/constants";
+import { Domain } from "@web/core/domain";
 
 const { astToFormula } = spreadsheet;
 const { DateTime } = luxon;
@@ -68,6 +69,16 @@ export default class PivotUIPlugin extends spreadsheet.UIPlugin {
         }
     }
 
+    beforeHandle(cmd) {
+        switch (cmd.type) {
+            case "START":
+                // make sure the domains are correctly set before
+                // any evaluation
+                this._addDomains();
+                break;
+        }
+    }
+
     /**
      * Handle a spreadsheet command
      * @param {Object} cmd Command
@@ -78,7 +89,7 @@ export default class PivotUIPlugin extends spreadsheet.UIPlugin {
                 this.selectedPivotId = cmd.pivotId;
                 break;
             case "ADD_PIVOT_DOMAIN":
-                this._addDomain(cmd.id, cmd.domain);
+                this._addDomain(cmd.pivotId);
                 break;
             case "REFRESH_PIVOT":
                 this._refreshOdooPivot(cmd.id);
@@ -86,6 +97,10 @@ export default class PivotUIPlugin extends spreadsheet.UIPlugin {
             case "REFRESH_ALL_DATA_SOURCES":
                 this._refreshOdooPivots();
                 break;
+            case "ADD_GLOBAL_FILTER":
+            case "EDIT_GLOBAL_FILTER":
+            case "SET_GLOBAL_FILTER_VALUE":
+                this._addDomains();
         }
     }
 
@@ -262,16 +277,33 @@ export default class PivotUIPlugin extends spreadsheet.UIPlugin {
         }
     }
 
+
     /**
      * Add an additional domain to a pivot
+     * 
+     * @private
+     * 
+     * @param {string} pivotId pivot id
+     */
+    _addDomain(pivotId) {
+        const domainList = []
+        for (const [filterId, fieldMatch] of Object.entries(this.getters.getPivotFieldMatch(pivotId))) {
+            domainList.push(this.getters.getGlobalFilterDomain(filterId, fieldMatch))
+        }
+        const domain = Domain.combine(domainList, "AND").toString();
+        this.getters.getPivotDataSource(pivotId).addDomain(domain);
+    }
+
+    /**
+     * Add an additional domain to a list
      *
      * @private
      *
-     * @param {string} pivotId pivot id
-     * @param {Array<Array<any>>} domain
      */
-    _addDomain(pivotId, domain) {
-        this.getters.getPivotDataSource(pivotId).addDomain(domain);
+    _addDomains() {
+        for (const pivotId of this.getters.getPivotIds()) {
+            this._addDomain(pivotId);
+        }
     }
 }
 
