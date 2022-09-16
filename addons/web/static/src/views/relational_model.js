@@ -28,6 +28,8 @@ import {
     isRelational,
     isX2Many,
     orderByToString,
+    parseServerValue,
+    parseServerValues,
 } from "@web/views/utils";
 
 const { DateTime } = luxon;
@@ -339,46 +341,6 @@ class DataPoint {
      */
     setActiveFields(activeFields) {
         this.activeFields = activeFields || {};
-    }
-
-    // -------------------------------------------------------------------------
-    // Protected
-    // -------------------------------------------------------------------------
-
-    _parseServerValue(field, value) {
-        switch (field.type) {
-            case "date": {
-                return value ? deserializeDate(value) : false;
-            }
-            case "datetime": {
-                return value ? deserializeDateTime(value) : false;
-            }
-            case "html": {
-                return markup(value);
-            }
-            case "selection": {
-                if (value === false) {
-                    // process selection: convert false to 0, if 0 is a valid key
-                    const hasKey0 = field.selection.find((option) => option[0] === 0);
-                    return hasKey0 ? 0 : value;
-                }
-                break;
-            }
-        }
-        return value;
-    }
-
-    _parseServerValues(values) {
-        const parsedValues = {};
-        if (!values) {
-            return parsedValues;
-        }
-        for (const fieldName in values) {
-            const value = values[fieldName];
-            const field = this.fields[fieldName];
-            parsedValues[fieldName] = this._parseServerValue(field, value);
-        }
-        return parsedValues;
     }
 }
 
@@ -875,7 +837,7 @@ export class Record extends DataPoint {
             const changes = params.changes || (await this._onChange());
             await this._load({ changes });
         } else {
-            let values = this._parseServerValues(params.values);
+            let values = parseServerValues(this.fields, params.values);
             const missingFields = this.fieldNames.filter((fieldName) => !(fieldName in values));
             if (missingFields.length) {
                 values = Object.assign({}, values, await this._read(missingFields));
@@ -1324,7 +1286,7 @@ export class Record extends DataPoint {
             // do this outside
             Object.assign(this._domains, domain);
         }
-        return this._parseServerValues(changes);
+        return parseServerValues(this.fields, changes);
     }
 
     async _read(fieldNames) {
@@ -1338,7 +1300,7 @@ export class Record extends DataPoint {
                 ...this.context,
             },
         });
-        return this._parseServerValues(serverValues);
+        return parseServerValues(this.fields, serverValues);
     }
 
     _removeInvalidFields(fieldNames) {
@@ -2442,10 +2404,10 @@ export class DynamicGroupList extends DynamicList {
             if (!range) {
                 return false;
             }
-            const dateValue = this._parseServerValue(field, range.to);
+            const dateValue = parseServerValue(field, range.to);
             return dateValue.minus({ [field.type === "date" ? "day" : "second"]: 1 });
         } else {
-            const value = this._parseServerValue(field, groupData[fieldName]);
+            const value = parseServerValue(field, groupData[fieldName]);
             return Array.isArray(value) ? value[0] : value;
         }
     }

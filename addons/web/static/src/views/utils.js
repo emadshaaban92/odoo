@@ -1,7 +1,10 @@
 /** @odoo-module */
 
-import { Domain } from "@web/core/domain";
 import { _t } from "@web/core/l10n/translation";
+import { deserializeDate, deserializeDateTime } from "@web/core/l10n/dates";
+import { Domain } from "@web/core/domain";
+
+const { markup } = owl;
 
 export const X2M_TYPES = ["one2many", "many2many"];
 const RELATIONAL_TYPES = [...X2M_TYPES, "many2one"];
@@ -198,6 +201,42 @@ export function isNumeric(field) {
  */
 export function isNull(value) {
     return [null, undefined].includes(value);
+}
+
+export function parseServerValue(field, value) {
+    switch (field.type) {
+        case "date": {
+            return value ? deserializeDate(value) : false;
+        }
+        case "datetime": {
+            return value ? deserializeDateTime(value) : false;
+        }
+        case "html": {
+            return markup(value);
+        }
+        case "selection": {
+            if (value === false) {
+                // process selection: convert false to 0, if 0 is a valid key
+                const hasKey0 = field.selection.find((option) => option[0] === 0);
+                return hasKey0 ? 0 : value;
+            }
+            break;
+        }
+    }
+    return value;
+}
+
+export function parseServerValues(fields, values) {
+    const parsedValues = {};
+    if (!values) {
+        return parsedValues;
+    }
+    for (const fieldName in values) {
+        const value = values[fieldName];
+        const field = fields[fieldName];
+        parsedValues[fieldName] = parseServerValue(field, value);
+    }
+    return parsedValues;
 }
 
 export function processButton(node) {
