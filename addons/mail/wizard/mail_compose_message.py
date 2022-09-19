@@ -169,6 +169,11 @@ class MailComposer(models.TransientModel):
         help='This option permanently removes any track of email after it\'s been sent, including from the Technical menu in the Settings, in order to preserve storage space of your Odoo database.')
     auto_delete_message = fields.Boolean('Delete Message Copy', help='Do not keep a copy of the email in the document communication history (mass mailing only)')
     mail_server_id = fields.Many2one('ir.mail_server', 'Outgoing mail server')
+    scheduled_date = fields.Char(
+        'Scheduled Date',
+        help="In comment mode: if set, postpone notifications sending. "
+             "In mass mail mode: if sent, send emails after that date. "
+             "This date is considered as being in UTC timezone.")
 
     @api.constrains('res_ids')
     def _check_res_ids(self):
@@ -246,6 +251,7 @@ class MailComposer(models.TransientModel):
                 (field, template[field])
                 for field in ('email_from',
                               'reply_to',
+                              'scheduled_date',
                               'subject',
                              )
                 if template[field]
@@ -272,6 +278,7 @@ class MailComposer(models.TransientModel):
                  'partner_ids',
                  'reply_to',
                  'report_template',
+                 'scheduled_date',
                  'subject',
                 )
             )[template_res_ids[0]]
@@ -305,6 +312,7 @@ class MailComposer(models.TransientModel):
                            'partner_ids',
                            'reply_to',
                            'res_ids',
+                           'scheduled_date',
                            'subject',
                           ])
             values = dict(
@@ -315,6 +323,7 @@ class MailComposer(models.TransientModel):
                             'mail_server_id',
                             'partner_ids',
                             'reply_to',
+                            'scheduled_date',
                             'subject',
                            ) if key in default_values)
 
@@ -639,6 +648,7 @@ class MailComposer(models.TransientModel):
                  'mail_server_id',
                  'partner_ids',
                  'report_template',
+                 'scheduled_date',
                 )
             )
             for res_id in res_ids:
@@ -717,6 +727,7 @@ class MailComposer(models.TransientModel):
                 'mail_server_id': self.mail_server_id.id,
                 'partner_ids': self.partner_ids.ids,
                 'record_name': self.record_name,
+                'scheduled_date': self.scheduled_date,
                 'subject': self.subject or '',
             }
             for res_id in res_ids
