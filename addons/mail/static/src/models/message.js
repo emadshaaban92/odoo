@@ -107,6 +107,9 @@ registerModel({
             if ('trackingValues' in data) {
                 data2.trackingValues = data.trackingValues;
             }
+            if ('bypassed_blacklist' in data) {
+                data2.bypassed_blacklist = data.bypassed_blacklist;
+            }
 
             return data2;
         },
@@ -679,6 +682,9 @@ registerModel({
         subject: attr(),
         subtype_description: attr(),
         subtype_id: attr(),
+        bypassed_blacklist: attr({
+            default: false,
+        }),
         /**
          * All threads that this message is linked to. This field is read-only.
          */

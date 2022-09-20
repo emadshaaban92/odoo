@@ -403,6 +403,7 @@ class MailComposer(models.TransientModel):
                 'mail_server_id': self.mail_server_id.id,
                 'mail_activity_type_id': self.mail_activity_type_id.id,
                 'message_type': 'email' if mass_mail_mode else self.message_type,
+                'bypassed_blacklist': self.bypass_blacklist,
             }
 
             # mass mailing: rendering override wizard static values
