@@ -119,8 +119,25 @@
                     <field name="project_partner_id" invisible="1"/>
                     <field name="sale_line_id" groups="!sales_team.group_sale_salesman" placeholder="Non-billable" options="{'no_open': True}" readonly="1"/>
                     <field name="sale_line_id" groups="sales_team.group_sale_salesman" options="{'no_create': True}" placeholder="Non-billable" readonly="0"/>
-                    <field name="quantity_percentage" groups="!sales_team.group_sale_salesman" widget="percentage" readonly="1"/>
-                    <field name="quantity_percentage" class="w-25" groups="sales_team.group_sale_salesman" widget="percentage" readonly="0"/>
+                    <div class="row" colspan="2">
+                        <div class="d-flex">
+                            <label for="quantity_percentage" class="text-dark fw-bold"/>
+                            <field name="quantity_percentage" class="text-center" groups="!sales_team.group_sale_salesman" widget="percentage" readonly="1"/>
+                            <field name="quantity_percentage" class="text-center" groups="sales_team.group_sale_salesman" widget="percentage" decoration-danger="quantity_percentage==0 and sale_line_id" readonly="0"/>
+                            <span class="ps-2">of</span>
+                            <field name="product_uom_qty" class="text-center" readonly="1"/>
+                            <field name="product_uom" options="{'no_open': True}"/>
+                            <span class="fw-bold">=</span>
+                            <field name="total_qty" nolabel="1" class="ps-2 oe_inline"/>
+                            <field name="product_uom" options="{'no_open': True}"/>
+                        </div>
+                    </div>
+                    <div class="row" colspan="2" attrs="{'invisible': [('remaining_percentage', '=', 0.0)]}">
+                        <div class="d-flex">
+                            <field name="remaining_percentage" widget="percentage" class="oe_inline" nolabel="1"/>
+                            <span class="ps-2">remaining to be allocated</span>
+                        </div>
+                    </div>
                 </group>
             </xpath>
             <xpath expr="//button[@name='%(project.action_view_task_from_milestone)d']" position="before">

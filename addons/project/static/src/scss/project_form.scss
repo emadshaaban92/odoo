@@ -37,3 +37,12 @@
 .o_data_cell .o_favorite i.fa {
     font-size: 1.35em;
 }
+
+.task_name_text_truncate {
+  .o_form_uri{
+    max-width: 80%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
