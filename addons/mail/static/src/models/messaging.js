@@ -90,6 +90,9 @@ registerPatch({
             const { message, ...options } = params;
             return this.env.services.notification.add(message, options);
         },
+        onClickEmoji(ev) {
+            this.messaging.messagingBus.trigger('add_emoji', { emoji: ev.currentTarget.dataset.codepoints });
+        },
         /**
          * Opens the activity form view for creating an activity on the given
          * thread (if no activity is specified) or to update an existing
@@ -342,6 +345,9 @@ registerPatch({
             default: {},
             isCausal: true,
             readonly: true,
+        }),
+        emojiPicker: one('PopoverView', {
+            inverse: 'messagingEmojiPicker',
         }),
         emojiRegistry: one('EmojiRegistry', {
             default: {},
