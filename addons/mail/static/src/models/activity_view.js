@@ -15,13 +15,19 @@ Model({
          * @param {MouseEvent} ev
          */
         onClickActivity(ev) {
-            if (ev.target.tagName === "A" && ev.target.dataset.oeId && ev.target.dataset.oeModel) {
-                this.messaging.openProfile({
-                    id: Number(ev.target.dataset.oeId),
-                    model: ev.target.dataset.oeModel,
-                });
-                // avoid following dummy href
-                ev.preventDefault();
+            if (ev.target.tagName === "A") {
+                if (ev.target.dataset.oeId && ev.target.dataset.oeModel) {
+                    this.messaging.openProfile({
+                        id: Number(ev.target.dataset.oeId),
+                        model: ev.target.dataset.oeModel,
+                    });
+                    // avoid following dummy href
+                    ev.preventDefault();
+                } else if (ev.target.closest(".o_mail_internal") && ev.target.href !== window.location.href) {
+                    this.messaging.chatWindowManager.openThread(this.chatterOwner.thread, {
+                        makeActive: true,
+                    });
+                }
             }
         },
         /**

@@ -1,6 +1,7 @@
 /** @odoo-module **/
 
 import { attr, clear, insert, many, one, Model } from "@mail/model";
+import { parseAndTransform, addLink } from "@mail/js/utils";
 
 import { markup } from "@odoo/owl";
 
@@ -260,7 +261,7 @@ Model({
         }),
         noteAsMarkup: attr({
             compute() {
-                return markup(this.note);
+                return markup(this.note ? parseAndTransform(this.note, addLink) : this.note);
             },
         }),
         rawNote: attr(),

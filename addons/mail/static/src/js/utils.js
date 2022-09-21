@@ -57,19 +57,18 @@ var urlRegexp = /\b(?:https?:\/\/\d{1,3}(?:\.\d{1,3}){3}|(?:https?:\/\/|(?:www\.
  * @return {string} linkified text
  */
 function linkify(text, attrs) {
-    attrs = attrs || {};
-    if (attrs.target === undefined) {
-        attrs.target = "_blank";
-    }
-    if (attrs.target === "_blank") {
-        attrs.rel = "noreferrer noopener";
-    }
-    attrs = _.map(attrs, function (value, key) {
-        return key + '="' + _.escape(value) + '"';
-    }).join(" ");
     return text.replace(urlRegexp, function (url) {
-        var href = !/^https?:\/\//i.test(url) ? "http://" + url : url;
-        return "<a " + attrs + ' href="' + href + '">' + url + "</a>";
+        const href = !/^https?:\/\//i.test(url) ? "http://" + url : url;
+        let newAttrs = attrs || {};
+        newAttrs.target = newAttrs.target || ((new URL(href)).origin === window.location.origin ? "_self" : "_blank");
+        if (newAttrs.target === "_self") {
+            newAttrs.class = "o_mail_internal";
+        } else {
+            newAttrs.rel = "noreferrer noopener";
+            newAttrs.class = "o_mail_external";
+        }
+        newAttrs = Object.entries(newAttrs).map(([key, value]) => key + '="' + escape(value) + '"').join(" ");
+        return "<a " + newAttrs + ' href="' + href + '">' + url + "</a>";
     });
 }
 
@@ -89,6 +88,13 @@ function addLink(node, transformChildren) {
         return node.textContent;
     }
     if (node.tagName === "A") {
+        node.target = node.target || (node.origin === window.location.origin ? "_self" : "_blank");
+        if (node.target === "_self") {
+            node.classList.add("o_mail_internal");
+        } else {
+            node.rel = "noreferrer noopener";
+            node.classList.add("o_mail_external");
+        }
         return node.outerHTML;
     }
     transformChildren();

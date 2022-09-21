@@ -55,6 +55,10 @@ Model({
                         id: Number(ev.target.dataset.oeId),
                         model: ev.target.dataset.oeModel,
                     });
+                } else if (ev.target.closest(".o_mail_internal") && ev.target.href !== window.location.href) {
+                    this.messaging.chatWindowManager.openThread(this.messageListViewItemOwner.messageListViewOwner.thread, {
+                        makeActive: true,
+                    });
                 }
                 return;
             }

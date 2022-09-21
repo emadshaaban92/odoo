@@ -248,13 +248,17 @@ Model({
             default: BASE_VISUAL,
             compute() {
                 const visual = JSON.parse(JSON.stringify(BASE_VISUAL));
+                const chatter = this.messaging.models["Chatter"].all()[0];
+                const visibleChatWindows = chatter
+                    ? this.chatWindows.filter(chatWindow => chatWindow.thread !== chatter.thread)
+                    : this.chatWindows;
                 if (!this.messaging || !this.messaging.device) {
                     return visual;
                 }
                 if (!this.messaging.device.isSmall && this.messaging.discuss.discussView) {
                     return visual;
                 }
-                if (!this.chatWindows.length) {
+                if (!visibleChatWindows.length) {
                     return visual;
                 }
                 const relativeGlobalWindowWidth =
@@ -272,10 +276,10 @@ Model({
                     maxAmountWithoutHidden = 1;
                     maxAmountWithHidden = 1;
                 }
-                if (this.chatWindows.length <= maxAmountWithoutHidden) {
+                if (visibleChatWindows.length <= maxAmountWithoutHidden) {
                     // all visible
-                    for (let i = 0; i < this.chatWindows.length; i++) {
-                        const chatWindow = this.chatWindows[i];
+                    for (let i = 0; i < visibleChatWindows.length; i++) {
+                        const chatWindow = visibleChatWindows[i];
                         const offset =
                             this.startGapWidth + i * (this.chatWindowWidth + this.betweenGapWidth);
                         visual.visible.push({ chatWindow, offset });
@@ -284,27 +288,27 @@ Model({
                 } else if (maxAmountWithHidden > 0) {
                     // some visible, some hidden
                     for (let i = 0; i < maxAmountWithHidden; i++) {
-                        const chatWindow = this.chatWindows[i];
+                        const chatWindow = visibleChatWindows[i];
                         const offset =
                             this.startGapWidth + i * (this.chatWindowWidth + this.betweenGapWidth);
                         visual.visible.push({ chatWindow, offset });
                     }
-                    if (this.chatWindows.length > maxAmountWithHidden) {
+                    if (visibleChatWindows.length > maxAmountWithHidden) {
                         visual.isHiddenMenuVisible = !this.messaging.device.isSmall;
                         visual.hiddenMenuOffset =
                             visual.visible[maxAmountWithHidden - 1].offset +
                             this.chatWindowWidth +
                             this.betweenGapWidth;
                     }
-                    for (let j = maxAmountWithHidden; j < this.chatWindows.length; j++) {
-                        visual.hiddenChatWindows.push(this.chatWindows[j]);
+                    for (let j = maxAmountWithHidden; j < visibleChatWindows.length; j++) {
+                        visual.hiddenChatWindows.push(visibleChatWindows[j]);
                     }
                     visual.availableVisibleSlots = maxAmountWithHidden;
                 } else {
                     // all hidden
                     visual.isHiddenMenuVisible = !this.messaging.device.isSmall;
                     visual.hiddenMenuOffset = this.startGapWidth;
-                    visual.hiddenChatWindows.push(...this.chatWindows);
+                    visual.hiddenChatWindows.push(...visibleChatWindows);
                     console.warn("cannot display any visible chat windows (screen is too small)");
                     visual.availableVisibleSlots = 0;
                 }
