@@ -18,6 +18,29 @@ registerModel({
                 scrollRecomputeCount: increment()
             });
         },
+        doJumpToQueuedCategory() {
+            let categoryRowScrollPosition = Math.max(
+                0,
+                // Index of the beginning of the category
+                (this.rowHeight * this.queuedCategoryForJump.emojiGridRowView.index)
+                -
+                // Cancels the amount of buffer rows
+                (this.rowHeight * this.topBufferAmount)
+            );
+            this.containerRef.el.scrollTo({ top: categoryRowScrollPosition });
+            this.update({ queuedCategoryForJump: clear() });
+        },
+        /**
+         * Handles OWL update on component update.
+         */
+        onComponentUpdate() {
+            if (
+                this.queuedCategoryForJump &&
+                this.emojiPickerViewOwner.emojiSearchBarView.currentSearch === ""
+            ) {
+                this.doJumpToQueuedCategory();
+            }
+        },
         onScroll() {
             if (!this.exists()) {
                 return;
@@ -130,6 +153,8 @@ registerModel({
                 return { func: () => this.update({ scrollRecomputeCount: increment() }) };
             },
             inverse: 'emojiGridViewAsOnScroll',
+        }),
+        queuedCategoryForJump: one('EmojiPickerView.Category', {
         }),
         renderedRows: many('EmojiGridRowView', {
             compute() {
