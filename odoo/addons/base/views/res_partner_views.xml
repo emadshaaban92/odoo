@@ -223,8 +223,7 @@
                             <field name="website" string="Website" widget="url" placeholder="e.g. https://www.odoo.com"/>
                             <field name="title" options='{"no_open": True}' placeholder="e.g. Mister"
                                 attrs="{'invisible': [('is_company', '=', True)]}"/>
-                            <field name="active_lang_count" invisible="1"/>
-                            <field name="lang" attrs="{'invisible': [('active_lang_count', '&lt;=', 1)]}"/>
+                            <field name="lang"/>
                             <field name="category_id" widget="many2many_tags" options="{'color_field': 'color', 'no_create_edit': True}"
                                    placeholder='e.g. "B2B", "VIP", "Consulting", ...'/>
                         </group>
