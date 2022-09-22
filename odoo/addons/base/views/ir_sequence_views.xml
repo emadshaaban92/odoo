@@ -10,7 +10,6 @@
                       <group>
                         <field name="name"/>
                         <field name="implementation"/>
-                        <field name="sequence_preview"/>
                       </group>
                       <group>
                         <field name="code"/>
@@ -27,9 +26,14 @@
                             <field name="use_date_range"/>
                           </group>
                           <group>
-                            <field name="padding"/>
-                            <field name="number_increment"/>
-                            <field name="number_next_actual" string="Next Number" attrs="{'invisible': [('use_date_range', '=', True)]}"/>
+                              <group>
+                                <field name="padding"/>
+                                <field name="number_increment"/>
+                                <field name="number_next_actual" string="Next Number" attrs="{'invisible': [('use_date_range', '=', True)]}"/>
+                              </group>
+                              <group class='mt-4 border border-3 p-3 text-muted col-4'>
+                                <field name="sequence_preview"/>
+                              </group>
                           </group>
                         </group>
                         <field name="date_range_ids" attrs="{'invisible': [('use_date_range', '=', False)]}">
