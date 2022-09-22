@@ -144,7 +144,7 @@ export class FormCompiler extends ViewCompiler {
             hasContent = true;
             let isVisibleExpr;
             if (typeof invisible === "boolean") {
-                isVisibleExpr = `!${invisible}`;
+                isVisibleExpr = `${invisible ? false : true}`;
             } else {
                 isVisibleExpr = `!evalDomainFromRecord(props.record,${JSON.stringify(invisible)})`;
             }
@@ -351,7 +351,7 @@ export class FormCompiler extends ViewCompiler {
             if (slotContent && !isTextNode(slotContent)) {
                 let isVisibleExpr;
                 if (typeof invisible === "boolean") {
-                    isVisibleExpr = `!${invisible}`;
+                    isVisibleExpr = `${invisible ? false : true}`;
                 } else {
                     isVisibleExpr = `!evalDomainFromRecord(props.record,${JSON.stringify(
                         invisible
