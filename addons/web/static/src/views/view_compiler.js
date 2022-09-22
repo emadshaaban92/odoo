@@ -18,8 +18,6 @@ import { toStringExpression } from "./utils";
 
 const { xml } = owl;
 
-const templateIds = Object.create(null);
-
 const BUTTON_CLICK_PARAMS = [
     "name",
     "type",
@@ -250,7 +248,7 @@ export class ViewCompiler {
         if (!invisible) {
             return compiled;
         }
-        if (typeof invisible === "boolean" && !params.enableInvisible) {
+        if (typeof invisible === "boolean") {
             return;
         }
         let isVisileExpr = `!evalDomainFromRecord(props.record,${JSON.stringify(invisible)})`;
@@ -448,6 +446,7 @@ export class ViewCompiler {
     }
 }
 
+let templateIds = Object.create(null);
 /**
  * @param {typeof ViewCompiler} ViewCompiler
  * @param {string} rawArch
@@ -462,10 +461,14 @@ export function useViewCompiler(ViewCompiler, rawArch, templates, params) {
     const compiledTemplates = templateIds[rawArch];
     const compiler = new ViewCompiler(templates);
     for (const key in templates) {
-        //if (!compiledTemplates[key]) {
-        const compiledDoc = compiler.compile(key, params);
-        compiledTemplates[key] = xml`${compiledDoc.outerHTML}`;
-        //}
+        if (!compiledTemplates[key]) {
+            const compiledDoc = compiler.compile(key, params);
+            compiledTemplates[key] = xml`${compiledDoc.outerHTML}`;
+        }
     }
     return { ...compiledTemplates };
+}
+
+export function _wipeViewCompilerCache() {
+    templateIds = Object.create(null);
 }
