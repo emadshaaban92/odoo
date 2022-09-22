@@ -42,7 +42,6 @@ export async function startWebClient(Webclient) {
         translatableAttributes: ["data-tooltip"],
         translateFn: env._t,
     });
-    odoo.mainOwlApp = app;
     renderToString.app = app;
     setLoadXmlDefaultApp(app);
     const root = await app.mount(document.body);
