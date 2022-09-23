@@ -830,6 +830,14 @@ class Picking(models.Model):
         self.move_ids.filtered(lambda move: move.state not in ('draft', 'cancel', 'done'))._trigger_scheduler()
         return True
 
+    def action_reserve_same_procure_group_picks(self):
+        self.search([('group_id', 'in', self.group_id.ids),
+                    ('state', 'not in', ['draft', 'cancel', 'done'])]).action_assign()
+
+    def action_unreserve_same_procure_group_picks(self):
+        self.search([('group_id', 'in', self.group_id.ids),
+                    ('state', 'not in', ['draft', 'cancel', 'done'])]).do_unreserve()
+
     def action_assign(self):
         """ Check availability of picking moves.
         This has the effect of changing the state and reserve quants on available moves, and may

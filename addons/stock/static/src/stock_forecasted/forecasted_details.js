@@ -16,7 +16,7 @@ export class ForecastedDetails extends Component{
     async _reserve(model, modelId){
         await this.orm.call(
             model,
-            'action_assign',
+            'action_reserve_same_procure_group_picks',
             [[modelId]],
             // {modelId}
         );
@@ -26,7 +26,7 @@ export class ForecastedDetails extends Component{
     async _unreserve(model, modelId){
         await this.orm.call(
             model,
-            'do_unreserve',
+            'action_unreserve_same_procure_group_picks',
             [[modelId]],
         );
         this.props.reloadReport();
@@ -44,7 +44,7 @@ export class ForecastedDetails extends Component{
     }
 
     displayReserve(line){
-        return line.move_out && ['confirmed', 'partially_available'].includes(line.move_out.state) && line.move_out.picking_id;
+        return line.move_out && line.move_out.picking_id && !line.in_transit;
     }
 
     get futureVirtualAvailable(){
