@@ -28,7 +28,7 @@ class ProductProduct(models.Model):
 
     def _is_sold_out(self):
         combination_info = self.with_context(website_sale_stock_get_quantity=True).product_tmpl_id._get_combination_info(product_id=self.id)
-        return combination_info['product_type'] == 'product' and combination_info['free_qty'] <= 0
+        return combination_info['product_type'] == 'product' and combination_info['free_qty'] <= 0 and not combination_info.get('prevent_zero_price_sale')
 
     def _send_availability_email(self):
         for product in self.search([('stock_notification_partner_ids', '!=', False)]):

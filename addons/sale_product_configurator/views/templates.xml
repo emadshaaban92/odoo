@@ -153,7 +153,9 @@
                         }'/>
                 </td>
             </tr>
-            <t t-if="product.optional_product_ids and mode != 'edit'">
+            <t t-if="product.optional_product_ids.filtered(
+            lambda p: not p._get_combination_info(combination, add_qty=add_qty or 1, pricelist=pricelist).get(
+                'prevent_zero_price_sale')) and mode != 'edit'">
                 <tr class="o_select_options"><td colspan="4"><h4>Available Options:</h4></td></tr>
                 <t t-call="sale_product_configurator.optional_product_items">
                     <t t-set="parent_combination" t-value="combination"/>
@@ -165,13 +167,13 @@
 
     <!-- modal: optional products -->
     <template id="optional_product_items">
-        <t t-foreach="product.optional_product_ids" t-as="product">
+        <t t-foreach="product.optional_product_ids.filtered(
+            lambda p: not p._get_combination_info(combination, add_qty=add_qty or 1, pricelist=pricelist).get(
+                'prevent_zero_price_sale'))" t-as="product">
             <t t-set="combination" t-value="product._get_first_possible_combination(parent_combination)"/>
             <t t-if="product._is_add_to_cart_possible(parent_combination)">
-
                 <t t-set="combination_info" t-value="product._get_combination_info(combination, add_qty=add_qty or 1, pricelist=pricelist)"/>
                 <t t-set="product_variant" t-value="product.env['product.product'].browse(combination_info['product_id'])"/>
-
                 <tr class="js_product">
                     <td class="td-img">
                         <input type="hidden" class="product_template_id" t-att-value="product.id"/>

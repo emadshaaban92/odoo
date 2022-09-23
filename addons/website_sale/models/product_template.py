@@ -279,6 +279,10 @@ class ProductTemplate(models.Model):
                 has_discounted_price=has_discounted_price,
                 prevent_zero_price_sale=prevent_zero_price_sale,
             )
+            if prevent_zero_price_sale:
+                combination_info.update(
+                    base_unit_price=0
+                )
 
         return combination_info
 

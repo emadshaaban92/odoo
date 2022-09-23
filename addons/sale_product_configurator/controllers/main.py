@@ -70,6 +70,7 @@ class ProductConfiguratorController(http.Controller):
         if no_variant_attribute_values:
             product = product.with_context(no_variant_attribute_values=no_variant_attribute_values)
 
+
         return request.env['ir.ui.view']._render_template("sale_product_configurator.optional_products_modal", {
             'product': product,
             'combination': combination,
