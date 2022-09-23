@@ -17389,8 +17389,6 @@
                 argToFocus: 0,
             });
             this.isKeyStillDown = false;
-            /** Should be true if a mousedown was called on the composer, and the mouseUp still hasn't been handled */
-            this.mouseDownActive = false;
             this.borderStyle = `box-shadow: 0 1px 4px 3px rgba(60, 64, 67, 0.15);`;
             // we can't allow input events to be triggered while we remove and add back the content of the composer in processContent
             this.shouldProcessInputEvents = false;
@@ -17581,17 +17579,9 @@
                 // not main button, probably a context menu
                 return;
             }
-            if (this.props.focus === "inactive") {
-                const newSelection = this.contentHelper.getCurrentSelection();
-                this.props.onComposerContentFocused(newSelection);
-            }
-            else {
-                this.contentHelper.removeSelection();
-                this.mouseDownActive = true;
-            }
+            this.contentHelper.removeSelection();
         }
         onClick() {
-            this.mouseDownActive = false;
             if (this.env.model.getters.isReadonly()) {
                 return;
             }
@@ -17604,11 +17594,6 @@
             this.processTokenAtCursor();
         }
         onBlur() {
-            if (this.mouseDownActive && this.props.focus !== "inactive") {
-                const newSelection = this.contentHelper.getCurrentSelection();
-                this.env.model.dispatch("CHANGE_COMPOSER_CURSOR_SELECTION", newSelection);
-                this.mouseDownActive = false;
-            }
             this.isKeyStillDown = false;
         }
         onCompleted(text) {
@@ -37763,8 +37748,8 @@
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-09-22T12:32:07.231Z';
-    exports.__info__.hash = '739db5a';
+    exports.__info__.date = '2022-09-23T08:44:00.086Z';
+    exports.__info__.hash = 'a95ab4d';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
