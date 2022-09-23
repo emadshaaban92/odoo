@@ -2233,11 +2233,12 @@ class Task(models.Model):
                 pass
         return new_followers
 
-    def _mail_track(self, tracked_fields, initial_values):
-        changes, tracking_value_ids = super()._mail_track(tracked_fields, initial_values)
+    def _mail_track(self, tracked_fields, initial_values, filtered_fields=None):
+        changes, tracking_value_ids, filtered_out_fields = super()._mail_track(tracked_fields, initial_values, filtered_fields=filtered_fields)
+        displayed_changes = changes-filtered_out_fields
         # Many2many tracking
-        if len(changes) > len(tracking_value_ids):
-            for changed_field in changes:
+        if len(displayed_changes) > len(tracking_value_ids):
+            for changed_field in displayed_changes:
                 if tracked_fields[changed_field]['type'] in ['one2many', 'many2many']:
                     field = self.env['ir.model.fields']._get(self._name, changed_field)
                     vals = {
@@ -2274,7 +2275,7 @@ class Task(models.Model):
                 })
                 for p in parent_ids:
                     p.message_post(body=body, subtype_id=subtype, tracking_value_ids=depends_tracking_value_ids)
-        return changes, tracking_value_ids
+        return changes, tracking_value_ids, filtered_out_fields
 
     def _track_template(self, changes):
         res = super(Task, self)._track_template(changes)

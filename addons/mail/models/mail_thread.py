@@ -540,21 +540,29 @@ class MailThread(models.AbstractModel):
         context = clean_context(self._context)
         tracking = records.with_context(context)._message_track(fnames, initial_values)
         for record in records:
-            changes, _tracking_value_ids = tracking.get(record.id, (None, None))
+            # filtered_out_fields still processed here, as templates carry additional value
+            changes = tracking.get(record.id, (None, None, None))[0]
             record._message_track_post_template(changes)
         # this method is called after the main flush() and just before commit();
         # we have to flush() again in case we triggered some recomputations
         self.env.flush_all()
 
-    def _track_set_log_message(self, message):
+    def _track_set_log_message(self, message, filtered_fields=None, replace_existing_body=True):
         """ Link tracking to a message logged as body, in addition to subtype
         description (if set) and tracking values that make the core content of
         tracking message. """
         if not self._track_get_fields():
             return
         body_values = self.env.cr.precommit.data.setdefault(f'mail.tracking.message.{self._name}', {})
+        rec_to_filtered_fields = self.env.cr.precommit.data.setdefault(f'mail.tracking.message.filtered_fields.{self._name}', {})
         for id_ in self.ids:
-            body_values[id_] = message
+            if not body_values.get(id_) or replace_existing_body:
+                body_values[id_] = message
+
+            if rec_to_filtered_fields.get(id_) and filtered_fields:
+                rec_to_filtered_fields[id_].update(filtered_fields)
+            elif filtered_fields:
+                rec_to_filtered_fields[id_] = filtered_fields
 
     @tools.ormcache('self.env.uid', 'self.env.su')
     def _track_get_fields(self):
@@ -594,18 +602,20 @@ class MailThread(models.AbstractModel):
         if not fields_iter:
             return {}
 
+        rec_to_filtered_fields = self.env.cr.precommit.data.pop(f'mail.tracking.message.filtered_fields.{self._name}', {})
         tracked_fields = self.fields_get(fields_iter)
         tracking = dict()
         for record in self:
             try:
-                tracking[record.id] = record._mail_track(tracked_fields, initial_values_dict[record.id])
+                tracking[record.id] = record._mail_track(tracked_fields, initial_values_dict[record.id], filtered_fields=rec_to_filtered_fields.get(record.id))
             except MissingError:
                 continue
 
         # find content to log as body
         bodies = self.env.cr.precommit.data.pop(f'mail.tracking.message.{self._name}', {})
         for record in self:
-            changes, tracking_value_ids = tracking.get(record.id, (None, None))
+            changes, tracking_value_ids, _ = tracking.get(record.id, (None, None, None))
+            # use unfiltered changes as we still want to post a message even if all fields were filtered
             if not changes:
                 continue
 

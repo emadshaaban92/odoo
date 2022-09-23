@@ -29,6 +29,46 @@ class TestTracking(TestMailCommon):
         self.flush_tracking()
         self.assertEqual(self.record.message_ids, self.env['mail.message'])
 
+    def test_track_filtered_log_message(self):
+        """Try setting a message with filters on some tracked fields."""
+        self.record.message_subscribe(
+            partner_ids=[self.user_admin.partner_id.id],
+            subtype_ids=[self.env.ref('test_mail.st_mail_test_ticket_container_upd').id]
+        )
+
+        customer = self.env['res.partner'].create({'name': 'Customer'})
+        responsible = self.user_admin
+        container = self.env['mail.test.container'].with_context(mail_create_nosubscribe=True).create({'name': 'Container'})
+        self.record._track_set_log_message('Test Message', filtered_fields={'container_id': lambda old, new: False,
+                                                                            'customer_id': lambda old, new: False,
+                                                                            'user_id': lambda old, new: new == responsible,
+                                                                            })
+        self.record._track_set_log_message('Test Message 2', replace_existing_body=True) # replace body
+        self.record._track_set_log_message('Do Not Replace', filtered_fields={'container_id': lambda old, new: not old},
+                                            replace_existing_body=False) # replace filter
+        self.record.write({
+            'name': 'Test2',
+            'email_from': 'noone@example.com',
+            'customer_id': customer.id,
+            'user_id': responsible.id,
+            'container_id': container.id,
+        })
+        self.flush_tracking()
+        # one new message containing tracking; subtype linked to tracking
+        self.assertEqual(len(self.record.message_ids), 1)
+        self.assertEqual(self.record.message_ids.subtype_id, self.env.ref('test_mail.st_mail_test_ticket_container_upd'))
+        self.assertIn('Test Message 2', self.record.message_ids.body)
+
+        # verify tracked value number
+        self.assertEqual(len(self.record.message_ids.sudo().tracking_value_ids), 3, 'customer_id should not have been added to the message')
+        # verify tracked value
+        self.assertTracking(
+            self.record.message_ids,
+            [('container_id', 'many2one', False, container),  # filter should be true, 'old' not set
+             ('email_from', 'char', False, 'noone@example.com'), # should have defaulted to unfiltered
+             ('user_id', 'many2one', False, responsible),  # filter should be true, new should be the new value
+             ])
+
     def test_message_track_no_subtype(self):
         """ Update some tracked fields not linked to some subtype -> message with onchange """
         customer = self.env['res.partner'].create({'name': 'Customer', 'email': 'cust@example.com'})

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
+from collections import defaultdict
 from lxml.builder import E
 from markupsafe import Markup
 
@@ -21,24 +22,33 @@ class BaseModel(models.AbstractModel):
     # GENERIC MAIL FEATURES
     # ------------------------------------------------------------
 
-    def _mail_track(self, tracked_fields, initial):
+    def _mail_track(self, tracked_fields, initial, filtered_fields=None):
         """ For a given record, fields to check (tuple column name, column info)
         and initial values, return a valid command to create tracking values.
 
         :param tracked_fields: fields_get of updated fields on which tracking
           is checked and performed;
         :param initial: dict of initial values for each updated fields;
+        :param filtered_fields dict[str, callable[[any, any], bool]]:
+            fist of pairs of a field and a function determining whether or not to the field in the tracking.
+            function takes old value and current value as parameter;
 
-        :return: a tuple (changes, tracking_value_ids) where
+        :return: a tuple (changes, tracking_value_ids, filtered_out_fields) where
           changes: set of updated column names;
           tracking_value_ids: a list of ORM (0, 0, values) commands to create
           ``mail.tracking.value`` records;
+          filtered_out_fields: set of fields that were actively filtered out
 
         Override this method on a specific model to implement model-specific
         behavior. Also consider inheriting from ``mail.thread``. """
         self.ensure_one()
         changes = set()  # contains onchange tracked fields that changed
         tracking_value_ids = []
+
+        if not filtered_fields:
+            filtered_fields = {}
+        filtered_fields = defaultdict(lambda: lambda old, new: True, filtered_fields)
+        filtered_out_fields = set()
 
         # generate tracked_values data structure: {'col_name': {col_info, new_value, old_value}}
         for col_name, col_info in tracked_fields.items():
@@ -47,19 +57,24 @@ class BaseModel(models.AbstractModel):
             initial_value = initial[col_name]
             new_value = self[col_name]
 
+
             if new_value != initial_value and (new_value or initial_value):  # because browse null != False
+                should_filter_out = not filtered_fields[col_name](initial_value, new_value)
+                if should_filter_out:
+                    filtered_out_fields.add(col_name)
+
                 tracking_sequence = getattr(self._fields[col_name], 'tracking',
                                             getattr(self._fields[col_name], 'track_sequence', 100))  # backward compatibility with old parameter name
                 if tracking_sequence is True:
                     tracking_sequence = 100
                 tracking = self.env['mail.tracking.value'].create_tracking_values(initial_value, new_value, col_name, col_info, tracking_sequence, self._name)
-                if tracking:
+                if tracking and not should_filter_out:
                     if tracking['field_type'] == 'monetary':
                         tracking['currency_id'] = getattr(self, col_info.get('currency_field', ''), self.company_id.currency_id).id
                     tracking_value_ids.append([0, 0, tracking])
                 changes.add(col_name)
 
-        return changes, tracking_value_ids
+        return changes, tracking_value_ids, filtered_out_fields
 
     def _message_get_default_recipients(self):
         """ Generic implementation for finding default recipient to mail on

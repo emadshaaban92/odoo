@@ -1519,10 +1519,11 @@ class AccountMoveLine(models.Model):
     # TRACKING METHODS
     # -------------------------------------------------------------------------
 
-    def _mail_track(self, tracked_fields, initial):
-        changes, tracking_value_ids = super()._mail_track(tracked_fields, initial)
-        if len(changes) > len(tracking_value_ids):
-            for i, changed_field in enumerate(changes):
+    def _mail_track(self, tracked_fields, initial, filtered_fields=None):
+        changes, tracking_value_ids, filtered_out_fields = super()._mail_track(tracked_fields, initial, filtered_fields=filtered_fields)
+        displayed_changes = changes-filtered_out_fields
+        if len(displayed_changes) > len(tracking_value_ids):
+            for i, changed_field in enumerate(displayed_changes):
                 if tracked_fields[changed_field]['type'] in ['one2many', 'many2many']:
                     field = self.env['ir.model.fields']._get(self._name, changed_field)
                     vals = {
@@ -1534,7 +1535,7 @@ class AccountMoveLine(models.Model):
                         'new_value_char': ', '.join(self[changed_field].mapped('name')),
                     }
                     tracking_value_ids.insert(i, Command.create(vals))
-        return changes, tracking_value_ids
+        return changes, tracking_value_ids, filtered_out_fields
 
     # -------------------------------------------------------------------------
     # RECONCILIATION
