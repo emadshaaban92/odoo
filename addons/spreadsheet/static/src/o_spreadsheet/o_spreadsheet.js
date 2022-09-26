@@ -17890,8 +17890,13 @@
   .o-figure-wrapper {
     position: absolute;
     box-sizing: content-box;
-    overflow: hidden;
 
+    .o-figure-overflow-wrapper {
+      position: absolute;
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+    }
     .o-anchor {
       z-index: ${ComponentsImportance.ChartAnchor};
       position: absolute;
@@ -37603,8 +37608,8 @@
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-09-26T10:50:52.978Z';
-    exports.__info__.hash = '439b355';
+    exports.__info__.date = '2022-09-26T11:03:58.243Z';
+    exports.__info__.hash = '1b9aa7f';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
