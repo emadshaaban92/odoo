@@ -17865,16 +17865,12 @@
     const ACTIVE_BORDER_WIDTH = 2;
     const MIN_FIG_SIZE = 80;
     css /*SCSS*/ `
-  .o-figure-wrapper {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-  }
-
   div.o-figure {
     box-sizing: content-box;
     position: absolute;
+    width: 100%;
+    height: 100%;
+
     bottom: 0px;
     right: 0px;
     border: solid ${FIGURE_BORDER_COLOR};
@@ -17891,9 +17887,10 @@
     }
   }
 
-  .o-figure-container {
+  .o-figure-wrapper {
     position: absolute;
     box-sizing: content-box;
+    overflow: hidden;
 
     .o-anchor {
       z-index: ${ComponentsImportance.ChartAnchor};
@@ -17934,7 +17931,6 @@
         constructor() {
             super(...arguments);
             this.figureRegistry = figureRegistry;
-            this.selectedFigureId = null;
             this.figureRef = owl.useRef("figure");
             this.dnd = owl.useState({
                 isActive: false,
@@ -18029,14 +18025,11 @@
             return `visibility : ${visibility};top:${y - overflowY}px; left:${x - overflowX}px;`;
         }
         setup() {
-            owl.onPatched(() => {
-                var _a;
-                const selectedFigureId = this.env.model.getters.getSelectedFigureId();
-                if (selectedFigureId === this.props.figure.id && selectedFigureId !== this.selectedFigureId) {
-                    (_a = this.figureRef.el) === null || _a === void 0 ? void 0 : _a.focus();
+            owl.useEffect((selectedFigureId, thisFigureId, el) => {
+                if (selectedFigureId === thisFigureId) {
+                    el === null || el === void 0 ? void 0 : el.focus();
                 }
-                this.selectedFigureId = selectedFigureId;
-            });
+            }, () => [this.env.model.getters.getSelectedFigureId(), this.props.figure.id, this.figureRef.el]);
         }
         resize(dirX, dirY, ev) {
             const figure = this.props.figure;
@@ -37610,8 +37603,8 @@
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-09-14T13:25:57.788Z';
-    exports.__info__.hash = '0a45403';
+    exports.__info__.date = '2022-09-26T10:49:53.837Z';
+    exports.__info__.hash = '439b355';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map

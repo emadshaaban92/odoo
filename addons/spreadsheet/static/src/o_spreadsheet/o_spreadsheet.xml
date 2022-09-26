@@ -324,24 +324,23 @@
   </t>
 
   <t t-name="o-spreadsheet-FigureComponent" owl="1">
-    <div class="o-figure-container" t-att-style="getContainerStyle()">
-      <div class="o-figure-wrapper" t-on-mousedown.stop="(ev) => this.onMouseDown(ev)">
-        <div
-          class="o-figure"
-          t-att-style="getFigureStyle()"
-          t-att-class="{active: isSelected, 'o-dragging': dnd.isActive}"
-          t-ref="figure"
-          tabindex="0"
-          t-on-keydown.stop="(ev) => this.onKeyDown(ev)"
-          t-on-keyup.stop="">
-          <t
-            t-component="figureRegistry.get(this.props.figure.tag).Component"
-            t-key="this.props.figure.id"
-            sidePanelIsOpen="props.sidePanelIsOpen"
-            onFigureDeleted="props.onFigureDeleted"
-            figure="this.props.figure"
-          />
-        </div>
+    <div class="o-figure-wrapper" t-att-style="getContainerStyle()">
+      <div
+        class="o-figure"
+        t-on-mousedown.stop="(ev) => this.onMouseDown(ev)"
+        t-att-style="getFigureStyle()"
+        t-att-class="{active: isSelected, 'o-dragging': dnd.isActive}"
+        t-ref="figure"
+        tabindex="0"
+        t-on-keydown.stop="(ev) => this.onKeyDown(ev)"
+        t-on-keyup.stop="">
+        <t
+          t-component="figureRegistry.get(this.props.figure.tag).Component"
+          t-key="this.props.figure.id"
+          sidePanelIsOpen="props.sidePanelIsOpen"
+          onFigureDeleted="props.onFigureDeleted"
+          figure="this.props.figure"
+        />
       </div>
       <t t-if="isSelected">
         <div
