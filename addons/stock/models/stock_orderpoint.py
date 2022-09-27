@@ -239,6 +239,9 @@ class StockWarehouseOrderpoint(models.Model):
         self.trigger = 'auto'
         return self.action_replenish()
 
+    def action_replenish_max(self):
+        return self.with_context(force_to_max=True).action_replenish()
+
     @api.depends('product_id', 'location_id', 'product_id.stock_move_ids', 'product_id.stock_move_ids.state',
                  'product_id.stock_move_ids.date', 'product_id.stock_move_ids.product_uom_qty')
     def _compute_qty(self):
@@ -505,11 +508,21 @@ class StockWarehouseOrderpoint(models.Model):
                         origin = '%s - %s' % (orderpoint.display_name, ','.join(origins))
                     else:
                         origin = orderpoint.name
-                    if float_compare(orderpoint.qty_to_order, 0.0, precision_rounding=orderpoint.product_uom.rounding) == 1:
+                    qty_to_order = orderpoint.qty_to_order
+                    product_rounding = orderpoint.product_uom.rounding
+                    if self._context.get('force_to_max') and float_compare(qty_to_order, 0.0, precision_rounding=product_rounding) == 0:
+                        product_context = orderpoint._get_product_context(visibility_days=orderpoint.visibility_days)
+                        virtual_available = orderpoint.product_id.with_context(product_context).read(['virtual_available'])[0]['virtual_available']
+                        qty_forecast_with_visibility = virtual_available + orderpoint._quantity_in_progress()[orderpoint.id]
+                        qty_to_order = orderpoint.product_max_qty - qty_forecast_with_visibility
+                        remainder = orderpoint.qty_multiple > 0 and qty_to_order % orderpoint.qty_multiple or 0.0
+                        if float_compare(remainder, 0.0, precision_rounding=product_rounding) > 0:
+                            qty_to_order += orderpoint.qty_multiple - remainder
+                    if float_compare(qty_to_order, 0.0, precision_rounding=product_rounding) == 1:
                         date = orderpoint._get_orderpoint_procurement_date()
                         values = orderpoint._prepare_procurement_values(date=date)
                         procurements.append(self.env['procurement.group'].Procurement(
-                            orderpoint.product_id, orderpoint.qty_to_order, orderpoint.product_uom,
+                            orderpoint.product_id, qty_to_order, orderpoint.product_uom,
                             orderpoint.location_id, orderpoint.name, origin,
                             orderpoint.company_id, values))
 

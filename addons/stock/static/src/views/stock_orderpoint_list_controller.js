@@ -27,4 +27,17 @@ export class StockOrderpointListController extends ListController {
             }
         });
     }
+
+    async onClickOrderMax() {
+        const resIds = await this.getSelectedResIds();
+        const action = await this.model.orm.call(this.props.resModel, 'action_replenish_max', [resIds], {
+            context: this.props.context,
+        });
+        if (action) {
+            await this.actionService.doAction(action);
+        }
+        return this.actionService.doAction('stock.action_replenishment', {
+            stackPosition: 'replaceCurrentAction',
+        });
+    }
 }
