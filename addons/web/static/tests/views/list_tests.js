@@ -11811,6 +11811,56 @@ QUnit.module('Views', {
         list.destroy();
     });
 
+    QUnit.test('quickly setting row mode with owl_compatibility', async function (assert) {
+        assert.expect(3);
+
+        this.data.bar.fields.bool = { string: 'bool', type: 'boolean' };
+        this.data.foo.records[0].o2m = [1, 2, 3];
+
+        const form = await createView({
+            View: FormView,
+            model: 'foo',
+            data: this.data,
+            res_id: 1,
+            viewOptions: { mode: 'edit' },
+            arch: `<form>
+                <sheet>
+                    <notebook>
+                        <page>
+                            <field name="o2m">
+                                <tree editable="bottom">
+                                    <field name="bool"/>
+                                    <field name="display_name"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>`,
+        });
+
+        await testUtils.nextTick();
+
+        await testUtils.dom.click(form.$('tbody tr:eq(0) td:eq(1)'));
+        const $input = form.$('input[name=display_name]');
+        await testUtils.fields.editInput($input, 'another value');
+        await testUtils.dom.triggerEvents($input, ['keyup', 'blur', 'focusout']);
+
+        // Double-click on a field of the second row
+        testUtils.dom.click(form.$('tbody tr:eq(1) td:eq(1)'));
+        testUtils.dom.click(form.$('tbody tr:eq(1) td:eq(1)'));
+        await testUtils.nextTick();
+        await testUtils.nextTick();
+
+        assert.strictEqual($input.val(), 'another value');
+
+        const rows = $('.o_data_row .o_list_char');
+        assert.containsNone(rows[0], 'input'); // this means that the first row is saved
+        assert.containsOnce(rows[1], 'input'); // this means that the second row is in edit mode
+
+        form.destroy();
+    });
+
 });
 
 });
