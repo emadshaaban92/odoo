@@ -205,4 +205,92 @@ QUnit.module("Search", (hooks) => {
             assert.deepEqual(getFacetTexts(target), ["Candlelight"]);
         }
     );
+
+    QUnit.test(
+        "group by properties",
+        async function (assert) {
+            assert.expect(4);
+
+            // variable set true when we fetch the definition
+            let definitionFetched = false;
+
+            async function mockRPC(route, { method, model, args, kwargs }) {
+                if (method === "search_read" && model === "parentModel") {
+                    definitionFetched = true;
+
+                    return [{
+                        display_name: "First Parent",
+                        properties_definition: [{
+                            name: "my_text",
+                            type: "text",
+                            string: "My Text",
+                        }, {
+                            name: "my_partner",
+                            type: "many2one",
+                            string: "My Partner",
+                            comodel: "res.partner",
+                        }],
+                    }, {
+                        display_name: "Second Parent",
+                        properties_definition: [{
+                            name: "my_integer",
+                            type: "integer",
+                            string: "My Integer",
+                        }],
+                    }];
+                }
+            }
+
+            await makeWithSearch({
+                serverData,
+                resModel: "foo",
+                Component: ControlPanel,
+                searchMenuTypes: ["groupBy"],
+                searchViewFields: {
+                    candle_light: {
+                        sortable: true,
+                        string: "Candlelight",
+                        type: "boolean",
+                        name: "candle_light",
+                    },
+                    properties: {
+                        string: "Properties",
+                        type: "properties",
+                        definition_record: "parent_id",
+                        definition_record_field: "properties_definition",
+                        name: "properties",
+                    },
+                    parent_id: {
+                        string: "Parent",
+                        type: "many2one",
+                        relation: "parentModel",
+                        name: "parent_id",
+                    }
+                },
+                mockRPC,
+            });
+
+            // definition is fetched only when we open the menu
+            assert.notOk(definitionFetched);
+            await toggleGroupByMenu(target);
+            assert.ok(definitionFetched);
+
+            await toggleAddCustomGroup(target);
+
+            const fields = [...target.querySelectorAll(".o_add_custom_group_menu select option")]
+                .map(element => element.innerText);
+
+            // should remove the original properties fields,
+            // and added the properties from the definition we fetched
+            assert.deepEqual(fields, ["Candlelight", "My Text (First Parent)", "My Partner (First Parent)", "My Integer (Second Parent)"])
+
+            // select the second property
+            const select = target.querySelector(".o_add_custom_group_menu select");
+            select.value = "properties.my_partner";
+            select.dispatchEvent(new Event('change'));
+            await applyGroup(target);
+
+            assert.deepEqual(getFacetTexts(target), ["My Partner (First Parent)"]);
+        }
+    );
 });

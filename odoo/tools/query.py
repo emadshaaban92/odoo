@@ -12,7 +12,11 @@ IDENT_RE = re.compile(r'^[a-z_][a-z0-9_$]*$', re.I)
 
 def _from_table(table, alias):
     """ Return a FROM clause element from ``table`` and ``alias``. """
-    if alias == table:
+
+    if table is None:
+        # raw SQL alias
+        return alias
+    elif alias == table:
         return f'"{alias}"'
     elif IDENT_RE.match(table):
         return f'"{table}" AS "{alias}"'

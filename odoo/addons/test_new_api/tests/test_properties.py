@@ -81,6 +81,14 @@ class PropertiesCase(TransactionCase):
             'author': cls.user.id,
         })
 
+        cls.message_4 = cls.env['test_new_api.message'].create({
+            'name': 'Test Message',
+            'discussion': cls.discussion_1.id,
+            'author': cls.user.id,
+        })
+
+        cls.messages = cls.message_1 | cls.message_2 | cls.message_3 | cls.message_4
+
     def test_properties_field(self):
         self.assertTrue(isinstance(self.message_1.attributes, list))
         # testing assigned value
@@ -1577,6 +1585,408 @@ class PropertiesCase(TransactionCase):
             with self.assertRaises(UserError):
                 self.env['test_new_api.message'].search(
                     domain=[], order=f'attribut{c}es.b97300923a1c251e ASC')
+
+    @mute_logger('odoo.fields')
+    def test_properties_field_read_group_basic(self):
+        Model = self.env['test_new_api.message']
+        Model.search([('id', 'not in', self.messages.ids)]).unlink()
+
+        self.messages.discussion = self.discussion_1
+        # search on text properties
+        self.message_1.attributes = [{
+            'name': '3f32ce8a40059c4b',
+            'type': 'char',
+            'value': 'qsd',
+            'definition_changed': True,
+        }, {
+            'name': '6bee1c2180749249',
+            'type': 'integer',
+            'value': 1337,
+            'definition_changed': True,
+        }]
+        self.message_2.attributes = {'3f32ce8a40059c4b': 'qsd', '6bee1c2180749249': 5}
+        self.message_3.attributes = {'3f32ce8a40059c4b': 'boum', '6bee1c2180749249': 1337}
+        self.env.flush_all()
+
+        # group by the char property
+        with self.assertQueryCount(3):
+            result = Model.read_group(
+                domain=[],
+                fields=['name', 'attributes'],
+                groupby=['attributes.3f32ce8a40059c4b'],
+            )
+        self.assertEqual(len(result), 3)
+
+        # check counts
+        count_by_values = {
+            value['attributes.3f32ce8a40059c4b']: value['attributes.3f32ce8a40059c4b_count']
+            for value in result
+        }
+        self.assertEqual(count_by_values['boum'], 1)
+        self.assertEqual(count_by_values['qsd'], 2)
+        self.assertEqual(count_by_values[False], 1)
+
+        # check domains
+        domain_by_values = {
+            value['attributes.3f32ce8a40059c4b']: value['__domain']
+            for value in result
+        }
+        self.assertEqual(domain_by_values['boum'], [('attributes.3f32ce8a40059c4b', '=', 'boum')])
+        self.assertEqual(domain_by_values['qsd'], [('attributes.3f32ce8a40059c4b', '=', 'qsd')])
+
+        # group by the integer property
+        with self.assertQueryCount(3):
+            result = Model.read_group(
+                domain=[],
+                fields=['name', 'attributes'],
+                groupby=['attributes.6bee1c2180749249'],
+            )
+
+        self.assertEqual(len(result), 3)
+        count_by_values = {
+            value['attributes.6bee1c2180749249']: value['attributes.6bee1c2180749249_count']
+            for value in result
+        }
+
+        self.assertEqual(count_by_values[5], 1)
+        self.assertEqual(count_by_values[1337], 2)
+        self.assertEqual(count_by_values[False], 1)
+
+        # falsy properties
+        self.message_3.attributes = {'3f32ce8a40059c4b': False, '6bee1c2180749249': False}
+        with self.assertQueryCount(3):
+            result = Model.read_group(
+                domain=[],
+                fields=['name', 'attributes'],
+                groupby=['attributes.6bee1c2180749249'],
+            )
+
+        self.assertEqual(result[-1]['attributes.6bee1c2180749249_count'], 2)
+        self.assertEqual(result[-1]['__domain'], [('attributes.6bee1c2180749249', '=', False)])
+
+        # non existing keys in the dict values should be grouped with False value
+        self.env.cr.execute(
+            """
+            UPDATE test_new_api_message
+               SET attributes = '{}'
+             WHERE id = %s
+            """,
+            [self.message_2.id],
+        )
+        with self.assertQueryCount(3):
+            result = Model.read_group(
+                domain=[],
+                fields=['name', 'attributes'],
+                groupby=['attributes.6bee1c2180749249'],
+            )
+
+        self.assertEqual(result[-1]['attributes.6bee1c2180749249_count'], 3)
+        self.assertEqual(result[-1]['__domain'], [('attributes.6bee1c2180749249', '=', False)])
+        result = Model.search(result[-1]['__domain'])  # check the domain is correct for the search
+        self.assertEqual(result, self.message_2 | self.message_3 | self.message_4)
+
+        # test the order by
+        result = Model.read_group(
+            domain=[],
+            fields=['name', 'attributes'],
+            groupby=['attributes.6bee1c2180749249'],
+            orderby='attributes.6bee1c2180749249 ASC'
+        )
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0]['attributes.6bee1c2180749249'], 1337)
+        self.assertEqual(result[1]['attributes.6bee1c2180749249'], False)
+
+        result = Model.read_group(
+            domain=[],
+            fields=['name', 'attributes'],
+            groupby=['attributes.6bee1c2180749249'],
+            orderby='attributes.6bee1c2180749249 DESC'
+        )
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0]['attributes.6bee1c2180749249'], False)
+        self.assertEqual(result[1]['attributes.6bee1c2180749249'], 1337)
+
+    @mute_logger('odoo.fields')
+    def test_properties_field_read_group_selection(self):
+        Model = self.env['test_new_api.message']
+        Model.search([('id', 'not in', self.messages.ids)]).unlink()
+
+        # group by selection property
+        self.message_1.attributes = [{
+            'name': 'dc979feb40c401dc',
+            'type': 'selection',
+            'value': '5c9a5b15bae16688',
+            'selection': [['5c9a5b15bae16688', 'A'], ['9bebef77611e2cfe', 'B']],
+            'definition_changed': True,
+        }, {
+            'name': '296b6dbba24545d8',
+            'type': 'char',
+            'value': 'qsd',
+            'definition_changed': True,
+        }]
+        self.message_2.attributes = {'dc979feb40c401dc': False}
+
+        self.env.cr.execute(
+            """
+            UPDATE test_new_api_message
+               SET attributes = '{"dc979feb40c401dc": "invalid_option"}'
+             WHERE id = %s
+            """,
+            [self.message_3.id],
+        )
+
+        with self.assertQueryCount(3):
+            result = Model.read_group(
+                domain=[('discussion', '!=', 99999999999)],
+                fields=['name', 'attributes', 'discussion'],
+                groupby=['attributes.dc979feb40c401dc'],
+            )
+
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0]['attributes.dc979feb40c401dc_count'], 1)
+        self.assertEqual(
+            result[0]['__domain'],
+            [
+                '&',
+                ('attributes.dc979feb40c401dc', '=', '5c9a5b15bae16688'),
+                ('discussion', '!=', 99999999999),  # original domain should be preserved
+            ],
+        )
+        self.assertEqual(result[0]['attributes.dc979feb40c401dc'], ('5c9a5b15bae16688', 'A'))
+
+        # check that the option that is not valid is included in the "False" domain
+        # the count should be updated as well
+        self.assertEqual(result[1]['attributes.dc979feb40c401dc_count'], 3)
+        self.assertEqual(
+            result[1]['__domain'],
+            [
+                '|',
+                '&',
+                ('attributes.dc979feb40c401dc', '=', False),
+                ('discussion', '!=', 99999999999),  # original domain should be preserved
+                '&',
+                ('attributes.dc979feb40c401dc', '=', 'invalid_option'),
+                ('discussion', '!=', 99999999999),  # original domain should be preserved
+            ],
+        )
+        self.assertEqual(result[1]['attributes.dc979feb40c401dc'], False)
+
+    @mute_logger('odoo.fields')
+    def test_properties_field_read_group_many2one(self):
+        Model = self.env['test_new_api.message']
+        Model.search([('id', 'not in', self.messages.ids)]).unlink()
+
+        # group by many2one property
+        self.message_1.attributes = [{
+            'name': 'd6ed602628132d99',
+            'type': 'many2one',
+            'value': self.partner_2.id,
+            'comodel': 'test_new_api.partner',
+            'definition_changed': True,
+        }]
+        self.message_2.attributes = {'d6ed602628132d99': self.partner.id}
+
+        # this partner id doesn't exist
+        self.env.cr.execute(
+            """
+            UPDATE test_new_api_message
+               SET attributes = '{"d6ed602628132d99": 1333333333337}'
+             WHERE id = %s
+            """,
+            [self.message_3.id],
+        )
+
+        with self.assertQueryCount(6):
+            result = Model.read_group(
+                domain=[],
+                fields=['name', 'attributes', 'discussion'],
+                groupby=['attributes.d6ed602628132d99'],
+            )
+
+        self.assertEqual(len(result), 3, 'Should ignore the partner that has been removed')
+
+        self.assertEqual(result[0]['attributes.d6ed602628132d99_count'], 1)
+        self.assertEqual(result[0]['attributes.d6ed602628132d99'][0], self.partner.id)
+        self.assertEqual(result[0]['attributes.d6ed602628132d99'][1], self.partner.display_name)
+        self.assertEqual(result[0]['__domain'], [('attributes.d6ed602628132d99', '=', self.partner.id)])
+
+        self.assertEqual(result[1]['attributes.d6ed602628132d99_count'], 1)
+        self.assertEqual(result[1]['attributes.d6ed602628132d99'][0], self.partner_2.id)
+        self.assertEqual(result[1]['attributes.d6ed602628132d99'][1], self.partner_2.display_name)
+        self.assertEqual(result[1]['__domain'], [('attributes.d6ed602628132d99', '=', self.partner_2.id)])
+
+        # falsy domain, automatically generated, contains the false value
+        # and the ids of the records that doesn't exist in the database
+        self.assertEqual(result[2]['attributes.d6ed602628132d99_count'], 2)
+        self.assertEqual(result[2]['attributes.d6ed602628132d99'], False)
+        self.assertEqual(
+            result[2]['__domain'],
+            [
+                '|',
+                ('attributes.d6ed602628132d99', '=', False),
+                ('attributes.d6ed602628132d99', '=', 1333333333337),
+            ],
+        )
+
+        # when there's no "('property', '=', False)" domain, it should be created
+        self.message_4.attributes = {'d6ed602628132d99': self.partner.id}
+        result = Model.read_group(
+            domain=[],
+            fields=['name', 'attributes', 'discussion'],
+            groupby=['attributes.d6ed602628132d99'],
+        )
+        self.assertEqual(result[2]['attributes.d6ed602628132d99_count'], 1)
+        self.assertEqual(result[2]['__domain'], [('attributes.d6ed602628132d99', '=', 1333333333337)])
+
+        # test an invalid model name (e.g. if we uninstalled the module of the model)
+        # should have only one group with the value "False", and all records
+        self.env.cr.execute(
+            """
+            UPDATE test_new_api_discussion
+               SET attributes_definition
+                   = jsonb_set(attributes_definition, '{0,comodel}', '"invalid_model_name"')
+             WHERE id = %s
+            """,
+            [self.discussion_1.id],
+        )  # bypass the ORM to set an invalid model name
+        definition = self._get_sql_definition(self.discussion_1)
+        self.assertEqual(definition[0]['comodel'], 'invalid_model_name')
+        with self.assertQueryCount(3):
+            result = Model.read_group(
+                domain=[('discussion', '!=', 99999999999)],
+                fields=[],
+                groupby=['attributes.d6ed602628132d99'],
+                lazy=False,
+            )
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]['__count'], 4)
+        self.assertEqual(self.env['test_new_api.message'].search_count(result[0]['__domain']), 4)
+
+    @mute_logger('odoo.fields')
+    def test_properties_field_read_group_tags(self):
+        Model = self.env['test_new_api.message']
+        Model.search([('id', 'not in', self.messages.ids)]).unlink()
+
+        # group by tags property
+        self.message_1.attributes = [{
+            'name': '0404962e45630bda',
+            'type': 'tags',
+            'value': ['a', 'c', 'g'],
+            'tags': [[x.lower(), x, i] for i, x in enumerate('ABCDEFG')],
+            'definition_changed': True,
+        }]
+        self.message_2.attributes = {'0404962e45630bda': ['a', 'e', 'g']}
+        self.env.cr.execute(
+            """
+            UPDATE test_new_api_message
+               SET attributes = '{"0404962e45630bda": ["a", "d", "invalid", "e"]}'
+             WHERE id = %s
+            """,
+            [self.message_3.id],
+        )
+
+        with self.assertQueryCount(3):
+            result = Model.read_group(
+                domain=[('discussion', '!=', 99999999999)],
+                fields=[],
+                groupby=['attributes.0404962e45630bda'],
+                lazy=False,
+            )
+
+        self.assertNotIn('invalid', str(result))
+        self.assertEqual(len(result), 5)
+
+        all_tags = self.message_1.attributes[0]['tags']
+        all_tags = {tag[0]: tag for tag in all_tags}
+
+        for i, (tag, count) in enumerate((('a', 3), ('c', 1), ('d', 1), ('e', 2), ('g', 2))):
+            self.assertEqual(result[i]['attributes.0404962e45630bda'], all_tags[tag])
+            self.assertEqual(result[i]['__count'], count)
+            self.assertEqual(
+                result[i]['__domain'],
+                [
+                    '&',
+                    ('attributes.0404962e45630bda', 'in', tag),
+                    ('discussion', '!=', 99999999999),
+                ],
+            )
+
+        # double check the domain in the result work well
+        for line in result:
+            self.assertEqual(line['__count'], Model.search_count(line['__domain']))
+
+    @mute_logger('odoo.fields')
+    def test_properties_field_read_group_many2many(self):
+        Model = self.env['test_new_api.message']
+        Model.search([('id', 'not in', self.messages.ids)]).unlink()
+
+        partners = self.env['test_new_api.partner'].create([
+            {'name': f'Partner {i}'}
+            for i in range(10)
+        ])
+
+        self.discussion_1.attributes_definition = [{
+            'name': '33024094ba4559a3',
+            'string': 'Partners',
+            'type': 'many2many',
+            'comodel': 'test_new_api.partner',
+        }]
+
+        self.messages.discussion = self.discussion_1
+
+        self.message_1.attributes = {'33024094ba4559a3': partners[:5].ids}
+        self.message_2.attributes = {'33024094ba4559a3': partners[3:8].ids}
+        self.message_3.attributes = {'33024094ba4559a3': partners[8:].ids}
+
+        (partners[4] | partners[7] | partners[9]).unlink()
+
+        with self.assertQueryCount(3):
+            result = Model.read_group(
+                domain=[('discussion', '!=', 99999999999)],
+                fields=[],
+                groupby=['attributes.33024094ba4559a3'],
+                lazy=False,
+            )
+
+        self.assertEqual(len(result), 7, "Should not include the removed partners")
+        existing_partners = partners.exists()
+        self.assertEqual(len(existing_partners), 7)
+        for partner, line in zip(existing_partners, result):
+            self.assertEqual(partner.id, line['attributes.33024094ba4559a3'][0])
+            self.assertEqual(partner.display_name, line['attributes.33024094ba4559a3'][1])
+            self.assertEqual(
+                line['__domain'],
+                [
+                    '&',
+                    ('attributes.33024094ba4559a3', 'in', partner.id),
+                    ('discussion', '!=', 99999999999),
+                ],
+            )
+            # only the fourth partner is in 2 messages
+            self.assertEqual(line['__count'], 2 if partner == partners[3] else 1)
+            # double check the domain on the read group result
+            self.assertEqual(self.env['test_new_api.message'].search_count(line['__domain']), line['__count'])
+
+        # test an invalid model name (e.g. if we uninstalled the module of the model)
+        self.env.cr.execute(
+            """
+            UPDATE test_new_api_discussion
+               SET attributes_definition
+                   = jsonb_set(attributes_definition, '{0,comodel}', '"invalid_model_name"')
+             WHERE id = %s
+            """,
+            [self.discussion_1.id],
+        )  # bypass the ORM to set an invalid model name
+        definition = self._get_sql_definition(self.discussion_1)
+        self.assertEqual(definition[0]['comodel'], 'invalid_model_name')
+        with self.assertQueryCount(3):
+            result = Model.read_group(
+                domain=[('discussion', '!=', 99999999999)],
+                fields=[],
+                groupby=['attributes.33024094ba4559a3'],
+                lazy=False,
+            )
+        self.assertEqual(len(result), 0)
 
     @mute_logger('odoo.fields')
     def test_properties_field_security(self):

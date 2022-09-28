@@ -1989,6 +1989,10 @@ class BaseModel(metaclass=MetaModel):
             is_many2one_id = order_field.endswith(".id")
             if is_many2one_id:
                 order_field = order_field[:-3]
+            if '.' in order_field:
+                # contain a property name
+                order_field, property_name = order_field.split('.')
+                check_property_name(property_name)
             if order_field == 'id' or order_field in groupby_fields:
                 order_field_name = order_field.split(':')[0]
                 if self._fields[order_field_name].type == 'many2one' and not is_many2one_id:
@@ -2021,7 +2025,14 @@ class BaseModel(metaclass=MetaModel):
             field name, type, time information, qualified name, ...
         """
         split = gb.split(':')
-        field = self._fields.get(split[0])
+
+        fieldname = split[0]
+        property_name = None
+        if '.' in fieldname:
+            fieldname, property_name = fieldname.split('.', 1)
+            check_property_name(property_name)
+
+        field = self._fields.get(fieldname)
         if not field:
             raise ValueError("Invalid field %r on model %r" % (split[0], self._name))
         field_type = field.type
@@ -2060,8 +2071,15 @@ class BaseModel(metaclass=MetaModel):
             qualified_field = "date_trunc('%s', %s::timestamp)" % (gb_function or 'month', qualified_field)
         if field_type == 'boolean':
             qualified_field = "coalesce(%s,false)" % qualified_field
+
+        if property_name and field.type == 'properties':
+            fullname = f'{fieldname}.{property_name or ""}'
+        else:
+            fullname = fieldname
+
         return {
-            'field': split[0],
+            'field':  fieldname,
+            'fullname': fullname,
             'groupby': gb,
             'type': field_type,
             'display_format': display_formats[gb_function or 'month'] if temporal else None,
@@ -2147,13 +2165,17 @@ class BaseModel(metaclass=MetaModel):
                         (gb['field'], '>=', range_start),
                         (gb['field'], '<', range_end),
                     ]
+
+                elif ftype == 'properties' and '.' in gb['fullname']:
+                    d = [(gb['fullname'], '=', data[gb['groupby']])]
+
             elif ftype in ('date', 'datetime'):
                 # Set the __range of the group containing records with an unset
                 # date/datetime field value to False.
                 data.setdefault('__range', {})[gb['groupby']] = False
 
             if d is None:
-                d = [(gb['field'], '=', value)]
+                d = [(gb['fullname'], '=', value)]
             sections.append(d)
         sections.append(domain)
 
@@ -2225,7 +2247,7 @@ class BaseModel(metaclass=MetaModel):
         groupby = [groupby] if isinstance(groupby, str) else groupby[:1] if lazy else OrderedSet(groupby)
         groupby_dates = [
             groupby_description for groupby_description in groupby
-            if self._fields[groupby_description.split(':')[0]].type in ('date', 'datetime')    # e.g. 'date:month'
+            if self._fields[groupby_description.split(':')[0].split('.')[0]].type in ('date', 'datetime')    # e.g. 'date:month'
         ]
         if not groupby_dates:
             return result
@@ -2252,6 +2274,7 @@ class BaseModel(metaclass=MetaModel):
         groupby_list = groupby[:1] if lazy else groupby
         annotated_groupbys = [self._read_group_process_groupby(gb, query) for gb in groupby_list]
         groupby_fields = [g['field'] for g in annotated_groupbys]
+        fullname_fields = [g['fullname'] for g in annotated_groupbys]
         order = orderby or ','.join([g for g in groupby_list])
         groupby_dict = {gb['groupby']: gb for gb in annotated_groupbys}
 
@@ -2323,8 +2346,8 @@ class BaseModel(metaclass=MetaModel):
 
         groupby_terms, orderby_terms = self._read_group_prepare(order, aggregated_fields, annotated_groupbys, query)
         from_clause, where_clause, where_clause_params = query.get_sql()
-        if lazy and (len(groupby_fields) >= 2 or not self._context.get('group_by_no_leaf')):
-            count_field = groupby_fields[0] if len(groupby_fields) >= 1 else '_'
+        if lazy and (len(fullname_fields) >= 2 or not self._context.get('group_by_no_leaf')):
+            count_field = fullname_fields[0] if len(fullname_fields) >= 1 else '_'
         else:
             count_field = '_'
         count_field += '_count'
@@ -2373,6 +2396,8 @@ class BaseModel(metaclass=MetaModel):
 
         result = [self._read_group_format_result(d, annotated_groupbys, groupby, domain) for d in data]
 
+        result = self._read_group_resolve_properties(result, annotated_groupbys, domain)
+
         if lazy:
             # Right now, read_group only fill results in lazy mode (by default).
             # If you need to have the empty groups in 'eager' mode, then the
@@ -2392,6 +2417,129 @@ class BaseModel(metaclass=MetaModel):
             data_dict = dict(lazy_name_get(m2x_records.sudo()))
             for d in data:
                 d[field] = (d[field], data_dict[d[field]]) if d[field] else False
+
+    def _read_group_resolve_properties(self, data, fields, domain):
+        """Modify the final read group properties result.
+
+        Replace the relational properties ids by a lazy name get, replace the "raw" tags
+        and selection values by a list containing their labels.
+
+        If a selection option has been removed, or a many2one id, the record must be in
+        the "Falsy group" (so it should be considered like if the value in the database is
+        false). To do that, we check the existence of the m2o / option here, and if
+        needed, we remove corresponding group from the final result and merge it into
+        the group containing the "False" values in database (or the group is added if no
+        record have false as value in the database).
+        """
+        properties_fields = filter(lambda field: field['type'] == 'properties', fields)
+
+        all_groups_to_ignore = set()
+
+        for properties_field in properties_fields:
+            groups_to_ignore = []
+
+            field = self._fields[properties_field['field']]
+            fullname = properties_field['fullname']
+            property_name = fullname.split('.')[1]
+            definition_record_model = self._fields[field.definition_record].comodel_name
+            definition_record_table = self.env[definition_record_model]._table
+
+            count_key = (
+                f"{fullname}_count" if data and f"{fullname}_count" in data[0]
+                else '__count'
+            )
+
+            # retrieve the definition on the current property
+            self.env.cr.execute("""
+                SELECT definition
+                  FROM {definition_record_table},
+                       jsonb_array_elements({definition_record_field}) definition
+                 WHERE {definition_record_field} IS NOT NULL
+                   AND definition->>'name' = %s
+                 LIMIT 1
+            """.format(
+                definition_record_table=definition_record_table,
+                definition_record_field=field.definition_record_field,
+            ), [property_name])
+
+            result = self.env.cr.dictfetchall()
+            if not result:
+                continue
+
+            definition = result[0]['definition']
+            if definition.get('type') == 'selection':
+                options = definition.get('selection') or []
+                options = {option[0]: option[1] for option in options}
+                for i, d in enumerate(data):
+                    if not d[fullname]:
+                        continue
+
+                    if d[fullname] not in options:
+                        # do not show this group
+                        groups_to_ignore.append(i)
+                        continue
+
+                    d[fullname] = (d[fullname], options[d[fullname]])
+
+            elif definition.get('type') == 'many2one':
+                model = definition.get('comodel')
+                for i, d in enumerate(data):
+                    if not d[fullname]:
+                        continue
+
+                    if model not in self.env:
+                        groups_to_ignore.append(i)
+                        continue
+
+                    record = self.env[model].browse(d[fullname]).exists()
+                    if not record:
+                        # do not show this group
+                        groups_to_ignore.append(i)
+                        continue
+
+                    d[fullname] = lazy_name_get(record)[0]
+
+            elif definition.get('type') == 'tags':
+                tags = definition.get('tags') or []
+                tags = {tag[0]: tag for tag in tags}
+                for d in data:
+                    # use the "in" for the domain and not "="
+                    d['__domain'] = expression.AND([[(fullname, 'in', d[fullname])], domain])
+                    # replace tag raw value with list of raw value, label and color
+                    d[fullname] = tags.get(d[fullname])
+
+            elif definition.get('type') == 'many2many':
+                comodel = definition.get('comodel')
+                if not comodel or comodel not in self.env:
+                    all_groups_to_ignore |= set(range(len(data)))
+                    continue
+
+                for i, d in enumerate(data):
+                    # use the "in" for the domain and not "="
+                    d['__domain'] = expression.AND([[(fullname, 'in', d[fullname])], domain])
+                    # replace the id of the record by its lazy name get
+                    d[fullname] = lazy_name_get(self.env[comodel].browse(d[fullname]))[0]
+
+            if groups_to_ignore:
+                falsy_index = next((i for i, d in enumerate(data) if d[fullname] is False), None)
+                if falsy_index is None:
+                    falsy_index = groups_to_ignore[0]
+                    data[falsy_index][fullname] = False
+                    groups_to_ignore = groups_to_ignore[1:]
+
+                for group_to_ignore in groups_to_ignore:
+                    data[falsy_index]['__domain'] = expression.OR([
+                        data[falsy_index]['__domain'],
+                        data[group_to_ignore]['__domain'],
+                    ])
+
+                    # update the counter of the falsy domain with the counter
+                    # of the invalid selection option, removed many2one property, etc
+                    data[falsy_index][count_key] += data[group_to_ignore][count_key]
+
+                all_groups_to_ignore |= set(groups_to_ignore)
+
+        return [d for i, d in enumerate(data) if i not in all_groups_to_ignore]
 
     def _inherits_join_add(self, current_model, parent_model_name, query):
         """
@@ -2418,6 +2566,11 @@ class BaseModel(metaclass=MetaModel):
         :param query: query object on which the JOIN should be added
         :return: qualified name of field, to be used in SELECT clause
         """
+        property_name = None
+        if '.' in fname:
+            fname, property_name = fname.split('.', 1)
+            check_property_name(property_name)
+
         # INVARIANT: alias is the SQL alias of model._table in query
         model, field = self, self._fields[fname]
         while field.inherited:
@@ -2455,6 +2608,54 @@ class BaseModel(metaclass=MetaModel):
             if lang == 'en_US':
                 return f'"{alias}"."{fname}"->>\'en_US\''
             return f'COALESCE("{alias}"."{fname}"->>\'{lang}\', "{alias}"."{fname}"->>\'en_US\')'
+        elif field.type == 'properties' and property_name:
+            self.env.cr.execute("""
+                SELECT definition
+                  FROM {definition_record_table},
+                       jsonb_array_elements({definition_record_field}) definition
+                 WHERE {definition_record_field} IS NOT NULL
+                   AND definition->>'name' = %s
+                 LIMIT 1
+            """.format(
+                definition_record_table=self.env[self._fields[field.definition_record].comodel_name]._table,
+                definition_record_field=field.definition_record_field,
+            ), [property_name])
+
+            result = self.env.cr.dictfetchall()
+            if not result:
+                raise ValueError(_('Invalid property name %r.', property_name))
+
+            definition = result[0]['definition']
+
+            if definition.get('type') in ('tags', 'many2many'):
+                property_alias = 'property_%s' % uuid.uuid4().hex[:8]
+                property_join = (
+                    f""" jsonb_array_elements("{alias}"."{fname}" -> '{property_name}') """
+                    f"{property_alias}"
+                )
+
+                query._tables[property_join] = None
+                query.add_where(
+                    f""" jsonb_typeof("{alias}"."{fname}" -> '{property_name}') = 'array' """
+                )
+
+                if definition['type'] == 'tags':
+                    # ignore invalid tags
+                    tags = definition.get('tags') or []
+                    tags = [tag[0] for tag in tags]
+                    query.add_where(f'{property_alias}->>0 = ANY(%s::text[])', [tags])
+
+                elif definition['type'] == 'many2many':
+                    comodel = definition.get('comodel')
+                    if comodel in self.env:
+                        comodel_table = self.env[comodel]._table
+                        # check the existences of the many2many
+                        query.add_where(f'{property_alias}::int IN (SELECT id FROM {comodel_table})')
+
+                return property_alias
+
+            # if the key is not present in the dict, fallback to false instead of none
+            return f""" COALESCE("{alias}"."{fname}" -> '{property_name}', 'false') """
         else:
             return '"%s"."%s"' % (alias, fname)
 

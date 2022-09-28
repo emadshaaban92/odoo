@@ -991,6 +991,47 @@ export class SearchModel extends EventBus {
     }
 
     /**
+     * Because it require a RPC call to get the properties search views items,
+     * it's done lazily, only when we need them.
+     */
+    async fillSearchViewItemsProperty() {
+        if (!this.searchViewFields) {
+            return;
+        }
+
+        const fields = Object.values(this.searchViewFields);
+
+        for (const field of fields) {
+            if (field.type !== "properties") {
+                continue;
+            }
+
+            const definitionField = fields.find(f => f.name === field.definition_record);
+            const definitionRecordModel = definitionField.relation;
+            const definitionRecordField = field.definition_record_field;
+
+            const result = await this.fetchPropertiesDefinition(
+                definitionRecordModel, definitionRecordField);
+
+            for (const [definitionRecordName, definitions] of result) {
+                for (const definition of definitions) {
+                    this.searchViewFields[`${field.name}.${definition.name}`] = {
+                        "name": `${field.name}.${definition.name}`,
+                        "readonly": true,
+                        "required": false,
+                        "searchable": false,
+                        "sortable": true,
+                        "store": true,
+                        "string": `${definition.string} (${definitionRecordName})`,
+                        "type": definition.type,
+                        "isProperty": true,
+                    };
+                }
+            }
+        }
+    }
+
+    /**
      * Fetch the properties definitions.
      *
      * @param {string} definitionRecordModel
@@ -998,10 +1039,10 @@ export class SearchModel extends EventBus {
      */
     async fetchPropertiesDefinition(definitionRecordModel, definitionRecordField) {
         let domain = [];
-        if (this._context.active_id) {
+        if (this.context.active_id) {
             // assume the active id is the definition record
             // and show only its properties
-            domain = [['id', '=', this._context.active_id]];
+            domain = [['id', '=', this.context.active_id]];
         }
 
         const result = await this.orm.call(
@@ -1009,7 +1050,10 @@ export class SearchModel extends EventBus {
             "search_read",
             [domain, ["display_name", definitionRecordField]]);
 
-        return result.map(values => [values["display_name"], values[definitionRecordField]]);
+        return result.map(values => [
+            values["display_name"],
+            values[definitionRecordField] || [], // definitions
+        ]);
     }
 
     //--------------------------------------------------------------------------

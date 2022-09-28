@@ -7,7 +7,7 @@
             </t>
             <div class="px-3 py-2">
                 <select class="w-100 o_input" t-model="state.fieldName">
-                    <option t-foreach="props.fields" t-as="field" t-key="field.name"
+                    <option t-foreach="fields" t-as="field" t-key="field.name"
                     t-att-value="field.name"
                     t-esc="field.string"
                     />

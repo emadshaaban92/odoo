@@ -152,7 +152,7 @@ class Base(models.AbstractModel):
         :return a dictionnary mapping group_by values to dictionnaries mapping
                 progress bar field values to the related number of records
         """
-        group_by_fname = group_by.partition(':')[0]
+        group_by_fname = group_by.partition(':')[0].split(".")[0]
         field_type = self._fields[group_by_fname].type
         if field_type == 'selection':
             selection_labels = dict(self.fields_get()[group_by]['selection'])

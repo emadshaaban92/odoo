@@ -15,5 +15,6 @@ export const GROUPABLE_TYPES = [
     "integer",
     "many2one",
     "many2many",
+    "properties",
     "selection",
 ];
