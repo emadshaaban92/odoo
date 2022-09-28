@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_employee_cv">
+        <t t-set="full_width" t-value="True"/>
+        <t t-call="web.basic_layout">
+        <t t-foreach="docs" t-as="o">
+            <div class="o_employee_cv page">
+                <p class="o_new_page"/>
+                <t t-if="side_panel_position == 'right'">
+                    <t t-call="hr_skills.report_employee_cv_main_panel"/>
+                    <t t-call="hr_skills.report_employee_cv_sidepanel"/>
+                </t>
+                <t t-else="">
+                    <t t-call="hr_skills.report_employee_cv_sidepanel"/>
+                    <t t-call="hr_skills.report_employee_cv_main_panel"/>
+                </t>
+            </div>
+        </t>
+        </t>
+    </template>
+
+    <template id="report_employee_cv_sidepanel">
+        <div class="o_sidebar" t-attf-style="
+            background: #{color};
+            background-color: #{color};">
+            <div class="o_profile">
+                <img class="img img-fluid rounded-circle o_profile_image" t-attf-src="data:image/png;base64,#{o.image_128}" alt=""/>
+                <h1 class="o_profile_name" t-field="o.name"/>
+                <h3 class="o_profile_job" t-field="o.job_id"/>
+            </div>
+            
+            <div class="o_sidebar_section">
+                <ul class="o_social">
+                    <li class="email">
+                        <i class="fa fa-solid fa-envelope pe-2"/>
+                        <a t-attf-href="mailto: #{o.private_email}" t-field="o.private_email"/>
+                    </li>
+                    <li class="phone">
+                        <i class="fa fa-solid fa-phone pe-2"/>
+                        <a t-attf-href="tel:#{o.phone}" t-field="o.phone"/>
+                    </li>
+                    <li class="website" t-if="o.social_website">
+                        <i class="fa fa-solid fa-globe pe-2"/>
+                        <a t-att-href="o.social_website" t-field="o.social_website" target="_blank"/>
+                    </li>
+                    <li class="twitter" t-if="o.social_twitter">
+                        <i class="fa fa-solid fa-twitter pe-2"/>
+                        <a t-att-href="o.social_twitter" t-field="o.social_twitter" target="_blank"/>
+                    </li>
+                    <li class="facebook" t-if="o.social_facebook">
+                        <i class="fa fa-solid fa-facebook pe-2"/>
+                        <a t-att-href="o.social_facebook" t-field="o.social_facebook" target="_blank"/>
+                    </li>
+                    <li class="github" t-if="o.social_github">
+                        <i class="fa fa-solid fa-github pe-2"/>
+                        <a t-att-href="o.social_github" t-field="o.social_github" target="_blank"/>
+                    </li>
+                    <li class="linkedin" t-if="o.social_linkedin">
+                        <i class="fa fa-solid fa-linkedin pe-2"/>
+                        <a t-att-href="o.social_linkedin" t-field="o.social_linkedin" target="_blank"/>
+                    </li>
+                    <li class="youtube" t-if="o.social_youtube">
+                        <i class="fa fa-solid fa-youtube pe-2"/>
+                        <a t-att-href="o.social_youtube" t-field="o.social_youtube" target="_blank"/>
+                    </li>
+                    <li class="instagram" t-if="o.social_instagram">
+                        <i class="fa fa-solid fa-instagram pe-2"/>
+                        <a t-att-href="o.social_instagram" t-field="o.social_instagram" target="_blank"/>
+                    </li>
+                </ul>
+            </div>
+            <div class="o_sidebar_education o_sidebar_section" t-if="resume_type_education">
+                <h2 class="o_sidebar_title">Education</h2>
+                <t t-foreach="o.resume_line_ids" t-as="resume_line">
+                    <div t-if="resume_line.line_type_id == resume_type_education" class="o_sidebar_education_line">
+                        <h4 class="o_sidebar_education_degree" t-field="resume_line.name"/>
+                        <h5 class="o_sidebar_education_description" t-field="resume_line.description"/>
+                        <t t-set="present">Present</t>
+                        <div class="o_sidebar_education_description_year">
+                            <t t-esc="resume_line.date_start.year"/> - <t t-esc="resume_line.date_end.year if resume_line.date_end else present"/>
+                        </div>
+                    </div>
+                </t>
+            </div>
+            
+            <div class="o_sidebar_language o_sidebar_section" t-if="skill_type_language">
+                <h2 class="o_sidebar_title">Languages</h2>
+                <ul class="o_sidebar_list">
+                    <t t-foreach="o.employee_skill_ids" t-as="skill_line">
+                        <li t-if="skill_line.skill_type_id == skill_type_language" >
+                            <t t-esc="skill_line.skill_id.name"/> <span class="o_sidebar_language_level" t-field="skill_line.skill_level_id"/>
+                        </li>
+                    </t>
+                </ul>
+            </div>
+
+            <div class="interests-container o_sidebar_section" t-if="o.resume_interest_ids">
+                <h2 class="o_sidebar_title">Interests</h2>
+                <ul class="o_sidebar_list">
+                    <t t-foreach="o.resume_interest_ids" t-as="interest">
+                        <li>
+                            <t t-esc="interest.name"/>
+                        </li>
+                    </t>
+                </ul>
+            </div>
+        </div>
+    </template>
+
+    <template id="report_employee_cv_main_panel">
+        <div class="o_main_panel">
+            <div class="o_main_panel_section">
+                <h2 class="o_main_panel_title" t-attf-style="color: #{color};">
+                    <span class="o_main_panel_icon" t-attf-style="background: #{color};">
+                        <i class="fa fa-solid fa-user"/>
+                    </span>Career Profile
+                </h2>
+                <div class="summary">
+                    <p t-field="o.personal_description"/>
+                </div>
+            </div>
+            
+            <div class="o_main_panel_section">
+                <t t-foreach="o.resume_line_ids.line_type_id" t-as="line_type">
+                    <h2 class="o_main_panel_title" t-if="line_type != resume_type_education" t-attf-style="color: #{color};">
+                        <span class="o_main_panel_icon" t-attf-style="background: #{color};">
+                            <i class="fa fa-solid fa-briefcase"/>
+                        </span>
+                        <t t-esc="line_type.name"/>
+                    </h2>
+                    <t t-foreach="o.resume_line_ids" t-as="resume_line">
+                        <t t-if="resume_line.line_type_id == line_type and resume_line.line_type_id != resume_type_education">
+                            <div class="o_main_panel_resume_title">
+                                <div class="o_main_panel_resume_title_job">
+                                    <h3 class="o_main_panel_resume_job" t-field="resume_line.name"/>
+                                </div>
+                                <div class="o_main_panel_resume_title_dates">
+                                    <t t-set="present">Present</t>
+                                    <div class="o_main_panel_resume_year">
+                                        <t t-esc="resume_line.date_start.year"/> - <t t-esc="resume_line.date_end.year if resume_line.date_end else present"/>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="o_main_panel_resume_description">
+                                <p t-field="resume_line.description"/>
+                            </div>
+                        </t>
+                    </t>
+                </t>
+            </div>
+
+            <div class="o_main_panel_section">
+                <h2 class="o_main_panel_title" t-attf-style="color: #{color};">
+                    <span class="o_main_panel_icon" t-attf-style="background: #{color};">
+                        <i class="fa fa-solid fa-rocket"/>
+                    </span>Skills
+                </h2>
+                <div class="o_main_panel_skills">
+                    <t t-foreach="o.employee_skill_ids" t-as="skill_line">
+                        <div class="o_main_panel_skill_line" t-if="skill_line.skill_type_id != skill_type_language">
+                            <h3 class="o_main_panel_skill_name" t-field="skill_line.skill_id"/>
+                            <div class="progress o_main_panel_skill_progress_bar">
+                                <div
+                                    class="o_main_panel_skill_progress_bar_color"
+                                    role="progressbar"
+                                    t-attf-style="width: #{skill_line.level_progress}%; background: #{color};"
+                                    t-att-aria-valuenow="skill_line.level_progress"
+                                    aria-valuemin="0"
+                                    aria-valuemax="100"/>
+                            </div>                               
+                        </div>
+                    </t>
+                </div>
+            </div>
+        </div>
+    </template>
+</odoo>
