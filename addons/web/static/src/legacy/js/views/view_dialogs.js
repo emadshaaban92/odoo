@@ -205,6 +205,10 @@ var FormViewDialog = ViewDialog.extend({
             var xml = new DOMParser().parseFromString(viewInfo.arch, "text/xml")
             var key = xml.documentElement.getAttribute("js_class");
             var FormView = view_registry.get(key || 'form');
+            // if there is js_class on form view but that view removed from legacy then it'll take orignal form view
+            if (!FormView) {
+                FormView = view_registry.get('form');
+            }
             var formview = new FormView(viewInfo, {
                 modelName: self.res_model,
                 context: refinedContext,
