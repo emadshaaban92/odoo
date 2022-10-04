@@ -834,8 +834,7 @@
             id="option_header_transparent_color"
             data-select-style="true"
             data-css-property="background-color"
-            data-color-prefix="bg-"
-            data-excluded="theme, common, custom"/>
+            data-color-prefix="bg-"/>
     </div>
 
     <!-- Header > Navbar Options -->

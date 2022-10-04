@@ -22,6 +22,11 @@ wTourUtils.registerWebsitePreviewTour('website_page_options', {
     wTourUtils.clickOnEdit(),
     wTourUtils.clickOnSnippet({id: 'o_header_standard', name: 'Header'}),
     wTourUtils.changeOption('topMenuColor', 'we-select.o_we_so_color_palette'),
+    {
+        content: "Click on the solid tab",
+        trigger: '.o_we_colorpicker_switch_pane_btn[title="Solid"]',
+        run: 'click',
+    },
     wTourUtils.changeOption('topMenuColor', 'button[data-color="black-50"]', 'background color', 'bottom', true),
     ...wTourUtils.clickOnSave(),
     {

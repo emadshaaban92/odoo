@@ -182,6 +182,7 @@
                 <input t-if="optionName in main_object" type="hidden" class="o_page_option_data" autocomplete="off" t-att-name="optionName" t-att-value="main_object[optionName]"/>
             </t>
         </t>
+        <t t-set="header_bg_color" t-value="'header_color' in main_object and main_object.header_color"/>
         <div groups="base.group_user" class="o_frontend_to_backend_nav position-fixed d-none">
             <svg class="o_frontend_to_backend_icon position-absolute" width="24px" height="24px"
                  viewBox="-7 -7 24 24" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin">
@@ -204,7 +205,9 @@
         <attribute name="t-attf-class" add="#{'o_header_overlay' if 'header_overlay' in main_object and main_object.header_overlay else ''}" separator=" "/>
     </xpath>
     <xpath expr="//header" position="attributes">
-        <attribute name="t-attf-class" add="#{main_object.header_color if 'header_color' in main_object else ''}" separator=" "/>
+        <attribute name="t-attf-class" add="#{main_object.header_color if header_bg_color and ('bg-' in main_object.header_color) else ''}" separator=" "/>
+        <!-- applied style for inline css background color -->
+        <attribute name="t-attf-style" add="#{'background-color:' + main_object.header_color + ';' if header_bg_color and ('bg-' not in main_object.header_color) else ''}" separator=" "/>
     </xpath>
     <xpath expr="//header" position="attributes">
         <attribute name="t-attf-class" add="#{'d-none o_snippet_invisible' if 'header_visible' in main_object and not main_object.header_visible else ''}" separator=" "/>
