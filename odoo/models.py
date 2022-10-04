@@ -3109,7 +3109,24 @@ class BaseModel(metaclass=MetaModel):
         data = [(record, {'id': record._ids[0]}) for record in self]
         use_name_get = (load == '_classic_read')
         for name in fnames:
-            convert = self._fields[name].convert_to_read
+            field = self._fields[name]
+            if field.type == 'properties':
+                values_list = []
+                records = []
+                for record, vals in data:
+                    try:
+                        values_list.append(record[name])
+                        records.append(record.id)
+                    except MissingError:
+                        vals.clear()
+
+                results = field.convert_to_read_multi(values_list, self.browse(records), use_name_get)
+
+                for vals, result in zip(data, results):
+                    vals[1][name] = result
+                continue
+
+            convert = field.convert_to_read
             for record, vals in data:
                 # missing records have their vals empty
                 if not vals:
