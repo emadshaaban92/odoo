@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Fiscal positions -->
+        <record id="l10n_ie_fp_dom" model="account.fiscal.position.template">
+            <field name="sequence">10</field>
+            <field name="name">Ireland Domestic</field>
+            <field name="chart_template_id" ref="l10n_ie_coa"/>
+            <field name="auto_apply" eval="True"/>
+            <field name="vat_required" eval="True"/>
+            <field name="country_id" ref="base.ie"/>
+        </record>
+
+        <record id="l10n_ie_fp_in_eu_private" model="account.fiscal.position.template">
+            <field name="name">Intra-Community Private</field>
+            <field name="sequence">20</field>
+            <field name="chart_template_id" ref="l10n_ie_coa"/>
+            <field name="auto_apply" eval="True"/>
+            <field name="country_group_id" ref="base.europe"/>
+        </record>
+
+        <record id="l10n_ie_fp_in_eu" model="account.fiscal.position.template">
+            <field name="sequence">30</field>
+            <field name="name">Intra-Community</field>
+            <field name="chart_template_id" ref="l10n_ie_coa"/>
+            <field name="auto_apply" eval="True"/>
+            <field name="country_group_id" ref="base.europe"/>
+        </record>
+
+        <record id="l10n_ie_fp_out_eu" model="account.fiscal.position.template">
+            <field name="sequence">40</field>
+            <field name="name">Extra-Community</field>
+            <field name="chart_template_id" ref="l10n_ie_coa"/>
+            <field name="auto_apply" eval="True"/>
+        </record>
+
+        <!-- Tax mapping -->
+        <!-- Sales 23% goods (IE) > Sales 0% goods (EU) -->
+        <record id="l10n_ie_fp_sale_good_23_vat_in_eu" model="account.fiscal.position.tax.template">
+            <field name="position_id" ref="l10n_ie_fp_in_eu"/>
+            <field name="tax_src_id" ref="l10n_ie_tax_sale_good_23"/>
+            <field name="tax_dest_id" ref="l10n_ie_tax_sale_intra_good_0"/>
+        </record>
+
+        <!-- Sales 23% services (IE) > Sales 0% services (EU) -->
+        <record id="l10n_ie_fp_sale_service_23_vat_in_eu" model="account.fiscal.position.tax.template">
+            <field name="position_id" ref="l10n_ie_fp_in_eu"/>
+            <field name="tax_src_id" ref="l10n_ie_tax_sale_service_23"/>
+            <field name="tax_dest_id" ref="l10n_ie_tax_sale_intra_service_0"/>
+        </record>
+
+        <!-- Purchases 23% goods (IE) > Purchases 0% goods (EU) -->
+        <record id="l10n_ie_fp_purchase_good_23_vat_in_eu" model="account.fiscal.position.tax.template">
+            <field name="position_id" ref="l10n_ie_fp_in_eu"/>
+            <field name="tax_src_id" ref="l10n_ie_tax_purchase_good_23"/>
+            <field name="tax_dest_id" ref="l10n_ie_tax_purchase_intra_good_0"/>
+        </record>
+
+        <!-- Purchases 23% services (IE) > Purchases 0% services (EU) -->
+        <record id="l10n_ie_fp_purchase_service_23_vat_in_eu" model="account.fiscal.position.tax.template">
+            <field name="position_id" ref="l10n_ie_fp_in_eu"/>
+            <field name="tax_src_id" ref="l10n_ie_tax_purchase_service_23"/>
+            <field name="tax_dest_id" ref="l10n_ie_tax_purchase_intra_service_0"/>
+        </record>
+
+        <!-- Sales 13.5% goods (IE) > Sales 0% goods (EU) -->
+        <record id="l10n_ie_fp_sale_good_135_vat_in_eu" model="account.fiscal.position.tax.template">
+            <field name="position_id" ref="l10n_ie_fp_in_eu"/>
+            <field name="tax_src_id" ref="l10n_ie_tax_sale_good_135"/>
+            <field name="tax_dest_id" ref="l10n_ie_tax_sale_intra_good_0"/>
+        </record>
+
+        <!-- Sales 13.5% services (IE) > Sales 0% services (EU) -->
+        <record id="l10n_ie_fp_sale_service_135_vat_in_eu" model="account.fiscal.position.tax.template">
+            <field name="position_id" ref="l10n_ie_fp_in_eu"/>
+            <field name="tax_src_id" ref="l10n_ie_tax_sale_service_135"/>
+            <field name="tax_dest_id" ref="l10n_ie_tax_sale_intra_service_0"/>
+        </record>
+
+        <!-- Purchases 13.5% goods (IE) > Purchases 0% goods (EU) -->
+        <record id="l10n_ie_fp_purchase_good_135_vat_in_eu" model="account.fiscal.position.tax.template">
+            <field name="position_id" ref="l10n_ie_fp_in_eu"/>
+            <field name="tax_src_id" ref="l10n_ie_tax_purchase_good_135"/>
+            <field name="tax_dest_id" ref="l10n_ie_tax_purchase_intra_good_0"/>
+        </record>
+
+        <!-- Purchases 13.5% services (IE) > Purchases 0% services (EU) -->
+        <record id="l10n_ie_fp_purchase_service_135_vat_in_eu" model="account.fiscal.position.tax.template">
+            <field name="position_id" ref="l10n_ie_fp_in_eu"/>
+            <field name="tax_src_id" ref="l10n_ie_tax_purchase_service_135"/>
+            <field name="tax_dest_id" ref="l10n_ie_tax_purchase_intra_service_0"/>
+        </record>
+
+        <!-- Sales 9% goods (IE) > Sales 0% goods (EU) -->
+        <record id="l10n_ie_fp_sale_good_9_vat_in_eu" model="account.fiscal.position.tax.template">
+            <field name="position_id" ref="l10n_ie_fp_in_eu"/>
+            <field name="tax_src_id" ref="l10n_ie_tax_sale_good_9"/>
+            <field name="tax_dest_id" ref="l10n_ie_tax_sale_intra_good_0"/>
+        </record>
+
+        <!-- Sales 9% services (IE) > Sales 0% services (EU) -->
+        <record id="l10n_ie_fp_sale_service_9_vat_in_eu" model="account.fiscal.position.tax.template">
+            <field name="position_id" ref="l10n_ie_fp_in_eu"/>
+            <field name="tax_src_id" ref="l10n_ie_tax_sale_service_9"/>
+            <field name="tax_dest_id" ref="l10n_ie_tax_sale_intra_service_0"/>
+        </record>
+
+        <!-- Purchases 9% goods (IE) > Purchases 0% goods (EU) -->
+        <record id="l10n_ie_fp_purchase_good_9_vat_in_eu" model="account.fiscal.position.tax.template">
+            <field name="position_id" ref="l10n_ie_fp_in_eu"/>
+            <field name="tax_src_id" ref="l10n_ie_tax_purchase_good_9"/>
+            <field name="tax_dest_id" ref="l10n_ie_tax_purchase_intra_good_0"/>
+        </record>
+
+        <!-- Purchases 9% services (IE) > Purchases 0% services (EU) -->
+        <record id="l10n_ie_fp_purchase_service_9_vat_in_eu" model="account.fiscal.position.tax.template">
+            <field name="position_id" ref="l10n_ie_fp_in_eu"/>
+            <field name="tax_src_id" ref="l10n_ie_tax_purchase_service_9"/>
+            <field name="tax_dest_id" ref="l10n_ie_tax_purchase_intra_service_0"/>
+        </record>
+
+        <!-- Sales 4.8% (IE) > Sales 0% goods (EU) -->
+        <record id="l10n_ie_fp_sale_48_vat_in_eu" model="account.fiscal.position.tax.template">
+            <field name="position_id" ref="l10n_ie_fp_in_eu"/>
+            <field name="tax_src_id" ref="l10n_ie_tax_sale_48"/>
+            <field name="tax_dest_id" ref="l10n_ie_tax_sale_intra_good_0"/>
+        </record>
+
+        <!-- Purchases 4.8% (IE) > Purchases 0% goods (EU) -->
+        <record id="l10n_ie_fp_purchase_48_vat_in_eu" model="account.fiscal.position.tax.template">
+            <field name="position_id" ref="l10n_ie_fp_in_eu"/>
+            <field name="tax_src_id" ref="l10n_ie_tax_purchase_48"/>
+            <field name="tax_dest_id" ref="l10n_ie_tax_purchase_intra_good_0"/>
+        </record>
+
+        <!-- Sales 0% (IE) > Sales 0% goods (EU) -->
+        <record id="l10n_ie_fp_sale_0_vat_in_eu" model="account.fiscal.position.tax.template">
+            <field name="position_id" ref="l10n_ie_fp_in_eu"/>
+            <field name="tax_src_id" ref="l10n_ie_tax_sale_0"/>
+            <field name="tax_dest_id" ref="l10n_ie_tax_sale_intra_good_0"/>
+        </record>
+
+        <!-- Purchases 0% (IE) > Purchases 0% goods (EU) -->
+        <record id="l10n_ie_fp_purchase_0_vat_in_eu" model="account.fiscal.position.tax.template">
+            <field name="position_id" ref="l10n_ie_fp_in_eu"/>
+            <field name="tax_src_id" ref="l10n_ie_tax_purchase_0"/>
+            <field name="tax_dest_id" ref="l10n_ie_tax_purchase_intra_good_0"/>
+        </record>
+
+        <!-- Sales Exempt (IE) > Sales 0% goods (EU) -->
+        <record id="l10n_ie_fp_sale_0_vat_in_eu" model="account.fiscal.position.tax.template">
+            <field name="position_id" ref="l10n_ie_fp_in_eu"/>
+            <field name="tax_src_id" ref="l10n_ie_tax_sale_exempt"/>
+            <field name="tax_dest_id" ref="l10n_ie_tax_sale_intra_good_0"/>
+        </record>
+
+        <!-- Purchases Exempt (IE) > Purchases 0% goods (EU) -->
+        <record id="l10n_ie_fp_purchase_0_vat_in_eu" model="account.fiscal.position.tax.template">
+            <field name="position_id" ref="l10n_ie_fp_in_eu"/>
+            <field name="tax_src_id" ref="l10n_ie_tax_purchase_exempt"/>
+            <field name="tax_dest_id" ref="l10n_ie_tax_purchase_intra_good_0"/>
+        </record>
+
+        <!-- Sales 23% goods (IE) > Sales 0% goods (Export) -->
+        <record id="l10n_ie_fp_sale_good_23_vat_out_eu" model="account.fiscal.position.tax.template">
+            <field name="position_id" ref="l10n_ie_fp_out_eu"/>
+            <field name="tax_src_id" ref="l10n_ie_tax_sale_good_23"/>
+            <field name="tax_dest_id" ref="l10n_ie_tax_sale_extra_good_0"/>
+        </record>
+
+        <!-- Sales 23% services (IE) > Sales 0% services (Export) -->
+        <record id="l10n_ie_fp_sale_service_23_vat_out_eu" model="account.fiscal.position.tax.template">
+            <field name="position_id" ref="l10n_ie_fp_out_eu"/>
+            <field name="tax_src_id" ref="l10n_ie_tax_sale_service_23"/>
+            <field name="tax_dest_id" ref="l10n_ie_tax_sale_extra_service_0"/>
+        </record>
+
+        <!-- Purchases 23% goods (IE) > Purchases 0% goods (Export) -->
+        <record id="l10n_ie_fp_purchase_good_23_vat_out_eu" model="account.fiscal.position.tax.template">
+            <field name="position_id" ref="l10n_ie_fp_out_eu"/>
+            <field name="tax_src_id" ref="l10n_ie_tax_purchase_good_23"/>
+            <field name="tax_dest_id" ref="l10n_ie_tax_purchase_extra_good_23"/>
+        </record>
+
+        <!-- Purchases 23% services (IE) > Purchases 0% services (Export) -->
+        <record id="l10n_ie_fp_purchase_service_23_vat_out_eu" model="account.fiscal.position.tax.template">
+            <field name="position_id" ref="l10n_ie_fp_out_eu"/>
+            <field name="tax_src_id" ref="l10n_ie_tax_purchase_service_23"/>
+            <field name="tax_dest_id" ref="l10n_ie_tax_purchase_extra_service_23"/>
+        </record>
+
+        <!-- Sales 9% goods (IE) > Sales 0% goods (Export) -->
+        <record id="l10n_ie_fp_sale_good_9_vat_out_eu" model="account.fiscal.position.tax.template">
+            <field name="position_id" ref="l10n_ie_fp_out_eu"/>
+            <field name="tax_src_id" ref="l10n_ie_tax_sale_good_9"/>
+            <field name="tax_dest_id" ref="l10n_ie_tax_sale_extra_good_0"/>
+        </record>
+
+        <!-- Sales 9% services (IE) > Sales 0% services (Export) -->
+        <record id="l10n_ie_fp_sale_service_9_vat_out_eu" model="account.fiscal.position.tax.template">
+            <field name="position_id" ref="l10n_ie_fp_out_eu"/>
+            <field name="tax_src_id" ref="l10n_ie_tax_sale_service_9"/>
+            <field name="tax_dest_id" ref="l10n_ie_tax_sale_extra_service_0"/>
+        </record>
+
+        <!-- Purchases 9% goods (IE) > Purchases 0% goods (Export) -->
+        <record id="l10n_ie_fp_purchase_good_9_vat_out_eu" model="account.fiscal.position.tax.template">
+            <field name="position_id" ref="l10n_ie_fp_out_eu"/>
+            <field name="tax_src_id" ref="l10n_ie_tax_purchase_good_9"/>
+            <field name="tax_dest_id" ref="l10n_ie_tax_purchase_extra_good_9"/>
+        </record>
+
+        <!-- Purchases 9% services (IE) > Purchases 0% services (Export) -->
+        <record id="l10n_ie_fp_purchase_service_9_vat_out_eu" model="account.fiscal.position.tax.template">
+            <field name="position_id" ref="l10n_ie_fp_out_eu"/>
+            <field name="tax_src_id" ref="l10n_ie_tax_purchase_service_9"/>
+            <field name="tax_dest_id" ref="l10n_ie_tax_purchase_extra_service_9"/>
+        </record>
+
+        <!-- Sales 0% (IE) > Sales 0% goods (Export) -->
+        <record id="l10n_ie_fp_sale_0_vat_out_eu" model="account.fiscal.position.tax.template">
+            <field name="position_id" ref="l10n_ie_fp_out_eu"/>
+            <field name="tax_src_id" ref="l10n_ie_tax_sale_0"/>
+            <field name="tax_dest_id" ref="l10n_ie_tax_sale_extra_good_0"/>
+        </record>
+
+        <!-- Purchases 0% (IE) > Purchases 0% goods (Export) -->
+        <record id="l10n_ie_fp_purchase_0_vat_out_eu" model="account.fiscal.position.tax.template">
+            <field name="position_id" ref="l10n_ie_fp_out_eu"/>
+            <field name="tax_src_id" ref="l10n_ie_tax_purchase_0"/>
+            <field name="tax_dest_id" ref="l10n_ie_tax_purchase_extra_good_0"/>
+        </record>
+    </data>
+</odoo>

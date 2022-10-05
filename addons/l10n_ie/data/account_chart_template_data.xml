@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="l10n_ie_coa" model="account.chart.template">
+        <field name="name">Ireland Chart Template</field>
+        <field name="bank_account_code_prefix">513</field>
+        <field name="cash_account_code_prefix">516</field>
+        <field name="transfer_account_code_prefix">517</field>
+        <field name="code_digits">6</field>
+        <field name="currency_id" ref="base.EUR"/>
+        <field name="country_id" ref="base.ie"/>
+    </record>
+</odoo>

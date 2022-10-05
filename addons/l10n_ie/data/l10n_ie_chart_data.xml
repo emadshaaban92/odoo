@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="l10n_ie_coa" model="account.chart.template">
+        <field name="property_account_receivable_id" ref="l10n_ie_account_4011"/>
+        <field name="property_account_payable_id" ref="l10n_ie_account_44111"/>
+        <field name="property_account_expense_categ_id" ref="l10n_ie_account_6061"/>
+        <field name="property_account_income_categ_id" ref="l10n_ie_account_703001"/>
+        <field name="income_currency_exchange_account_id" ref="l10n_ie_account_7561"/>
+        <field name="expense_currency_exchange_account_id" ref="l10n_ie_account_6561"/>
+        <field name="default_pos_receivable_account_id" ref="l10n_ie_account_40111"/>
+        <field name="property_stock_account_input_categ_id" ref="l10n_ie_account_321"/>
+        <field name="property_stock_account_output_categ_id" ref="l10n_ie_account_321"/>
+        <field name="property_stock_valuation_account_id" ref="l10n_ie_account_60761"/>
+        <field name="property_tax_payable_account_id" ref="l10n_ie_account_461412"/>
+        <field name="property_tax_receivable_account_id" ref="l10n_ie_account_421612"/>
+        <field name="property_advance_tax_payment_account_id" ref="l10n_ie_account_421613"/>
+        <field name="account_journal_suspense_account_id" ref="l10n_ie_account_485"/>
+    </record>
+</odoo>
