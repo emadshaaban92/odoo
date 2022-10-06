@@ -6,7 +6,6 @@ import logging
 from freezegun import freeze_time
 from lxml import etree
 
-from odoo import tools
 from odoo.tests import tagged
 from odoo.addons.l10n_it_edi.tests.common import TestItEdi, patch_proxy_user
 from odoo.addons.l10n_it_edi.tools.remove_signature import remove_signature
@@ -43,8 +42,7 @@ class TestItEdiImport(TestItEdi):
 
     @classmethod
     def setUpClass(cls):
-        super().setUpClass(chart_template_ref='l10n_it.l10n_it_chart_template_generic',
-                           edi_format_ref='l10n_it_edi.edi_fatturaPA')
+        super().setUpClass()
 
         # Build test data.
         # invoice_filename1 is used for vendor bill receipts tests
