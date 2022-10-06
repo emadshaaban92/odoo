@@ -4,8 +4,10 @@
 from unittest.mock import patch
 
 from odoo.addons.test_mail.tests.common import TestMailCommon
+from odoo.addons.test_mail.data.test_mail_data import MAIL_TEMPLATE
 from odoo.tests.common import tagged
 from odoo.tests import Form
+from odoo.tools.mail import formataddr
 
 
 @tagged('mail_track')
@@ -84,30 +86,40 @@ class TestTracking(TestMailCommon):
 
     def test_message_track_template(self):
         """ Update some tracked fields linked to some template -> message with onchange """
-        self.record.write({'mail_template': self.env.ref('test_mail.mail_test_ticket_tracking_tpl').id})
-        self.assertEqual(self.record.message_ids, self.env['mail.message'])
+        sender_email = 'sender@test.lan'
+        recipient_email = 'recipient@test.lan'
+        formated_sender_email = formataddr((sender_email, sender_email))
+        formated_recipient_email = formataddr((recipient_email, recipient_email))
+        # 'external_notification' cannot be set on mail.test.ticket
+        # because it uses a 'mass_mail' for convenience of other tests (abnormal usecase)
+        test_model = self.env['mail.test.gateway.track']
 
-        with self.mock_mail_gateway():
-            self.record.write({
-                'name': 'Test2',
-                'customer_id': self.user_admin.partner_id.id,
+        test_record = test_model.create({
+            'name': 'Test',
+            'email_to': formated_recipient_email,
             })
+        self.flush_tracking()
+        self.assertEqual(len(test_record.message_ids), 1, 'should have a thread creation message')
+        test_record.message_ids.unlink()  # first message unrelated to test
+
+        with self.mock_mail_gateway(mail_unlink_sent=False):
+            test_record.write({'email_from': formated_sender_email})
             self.flush_tracking()
 
-        self.assertEqual(len(self.record.message_ids), 2, 'should have 2 new messages: one for tracking, one for template')
+        self.assertEqual(len(test_record.message_ids), 2, 'should have 2 new messages: one for tracking, one for template')
 
         # one new message containing the template linked to tracking
-        self.assertEqual(self.record.message_ids[0].subject, 'Test Template')
-        self.assertEqual(self.record.message_ids[0].body, '<p>Hello Test2</p>')
+        self.assertEqual(test_record.message_ids[0].subject, 'Template on Test')
+        self.assertEqual(test_record.message_ids[0].message_type, 'notification')
 
         # one email send due to template
-        self.assertSentEmail(self.record.env.user.partner_id, [self.partner_admin], body='<p>Hello Test2</p>')
+        self.assertSentEmail(formated_sender_email, [formated_recipient_email], subject='Template on Test')
 
         # one new message containing tracking; without subtype linked to tracking
-        self.assertEqual(self.record.message_ids[1].subtype_id, self.env.ref('mail.mt_note'))
+        self.assertEqual(test_record.message_ids[1].subtype_id, self.env.ref('mail.mt_note'))
         self.assertTracking(
-            self.record.message_ids[1],
-            [('customer_id', 'many2one', False, self.user_admin.partner_id)  # onchange tracked field
+            test_record.message_ids[1],
+            [('email_from', 'char', False, formated_sender_email)  # onchange tracked field
              ])
 
     def test_message_track_template_at_create(self):
@@ -129,6 +141,33 @@ class TestTracking(TestMailCommon):
         self.assertEqual(record.message_ids[0].body, '<p>Hello Test</p>')
         # one email send due to template
         self.assertSentEmail(self.record.env.user.partner_id, [self.partner_admin], body='<p>Hello Test</p>')
+
+    def test_message_track_template_at_create_from_message(self):
+        """Make sure records created through aliasing show the original message before the template"""
+        # setup
+        test_model = self.env['ir.model']._get('mail.test.ticket')
+        custom_values = {'name': 'Test', 'customer_id': self.user_admin.partner_id.id,
+                         'mail_template': self.env.ref('test_mail.mail_test_ticket_tracking_tpl').id}
+        self.env['mail.alias'].create({
+            'alias_name': 'groups',
+            'alias_user_id': False,
+            'alias_model_id': test_model.id,
+            'alias_contact': 'everyone',
+            'alias_defaults': custom_values})
+        record = self.format_and_process(MAIL_TEMPLATE, '"Sylvie Lelitre" <test.sylvie.lelitre@agrolait.com>',
+                                         'groups@test.com', target_field='customer_id', subject=custom_values['customer_id'],
+                                         target_model='mail.test.ticket')
+        self.flush_tracking()
+
+        # Should be trigger message and response template
+        self.assertEqual(len(record.message_ids), 2)
+        messages = list(record.message_ids)
+        messages.sort(key=lambda msg: msg.id)
+        trigger = messages[0]
+        template = messages[1]
+        self.assertIn('Please call me as soon as possible this afternoon!', trigger.body)
+        self.assertIn('Hello', template.body)
+        self.assertEqual(template.mail_ids.recipient_ids, self.user_admin.partner_id)
 
     def test_create_partner_from_tracking_multicompany(self):
         company1 = self.env['res.company'].create({'name': 'company1'})

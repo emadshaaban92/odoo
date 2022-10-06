@@ -8,7 +8,7 @@ from datetime import datetime
 from unittest.mock import DEFAULT
 from unittest.mock import patch
 
-from odoo import exceptions
+from odoo import exceptions, SUPERUSER_ID
 from odoo.addons.mail.tests.common import mail_new_test_user
 from odoo.addons.test_mail.data import test_mail_data
 from odoo.addons.test_mail.data.test_mail_data import MAIL_TEMPLATE
@@ -1067,6 +1067,45 @@ class TestMailgateway(TestMailCommon):
     # --------------------------------------------------
     # Thread formation
     # --------------------------------------------------
+
+    @mute_logger('odoo.addons.mail.models.mail_thread', 'odoo.models.unlink', 'odoo.addons.mail.models.mail_mail')
+    def test_message_process_external_notification_reply(self):
+        """Ensure responses bot messages are discussions."""
+        bot_notification_message = self._create_gateway_message(
+            self.test_record,
+            'bot_notif_message',
+            author_id=self.env['res.users'].browse(SUPERUSER_ID).partner_id.id,
+            message_type='notification',
+            is_internal=True,
+            subtype_id=self.env.ref('mail.mt_note').id,
+        )
+
+        self.format_and_process(
+            MAIL_TEMPLATE, self.email_from, '',
+            subject='Reply to bot notif',
+            extra=f'References: {bot_notification_message.message_id}'
+        )
+        new_msg = self.test_record.message_ids[0]
+        self.assertFalse(new_msg.is_internal)
+        self.assertEqual(new_msg.subtype_id, self.env.ref('mail.mt_comment'))
+
+        # Also check the regular case
+        some_notification_message = self._create_gateway_message(
+            self.test_record,
+            'some_notif_message',
+            message_type='notification',
+            is_internal=True,
+            subtype_id=self.env.ref('mail.mt_note').id,
+        )
+
+        self.format_and_process(
+            MAIL_TEMPLATE, self.email_from, '',
+            subject='Reply to some notif',
+            extra=f'References: {some_notification_message.message_id}'
+        )
+        new_msg = self.test_record.message_ids[0]
+        self.assertTrue(new_msg.is_internal)
+        self.assertEqual(new_msg.subtype_id, self.env.ref('mail.mt_note'))
 
     @mute_logger('odoo.addons.mail.models.mail_thread', 'odoo.models')
     def test_message_process_in_reply_to(self):

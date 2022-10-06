@@ -300,9 +300,14 @@ class MailThread(models.AbstractModel):
                 # based on tracked field to stay consistent with write
                 # we don't consider that a falsy field is a change, to stay consistent with previous implementation,
                 # but we may want to change that behaviour later.
-                thread._message_track_post_template(changes)
-
+                if changes:
+                    self.env.cr.precommit.add(thread._message_track_post_template_precommit)
+                    self.env.cr.precommit.data.setdefault(f'mail.tracking.create.{self._name}.{thread.id}', changes)
         return threads
+
+    def _message_track_post_template_precommit(self):
+        self._message_track_post_template(self.env.cr.precommit.data.pop(f'mail.tracking.create.{self._name}.{self.id}', []))
+        self.env.flush_all()
 
     def write(self, values):
         if self._context.get('tracking_disable'):
@@ -1592,8 +1597,11 @@ class MailThread(models.AbstractModel):
                 order='create_date DESC, id DESC',
                 limit=1)
         if parent_ids:
+            parent_subtype = parent_ids.subtype_id
             msg_dict['parent_id'] = parent_ids.id
-            msg_dict['is_internal'] = parent_ids.subtype_id and parent_ids.subtype_id.internal or False
+            # If responding to a bot message, make comment as nobody would be notified otherwise
+            parent_sent_by_bot = parent_ids.author_id == self.env['res.users'].browse(SUPERUSER_ID).partner_id
+            msg_dict['is_internal'] = parent_subtype and parent_subtype.internal and not parent_sent_by_bot
 
         msg_dict.update(self._message_parse_extract_payload(message, save_original=save_original))
         msg_dict.update(self._message_parse_extract_bounce(message, msg_dict))
