@@ -146,14 +146,13 @@ class ReportBomStructure(models.AbstractModel):
         attachment_ids = []
         if not is_minimized:
             if product:
-                prod_cost = product.uom_id._compute_price(product.with_company(company).standard_price, bom.product_uom_id) * current_quantity
                 attachment_ids = self.env['mrp.document'].search(['|', '&', ('res_model', '=', 'product.product'),
                                                                  ('res_id', '=', product.id), '&', ('res_model', '=', 'product.template'),
                                                                  ('res_id', '=', product.product_tmpl_id.id)]).ids
             else:
                 # Use the product template instead of the variant
-                prod_cost = bom.product_tmpl_id.uom_id._compute_price(bom.product_tmpl_id.with_company(company).standard_price, bom.product_uom_id) * current_quantity
-                attachment_ids = self.env['mrp.document'].search([('res_model', '=', 'product.template'), ('res_id', '=', bom.product_tmpl_id.id)]).ids
+                product = bom.product_tmpl_id
+                attachment_ids = self.env['mrp.document'].search([('res_model', '=', 'product.template'), ('res_id', '=', product.id)]).ids
 
         bom_key = bom.id
         if not product_info[key].get(bom_key):
@@ -188,7 +187,7 @@ class ReportBomStructure(models.AbstractModel):
             'link_id': product.id if product.product_variant_count > 1 else product.product_tmpl_id.id,
             'link_model': 'product.product' if product.product_variant_count > 1 else 'product.template',
             'code': bom and bom.display_name or '',
-            'prod_cost': prod_cost,
+            'prod_cost': product.uom_id._compute_price(product.with_company(company).standard_price, bom.product_uom_id) * current_quantity,
             'bom_cost': 0,
             'level': level or 0,
             'attachment_ids': attachment_ids,
