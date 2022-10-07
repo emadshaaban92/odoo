@@ -5,7 +5,7 @@
             "id": "sheet1",
             "name": "Dashboard",
             "colNumber": 11,
-            "rowNumber": 30,
+            "rowNumber": 37,
             "rows": {
                 "6": {
                     "size": 40
@@ -610,7 +610,7 @@
             ]
         }
     },
-    "revisionId": "aebd5982-19e1-4e68-8d75-6e1ef9493c95",
+    "revisionId": "0cdc7a87-ea1e-4dfd-a020-c836760a2054",
     "chartOdooMenusReferences": {
         "e4d80a72-4568-4b7b-9f10-439064db939e": "website_slides.website_slides_menu_root",
         "2f9b379a-0281-4399-8bc8-8847019c8ac7": "website_slides.website_slides_menu_root",
@@ -802,7 +802,7 @@
             "id": "46b74887-ff98-4c97-9629-4a5a14084321",
             "type": "date",
             "label": "Period",
-            "defaultValue": "last_three_months",
+            "defaultValue": "last_year",
             "rangeType": "relative",
             "defaultsToCurrentPeriod": false,
             "pivotFields": {
