@@ -120,11 +120,41 @@ function factory(dependencies) {
                         last_message_id,
                         partner_id,
                     });
+                case 'deletion':
+                    return this._handleNotificationChannelDeletion(channelId, data);
                 case 'typing_status':
                     return this._handleNotificationChannelTypingStatus(channelId, data);
                 default:
                     return this._handleNotificationChannelMessage(channelId, data);
             }
+        }
+
+        /**
+         * @private
+         * @param {integer} channelId
+         * @param {Object} param1
+         * @param {integer} param1.partner_id
+         * @param {string} param1.partner_name
+         */
+        async _handleNotificationChannelDeletion(channelId, { partner_id, partner_name }) {
+            const channel = this.env.models['mail.thread'].findFromIdentifyingData({
+                id: channelId,
+                model: 'mail.channel',
+            });
+            if (!channel) {
+                return;
+            }
+            channel.update({ isServerPinned: false });
+            partner_name = partner_id === this.messaging.currentPartner.id ? "You" : partner_name;
+            const message = _.str.sprintf(
+                this.env._t("%s deleted <b>%s</b>."),
+                partner_name,
+                owl.utils.escape(channel.name),
+            );
+            this.env.services['notification'].notify({
+                message,
+                type: 'warning',
+            });
         }
 
         /**
