@@ -199,7 +199,8 @@ class ResUsers(models.Model):
             # TDE FIXME: make this template technical (qweb)
             with self.env.cr.savepoint():
                 force_send = not(self.env.context.get('import_file', False))
-                template.send_mail(user.id, force_send=force_send, raise_exception=True, email_values=email_values)
+                template.send_mail(user.id, force_send=force_send, raise_exception=True, email_values=email_values,
+                                   email_layout_xmlid='mail.mail_notification_layout')
             _logger.info("Password reset email sent for user <%s> to <%s>", user.login, user.email)
 
     def send_unregistered_user_reminder(self, after_days=5):
@@ -221,7 +222,7 @@ class ResUsers(models.Model):
         # For sending mail to all the invitors about their invited users
         for user in invited_users:
             template = self.env.ref('auth_signup.mail_template_data_unregistered_users').with_context(dbname=self._cr.dbname, invited_users=invited_users[user])
-            template.send_mail(user, email_layout_xmlid='mail.mail_notification_light', force_send=False)
+            template.send_mail(user, email_layout_xmlid='mail.mail_notification_layout', force_send=False)
 
     @api.model
     def web_create_users(self, emails):
