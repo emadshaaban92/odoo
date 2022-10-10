@@ -130,20 +130,25 @@ class MailChannel(models.Model):
 
     def _email_livechat_transcript(self, email):
         company = self.env.user.company_id
-        render_context = {
-            "company": company,
-            "channel": self,
-        }
-        mail_body = self.env['ir.qweb']._render('im_livechat.livechat_email_template', render_context, minimal_qcontext=True)
-        mail_body = self.env['mail.render.mixin']._replace_local_links(mail_body)
-        mail = self.env['mail.mail'].sudo().create({
-            'subject': _('Conversation with %s', self.livechat_operator_id.user_livechat_username or self.livechat_operator_id.name),
-            'email_from': company.catchall_formatted or company.email_formatted,
-            'author_id': self.env.user.partner_id.id,
-            'email_to': email,
-            'body_html': mail_body,
-        })
-        mail.send()
+        self.env['mail.mail'].create_rendered_mail(
+            'im_livechat.livechat_email_template',
+            {
+                'subject': _('Conversation with %s',
+                             self.livechat_operator_id.user_livechat_username or self.livechat_operator_id.name),
+                'email_from': company.catchall_formatted or company.email_formatted,
+                'author_id': self.env.user.partner_id.id,
+                'email_to': email,
+                'auto_delete': True,
+            },
+            record=self,
+            message_render_context={
+                "company": company,
+                "channel": self,
+            },
+            mail_layout_render_context={
+                'subtitles': [_('Livechat Conversation'), company.name],
+                'subtitles_mode': 'highlight_level2',
+            }).send()
 
     def _get_channel_history(self):
         """
