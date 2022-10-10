@@ -41,6 +41,17 @@ class MailTemplate(models.Model):
     model_id = fields.Many2one('ir.model', 'Applies to')
     model = fields.Char('Related Document Model', related='model_id.model', index=True, store=True, readonly=True)
     subject = fields.Char('Subject', translate=True, prefetch=True, help="Subject (placeholders may be used here)")
+    subtitle1 = fields.Char('Subtitle level 1', translate=True, prefetch=True,
+                            help='title of level 1 displayed in the header')
+    subtitle2 = fields.Char('Subtitle level 2', translate=True, prefetch=True,
+                            help='title of level 2 displayed in the header')
+    subtitles_supported = fields.Boolean('Subtitles supported',
+                                         help='Whether the associated template layout support rendering of subtitles')
+    subtitles_mode = fields.Selection(
+        [('highlight_level2', 'Highlight second subtitle'),
+         ],
+        'Subtitles mode',
+        help="By default, the first subtitle is highlighted")
     email_from = fields.Char('From',
                              help="Sender address (placeholders may be used here). If not set, the default "
                                   "value will be the author's email alias if configured, or email address.")
@@ -311,6 +322,14 @@ class MailTemplate(models.Model):
         records.check_access_rights('read')
         records.check_access_rule('read')
 
+    def _render_subtitles(self, res_model, res_id):
+        subtitles = []
+        if self.subtitle1:
+            subtitles.append(self._render_template_inline_template(self.subtitle1, res_model, [res_id])[res_id])
+        if self.subtitle2:
+            subtitles.append(self._render_template_inline_template(self.subtitle2, res_model, [res_id])[res_id])
+        return subtitles
+
     def send_mail(self, res_id, force_send=False, raise_exception=False, email_values=None,
                   email_layout_xmlid=False):
         """ Generates a new mail.mail. Template is rendered on record given by
@@ -351,10 +370,12 @@ class MailTemplate(models.Model):
         if email_layout_xmlid and values['body_html']:
             record = self.env[self.model].browse(res_id)
             model = self.env['ir.model']._get(record._name)
+            self_with_lang = self
 
             if self.lang:
                 lang = self._render_lang([res_id])[res_id]
                 model = model.with_context(lang=lang)
+                self_with_lang = self.with_context(lang=lang)
 
             template_ctx = {
                 # message
@@ -364,7 +385,8 @@ class MailTemplate(models.Model):
                 'model_description': model.display_name,
                 'record': record,
                 'record_name': False,
-                'subtitles': False,
+                'subtitles': self_with_lang._render_subtitles(record._name, res_id),
+                'subtitles_mode': self.subtitles_mode,
                 # user / environment
                 'company': 'company_id' in record and record['company_id'] or self.env.company,
                 'email_add_signature': False,

@@ -53,6 +53,10 @@
                         <notebook>
                             <page string="Content" name="content">
                                 <field name="can_write" invisible="1"/>
+                                <group attrs="{'invisible': [('subtitles_supported', '=', False)]}">
+                                    <field name="subtitle1"/>
+                                    <field name="subtitle2"/>
+                                </group>
                                 <field name="body_html" widget="html" class="oe-bordered-editor"
                                     options="{'style-inline': true, 'codeview': true, 'dynamic_placeholder': true}"
                                     attrs="{'readonly': [('can_write', '=', False), ('id', '!=', False)]}"/>
@@ -96,6 +100,9 @@
                                         <field name="auto_delete"/>
                                         <field name="report_template" domain="[('model','=',model)]"/>
                                         <field name="report_name" attrs="{'invisible':[('report_template','=',False)]}"/>
+                                        <field name="subtitles_supported"/>
+                                        <field name="subtitles_mode"
+                                               attrs="{'invisible': [('subtitles_supported', '=', False)]}"/>
                                     </group>
                                 </group>
                             </page>
