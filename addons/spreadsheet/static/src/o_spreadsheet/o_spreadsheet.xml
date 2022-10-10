@@ -1536,8 +1536,11 @@
         <button class="o-btn-action o-add-selection" t-if="canAddRange" t-on-click="addEmptyInput">
           Add range
         </button>
-        <button class="o-btn-action o-selection-ok" t-if="hasFocus" t-on-click="disable">
+        <button class="o-btn-action o-selection-ok" t-if="isConfirmable" t-on-click="disable">
           Confirm
+        </button>
+        <button class="o-btn-action o-selection-ko" t-if="isResettable" t-on-click="reset">
+          Reset
         </button>
       </div>
     </div>

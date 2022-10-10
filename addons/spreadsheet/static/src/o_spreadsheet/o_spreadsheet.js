@@ -2831,7 +2831,6 @@
         "SET_FORMULA_VISIBILITY",
         "OPEN_CELL_POPOVER",
         "CLOSE_CELL_POPOVER",
-        "UPDATE_FILTER",
     ]);
     const coreTypes = new Set([
         /** CELLS */
@@ -6190,6 +6189,12 @@
         get isInvalid() {
             return this.props.isInvalid || this.state.isMissing;
         }
+        get isConfirmable() {
+            return this.hasFocus && this.ranges.every((range) => range.isValidRange);
+        }
+        get isResettable() {
+            return this.ranges.some((range) => !range.isValidRange);
+        }
         setup() {
             owl.onMounted(() => this.enableNewSelectionInput());
             owl.onWillUnmount(async () => this.disableNewSelectionInput());
@@ -6219,7 +6224,9 @@
             var _a, _b;
             const ranges = this.env.model.getters.getSelectionInputValue(this.id);
             (_b = (_a = this.props).onSelectionChanged) === null || _b === void 0 ? void 0 : _b.call(_a, ranges);
-            this.previousRanges = ranges;
+            if (this.isConfirmable) {
+                this.previousRanges = ranges;
+            }
         }
         focus(rangeId) {
             this.state.isMissing = false;
@@ -6246,6 +6253,19 @@
             });
             target.blur();
             this.triggerChange();
+        }
+        reset(ev) {
+            var _a, _b, _c, _d;
+            const existingSelectionRange = this.env.model.getters.getSelectionInput(this.id);
+            for (var i = 0; i < this.previousRanges.length; i++) {
+                this.env.model.dispatch("CHANGE_RANGE", {
+                    id: this.id,
+                    rangeId: existingSelectionRange[i].id,
+                    value: this.previousRanges[i],
+                });
+            }
+            (_b = (_a = this.props).onSelectionChanged) === null || _b === void 0 ? void 0 : _b.call(_a, this.previousRanges);
+            (_d = (_c = this.props).onSelectionConfirmed) === null || _d === void 0 ? void 0 : _d.call(_c);
         }
         disable() {
             var _a, _b;
@@ -20423,12 +20443,6 @@
                         target: this.env.model.getters.getSelectedZones(),
                     });
                 },
-                BACKSPACE: () => {
-                    this.env.model.dispatch("DELETE_CONTENT", {
-                        sheetId: this.env.model.getters.getActiveSheetId(),
-                        target: this.env.model.getters.getSelectedZones(),
-                    });
-                },
                 "CTRL+A": () => this.env.model.selection.loopSelection(),
                 "CTRL+S": () => {
                     var _a, _b;
@@ -31204,6 +31218,7 @@
     }
     HeaderVisibilityUIPlugin.getters = [
         "getNextVisibleCellPosition",
+        "getNextVisibleCellPosition",
         "findVisibleHeader",
         "findLastVisibleColRowIndex",
         "findFirstVisibleColRowIndex",
@@ -39834,9 +39849,6 @@
                 if (!(name in plugin)) {
                     throw new Error(`Invalid getter name: ${name} for plugin ${plugin.constructor}`);
                 }
-                if (name in this.getters) {
-                    throw new Error(`Getter "${name}" is already defined.`);
-                }
                 this.getters[name] = plugin[name].bind(plugin);
             }
             this.uiPlugins.push(plugin);
@@ -39855,9 +39867,6 @@
             for (let name of Plugin.getters) {
                 if (!(name in plugin)) {
                     throw new Error(`Invalid getter name: ${name} for plugin ${plugin.constructor}`);
-                }
-                if (name in this.coreGetters) {
-                    throw new Error(`Getter "${name}" is already defined.`);
                 }
                 this.coreGetters[name] = plugin[name].bind(plugin);
             }
@@ -40128,8 +40137,8 @@
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-10-10T07:43:36.847Z';
-    exports.__info__.hash = '1af8ad3';
+    exports.__info__.date = '2022-10-10T13:25:24.698Z';
+    exports.__info__.hash = 'e09f77e';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
