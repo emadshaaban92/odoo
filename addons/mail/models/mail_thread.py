@@ -2208,6 +2208,7 @@ class MailThread(models.AbstractModel):
     # MAIL.MESSAGE HELPERS
     # ------------------------------------------------------------
 
+    @api.model
     def _message_compute_author(self, author_id=None, email_from=None, raise_on_email=True):
         """ Tool method computing author information for messages. Purpose is
         to ensure maximum coherence between author / current user / email_from

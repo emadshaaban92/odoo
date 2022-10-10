@@ -583,3 +583,65 @@ class MailMail(models.Model):
             if auto_commit is True:
                 self._cr.commit()
         return True
+
+    @api.model
+    def create_rendered_mail(self, template_xmlid, mail_values,
+                             record=None,
+                             message_render_context=None, message_values=None,
+                             email_layout_xmlid='mail.mail_notification_layout', mail_layout_render_context=None):
+        """Create rendered mail along with the associated message.
+
+        The goal of this method is to hide the inner mechanism for sending simple email: render the body of the message,
+        create a mail.message, apply layout template around the rendered message and then create a mail.mail.
+
+        :param str template_xmlid: template id to render for the message.
+        :param dict mail_values: values for mail.mail creation.
+        :param recordset record: optional related record.
+        :param dict message_render_context: optional additional rendering context for the message. "object" is
+        automatically added based on the record.
+        :param dict message_values: values for mail.message creation. model and res_id are automatically added based on
+        the record and if author_id or email_from is not provided, it is automatically added using
+        mail.thread._message_compute_author.
+        :param str email_layout_xmlid: optional template layout id.
+        :param dict mail_layout_render_context: optional additional rendering context for the mail layout. Note that the
+        message is automatically added.
+        :returns recordset: created mail.mail recordset
+        """
+        message_values = message_values if message_values else {}
+        mail_layout_render_context = mail_layout_render_context if mail_layout_render_context else {}
+        message_render_context = message_render_context if message_render_context else {}
+        if not message_values.get('author_id') or not message_values.get('email_from'):
+            author_id, email_from = self.env['mail.thread']._message_compute_author(
+                message_values.get('author_id'), message_values.get('email_from'))
+            message_values['author_id'] = author_id
+            message_values['email_from'] = email_from
+
+        if record:
+            record.ensure_one()
+            message_values['model'] = record._name
+            message_values['res_id'] = record.id
+            message_render_context['object'] = record
+        message_html = self.env['ir.qweb']._render(template_xmlid, message_render_context)
+        message = self.env["mail.message"].sudo().new({
+            **message_values,
+            'body': message_html,
+        })
+        if email_layout_xmlid:
+            mail_body_html = self.env["mail.render.mixin"]._render_encapsulate(
+                email_layout_xmlid,
+                message_html,
+                add_context={
+                    **mail_layout_render_context,
+                    'message': message,
+                }
+            )
+        else:
+            mail_body_html = message_html
+        mail = self.env["mail.mail"].sudo().create({
+            # Following line is needed otherwise related field like "subject" are not set, and we end up with no subject
+            **{k: v for k, v in message_values.items() if k in self.env['mail.mail']._fields},
+            **mail_values,
+            'body_html': mail_body_html,
+            'mail_message_id': message.id,
+        })
+        return mail
