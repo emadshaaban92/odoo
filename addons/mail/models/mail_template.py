@@ -388,7 +388,9 @@ class MailTemplate(models.Model):
                 'subtitles': self_with_lang._render_subtitles(record._name, res_id),
                 'subtitles_mode': self.subtitles_mode,
                 # user / environment
-                'company': 'company_id' in record and record['company_id'] or self.env.company,
+                'company': 'company_id' in record and record['company_id'] or
+                           'user_id' in record and record['user_id']['company_id'] or
+                           self.env.company,
                 'email_add_signature': False,
                 'signature': '',
                 'website_url': '',
