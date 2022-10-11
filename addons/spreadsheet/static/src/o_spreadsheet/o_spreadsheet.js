@@ -607,6 +607,152 @@
         const delta = date.getTime() - INITIAL_1900_DAY.getTime();
         return Math.round(delta / MS_PER_DAY);
     }
+    /** Return the number of days in the current month of the given date */
+    function getDaysInMonth(date) {
+        return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+    }
+    function isLastDayOfMonth(date) {
+        return getDaysInMonth(date) === date.getDate();
+    }
+    /**
+     * Add a certain number of months to a date. This will adapt the month number, and possibly adapt
+     * the day of the month to keep it in the month.
+     *
+     * For example "31/12/2020" minus one month will be "30/11/2020", and not "31/11/2020"
+     *
+     * @param keepEndOfMonth if true, if the given date was the last day of a month, the returned date will
+     *          also always be the last day of a month.
+     */
+    function addMonthsToDate(date, months, keepEndOfMonth) {
+        const yStart = date.getFullYear();
+        const mStart = date.getMonth();
+        const dStart = date.getDate();
+        const jsDate = new Date(yStart, mStart + months);
+        if (keepEndOfMonth && dStart === getDaysInMonth(date)) {
+            jsDate.setDate(getDaysInMonth(jsDate));
+        }
+        else if (dStart > getDaysInMonth(jsDate)) {
+            // 31/03 minus one month should be 28/02, not 31/02
+            jsDate.setDate(getDaysInMonth(jsDate));
+        }
+        else {
+            jsDate.setDate(dStart);
+        }
+        return jsDate;
+    }
+    function isLeapYear(year) {
+        const _year = Math.trunc(year);
+        return (_year % 4 === 0 && _year % 100 != 0) || _year % 400 == 0;
+    }
+    function getYearFrac(startDate, endDate, _dayCountConvention) {
+        if (startDate === endDate) {
+            return 0;
+        }
+        if (startDate > endDate) {
+            const stack = endDate;
+            endDate = startDate;
+            startDate = stack;
+        }
+        const jsStartDate = numberToJsDate(startDate);
+        const jsEndDate = numberToJsDate(endDate);
+        let dayStart = jsStartDate.getDate();
+        let dayEnd = jsEndDate.getDate();
+        const monthStart = jsStartDate.getMonth(); // january is 0
+        const monthEnd = jsEndDate.getMonth(); // january is 0
+        const yearStart = jsStartDate.getFullYear();
+        const yearEnd = jsEndDate.getFullYear();
+        let yearsStart = 0;
+        let yearsEnd = 0;
+        switch (_dayCountConvention) {
+            // 30/360 US convention --------------------------------------------------
+            case 0:
+                if (dayStart === 31)
+                    dayStart = 30;
+                if (dayStart === 30 && dayEnd === 31)
+                    dayEnd = 30;
+                // If jsStartDate is the last day of February
+                if (monthStart === 1 && dayStart === (isLeapYear(yearStart) ? 29 : 28)) {
+                    dayStart = 30;
+                    // If jsEndDate is the last day of February
+                    if (monthEnd === 1 && dayEnd === (isLeapYear(yearEnd) ? 29 : 28)) {
+                        dayEnd = 30;
+                    }
+                }
+                yearsStart = yearStart + (monthStart * 30 + dayStart) / 360;
+                yearsEnd = yearEnd + (monthEnd * 30 + dayEnd) / 360;
+                break;
+            // actual/actual convention ----------------------------------------------
+            case 1:
+                let daysInYear = 365;
+                const isSameYear = yearStart === yearEnd;
+                const isOneDeltaYear = yearStart + 1 === yearEnd;
+                const isMonthEndBigger = monthStart < monthEnd;
+                const isSameMonth = monthStart === monthEnd;
+                const isDayEndBigger = dayStart < dayEnd;
+                // |-----|  <-- one Year
+                // 'A' is start date
+                // 'B' is end date
+                if ((!isSameYear && !isOneDeltaYear) ||
+                    (!isSameYear && isMonthEndBigger) ||
+                    (!isSameYear && isSameMonth && isDayEndBigger)) {
+                    // |---A-|-----|-B---|  <-- !isSameYear && !isOneDeltaYear
+                    // |---A-|----B|-----|  <-- !isSameYear && isMonthEndBigger
+                    // |---A-|---B-|-----|  <-- !isSameYear && isSameMonth && isDayEndBigger
+                    let countYears = 0;
+                    let countDaysInYears = 0;
+                    for (let y = yearStart; y <= yearEnd; y++) {
+                        countYears++;
+                        countDaysInYears += isLeapYear(y) ? 366 : 365;
+                    }
+                    daysInYear = countDaysInYears / countYears;
+                }
+                else if (!isSameYear) {
+                    // |-AF--|B----|-----|
+                    if (isLeapYear(yearStart) && monthStart < 2) {
+                        daysInYear = 366;
+                    }
+                    // |--A--|FB---|-----|
+                    if (isLeapYear(yearEnd) && (monthEnd > 1 || (monthEnd === 1 && dayEnd === 29))) {
+                        daysInYear = 366;
+                    }
+                }
+                else {
+                    // remaining cases:
+                    //
+                    // |-F-AB|-----|-----|
+                    // |AB-F-|-----|-----|
+                    // |A-F-B|-----|-----|
+                    // if February 29 occurs between date1 (exclusive) and date2 (inclusive)
+                    // daysInYear --> 366
+                    if (isLeapYear(yearStart)) {
+                        daysInYear = 366;
+                    }
+                }
+                yearsStart = startDate / daysInYear;
+                yearsEnd = endDate / daysInYear;
+                break;
+            // actual/360 convention -------------------------------------------------
+            case 2:
+                yearsStart = startDate / 360;
+                yearsEnd = endDate / 360;
+                break;
+            // actual/365 convention -------------------------------------------------
+            case 3:
+                yearsStart = startDate / 365;
+                yearsEnd = endDate / 365;
+                break;
+            // 30/360 European convention --------------------------------------------
+            case 4:
+                if (dayStart === 31)
+                    dayStart = 30;
+                if (dayEnd === 31)
+                    dayEnd = 30;
+                yearsStart = yearStart + (monthStart * 30 + dayStart) / 360;
+                yearsEnd = yearEnd + (monthEnd * 30 + dayEnd) / 360;
+                break;
+        }
+        return yearsEnd - yearsStart;
+    }
 
     //------------------------------------------------------------------------------
     /**
@@ -1022,6 +1168,11 @@
     /** Transform a string to lower case. If the string is undefined, return an empty string */
     function toLowerCase(str) {
         return str ? str.toLowerCase() : "";
+    }
+    function transpose2dArray(matrix) {
+        if (!matrix.length)
+            return matrix;
+        return matrix[0].map((_, i) => matrix.map((row) => row[i]));
     }
 
     const colors$1 = [
@@ -2735,19 +2886,19 @@
             let x = 0;
             let y = 0;
             switch (direction) {
-                case 0 /* DIRECTION.UP */:
+                case 0 /* UP */:
                     x = 0;
                     y = -rule.current;
                     break;
-                case 1 /* DIRECTION.DOWN */:
+                case 1 /* DOWN */:
                     x = 0;
                     y = rule.current;
                     break;
-                case 2 /* DIRECTION.LEFT */:
+                case 2 /* LEFT */:
                     x = -rule.current;
                     y = 0;
                     break;
-                case 3 /* DIRECTION.RIGHT */:
+                case 3 /* RIGHT */:
                     x = rule.current;
                     y = 0;
                     break;
@@ -2901,7 +3052,7 @@
                 results = [results];
             }
             results = [...new Set(results)];
-            this.reasons = results.filter((result) => result !== 0 /* CommandResult.Success */);
+            this.reasons = results.filter((result) => result !== 0 /* Success */);
         }
         /**
          * Static helper which returns a successful DispatchResult
@@ -4481,7 +4632,7 @@
                 });
             }
         }
-        if (result.isCancelledBecause(60 /* CommandResult.InvalidSortZone */)) {
+        if (result.isCancelledBecause(60 /* InvalidSortZone */)) {
             const { col, row } = anchor;
             env.model.selection.selectZone({ cell: { col, row }, zone });
             env.raiseError(_lt("Cannot sort. To sort, select only cells or only merges that have the same size."));
@@ -4491,7 +4642,7 @@
     function interactiveCut(env) {
         const result = env.model.dispatch("CUT");
         if (!result.isSuccessful) {
-            if (result.isCancelledBecause(17 /* CommandResult.WrongCutSelection */)) {
+            if (result.isCancelledBecause(17 /* WrongCutSelection */)) {
                 env.raiseError(_lt("This operation is not allowed with multiple selections."));
             }
         }
@@ -4504,13 +4655,13 @@
     };
     function interactiveAddFilter(env, sheetId, target) {
         const result = env.model.dispatch("CREATE_FILTER_TABLE", { target, sheetId });
-        if (result.isCancelledBecause(75 /* CommandResult.FilterOverlap */)) {
+        if (result.isCancelledBecause(75 /* FilterOverlap */)) {
             env.raiseError(AddFilterInteractiveContent.filterOverlap);
         }
-        else if (result.isCancelledBecause(77 /* CommandResult.MergeInFilter */)) {
+        else if (result.isCancelledBecause(77 /* MergeInFilter */)) {
             env.raiseError(AddFilterInteractiveContent.mergeInFilter);
         }
-        else if (result.isCancelledBecause(78 /* CommandResult.NonContinuousTargets */)) {
+        else if (result.isCancelledBecause(78 /* NonContinuousTargets */)) {
             env.raiseError(AddFilterInteractiveContent.nonContinuousTargets);
         }
     }
@@ -4523,16 +4674,16 @@
     };
     function handlePasteResult(env, result) {
         if (!result.isSuccessful) {
-            if (result.reasons.includes(18 /* CommandResult.WrongPasteSelection */)) {
+            if (result.reasons.includes(18 /* WrongPasteSelection */)) {
                 env.raiseError(PasteInteractiveContent.wrongPasteSelection);
             }
-            else if (result.reasons.includes(2 /* CommandResult.WillRemoveExistingMerge */)) {
+            else if (result.reasons.includes(2 /* WillRemoveExistingMerge */)) {
                 env.raiseError(PasteInteractiveContent.willRemoveExistingMerge);
             }
-            else if (result.reasons.includes(20 /* CommandResult.WrongFigurePasteOption */)) {
+            else if (result.reasons.includes(20 /* WrongFigurePasteOption */)) {
                 env.raiseError(PasteInteractiveContent.wrongFigurePasteOption);
             }
-            else if (result.reasons.includes(72 /* CommandResult.FrozenPaneOverlap */)) {
+            else if (result.reasons.includes(72 /* FrozenPaneOverlap */)) {
                 env.raiseError(PasteInteractiveContent.frozenPaneOverlap);
             }
         }
@@ -5496,10 +5647,10 @@
             }
             const result = env.model.dispatch("RENAME_SHEET", { sheetId, name });
             if (!result.isSuccessful) {
-                if (result.reasons.includes(10 /* CommandResult.DuplicatedSheetName */)) {
+                if (result.reasons.includes(10 /* DuplicatedSheetName */)) {
                     interactiveRenameSheet(env, sheetId, _lt("A sheet with the name %s already exists. Please select another name.", name));
                 }
-                if (result.reasons.includes(11 /* CommandResult.ForbiddenCharactersInSheetName */)) {
+                if (result.reasons.includes(11 /* ForbiddenCharactersInSheetName */)) {
                     interactiveRenameSheet(env, sheetId, _lt("Some used characters are not allowed in a sheet name (Forbidden characters are %s).", FORBIDDEN_SHEET_CHARS.join(" ")));
                 }
             }
@@ -5574,24 +5725,24 @@
 
     const CfTerms = {
         Errors: {
-            [23 /* CommandResult.InvalidRange */]: _lt("The range is invalid"),
-            [48 /* CommandResult.FirstArgMissing */]: _lt("The argument is missing. Please provide a value"),
-            [49 /* CommandResult.SecondArgMissing */]: _lt("The second argument is missing. Please provide a value"),
-            [50 /* CommandResult.MinNaN */]: _lt("The minpoint must be a number"),
-            [51 /* CommandResult.MidNaN */]: _lt("The midpoint must be a number"),
-            [52 /* CommandResult.MaxNaN */]: _lt("The maxpoint must be a number"),
-            [53 /* CommandResult.ValueUpperInflectionNaN */]: _lt("The first value must be a number"),
-            [54 /* CommandResult.ValueLowerInflectionNaN */]: _lt("The second value must be a number"),
-            [44 /* CommandResult.MinBiggerThanMax */]: _lt("Minimum must be smaller then Maximum"),
-            [47 /* CommandResult.MinBiggerThanMid */]: _lt("Minimum must be smaller then Midpoint"),
-            [46 /* CommandResult.MidBiggerThanMax */]: _lt("Midpoint must be smaller then Maximum"),
-            [45 /* CommandResult.LowerBiggerThanUpper */]: _lt("Lower inflection point must be smaller than upper inflection point"),
-            [55 /* CommandResult.MinInvalidFormula */]: _lt("Invalid Minpoint formula"),
-            [57 /* CommandResult.MaxInvalidFormula */]: _lt("Invalid Maxpoint formula"),
-            [56 /* CommandResult.MidInvalidFormula */]: _lt("Invalid Midpoint formula"),
-            [58 /* CommandResult.ValueUpperInvalidFormula */]: _lt("Invalid upper inflection point formula"),
-            [59 /* CommandResult.ValueLowerInvalidFormula */]: _lt("Invalid lower inflection point formula"),
-            [22 /* CommandResult.EmptyRange */]: _lt("A range needs to be defined"),
+            [23 /* InvalidRange */]: _lt("The range is invalid"),
+            [48 /* FirstArgMissing */]: _lt("The argument is missing. Please provide a value"),
+            [49 /* SecondArgMissing */]: _lt("The second argument is missing. Please provide a value"),
+            [50 /* MinNaN */]: _lt("The minpoint must be a number"),
+            [51 /* MidNaN */]: _lt("The midpoint must be a number"),
+            [52 /* MaxNaN */]: _lt("The maxpoint must be a number"),
+            [53 /* ValueUpperInflectionNaN */]: _lt("The first value must be a number"),
+            [54 /* ValueLowerInflectionNaN */]: _lt("The second value must be a number"),
+            [44 /* MinBiggerThanMax */]: _lt("Minimum must be smaller then Maximum"),
+            [47 /* MinBiggerThanMid */]: _lt("Minimum must be smaller then Midpoint"),
+            [46 /* MidBiggerThanMax */]: _lt("Midpoint must be smaller then Maximum"),
+            [45 /* LowerBiggerThanUpper */]: _lt("Lower inflection point must be smaller than upper inflection point"),
+            [55 /* MinInvalidFormula */]: _lt("Invalid Minpoint formula"),
+            [57 /* MaxInvalidFormula */]: _lt("Invalid Maxpoint formula"),
+            [56 /* MidInvalidFormula */]: _lt("Invalid Midpoint formula"),
+            [58 /* ValueUpperInvalidFormula */]: _lt("Invalid upper inflection point formula"),
+            [59 /* ValueLowerInvalidFormula */]: _lt("Invalid lower inflection point formula"),
+            [22 /* EmptyRange */]: _lt("A range needs to be defined"),
             Unexpected: _lt("The rule is invalid for an unknown reason"),
         },
         ColorScale: _lt("Color scale"),
@@ -5618,20 +5769,20 @@
         Errors: {
             Unexpected: _lt("The chart definition is invalid for an unknown reason"),
             // BASIC CHART ERRORS (LINE | BAR | PIE)
-            [29 /* CommandResult.InvalidDataSet */]: _lt("The dataset is invalid"),
-            [30 /* CommandResult.InvalidLabelRange */]: _lt("Labels are invalid"),
+            [29 /* InvalidDataSet */]: _lt("The dataset is invalid"),
+            [30 /* InvalidLabelRange */]: _lt("Labels are invalid"),
             // SCORECARD CHART ERRORS
-            [31 /* CommandResult.InvalidScorecardKeyValue */]: _lt("The key value is invalid"),
-            [32 /* CommandResult.InvalidScorecardBaseline */]: _lt("The baseline value is invalid"),
+            [31 /* InvalidScorecardKeyValue */]: _lt("The key value is invalid"),
+            [32 /* InvalidScorecardBaseline */]: _lt("The baseline value is invalid"),
             // GAUGE CHART ERRORS
-            [33 /* CommandResult.InvalidGaugeDataRange */]: _lt("The data range is invalid"),
-            [34 /* CommandResult.EmptyGaugeRangeMin */]: _lt("A minimum range limit value is needed"),
-            [35 /* CommandResult.GaugeRangeMinNaN */]: _lt("The minimum range limit value must be a number"),
-            [36 /* CommandResult.EmptyGaugeRangeMax */]: _lt("A maximum range limit value is needed"),
-            [37 /* CommandResult.GaugeRangeMaxNaN */]: _lt("The maximum range limit value must be a number"),
-            [38 /* CommandResult.GaugeRangeMinBiggerThanRangeMax */]: _lt("Minimum range limit must be smaller than maximum range limit"),
-            [39 /* CommandResult.GaugeLowerInflectionPointNaN */]: _lt("The lower inflection point value must be a number"),
-            [40 /* CommandResult.GaugeUpperInflectionPointNaN */]: _lt("The upper inflection point value must be a number"),
+            [33 /* InvalidGaugeDataRange */]: _lt("The data range is invalid"),
+            [34 /* EmptyGaugeRangeMin */]: _lt("A minimum range limit value is needed"),
+            [35 /* GaugeRangeMinNaN */]: _lt("The minimum range limit value must be a number"),
+            [36 /* EmptyGaugeRangeMax */]: _lt("A maximum range limit value is needed"),
+            [37 /* GaugeRangeMaxNaN */]: _lt("The maximum range limit value must be a number"),
+            [38 /* GaugeRangeMinBiggerThanRangeMax */]: _lt("Minimum range limit must be smaller than maximum range limit"),
+            [39 /* GaugeLowerInflectionPointNaN */]: _lt("The lower inflection point value must be a number"),
+            [40 /* GaugeUpperInflectionPointNaN */]: _lt("The upper inflection point value must be a number"),
         },
     };
     const NumberFormatTerms = {
@@ -5655,7 +5806,7 @@
         const sheetId = env.model.getters.getActiveSheetId();
         const cmd = dimension === "COL" ? "FREEZE_COLUMNS" : "FREEZE_ROWS";
         const result = env.model.dispatch(cmd, { sheetId, quantity: base });
-        if (result.isCancelledBecause(62 /* CommandResult.MergeOverlap */)) {
+        if (result.isCancelledBecause(62 /* MergeOverlap */)) {
             env.raiseError(MergeErrorMessage);
         }
     }
@@ -6289,11 +6440,11 @@
         }
         get isDatasetInvalid() {
             var _a;
-            return !!((_a = this.state.datasetDispatchResult) === null || _a === void 0 ? void 0 : _a.isCancelledBecause(29 /* CommandResult.InvalidDataSet */));
+            return !!((_a = this.state.datasetDispatchResult) === null || _a === void 0 ? void 0 : _a.isCancelledBecause(29 /* InvalidDataSet */));
         }
         get isLabelInvalid() {
             var _a;
-            return !!((_a = this.state.labelsDispatchResult) === null || _a === void 0 ? void 0 : _a.isCancelledBecause(30 /* CommandResult.InvalidLabelRange */));
+            return !!((_a = this.state.labelsDispatchResult) === null || _a === void 0 ? void 0 : _a.isCancelledBecause(30 /* InvalidLabelRange */));
         }
         onUpdateDataSetsHaveTitle(ev) {
             this.props.updateChart({
@@ -6641,23 +6792,23 @@
         if (definition.dataSets) {
             const invalidRanges = definition.dataSets.find((range) => !rangeReference.test(range)) !== undefined;
             if (invalidRanges) {
-                return 29 /* CommandResult.InvalidDataSet */;
+                return 29 /* InvalidDataSet */;
             }
             const zones = definition.dataSets.map(toUnboundedZone);
             if (zones.some((zone) => zone.top !== zone.bottom && isFullRow(zone))) {
-                return 29 /* CommandResult.InvalidDataSet */;
+                return 29 /* InvalidDataSet */;
             }
         }
-        return 0 /* CommandResult.Success */;
+        return 0 /* Success */;
     }
     function checkLabelRange(definition) {
         if (definition.labelRange) {
             const invalidLabels = !rangeReference.test(definition.labelRange || "");
             if (invalidLabels) {
-                return 30 /* CommandResult.InvalidLabelRange */;
+                return 30 /* InvalidLabelRange */;
             }
         }
-        return 0 /* CommandResult.Success */;
+        return 0 /* Success */;
     }
     // ---------------------------------------------------------------------------
     // Scorecard
@@ -7112,20 +7263,20 @@
     });
     function isDataRangeValid(definition) {
         return definition.dataRange && !rangeReference.test(definition.dataRange)
-            ? 33 /* CommandResult.InvalidGaugeDataRange */
-            : 0 /* CommandResult.Success */;
+            ? 33 /* InvalidGaugeDataRange */
+            : 0 /* Success */;
     }
     function checkRangeLimits(check, batchValidations) {
         return batchValidations((definition) => {
             if (definition.sectionRule) {
                 return check(definition.sectionRule.rangeMin, "rangeMin");
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }, (definition) => {
             if (definition.sectionRule) {
                 return check(definition.sectionRule.rangeMax, "rangeMax");
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         });
     }
     function checkInflectionPointsValue(check, batchValidations) {
@@ -7133,47 +7284,47 @@
             if (definition.sectionRule) {
                 return check(definition.sectionRule.lowerInflectionPoint.value, "lowerInflectionPointValue");
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }, (definition) => {
             if (definition.sectionRule) {
                 return check(definition.sectionRule.upperInflectionPoint.value, "upperInflectionPointValue");
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         });
     }
     function checkRangeMinBiggerThanRangeMax(definition) {
         if (definition.sectionRule) {
             if (Number(definition.sectionRule.rangeMin) >= Number(definition.sectionRule.rangeMax)) {
-                return 38 /* CommandResult.GaugeRangeMinBiggerThanRangeMax */;
+                return 38 /* GaugeRangeMinBiggerThanRangeMax */;
             }
         }
-        return 0 /* CommandResult.Success */;
+        return 0 /* Success */;
     }
     function checkEmpty(value, valueName) {
         if (value === "") {
             switch (valueName) {
                 case "rangeMin":
-                    return 34 /* CommandResult.EmptyGaugeRangeMin */;
+                    return 34 /* EmptyGaugeRangeMin */;
                 case "rangeMax":
-                    return 36 /* CommandResult.EmptyGaugeRangeMax */;
+                    return 36 /* EmptyGaugeRangeMax */;
             }
         }
-        return 0 /* CommandResult.Success */;
+        return 0 /* Success */;
     }
     function checkNaN(value, valueName) {
         if (isNaN(value)) {
             switch (valueName) {
                 case "rangeMin":
-                    return 35 /* CommandResult.GaugeRangeMinNaN */;
+                    return 35 /* GaugeRangeMinNaN */;
                 case "rangeMax":
-                    return 37 /* CommandResult.GaugeRangeMaxNaN */;
+                    return 37 /* GaugeRangeMaxNaN */;
                 case "lowerInflectionPointValue":
-                    return 39 /* CommandResult.GaugeLowerInflectionPointNaN */;
+                    return 39 /* GaugeLowerInflectionPointNaN */;
                 case "upperInflectionPointValue":
-                    return 40 /* CommandResult.GaugeUpperInflectionPointNaN */;
+                    return 40 /* GaugeUpperInflectionPointNaN */;
             }
         }
-        return 0 /* CommandResult.Success */;
+        return 0 /* Success */;
     }
     class GaugeChart extends AbstractChart {
         constructor(definition, sheetId, getters) {
@@ -7910,13 +8061,13 @@
     });
     function checkKeyValue(definition) {
         return definition.keyValue && !rangeReference.test(definition.keyValue)
-            ? 31 /* CommandResult.InvalidScorecardKeyValue */
-            : 0 /* CommandResult.Success */;
+            ? 31 /* InvalidScorecardKeyValue */
+            : 0 /* Success */;
     }
     function checkBaseline(definition) {
         return definition.baseline && !rangeReference.test(definition.baseline)
-            ? 32 /* CommandResult.InvalidScorecardBaseline */
-            : 0 /* CommandResult.Success */;
+            ? 32 /* InvalidScorecardBaseline */
+            : 0 /* Success */;
     }
     class ScorecardChart$1 extends AbstractChart {
         constructor(definition, sheetId, getters) {
@@ -8314,7 +8465,7 @@
         }
         get isDataRangeInvalid() {
             var _a;
-            return !!((_a = this.state.dataRangeDispatchResult) === null || _a === void 0 ? void 0 : _a.isCancelledBecause(33 /* CommandResult.InvalidGaugeDataRange */));
+            return !!((_a = this.state.dataRangeDispatchResult) === null || _a === void 0 ? void 0 : _a.isCancelledBecause(33 /* InvalidGaugeDataRange */));
         }
         onDataRangeChanged(ranges) {
             this.dataRange = ranges[0];
@@ -8395,28 +8546,28 @@
         }
         isRangeMinInvalid() {
             var _a, _b, _c;
-            return !!(((_a = this.state.sectionRuleDispatchResult) === null || _a === void 0 ? void 0 : _a.isCancelledBecause(34 /* CommandResult.EmptyGaugeRangeMin */)) ||
-                ((_b = this.state.sectionRuleDispatchResult) === null || _b === void 0 ? void 0 : _b.isCancelledBecause(35 /* CommandResult.GaugeRangeMinNaN */)) ||
-                ((_c = this.state.sectionRuleDispatchResult) === null || _c === void 0 ? void 0 : _c.isCancelledBecause(38 /* CommandResult.GaugeRangeMinBiggerThanRangeMax */)));
+            return !!(((_a = this.state.sectionRuleDispatchResult) === null || _a === void 0 ? void 0 : _a.isCancelledBecause(34 /* EmptyGaugeRangeMin */)) ||
+                ((_b = this.state.sectionRuleDispatchResult) === null || _b === void 0 ? void 0 : _b.isCancelledBecause(35 /* GaugeRangeMinNaN */)) ||
+                ((_c = this.state.sectionRuleDispatchResult) === null || _c === void 0 ? void 0 : _c.isCancelledBecause(38 /* GaugeRangeMinBiggerThanRangeMax */)));
         }
         isRangeMaxInvalid() {
             var _a, _b, _c;
-            return !!(((_a = this.state.sectionRuleDispatchResult) === null || _a === void 0 ? void 0 : _a.isCancelledBecause(36 /* CommandResult.EmptyGaugeRangeMax */)) ||
-                ((_b = this.state.sectionRuleDispatchResult) === null || _b === void 0 ? void 0 : _b.isCancelledBecause(37 /* CommandResult.GaugeRangeMaxNaN */)) ||
-                ((_c = this.state.sectionRuleDispatchResult) === null || _c === void 0 ? void 0 : _c.isCancelledBecause(38 /* CommandResult.GaugeRangeMinBiggerThanRangeMax */)));
+            return !!(((_a = this.state.sectionRuleDispatchResult) === null || _a === void 0 ? void 0 : _a.isCancelledBecause(36 /* EmptyGaugeRangeMax */)) ||
+                ((_b = this.state.sectionRuleDispatchResult) === null || _b === void 0 ? void 0 : _b.isCancelledBecause(37 /* GaugeRangeMaxNaN */)) ||
+                ((_c = this.state.sectionRuleDispatchResult) === null || _c === void 0 ? void 0 : _c.isCancelledBecause(38 /* GaugeRangeMinBiggerThanRangeMax */)));
         }
         // ---------------------------------------------------------------------------
         // COLOR_SECTION_TEMPLATE
         // ---------------------------------------------------------------------------
         get isLowerInflectionPointInvalid() {
             var _a, _b;
-            return !!(((_a = this.state.sectionRuleDispatchResult) === null || _a === void 0 ? void 0 : _a.isCancelledBecause(39 /* CommandResult.GaugeLowerInflectionPointNaN */)) ||
-                ((_b = this.state.sectionRuleDispatchResult) === null || _b === void 0 ? void 0 : _b.isCancelledBecause(41 /* CommandResult.GaugeLowerBiggerThanUpper */)));
+            return !!(((_a = this.state.sectionRuleDispatchResult) === null || _a === void 0 ? void 0 : _a.isCancelledBecause(39 /* GaugeLowerInflectionPointNaN */)) ||
+                ((_b = this.state.sectionRuleDispatchResult) === null || _b === void 0 ? void 0 : _b.isCancelledBecause(41 /* GaugeLowerBiggerThanUpper */)));
         }
         get isUpperInflectionPointInvalid() {
             var _a, _b;
-            return !!(((_a = this.state.sectionRuleDispatchResult) === null || _a === void 0 ? void 0 : _a.isCancelledBecause(40 /* CommandResult.GaugeUpperInflectionPointNaN */)) ||
-                ((_b = this.state.sectionRuleDispatchResult) === null || _b === void 0 ? void 0 : _b.isCancelledBecause(41 /* CommandResult.GaugeLowerBiggerThanUpper */)));
+            return !!(((_a = this.state.sectionRuleDispatchResult) === null || _a === void 0 ? void 0 : _a.isCancelledBecause(40 /* GaugeUpperInflectionPointNaN */)) ||
+                ((_b = this.state.sectionRuleDispatchResult) === null || _b === void 0 ? void 0 : _b.isCancelledBecause(41 /* GaugeLowerBiggerThanUpper */)));
         }
         updateInflectionPointValue(attr, ev) {
             const sectionRule = deepCopy(this.props.definition.sectionRule);
@@ -8514,11 +8665,11 @@
         }
         get isKeyValueInvalid() {
             var _a;
-            return !!((_a = this.state.keyValueDispatchResult) === null || _a === void 0 ? void 0 : _a.isCancelledBecause(31 /* CommandResult.InvalidScorecardKeyValue */));
+            return !!((_a = this.state.keyValueDispatchResult) === null || _a === void 0 ? void 0 : _a.isCancelledBecause(31 /* InvalidScorecardKeyValue */));
         }
         get isBaselineInvalid() {
             var _a;
-            return !!((_a = this.state.keyValueDispatchResult) === null || _a === void 0 ? void 0 : _a.isCancelledBecause(32 /* CommandResult.InvalidScorecardBaseline */));
+            return !!((_a = this.state.keyValueDispatchResult) === null || _a === void 0 ? void 0 : _a.isCancelledBecause(32 /* InvalidScorecardBaseline */));
         }
         onKeyValueRangeChanged(ranges) {
             this.keyValue = ranges[0];
@@ -9142,7 +9293,7 @@
             return this.env.model.getters.getConditionalFormats(this.env.model.getters.getActiveSheetId());
         }
         get isRangeValid() {
-            return this.state.errors.includes(22 /* CommandResult.EmptyRange */);
+            return this.state.errors.includes(22 /* EmptyRange */);
         }
         errorMessage(error) {
             return CfTerms.Errors[error] || CfTerms.Errors.Unexpected;
@@ -9204,7 +9355,7 @@
             if (this.state.currentCF) {
                 const invalidRanges = this.state.currentCF.ranges.some((xc) => !xc.match(rangeReference));
                 if (invalidRanges) {
-                    this.state.errors = [23 /* CommandResult.InvalidRange */];
+                    this.state.errors = [23 /* InvalidRange */];
                     return;
                 }
                 const sheetId = this.env.model.getters.getActiveSheetId();
@@ -9360,11 +9511,11 @@
          ****************************************************************************/
         get isValue1Invalid() {
             var _a;
-            return !!((_a = this.state.errors) === null || _a === void 0 ? void 0 : _a.includes(48 /* CommandResult.FirstArgMissing */));
+            return !!((_a = this.state.errors) === null || _a === void 0 ? void 0 : _a.includes(48 /* FirstArgMissing */));
         }
         get isValue2Invalid() {
             var _a;
-            return !!((_a = this.state.errors) === null || _a === void 0 ? void 0 : _a.includes(49 /* CommandResult.SecondArgMissing */));
+            return !!((_a = this.state.errors) === null || _a === void 0 ? void 0 : _a.includes(49 /* SecondArgMissing */));
         }
         toggleStyle(tool) {
             const style = this.state.rules.cellIs.style;
@@ -9381,17 +9532,17 @@
         isValueInvalid(threshold) {
             switch (threshold) {
                 case "minimum":
-                    return (this.state.errors.includes(55 /* CommandResult.MinInvalidFormula */) ||
-                        this.state.errors.includes(47 /* CommandResult.MinBiggerThanMid */) ||
-                        this.state.errors.includes(44 /* CommandResult.MinBiggerThanMax */) ||
-                        this.state.errors.includes(50 /* CommandResult.MinNaN */));
+                    return (this.state.errors.includes(55 /* MinInvalidFormula */) ||
+                        this.state.errors.includes(47 /* MinBiggerThanMid */) ||
+                        this.state.errors.includes(44 /* MinBiggerThanMax */) ||
+                        this.state.errors.includes(50 /* MinNaN */));
                 case "midpoint":
-                    return (this.state.errors.includes(56 /* CommandResult.MidInvalidFormula */) ||
-                        this.state.errors.includes(51 /* CommandResult.MidNaN */) ||
-                        this.state.errors.includes(46 /* CommandResult.MidBiggerThanMax */));
+                    return (this.state.errors.includes(56 /* MidInvalidFormula */) ||
+                        this.state.errors.includes(51 /* MidNaN */) ||
+                        this.state.errors.includes(46 /* MidBiggerThanMax */));
                 case "maximum":
-                    return (this.state.errors.includes(57 /* CommandResult.MaxInvalidFormula */) ||
-                        this.state.errors.includes(52 /* CommandResult.MaxNaN */));
+                    return (this.state.errors.includes(57 /* MaxInvalidFormula */) ||
+                        this.state.errors.includes(52 /* MaxNaN */));
                 default:
                     return false;
             }
@@ -9440,13 +9591,13 @@
         isInflectionPointInvalid(inflectionPoint) {
             switch (inflectionPoint) {
                 case "lowerInflectionPoint":
-                    return (this.state.errors.includes(54 /* CommandResult.ValueLowerInflectionNaN */) ||
-                        this.state.errors.includes(59 /* CommandResult.ValueLowerInvalidFormula */) ||
-                        this.state.errors.includes(45 /* CommandResult.LowerBiggerThanUpper */));
+                    return (this.state.errors.includes(54 /* ValueLowerInflectionNaN */) ||
+                        this.state.errors.includes(59 /* ValueLowerInvalidFormula */) ||
+                        this.state.errors.includes(45 /* LowerBiggerThanUpper */));
                 case "upperInflectionPoint":
-                    return (this.state.errors.includes(53 /* CommandResult.ValueUpperInflectionNaN */) ||
-                        this.state.errors.includes(58 /* CommandResult.ValueUpperInvalidFormula */) ||
-                        this.state.errors.includes(45 /* CommandResult.LowerBiggerThanUpper */));
+                    return (this.state.errors.includes(53 /* ValueUpperInflectionNaN */) ||
+                        this.state.errors.includes(58 /* ValueUpperInvalidFormula */) ||
+                        this.state.errors.includes(45 /* LowerBiggerThanUpper */));
                 default:
                     return true;
             }
@@ -13424,10 +13575,6 @@
 
     const DEFAULT_TYPE = 1;
     const DEFAULT_WEEKEND = 1;
-    function isLeapYear(year) {
-        const _year = Math.trunc(year);
-        return (_year % 4 === 0 && _year % 100 != 0) || _year % 400 == 0;
-    }
     // -----------------------------------------------------------------------------
     // DATE
     // -----------------------------------------------------------------------------
@@ -13507,6 +13654,27 @@
         isExported: true,
     };
     // -----------------------------------------------------------------------------
+    // DAYS360
+    // -----------------------------------------------------------------------------
+    const DEFAULT_DAY_COUNT_METHOD = 0;
+    const DAYS360 = {
+        description: _lt("Number of days between two dates on a 360-day year (months of 30 days)."),
+        args: args(`
+      start_date (date) ${_lt("The start date to consider in the calculation.")}
+      end_date (date) ${_lt("The end date to consider in the calculation.")}
+      method (number, default=${DEFAULT_DAY_COUNT_METHOD}) ${_lt("An indicator of what day count method to use. (0) US NASD method (1) European method")}
+    `),
+        returns: ["NUMBER"],
+        compute: function (startDate, endDate, method = DEFAULT_DAY_COUNT_METHOD) {
+            const _startDate = toNumber(startDate);
+            const _endDate = toNumber(endDate);
+            const dayCountConvention = toBoolean(method) ? 4 : 0;
+            const yearFrac = YEARFRAC.compute(startDate, endDate, dayCountConvention);
+            return Math.sign(_endDate - _startDate) * Math.round(yearFrac * 360);
+        },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
     // EDATE
     // -----------------------------------------------------------------------------
     const EDATE = {
@@ -13520,10 +13688,7 @@
         compute: function (startDate, months) {
             const _startDate = toJsDate(startDate);
             const _months = Math.trunc(toNumber(months));
-            const yStart = _startDate.getFullYear();
-            const mStart = _startDate.getMonth();
-            const dStart = _startDate.getDate();
-            const jsDate = new Date(yStart, mStart + _months, dStart);
+            const jsDate = addMonthsToDate(_startDate, _months, false);
             return jsDateToRoundNumber(jsDate);
         },
         isExported: true,
@@ -14030,113 +14195,7 @@
             assert(() => _startDate >= 0, _lt("The start_date (%s) must be positive or null.", _startDate.toString()));
             assert(() => _endDate >= 0, _lt("The end_date (%s) must be positive or null.", _endDate.toString()));
             assert(() => 0 <= _dayCountConvention && _dayCountConvention <= 4, _lt("The day_count_convention (%s) must be between 0 and 4 inclusive.", _dayCountConvention.toString()));
-            if (_startDate === _endDate) {
-                return 0;
-            }
-            if (_startDate > _endDate) {
-                const stack = _endDate;
-                _endDate = _startDate;
-                _startDate = stack;
-            }
-            const jsStartDate = toJsDate(_startDate);
-            const jsEndDate = toJsDate(_endDate);
-            let dayStart = jsStartDate.getDate();
-            let dayEnd = jsEndDate.getDate();
-            const monthStart = jsStartDate.getMonth(); // january is 0
-            const monthEnd = jsEndDate.getMonth(); // january is 0
-            const yearStart = jsStartDate.getFullYear();
-            const yearEnd = jsEndDate.getFullYear();
-            let yearsStart = 0;
-            let yearsEnd = 0;
-            switch (_dayCountConvention) {
-                // 30/360 US convention --------------------------------------------------
-                case 0:
-                    if (dayStart === 31)
-                        dayStart = 30;
-                    if (dayStart === 30 && dayEnd === 31)
-                        dayEnd = 30;
-                    // If jsStartDate is the last day of February
-                    if (monthStart === 1 && dayStart === (isLeapYear(yearStart) ? 29 : 28)) {
-                        dayStart = 30;
-                        // If jsEndDate is the last day of February
-                        if (monthEnd === 1 && dayEnd === (isLeapYear(yearEnd) ? 29 : 28)) {
-                            dayEnd = 30;
-                        }
-                    }
-                    yearsStart = yearStart + (monthStart * 30 + dayStart) / 360;
-                    yearsEnd = yearEnd + (monthEnd * 30 + dayEnd) / 360;
-                    break;
-                // actual/actual convention ----------------------------------------------
-                case 1:
-                    let daysInYear = 365;
-                    const isSameYear = yearStart === yearEnd;
-                    const isOneDeltaYear = yearStart + 1 === yearEnd;
-                    const isMonthEndBigger = monthStart < monthEnd;
-                    const isSameMonth = monthStart === monthEnd;
-                    const isDayEndBigger = dayStart < dayEnd;
-                    // |-----|  <-- one Year
-                    // 'A' is start date
-                    // 'B' is end date
-                    if ((!isSameYear && !isOneDeltaYear) ||
-                        (!isSameYear && isMonthEndBigger) ||
-                        (!isSameYear && isSameMonth && isDayEndBigger)) {
-                        // |---A-|-----|-B---|  <-- !isSameYear && !isOneDeltaYear
-                        // |---A-|----B|-----|  <-- !isSameYear && isMonthEndBigger
-                        // |---A-|---B-|-----|  <-- !isSameYear && isSameMonth && isDayEndBigger
-                        let countYears = 0;
-                        let countDaysInYears = 0;
-                        for (let y = yearStart; y <= yearEnd; y++) {
-                            countYears++;
-                            countDaysInYears += isLeapYear(y) ? 366 : 365;
-                        }
-                        daysInYear = countDaysInYears / countYears;
-                    }
-                    else if (!isSameYear) {
-                        // |-AF--|B----|-----|
-                        if (isLeapYear(yearStart) && monthStart < 2) {
-                            daysInYear = 366;
-                        }
-                        // |--A--|FB---|-----|
-                        if (isLeapYear(yearEnd) && (monthEnd > 1 || (monthEnd === 1 && dayEnd === 29))) {
-                            daysInYear = 366;
-                        }
-                    }
-                    else {
-                        // remaining cases:
-                        //
-                        // |-F-AB|-----|-----|
-                        // |AB-F-|-----|-----|
-                        // |A-F-B|-----|-----|
-                        // if February 29 occurs between date1 (exclusive) and date2 (inclusive)
-                        // daysInYear --> 366
-                        if (isLeapYear(yearStart)) {
-                            daysInYear = 366;
-                        }
-                    }
-                    yearsStart = _startDate / daysInYear;
-                    yearsEnd = _endDate / daysInYear;
-                    break;
-                // actual/360 convention -------------------------------------------------
-                case 2:
-                    yearsStart = _startDate / 360;
-                    yearsEnd = _endDate / 360;
-                    break;
-                // actual/365 convention -------------------------------------------------
-                case 3:
-                    yearsStart = _startDate / 365;
-                    yearsEnd = _endDate / 365;
-                    break;
-                // 30/360 European convention --------------------------------------------
-                case 4:
-                    if (dayStart === 31)
-                        dayStart = 30;
-                    if (dayEnd === 31)
-                        dayEnd = 30;
-                    yearsStart = yearStart + (monthStart * 30 + dayStart) / 360;
-                    yearsEnd = yearEnd + (monthEnd * 30 + dayEnd) / 360;
-                    break;
-            }
-            return yearsEnd - yearsStart;
+            return getYearFrac(_startDate, _endDate, _dayCountConvention);
         },
     };
     // -----------------------------------------------------------------------------
@@ -14257,6 +14316,7 @@
         DATEVALUE: DATEVALUE,
         DAY: DAY,
         DAYS: DAYS,
+        DAYS360: DAYS360,
         EDATE: EDATE,
         EOMONTH: EOMONTH,
         HOUR: HOUR,
@@ -14309,26 +14369,508 @@
         DELTA: DELTA
     });
 
+    /** Assert maturity date > settlement date */
+    function assertMaturityAndSettlementDatesAreValid(settlement, maturity) {
+        assert(() => settlement < maturity, _lt("The maturity (%s) must be strictly greater than the settlement (%s).", maturity.toString(), settlement.toString()));
+    }
+    /** Assert settlement date > issue date */
+    function assertSettlementAndIssueDatesAreValid(settlement, issue) {
+        assert(() => issue < settlement, _lt("The settlement date (%s) must be strictly greater than the issue date (%s).", settlement.toString(), issue.toString()));
+    }
+    /** Assert coupon frequency is in [1, 2, 4] */
+    function assertCouponFrequencyIsValid(frequency) {
+        assert(() => [1, 2, 4].includes(frequency), _lt("The frequency (%s) must be one of %s", frequency.toString(), [1, 2, 4].toString()));
+    }
+    /** Assert dayCountConvention is between 0 and 4 */
+    function assertDayCountConventionIsValid(dayCountConvention) {
+        assert(() => 0 <= dayCountConvention && dayCountConvention <= 4, _lt("The day_count_convention (%s) must be between 0 and 4 inclusive.", dayCountConvention.toString()));
+    }
+    function assertRedemptionStrictlyPositive(redemption) {
+        assert(() => redemption > 0, _lt("The redemption (%s) must be strictly positive.", redemption.toString()));
+    }
+    function assertPriceStrictlyPositive(price) {
+        assert(() => price > 0, _lt("The price (%s) must be strictly positive.", price.toString()));
+    }
+    function assertNumberOfPeriodsStrictlyPositive(nPeriods) {
+        assert(() => nPeriods > 0, _lt("The number_of_periods (%s) must be greater than 0.", nPeriods.toString()));
+    }
+    function assertRateStrictlyPositive(rate) {
+        assert(() => rate > 0, _lt("The rate (%s) must be strictly positive.", rate.toString()));
+    }
+    function assertLifeStrictlyPositive(life) {
+        assert(() => life > 0, _lt("The life (%s) must be strictly positive.", life.toString()));
+    }
+    function assertCostStrictlyPositive(cost) {
+        assert(() => cost > 0, _lt("The cost (%s) must be strictly positive.", cost.toString()));
+    }
+    function assertCostPositiveOrZero(cost) {
+        assert(() => cost >= 0, _lt("The cost (%s) must be positive or null.", cost.toString()));
+    }
+    function assertPeriodStrictlyPositive(period) {
+        assert(() => period > 0, _lt("The period (%s) must be strictly positive.", period.toString()));
+    }
+    function assertPeriodPositiveOrZero(period) {
+        assert(() => period >= 0, _lt("The period (%s) must be positive or null.", period.toString()));
+    }
+    function assertSalvagePositiveOrZero(salvage) {
+        assert(() => salvage >= 0, _lt("The salvage (%s) must be positive or null.", salvage.toString()));
+    }
+    function assertSalvageSmallerOrEqualThanCost(salvage, cost) {
+        assert(() => salvage <= cost, _lt("The salvage (%s) must be smaller or equal than the cost (%s).", salvage.toString(), cost.toString()));
+    }
+    function assertPresentValueStrictlyPositive(pv) {
+        assert(() => pv > 0, _lt("The present value (%s) must be strictly positive.", pv.toString()));
+    }
+    function assertPeriodSmallerOrEqualToLife(period, life) {
+        assert(() => period <= life, _lt("The period (%s) must be less than or equal life (%.", period.toString(), life.toString()));
+    }
+    function assertInvestmentStrictlyPositive(investment) {
+        assert(() => investment > 0, _lt("The investment (%s) must be strictly positive.", investment.toString()));
+    }
+    function assertDiscountStrictlyPositive(discount) {
+        assert(() => discount > 0, _lt("The discount (%s) must be strictly positive.", discount.toString()));
+    }
+    function assertDiscountStrictlySmallerThanOne(discount) {
+        assert(() => discount < 1, _lt("The discount (%s) must be smaller than 1.", discount.toString()));
+    }
+    function assertDeprecationFactorStrictlyPositive(factor) {
+        assert(() => factor > 0, _lt("The depreciation factor (%s) must be strictly positive.", factor.toString()));
+    }
+    function assertSettlementLessThanOneYearBeforeMaturity(settlement, maturity) {
+        const startDate = toJsDate(settlement);
+        const endDate = toJsDate(maturity);
+        const startDatePlusOneYear = new Date(startDate);
+        startDatePlusOneYear.setFullYear(startDate.getFullYear() + 1);
+        assert(() => endDate.getTime() <= startDatePlusOneYear.getTime(), _lt("The settlement date (%s) must at most one year after the maturity date (%s).", settlement.toString(), maturity.toString()));
+    }
+    /**
+     * Check if the given periods are valid. This will assert :
+     *
+     * - 0 < numberOfPeriods
+     * - 0 < firstPeriod <= lastPeriod
+     * - 0 < lastPeriod <= numberOfPeriods
+     *
+     */
+    function assertFirstAndLastPeriodsAreValid(firstPeriod, lastPeriod, numberOfPeriods) {
+        assertNumberOfPeriodsStrictlyPositive(numberOfPeriods);
+        assert(() => firstPeriod > 0, _lt("The first_period (%s) must be strictly positive.", firstPeriod.toString()));
+        assert(() => lastPeriod > 0, _lt("The last_period (%s) must be strictly positive.", lastPeriod.toString()));
+        assert(() => firstPeriod <= lastPeriod, _lt("The first_period (%s) must be smaller or equal to the last_period (%s).", firstPeriod.toString(), lastPeriod.toString()));
+        assert(() => lastPeriod <= numberOfPeriods, _lt("The last_period (%s) must be smaller or equal to the number_of_periods (%s).", firstPeriod.toString(), numberOfPeriods.toString()));
+    }
+    /**
+     * Check if the given periods are valid. This will assert :
+     *
+     * - 0 < life
+     * - 0 <= startPeriod <= endPeriod
+     * - 0 <= endPeriod <= life
+     *
+     */
+    function assertStartAndEndPeriodAreValid(startPeriod, endPeriod, life) {
+        assertLifeStrictlyPositive(life);
+        assert(() => startPeriod >= 0, _lt("The start_period (%s) must be greater or equal than 0.", startPeriod.toString()));
+        assert(() => endPeriod >= 0, _lt("The end_period (%s) must be greater or equal than 0.", endPeriod.toString()));
+        assert(() => startPeriod <= endPeriod, _lt("The start_period (%s) must be smaller or equal to the end_period (%s).", startPeriod.toString(), endPeriod.toString()));
+        assert(() => endPeriod <= life, _lt("The end_period (%s) must be smaller or equal to the life (%s).", startPeriod.toString(), life.toString()));
+    }
+    function assertRateGuessStrictlyGreaterThanMinusOne(guess) {
+        assert(() => guess > -1, _lt("The rate_guess (%s) must be strictly greater than -1.", guess.toString()));
+    }
+    function assertCashFlowsAndDatesHaveSameDimension(cashFlows, dates) {
+        assert(() => cashFlows.length === dates.length && cashFlows[0].length === dates[0].length, _lt("The cashflow_amounts and cashflow_dates ranges must have the same dimensions."));
+    }
+    function assertCashFlowsHavePositiveAndNegativesValues(cashFlow) {
+        assert(() => cashFlow.some((val) => val > 0) && cashFlow.some((val) => val < 0), _lt("There must be both positive and negative values in cashflow_amounts."));
+    }
+    function assertEveryDateGreaterThanFirstDateOfCashFlowDates(dates) {
+        assert(() => dates.every((date) => date >= dates[0]), _lt("All the dates should be greater or equal to the first date in cashflow_dates (%s).", dates[0].toString()));
+    }
+
     const DEFAULT_DAY_COUNT_CONVENTION = 0;
     const DEFAULT_END_OR_BEGINNING = 0;
-    function newtonMethod(func, derivFunc, startValue, interMax, epsMax = 1e-10) {
+    const DEFAULT_FUTURE_VALUE = 0;
+    const COUPON_FUNCTION_ARGS = args(`
+settlement (date) ${_lt("The settlement date of the security, the date after issuance when the security is delivered to the buyer.")}
+maturity (date) ${_lt("The maturity or end date of the security, when it can be redeemed at face, or par value.")}
+frequency (number) ${_lt("The number of interest or coupon payments per year (1, 2, or 4).")}
+day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("An indicator of what day count method to use.")}
+`);
+    /**
+     * Use the Newton–Raphson method to find a root of the given function in an iterative manner.
+     *
+     * @param func the function to find a root of
+     * @param derivFunc the derivative of the function
+     * @param startValue the initial value for the first iteration of the algorithm
+     * @param maxIterations the maximum number of iterations
+     * @param epsMax the epsilon for the root
+     * @param nanFallback a function giving a fallback value to use if func(x) returns NaN. Useful if the
+     *                       function is not defined for some range, but we know approximately where the root is when the Newton
+     *                       algorithm ends up in this range.
+     */
+    function newtonMethod(func, derivFunc, startValue, maxIterations, epsMax = 1e-10, nanFallback) {
         let x = startValue;
         let newX;
         let xDelta;
         let y;
         let yEqual0 = false;
         let count = 0;
+        let previousFallback = undefined;
         do {
             y = func(x);
+            if (isNaN(y)) {
+                assert(() => count < maxIterations && nanFallback !== undefined, _lt(`Function [[FUNCTION_NAME]] didn't find any result.`));
+                count++;
+                x = nanFallback(previousFallback);
+                previousFallback = x;
+                continue;
+            }
             newX = x - y / derivFunc(x);
             xDelta = Math.abs(newX - x);
             x = newX;
             yEqual0 = xDelta < epsMax || Math.abs(y) < epsMax;
-            assert(() => count < interMax, _lt(`Function [[FUNCTION_NAME]] didn't find any result`));
+            assert(() => count < maxIterations, _lt(`Function [[FUNCTION_NAME]] didn't find any result.`));
             count++;
         } while (!yEqual0);
         return x;
     }
+    // -----------------------------------------------------------------------------
+    // ACCRINTM
+    // -----------------------------------------------------------------------------
+    const ACCRINTM = {
+        description: _lt("Accrued interest of security paying at maturity."),
+        args: args(`
+        issue (date) ${_lt("The date the security was initially issued.")}
+        maturity (date) ${_lt("The maturity date of the security.")}
+        rate (number) ${_lt("The annualized rate of interest.")}
+        redemption (number) ${_lt("The redemption amount per 100 face value, or par.")}
+        day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("An indicator of what day count method to use.")}
+    `),
+        returns: ["NUMBER"],
+        compute: function (issue, maturity, rate, redemption, dayCountConvention = DEFAULT_DAY_COUNT_CONVENTION) {
+            dayCountConvention = dayCountConvention || 0;
+            const start = Math.trunc(toNumber(issue));
+            const end = Math.trunc(toNumber(maturity));
+            const _redemption = toNumber(redemption);
+            const _rate = toNumber(rate);
+            const _dayCountConvention = Math.trunc(toNumber(dayCountConvention));
+            assertSettlementAndIssueDatesAreValid(end, start);
+            assertDayCountConventionIsValid(_dayCountConvention);
+            assertRedemptionStrictlyPositive(_redemption);
+            assertRateStrictlyPositive(_rate);
+            const yearFrac = YEARFRAC.compute(start, end, dayCountConvention);
+            return _redemption * _rate * yearFrac;
+        },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // AMORLINC
+    // -----------------------------------------------------------------------------
+    const AMORLINC = {
+        description: _lt("Depreciation for an accounting period."),
+        args: args(`
+        cost (number) ${_lt("The initial cost of the asset.")}
+        purchase_date (date) ${_lt("The date the asset was purchased.")}
+        first_period_end (date) ${_lt("The date the first period ended.")}
+        salvage (number) ${_lt("The value of the asset at the end of depreciation.")}
+        period (number) ${_lt("The single period within life for which to calculate depreciation.")}
+        rate (number) ${_lt("The deprecation rate.")}
+        day_count_convention  (number, optional) ${_lt("An indicator of what day count method to use.")}
+    `),
+        returns: ["NUMBER"],
+        compute: function (cost, purchaseDate, firstPeriodEnd, salvage, period, rate, dayCountConvention = DEFAULT_DAY_COUNT_CONVENTION) {
+            dayCountConvention = dayCountConvention || 0;
+            const _cost = toNumber(cost);
+            const _purchaseDate = Math.trunc(toNumber(purchaseDate));
+            const _firstPeriodEnd = Math.trunc(toNumber(firstPeriodEnd));
+            const _salvage = toNumber(salvage);
+            const _period = toNumber(period);
+            const _rate = toNumber(rate);
+            const _dayCountConvention = Math.trunc(toNumber(dayCountConvention));
+            assertCostStrictlyPositive(_cost);
+            assertSalvagePositiveOrZero(_salvage);
+            assertSalvageSmallerOrEqualThanCost(_salvage, _cost);
+            assertPeriodPositiveOrZero(_period);
+            assertRateStrictlyPositive(_rate);
+            assertDayCountConventionIsValid(_dayCountConvention);
+            assert(() => _purchaseDate <= _firstPeriodEnd, _lt("The purchase_date (%s) must be before the first_period_end (%s).", _purchaseDate.toString(), _firstPeriodEnd.toString()));
+            /**
+             * https://wiki.documentfoundation.org/Documentation/Calc_Functions/AMORLINC
+             *
+             * AMORLINC period 0 = cost * rate * YEARFRAC(purchase date, first period end)
+             * AMORLINC period n = cost * rate
+             * AMORLINC at the last period is such that the remaining deprecated cost is equal to the salvage value.
+             *
+             * The period is and rounded to 1 if < 1 truncated if > 1,
+             *
+             * Compatibility note :
+             * If (purchase date) === (first period end), on GSheet the deprecation at the first period is 0, and on Excel
+             * it is a full period deprecation. We choose to use the Excel behaviour.
+             */
+            const roundedPeriod = _period < 1 && _period > 0 ? 1 : Math.trunc(_period);
+            const deprec = _cost * _rate;
+            const yearFrac = YEARFRAC.compute(_purchaseDate, _firstPeriodEnd, _dayCountConvention);
+            const firstDeprec = _purchaseDate === _firstPeriodEnd ? deprec : deprec * yearFrac;
+            const valueAtPeriod = _cost - firstDeprec - deprec * roundedPeriod;
+            if (valueAtPeriod >= _salvage) {
+                return roundedPeriod === 0 ? firstDeprec : deprec;
+            }
+            return _salvage - valueAtPeriod < deprec ? deprec - (_salvage - valueAtPeriod) : 0;
+        },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // COUPDAYS
+    // -----------------------------------------------------------------------------
+    const COUPDAYS = {
+        description: _lt("Days in coupon period containing settlement date."),
+        args: COUPON_FUNCTION_ARGS,
+        returns: ["NUMBER"],
+        compute: function (settlement, maturity, frequency, dayCountConvention = DEFAULT_DAY_COUNT_CONVENTION) {
+            dayCountConvention = dayCountConvention || 0;
+            const start = Math.trunc(toNumber(settlement));
+            const end = Math.trunc(toNumber(maturity));
+            const _frequency = Math.trunc(toNumber(frequency));
+            const _dayCountConvention = Math.trunc(toNumber(dayCountConvention));
+            assertMaturityAndSettlementDatesAreValid(start, end);
+            assertCouponFrequencyIsValid(_frequency);
+            assertDayCountConventionIsValid(_dayCountConvention);
+            // https://wiki.documentfoundation.org/Documentation/Calc_Functions/COUPDAYS
+            if (_dayCountConvention === 1) {
+                const before = COUPPCD.compute(settlement, maturity, frequency, dayCountConvention);
+                const after = COUPNCD.compute(settlement, maturity, frequency, dayCountConvention);
+                return after - before;
+            }
+            const daysInYear = _dayCountConvention === 3 ? 365 : 360;
+            return daysInYear / _frequency;
+        },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // COUPDAYBS
+    // -----------------------------------------------------------------------------
+    const COUPDAYBS = {
+        description: _lt("Days from settlement until next coupon."),
+        args: COUPON_FUNCTION_ARGS,
+        returns: ["NUMBER"],
+        compute: function (settlement, maturity, frequency, dayCountConvention = DEFAULT_DAY_COUNT_CONVENTION) {
+            dayCountConvention = dayCountConvention || 0;
+            const start = Math.trunc(toNumber(settlement));
+            const end = Math.trunc(toNumber(maturity));
+            const _frequency = Math.trunc(toNumber(frequency));
+            const _dayCountConvention = Math.trunc(toNumber(dayCountConvention));
+            assertMaturityAndSettlementDatesAreValid(start, end);
+            assertCouponFrequencyIsValid(_frequency);
+            assertDayCountConventionIsValid(_dayCountConvention);
+            const couponBeforeStart = COUPPCD.compute(start, end, frequency, dayCountConvention);
+            if ([1, 2, 3].includes(_dayCountConvention)) {
+                return start - couponBeforeStart;
+            }
+            if (_dayCountConvention === 4) {
+                const yearFrac = getYearFrac(couponBeforeStart, start, _dayCountConvention);
+                return Math.round(yearFrac * 360);
+            }
+            const startDate = toJsDate(start);
+            const dateCouponBeforeStart = toJsDate(couponBeforeStart);
+            const y1 = dateCouponBeforeStart.getFullYear();
+            const y2 = startDate.getFullYear();
+            const m1 = dateCouponBeforeStart.getMonth() + 1; // +1 because months in js start at 0 and it's confusing
+            const m2 = startDate.getMonth() + 1;
+            let d1 = dateCouponBeforeStart.getDate();
+            let d2 = startDate.getDate();
+            /**
+             * Rules based on https://en.wikipedia.org/wiki/Day_count_convention#30/360_US
+             *
+             * These are slightly modified (no mention of if investment is EOM and rules order is modified),
+             * but from my testing this seems the rules used by Excel/GSheet.
+             */
+            if (m1 === 2 &&
+                m2 === 2 &&
+                isLastDayOfMonth(dateCouponBeforeStart) &&
+                isLastDayOfMonth(startDate)) {
+                d2 = 30;
+            }
+            if (d2 === 31 && (d1 === 30 || d1 === 31)) {
+                d2 = 30;
+            }
+            if (m1 === 2 && isLastDayOfMonth(dateCouponBeforeStart)) {
+                d1 = 30;
+            }
+            if (d1 === 31) {
+                d1 = 30;
+            }
+            return (y2 - y1) * 360 + (m2 - m1) * 30 + (d2 - d1);
+        },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // COUPDAYSNC
+    // -----------------------------------------------------------------------------
+    const COUPDAYSNC = {
+        description: _lt("Days from settlement until next coupon."),
+        args: COUPON_FUNCTION_ARGS,
+        returns: ["NUMBER"],
+        compute: function (settlement, maturity, frequency, dayCountConvention = DEFAULT_DAY_COUNT_CONVENTION) {
+            dayCountConvention = dayCountConvention || 0;
+            const start = Math.trunc(toNumber(settlement));
+            const end = Math.trunc(toNumber(maturity));
+            const _frequency = Math.trunc(toNumber(frequency));
+            const _dayCountConvention = Math.trunc(toNumber(dayCountConvention));
+            assertMaturityAndSettlementDatesAreValid(start, end);
+            assertCouponFrequencyIsValid(_frequency);
+            assertDayCountConventionIsValid(_dayCountConvention);
+            const couponAfterStart = COUPNCD.compute(start, end, frequency, dayCountConvention);
+            if ([1, 2, 3].includes(_dayCountConvention)) {
+                return couponAfterStart - start;
+            }
+            if (_dayCountConvention === 4) {
+                const yearFrac = getYearFrac(start, couponAfterStart, _dayCountConvention);
+                return Math.round(yearFrac * 360);
+            }
+            const coupDayBs = COUPDAYBS.compute(settlement, maturity, frequency, _dayCountConvention);
+            const coupDays = COUPDAYS.compute(settlement, maturity, frequency, _dayCountConvention);
+            return coupDays - coupDayBs;
+        },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // COUPNCD
+    // -----------------------------------------------------------------------------
+    const COUPNCD = {
+        description: _lt("Next coupon date after the settlement date."),
+        args: COUPON_FUNCTION_ARGS,
+        returns: ["NUMBER"],
+        computeFormat: () => "m/d/yyyy",
+        compute: function (settlement, maturity, frequency, dayCountConvention = DEFAULT_DAY_COUNT_CONVENTION) {
+            dayCountConvention = dayCountConvention || 0;
+            const start = Math.trunc(toNumber(settlement));
+            const end = Math.trunc(toNumber(maturity));
+            const _frequency = Math.trunc(toNumber(frequency));
+            const _dayCountConvention = Math.trunc(toNumber(dayCountConvention));
+            assertMaturityAndSettlementDatesAreValid(start, end);
+            assertCouponFrequencyIsValid(_frequency);
+            assertDayCountConventionIsValid(_dayCountConvention);
+            const monthsPerPeriod = 12 / _frequency;
+            const coupNum = COUPNUM.compute(settlement, maturity, frequency, dayCountConvention);
+            const date = addMonthsToDate(toJsDate(end), -(coupNum - 1) * monthsPerPeriod, true);
+            return jsDateToRoundNumber(date);
+        },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // COUPNUM
+    // -----------------------------------------------------------------------------
+    const COUPNUM = {
+        description: _lt("Number of coupons between settlement and maturity."),
+        args: COUPON_FUNCTION_ARGS,
+        returns: ["NUMBER"],
+        compute: function (settlement, maturity, frequency, dayCountConvention = DEFAULT_DAY_COUNT_CONVENTION) {
+            dayCountConvention = dayCountConvention || 0;
+            const start = Math.trunc(toNumber(settlement));
+            const end = Math.trunc(toNumber(maturity));
+            const _frequency = Math.trunc(toNumber(frequency));
+            const _dayCountConvention = Math.trunc(toNumber(dayCountConvention));
+            assertMaturityAndSettlementDatesAreValid(start, end);
+            assertCouponFrequencyIsValid(_frequency);
+            assertDayCountConventionIsValid(_dayCountConvention);
+            let num = 1;
+            let currentDate = end;
+            const monthsPerPeriod = 12 / _frequency;
+            while (currentDate > start) {
+                currentDate = jsDateToRoundNumber(addMonthsToDate(toJsDate(currentDate), -monthsPerPeriod, false));
+                num++;
+            }
+            return num - 1;
+        },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // COUPPCD
+    // -----------------------------------------------------------------------------
+    const COUPPCD = {
+        description: _lt("Last coupon date prior to or on the settlement date."),
+        args: COUPON_FUNCTION_ARGS,
+        returns: ["NUMBER"],
+        computeFormat: () => "m/d/yyyy",
+        compute: function (settlement, maturity, frequency, dayCountConvention = DEFAULT_DAY_COUNT_CONVENTION) {
+            dayCountConvention = dayCountConvention || 0;
+            const start = Math.trunc(toNumber(settlement));
+            const end = Math.trunc(toNumber(maturity));
+            const _frequency = Math.trunc(toNumber(frequency));
+            const _dayCountConvention = Math.trunc(toNumber(dayCountConvention));
+            assertMaturityAndSettlementDatesAreValid(start, end);
+            assertCouponFrequencyIsValid(_frequency);
+            assertDayCountConventionIsValid(_dayCountConvention);
+            const monthsPerPeriod = 12 / _frequency;
+            const coupNum = COUPNUM.compute(settlement, maturity, frequency, dayCountConvention);
+            const date = addMonthsToDate(toJsDate(end), -coupNum * monthsPerPeriod, true);
+            return jsDateToRoundNumber(date);
+        },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // CUMIPMT
+    // -----------------------------------------------------------------------------
+    const CUMIPMT = {
+        description: _lt("Cumulative interest paid over a set of periods."),
+        args: args(`
+  rate (number) ${_lt("The interest rate.")}
+  number_of_periods (number) ${_lt("The number of payments to be made.")}
+  present_value (number) ${_lt("The current value of the annuity.")}
+  first_period (number) ${_lt("The number of the payment period to begin the cumulative calculation.")}
+  last_period (number) ${_lt("The number of the payment period to end the cumulative calculation.")}
+  end_or_beginning (number, default=${DEFAULT_END_OR_BEGINNING}) ${_lt("Whether payments are due at the end (0) or beginning (1) of each period.")}
+  `),
+        returns: ["NUMBER"],
+        compute: function (rate, numberOfPeriods, presentValue, firstPeriod, lastPeriod, endOrBeginning = DEFAULT_END_OR_BEGINNING) {
+            const first = toNumber(firstPeriod);
+            const last = toNumber(lastPeriod);
+            const _rate = toNumber(rate);
+            const pv = toNumber(presentValue);
+            const nOfPeriods = toNumber(numberOfPeriods);
+            assertFirstAndLastPeriodsAreValid(first, last, nOfPeriods);
+            assertRateStrictlyPositive(_rate);
+            assertPresentValueStrictlyPositive(pv);
+            let cumSum = 0;
+            for (let i = first; i <= last; i++) {
+                const impt = IPMT.compute(rate, i, nOfPeriods, presentValue, 0, endOrBeginning);
+                cumSum += impt;
+            }
+            return cumSum;
+        },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // CUMPRINC
+    // -----------------------------------------------------------------------------
+    const CUMPRINC = {
+        description: _lt("Cumulative principal paid over a set of periods."),
+        args: args(`
+  rate (number) ${_lt("The interest rate.")}
+  number_of_periods (number) ${_lt("The number of payments to be made.")}
+  present_value (number) ${_lt("The current value of the annuity.")}
+  first_period (number) ${_lt("The number of the payment period to begin the cumulative calculation.")}
+  last_period (number) ${_lt("The number of the payment period to end the cumulative calculation.")}
+  end_or_beginning (number, default=${DEFAULT_END_OR_BEGINNING}) ${_lt("Whether payments are due at the end (0) or beginning (1) of each period.")}
+  `),
+        returns: ["NUMBER"],
+        compute: function (rate, numberOfPeriods, presentValue, firstPeriod, lastPeriod, endOrBeginning = DEFAULT_END_OR_BEGINNING) {
+            const first = toNumber(firstPeriod);
+            const last = toNumber(lastPeriod);
+            const _rate = toNumber(rate);
+            const pv = toNumber(presentValue);
+            const nOfPeriods = toNumber(numberOfPeriods);
+            assertFirstAndLastPeriodsAreValid(first, last, nOfPeriods);
+            assertRateStrictlyPositive(_rate);
+            assertPresentValueStrictlyPositive(pv);
+            let cumSum = 0;
+            for (let i = first; i <= last; i++) {
+                const ppmt = PPMT.compute(rate, i, nOfPeriods, presentValue, 0, endOrBeginning);
+                cumSum += ppmt;
+            }
+            return cumSum;
+        },
+        isExported: true,
+    };
     // -----------------------------------------------------------------------------
     // DB
     // -----------------------------------------------------------------------------
@@ -14351,10 +14893,10 @@
             const _period = Math.trunc(toNumber(period));
             const _month = args.length ? Math.trunc(toNumber(args[0])) : 12;
             const lifeLimit = _life + (_month === 12 ? 0 : 1);
-            assert(() => _cost > 0, _lt("The cost (%s) must be strictly positive.", _cost.toString()));
-            assert(() => _salvage >= 0, _lt("The salvage (%s) must be positive or null.", _salvage.toString()));
-            assert(() => _life > 0, _lt("The life (%s) must be strictly positive.", _life.toString()));
-            assert(() => _period > 0, _lt("The period (%s) must be strictly positive.", _period.toString()));
+            assertCostPositiveOrZero(_cost);
+            assertSalvagePositiveOrZero(_salvage);
+            assertPeriodStrictlyPositive(_period);
+            assertLifeStrictlyPositive(_life);
             assert(() => 1 <= _month && _month <= 12, _lt("The month (%s) must be between 1 and 12 inclusive.", _month.toString()));
             assert(() => _period <= lifeLimit, _lt("The period (%s) must be less than or equal to %s.", _period.toString(), lifeLimit.toString()));
             const monthPart = _month / 12;
@@ -14372,6 +14914,132 @@
             }
             return before - after;
         },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // DDB
+    // -----------------------------------------------------------------------------
+    const DEFAULT_DDB_DEPRECIATION_FACTOR = 2;
+    const DDB = {
+        description: _lt("Depreciation via double-declining balance method."),
+        args: args(`
+        cost (number) ${_lt("The initial cost of the asset.")}
+        salvage (number) ${_lt("The value of the asset at the end of depreciation.")}
+        life (number) ${_lt("The number of periods over which the asset is depreciated.")}
+        period (number) ${_lt("The single period within life for which to calculate depreciation.")}
+        factor (number, default=${DEFAULT_DDB_DEPRECIATION_FACTOR}) ${_lt("The factor by which depreciation decreases.")}
+    `),
+        returns: ["NUMBER"],
+        computeFormat: () => "#,##0.00",
+        compute: function (cost, salvage, life, period, factor = DEFAULT_DDB_DEPRECIATION_FACTOR) {
+            factor = factor || 0;
+            const _cost = toNumber(cost);
+            const _salvage = toNumber(salvage);
+            const _life = toNumber(life);
+            const _period = toNumber(period);
+            const _factor = toNumber(factor);
+            assertCostPositiveOrZero(_cost);
+            assertSalvagePositiveOrZero(_salvage);
+            assertPeriodStrictlyPositive(_period);
+            assertLifeStrictlyPositive(_life);
+            assertPeriodSmallerOrEqualToLife(_period, _life);
+            assertDeprecationFactorStrictlyPositive(_factor);
+            if (_cost === 0 || _salvage >= _cost)
+                return 0;
+            const deprecFactor = _factor / _life;
+            if (deprecFactor > 1) {
+                return period === 1 ? _cost - _salvage : 0;
+            }
+            if (_period <= 1) {
+                return _cost * deprecFactor;
+            }
+            const previousCost = _cost * Math.pow(1 - deprecFactor, _period - 1);
+            const nextCost = _cost * Math.pow(1 - deprecFactor, _period);
+            const deprec = nextCost < _salvage ? previousCost - _salvage : previousCost - nextCost;
+            return Math.max(deprec, 0);
+        },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // DISC
+    // -----------------------------------------------------------------------------
+    const DISC = {
+        description: _lt("Discount rate of a security based on price."),
+        args: args(`
+      settlement (date) ${_lt("The settlement date of the security, the date after issuance when the security is delivered to the buyer.")}
+      maturity (date) ${_lt("The maturity or end date of the security, when it can be redeemed at face, or par value.")}
+      price (number) ${_lt("The price at which the security is bought per 100 face value.")}
+      redemption (number) ${_lt("The redemption amount per 100 face value, or par.")}
+      day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("An indicator of what day count method to use.")}
+    `),
+        returns: ["NUMBER"],
+        compute: function (settlement, maturity, price, redemption, dayCountConvention = DEFAULT_DAY_COUNT_CONVENTION) {
+            dayCountConvention = dayCountConvention || 0;
+            const _settlement = Math.trunc(toNumber(settlement));
+            const _maturity = Math.trunc(toNumber(maturity));
+            const _price = toNumber(price);
+            const _redemption = toNumber(redemption);
+            const _dayCountConvention = Math.trunc(toNumber(dayCountConvention));
+            assertMaturityAndSettlementDatesAreValid(_settlement, _maturity);
+            assertDayCountConventionIsValid(_dayCountConvention);
+            assertPriceStrictlyPositive(_price);
+            assertRedemptionStrictlyPositive(_redemption);
+            /**
+             * https://support.microsoft.com/en-us/office/disc-function-71fce9f3-3f05-4acf-a5a3-eac6ef4daa53
+             *
+             * B = number of days in year, depending on year basis
+             * DSM = number of days from settlement to maturity
+             *
+             *        redemption - price          B
+             * DISC = ____________________  *    ____
+             *            redemption             DSM
+             */
+            const yearsFrac = YEARFRAC.compute(_settlement, _maturity, _dayCountConvention);
+            return (_redemption - _price) / _redemption / yearsFrac;
+        },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // DOLLARDE
+    // -----------------------------------------------------------------------------
+    const DOLLARDE = {
+        description: _lt("Convert a decimal fraction to decimal value."),
+        args: args(`
+      fractional_price (number) ${_lt("The price quotation given using fractional decimal conventions.")}
+      unit (number) ${_lt("The units of the fraction, e.g. 8 for 1/8ths or 32 for 1/32nds.")}
+    `),
+        returns: ["NUMBER"],
+        compute: function (fractionalPrice, unit) {
+            const price = toNumber(fractionalPrice);
+            const _unit = Math.trunc(toNumber(unit));
+            assert(() => _unit > 0, _lt("The unit (%s) must be strictly positive.", _unit.toString()));
+            const truncatedPrice = Math.trunc(price);
+            const priceFractionalPart = price - truncatedPrice;
+            const frac = 10 ** Math.ceil(Math.log10(_unit)) / _unit;
+            return truncatedPrice + priceFractionalPart * frac;
+        },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // DOLLARFR
+    // -----------------------------------------------------------------------------
+    const DOLLARFR = {
+        description: _lt("Convert a decimal value to decimal fraction."),
+        args: args(`
+  decimal_price (number) ${_lt("The price quotation given as a decimal value.")}
+      unit (number) ${_lt("The units of the desired fraction, e.g. 8 for 1/8ths or 32 for 1/32nds.")}
+    `),
+        returns: ["NUMBER"],
+        compute: function (decimalPrice, unit) {
+            const price = toNumber(decimalPrice);
+            const _unit = Math.trunc(toNumber(unit));
+            assert(() => _unit > 0, _lt("The unit (%s) must be strictly positive.", _unit.toString()));
+            const truncatedPrice = Math.trunc(price);
+            const priceFractionalPart = price - truncatedPrice;
+            const frac = _unit / 10 ** Math.ceil(Math.log10(_unit));
+            return truncatedPrice + priceFractionalPart * frac;
+        },
+        isExported: true,
     };
     // -----------------------------------------------------------------------------
     // DURATION
@@ -14395,11 +15063,11 @@
             const _yield = toNumber(securityYield);
             const _frequency = Math.trunc(toNumber(frequency));
             const _dayCountConvention = Math.trunc(toNumber(dayCountConvention));
-            assert(() => start < end, _lt("The maturity (%s) must be strictly greater than the settlement (%s).", end.toString(), start.toString()));
+            assertMaturityAndSettlementDatesAreValid(start, end);
+            assertCouponFrequencyIsValid(_frequency);
+            assertDayCountConventionIsValid(_dayCountConvention);
             assert(() => _rate >= 0, _lt("The rate (%s) must be positive or null.", _rate.toString()));
             assert(() => _yield >= 0, _lt("The yield (%s) must be positive or null.", _yield.toString()));
-            assert(() => [1, 2, 4].includes(_frequency), _lt("The frequency (%s) must be one of %s", _frequency.toString(), [1, 2, 4].toString()));
-            assert(() => 0 <= _dayCountConvention && _dayCountConvention <= 4, _lt("The day_count_convention (%s) must be between 0 and 4 inclusive.", _dayCountConvention.toString()));
             const years = YEARFRAC.compute(start, end, _dayCountConvention);
             const timeFirstYear = years - Math.trunc(years) || 1 / _frequency;
             const nbrCoupons = Math.ceil(years * _frequency);
@@ -14417,6 +15085,27 @@
             }
             return count === 0 ? 0 : sum / count;
         },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // EFFECT
+    // -----------------------------------------------------------------------------
+    const EFFECT = {
+        description: _lt("Annual effective interest rate."),
+        args: args(`
+  nominal_rate (number) ${_lt("The nominal interest rate per year.")}
+  periods_per_year (number) ${_lt("The number of compounding periods per year.")}
+  `),
+        returns: ["NUMBER"],
+        compute: function (nominal_rate, periods_per_year) {
+            const nominal = toNumber(nominal_rate);
+            const periods = Math.trunc(toNumber(periods_per_year));
+            assert(() => nominal > 0, _lt("The nominal rate (%s) must be strictly greater than 0.", nominal.toString()));
+            assert(() => periods > 0, _lt("The number of periods by year (%s) must strictly greater than 0.", periods.toString()));
+            // https://en.wikipedia.org/wiki/Nominal_interest_rate#Nominal_versus_effective_interest_rate
+            return Math.pow(1 + nominal / periods, periods) - 1;
+        },
+        isExported: true,
     };
     // -----------------------------------------------------------------------------
     // FV
@@ -14444,6 +15133,78 @@
             const type = toBoolean(endOrBeginning) ? 1 : 0;
             return r ? -pv * (1 + r) ** n - (p * (1 + r * type) * ((1 + r) ** n - 1)) / r : -(pv + p * n);
         },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // FVSCHEDULE
+    // -----------------------------------------------------------------------------
+    const FVSCHEDULE = {
+        description: _lt("Future value of principal from series of rates."),
+        args: args(`
+  principal (number) ${_lt("The amount of initial capital or value to compound against.")}
+  rate_schedule (number, range<number>) ${_lt("A series of interest rates to compound against the principal.")}
+  `),
+        returns: ["NUMBER"],
+        compute: function (principalAmount, rateSchedule) {
+            const principal = toNumber(principalAmount);
+            return reduceAny([rateSchedule], (acc, rate) => acc * (1 + toNumber(rate)), principal);
+        },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // INTRATE
+    // -----------------------------------------------------------------------------
+    const INTRATE = {
+        description: _lt("Calculates effective interest rate."),
+        args: args(`
+      settlement (date) ${_lt("The settlement date of the security, the date after issuance when the security is delivered to the buyer.")}
+      maturity (date) ${_lt("The maturity or end date of the security, when it can be redeemed at face, or par value.")}
+      investment (number) ${_lt("The amount invested in the security.")}
+      redemption (number) ${_lt("The amount to be received at maturity.")}
+      day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("An indicator of what day count method to use.")}
+    `),
+        returns: ["NUMBER"],
+        compute: function (settlement, maturity, investment, redemption, dayCountConvention = DEFAULT_DAY_COUNT_CONVENTION) {
+            const _settlement = Math.trunc(toNumber(settlement));
+            const _maturity = Math.trunc(toNumber(maturity));
+            const _redemption = toNumber(redemption);
+            const _investment = toNumber(investment);
+            assertMaturityAndSettlementDatesAreValid(_settlement, _maturity);
+            assertInvestmentStrictlyPositive(_investment);
+            assertRedemptionStrictlyPositive(_redemption);
+            /**
+             * https://wiki.documentfoundation.org/Documentation/Calc_Functions/INTRATE
+             *
+             *             (Redemption  - Investment) / Investment
+             * INTRATE =  _________________________________________
+             *              YEARFRAC(settlement, maturity, basis)
+             */
+            const yearFrac = YEARFRAC.compute(_settlement, _maturity, dayCountConvention);
+            return (_redemption - _investment) / _investment / yearFrac;
+        },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // IPMT
+    // -----------------------------------------------------------------------------
+    const IPMT = {
+        description: _lt("Payment on the principal of an investment."),
+        args: args(`
+  rate (number) ${_lt("The annualized rate of interest.")}
+  period (number) ${_lt("The amortization period, in terms of number of periods.")}
+  number_of_periods (number) ${_lt("The number of payments to be made.")}
+  present_value (number) ${_lt("The current value of the annuity.")}
+  future_value (number, default=${DEFAULT_FUTURE_VALUE}) ${_lt("The future value remaining after the final payment has been made.")}
+  end_or_beginning (number, default=${DEFAULT_END_OR_BEGINNING}) ${_lt("Whether payments are due at the end (0) or beginning (1) of each period.")}
+  `),
+        returns: ["NUMBER"],
+        computeFormat: () => "#,##0.00",
+        compute: function (rate, currentPeriod, numberOfPeriods, presentValue, futureValue = DEFAULT_FUTURE_VALUE, endOrBeginning = DEFAULT_END_OR_BEGINNING) {
+            const payment = PMT.compute(rate, numberOfPeriods, presentValue, futureValue, endOrBeginning);
+            const ppmt = PPMT.compute(rate, currentPeriod, numberOfPeriods, presentValue, futureValue, endOrBeginning);
+            return payment - ppmt;
+        },
+        isExported: true,
     };
     // -----------------------------------------------------------------------------
     // IRR
@@ -14459,7 +15220,7 @@
         computeFormat: () => "0%",
         compute: function (cashFlowAmounts, rateGuess = DEFAULT_RATE_GUESS) {
             const _rateGuess = toNumber(rateGuess);
-            assert(() => _rateGuess > -1, _lt("The rate_guess (%s) must be strictly greater than -1.", _rateGuess.toString()));
+            assertRateGuessStrictlyGreaterThanMinusOne(_rateGuess);
             // check that values contains at least one positive value and one negative value
             // and extract number present in the cashFlowAmount argument
             let positive = false;
@@ -14502,6 +15263,30 @@
             }
             return newtonMethod(func, derivFunc, _rateGuess + 1, 20, 1e-5) - 1;
         },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // ISPMT
+    // -----------------------------------------------------------------------------
+    const ISPMT = {
+        description: _lt("Returns the interest paid at a particular period of an investment."),
+        args: args(`
+  rate (number) ${_lt("The interest rate.")}
+  period (number) ${_lt("The period for which you want to view the interest payment.")}
+  number_of_periods (number) ${_lt("The number of payments to be made.")}
+  present_value (number) ${_lt("The current value of the annuity.")}
+  `),
+        returns: ["NUMBER"],
+        compute: function (rate, currentPeriod, numberOfPeriods, presentValue) {
+            const interestRate = toNumber(rate);
+            const period = toNumber(currentPeriod);
+            const nOfPeriods = toNumber(numberOfPeriods);
+            const investment = toNumber(presentValue);
+            assert(() => nOfPeriods !== 0, _lt("The number of periods must be different than 0.", nOfPeriods.toString()));
+            const currentInvestment = investment - investment * (period / nOfPeriods);
+            return -1 * currentInvestment * interestRate;
+        },
+        isExported: true,
     };
     // -----------------------------------------------------------------------------
     // MDURATION
@@ -14523,6 +15308,120 @@
             const k = Math.trunc(toNumber(frequency));
             return duration / (1 + y / k);
         },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // MIRR
+    // -----------------------------------------------------------------------------
+    const MIRR = {
+        description: _lt("Modified internal rate of return."),
+        args: args(`
+  cashflow_amounts (range<number>) ${_lt("A range containing the income or payments associated with the investment. The array should contain bot payments and incomes.")}
+  financing_rate (number) ${_lt("The interest rate paid on funds invested.")}
+  reinvestment_return_rate (number) ${_lt("The return (as a percentage) earned on reinvestment of income received from the investment.")}
+  `),
+        returns: ["NUMBER"],
+        compute: function (cashflowAmount, financingRate, reinvestmentRate) {
+            const fRate = toNumber(financingRate);
+            const rRate = toNumber(reinvestmentRate);
+            const cashFlow = transpose2dArray(cashflowAmount).flat().filter(isDefined$1).map(toNumber);
+            const n = cashFlow.length;
+            /**
+             * https://en.wikipedia.org/wiki/Modified_internal_rate_of_return
+             *
+             *         /  FV(positive cash flows, reinvestment rate) \  ^ (1 / (n - 1))
+             * MIRR = |  ___________________________________________  |                 - 1
+             *         \   - PV(negative cash flows, finance rate)   /
+             *
+             * with n the number of cash flows.
+             *
+             * You can compute FV and PV as :
+             *
+             * FV =    SUM      [ (cashFlow[i]>0 ? cashFlow[i] : 0) * (1 + rRate)**(n - i-1) ]
+             *       i= 0 => n
+             *
+             * PV =    SUM      [ (cashFlow[i]<0 ? cashFlow[i] : 0) / (1 + fRate)**i ]
+             *       i= 0 => n
+             */
+            let fv = 0;
+            let pv = 0;
+            for (const i of range(0, n)) {
+                const amount = cashFlow[i];
+                if (amount >= 0) {
+                    fv += amount * (rRate + 1) ** (n - i - 1);
+                }
+                else {
+                    pv += amount / (fRate + 1) ** i;
+                }
+            }
+            assert(() => pv !== 0 && fv !== 0, _lt("There must be both positive and negative values in cashflow_amounts."));
+            const exponent = 1 / (n - 1);
+            return (-fv / pv) ** exponent - 1;
+        },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // NOMINAL
+    // -----------------------------------------------------------------------------
+    const NOMINAL = {
+        description: _lt("Annual nominal interest rate."),
+        args: args(`
+  effective_rate (number) ${_lt("The effective interest rate per year.")}
+  periods_per_year (number) ${_lt("The number of compounding periods per year.")}
+  `),
+        returns: ["NUMBER"],
+        compute: function (effective_rate, periods_per_year) {
+            const effective = toNumber(effective_rate);
+            const periods = Math.trunc(toNumber(periods_per_year));
+            assert(() => effective > 0, _lt("The effective rate (%s) must must strictly greater than 0.", effective.toString()));
+            assert(() => periods > 0, _lt("The number of periods by year (%s) must strictly greater than 0.", periods.toString()));
+            // https://en.wikipedia.org/wiki/Nominal_interest_rate#Nominal_versus_effective_interest_rate
+            return (Math.pow(effective + 1, 1 / periods) - 1) * periods;
+        },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // NPER
+    // -----------------------------------------------------------------------------
+    const NPER = {
+        description: _lt("Number of payment periods for an investment."),
+        args: args(`
+  rate (number) ${_lt("The interest rate.")}
+  payment_amount (number) ${_lt("The amount of each payment made.")}
+  present_value (number) ${_lt("The current value of the annuity.")}
+  future_value (number, default=${DEFAULT_FUTURE_VALUE}) ${_lt("The future value remaining after the final payment has been made.")}
+  end_or_beginning (number, default=${DEFAULT_END_OR_BEGINNING}) ${_lt("Whether payments are due at the end (0) or beginning (1) of each period.")}
+  `),
+        returns: ["NUMBER"],
+        compute: function (rate, paymentAmount, presentValue, futureValue = DEFAULT_FUTURE_VALUE, endOrBeginning = DEFAULT_END_OR_BEGINNING) {
+            futureValue = futureValue || 0;
+            endOrBeginning = endOrBeginning || 0;
+            const r = toNumber(rate);
+            const p = toNumber(paymentAmount);
+            const pv = toNumber(presentValue);
+            const fv = toNumber(futureValue);
+            const t = toBoolean(endOrBeginning) ? 1 : 0;
+            /**
+             * https://wiki.documentfoundation.org/Documentation/Calc_Functions/NPER
+             *
+             * 0 = pv * (1 + r)^N + fv + [ p * (1 + r * t) * ((1 + r)^N - 1) ] / r
+             *
+             * We solve the equation for N:
+             *
+             * with C = [ p * (1 + r * t)] / r and
+             *      R = 1 + r
+             *
+             * => 0 = pv * R^N + C * R^N - C + fv
+             * <=> (C - fv) = R^N * (pv + C)
+             * <=> log[(C - fv) / (pv + C)] = N * log(R)
+             */
+            if (r === 0) {
+                return -(fv + pv) / p;
+            }
+            const c = (p * (1 + r * t)) / r;
+            return Math.log((c - fv) / (pv + c)) / Math.log(1 + r);
+        },
+        isExported: true,
     };
     // -----------------------------------------------------------------------------
     // NPV
@@ -14549,6 +15448,7 @@
             assert(() => _discount !== -1, _lt("The discount (%s) must be different from -1.", _discount.toString()));
             return npvResult(_discount, 0, values);
         },
+        isExported: true,
     };
     // -----------------------------------------------------------------------------
     // PDURATION
@@ -14565,16 +15465,92 @@
             const _rate = toNumber(rate);
             const _presentValue = toNumber(presentValue);
             const _futureValue = toNumber(futureValue);
-            assert(() => _rate > 0, _lt("The rate (%s) must be strictly positive.", _rate.toString()));
+            assertRateStrictlyPositive(_rate);
             assert(() => _presentValue > 0, _lt("The present_value (%s) must be strictly positive.", _presentValue.toString()));
             assert(() => _futureValue > 0, _lt("The future_value (%s) must be strictly positive.", _futureValue.toString()));
             return (Math.log(_futureValue) - Math.log(_presentValue)) / Math.log(1 + _rate);
         },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // PMT
+    // -----------------------------------------------------------------------------
+    const PMT = {
+        description: _lt("Periodic payment for an annuity investment."),
+        args: args(`
+  rate (number) ${_lt("The annualized rate of interest.")}
+  number_of_periods (number) ${_lt("The number of payments to be made.")}
+  present_value (number) ${_lt("The current value of the annuity.")}
+  future_value (number, default=${DEFAULT_FUTURE_VALUE}) ${_lt("The future value remaining after the final payment has been made.")}
+  end_or_beginning (number, default=${DEFAULT_END_OR_BEGINNING}) ${_lt("Whether payments are due at the end (0) or beginning (1) of each period.")}
+  `),
+        returns: ["NUMBER"],
+        computeFormat: () => "#,##0.00",
+        compute: function (rate, numberOfPeriods, presentValue, futureValue = DEFAULT_FUTURE_VALUE, endOrBeginning = DEFAULT_END_OR_BEGINNING) {
+            futureValue = futureValue || 0;
+            endOrBeginning = endOrBeginning || 0;
+            const n = toNumber(numberOfPeriods);
+            const r = toNumber(rate);
+            const t = toBoolean(endOrBeginning) ? 1 : 0;
+            let fv = toNumber(futureValue);
+            let pv = toNumber(presentValue);
+            assertNumberOfPeriodsStrictlyPositive(n);
+            /**
+             * https://wiki.documentfoundation.org/Documentation/Calc_Functions/PMT
+             *
+             * 0 = pv * (1 + r)^N + fv + [ p * (1 + r * t) * ((1 + r)^N - 1) ] / r
+             *
+             * We simply the equation for p
+             */
+            if (r === 0) {
+                return -(fv + pv) / n;
+            }
+            let payment = -(pv * (1 + r) ** n + fv);
+            payment = (payment * r) / ((1 + r * t) * ((1 + r) ** n - 1));
+            return payment;
+        },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // PPMT
+    // -----------------------------------------------------------------------------
+    const PPMT = {
+        description: _lt("Payment on the principal of an investment."),
+        args: args(`
+  rate (number) ${_lt("The annualized rate of interest.")}
+  period (number) ${_lt("The amortization period, in terms of number of periods.")}
+  number_of_periods (number) ${_lt("The number of payments to be made.")}
+  present_value (number) ${_lt("The current value of the annuity.")}
+  future_value (number, default=${DEFAULT_FUTURE_VALUE}) ${_lt("The future value remaining after the final payment has been made.")}
+  end_or_beginning (number, default=${DEFAULT_END_OR_BEGINNING}) ${_lt("Whether payments are due at the end (0) or beginning (1) of each period.")}
+  `),
+        returns: ["NUMBER"],
+        computeFormat: () => "#,##0.00",
+        compute: function (rate, currentPeriod, numberOfPeriods, presentValue, futureValue = DEFAULT_FUTURE_VALUE, endOrBeginning = DEFAULT_END_OR_BEGINNING) {
+            futureValue = futureValue || 0;
+            endOrBeginning = endOrBeginning || 0;
+            const n = toNumber(numberOfPeriods);
+            const r = toNumber(rate);
+            const period = toNumber(currentPeriod);
+            const type = toBoolean(endOrBeginning) ? 1 : 0;
+            const fv = toNumber(futureValue);
+            const pv = toNumber(presentValue);
+            assertNumberOfPeriodsStrictlyPositive(n);
+            assert(() => period > 0 && period <= n, _lt("The period must be between 1 and number_of_periods", n.toString()));
+            const payment = PMT.compute(r, n, pv, fv, endOrBeginning);
+            if (type === 1 && period === 1)
+                return payment;
+            const eqPeriod = type === 0 ? period - 1 : period - 2;
+            const eqPv = pv + payment * type;
+            const capitalAtPeriod = -FV.compute(r, eqPeriod, payment, eqPv, 0);
+            const currentInterest = capitalAtPeriod * r;
+            return payment + currentInterest;
+        },
+        isExported: true,
     };
     // -----------------------------------------------------------------------------
     // PV
     // -----------------------------------------------------------------------------
-    const DEFAULT_FUTURE_VALUE = 0;
     const PV = {
         description: _lt("Present value of an annuity investment."),
         args: args(`
@@ -14595,8 +15571,10 @@
             const p = toNumber(paymentAmount);
             const fv = toNumber(futureValue);
             const type = toBoolean(endOrBeginning) ? 1 : 0;
+            // https://wiki.documentfoundation.org/Documentation/Calc_Functions/PV
             return r ? -((p * (1 + r * type) * ((1 + r) ** n - 1)) / r + fv) / (1 + r) ** n : -(fv + p * n);
         },
+        isExported: true,
     };
     // -----------------------------------------------------------------------------
     // PRICE
@@ -14622,12 +15600,12 @@
             const _redemption = toNumber(redemption);
             const _frequency = Math.trunc(toNumber(frequency));
             const _dayCountConvention = Math.trunc(toNumber(dayCountConvention));
-            assert(() => _maturity > _settlement, _lt("The maturity (%s) must be strictly greater than the settlement (%s).", _maturity.toString(), _settlement.toString()));
+            assertMaturityAndSettlementDatesAreValid(_settlement, _maturity);
+            assertCouponFrequencyIsValid(_frequency);
+            assertDayCountConventionIsValid(_dayCountConvention);
             assert(() => _rate >= 0, _lt("The rate (%s) must be positive or null.", _rate.toString()));
             assert(() => _yield >= 0, _lt("The yield (%s) must be positive or null.", _yield.toString()));
-            assert(() => _redemption > 0, _lt("The redemption (%s) must be strictly positive.", _redemption.toString()));
-            assert(() => [1, 2, 4].includes(_frequency), _lt("The frequency (%s) must be one of %s.", _frequency.toString(), [1, 2, 4].toString()));
-            assert(() => 0 <= _dayCountConvention && _dayCountConvention <= 4, _lt("The day_count_convention (%s) must be between 0 and 4 inclusive.", _dayCountConvention.toString()));
+            assertRedemptionStrictlyPositive(_redemption);
             const years = YEARFRAC.compute(_settlement, _maturity, _dayCountConvention);
             const nbrRealCoupons = years * _frequency;
             const nbrFullCoupons = Math.ceil(nbrRealCoupons);
@@ -14646,6 +15624,609 @@
             const redemptionPresentValue = _redemption / yieldFactorPerPeriod ** (nbrFullCoupons - 1 + timeFirstCoupon);
             return (redemptionPresentValue + cashFlowsPresentValue - cashFlowFromCoupon * (1 - timeFirstCoupon));
         },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // PRICEDISC
+    // -----------------------------------------------------------------------------
+    const PRICEDISC = {
+        description: _lt("Price of a discount security."),
+        args: args(`
+      settlement (date) ${_lt("The settlement date of the security, the date after issuance when the security is delivered to the buyer.")}
+      maturity (date) ${_lt("The maturity or end date of the security, when it can be redeemed at face, or par value.")}
+      discount (number) ${_lt("The discount rate of the security at time of purchase.")}
+      redemption (number) ${_lt("The redemption amount per 100 face value, or par.")}
+      day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("An indicator of what day count method to use.")}
+    `),
+        returns: ["NUMBER"],
+        compute: function (settlement, maturity, discount, redemption, dayCountConvention = DEFAULT_DAY_COUNT_CONVENTION) {
+            dayCountConvention = dayCountConvention || 0;
+            const _settlement = Math.trunc(toNumber(settlement));
+            const _maturity = Math.trunc(toNumber(maturity));
+            const _discount = toNumber(discount);
+            const _redemption = toNumber(redemption);
+            const _dayCountConvention = Math.trunc(toNumber(dayCountConvention));
+            assertMaturityAndSettlementDatesAreValid(_settlement, _maturity);
+            assertDayCountConventionIsValid(_dayCountConvention);
+            assertDiscountStrictlyPositive(_discount);
+            assertRedemptionStrictlyPositive(_redemption);
+            /**
+             * https://support.microsoft.com/en-us/office/pricedisc-function-d06ad7c1-380e-4be7-9fd9-75e3079acfd3
+             *
+             * B = number of days in year, depending on year basis
+             * DSM = number of days from settlement to maturity
+             *
+             * PRICEDISC = redemption - discount * redemption * (DSM/B)
+             */
+            const yearsFrac = YEARFRAC.compute(_settlement, _maturity, _dayCountConvention);
+            return _redemption - _discount * _redemption * yearsFrac;
+        },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // PRICEMAT
+    // -----------------------------------------------------------------------------
+    const PRICEMAT = {
+        description: _lt("Calculates the price of a security paying interest at maturity, based on expected yield."),
+        args: args(`
+      settlement (date) ${_lt("The settlement date of the security, the date after issuance when the security is delivered to the buyer.")}
+      maturity (date) ${_lt("The maturity or end date of the security, when it can be redeemed at face, or par value.")}
+      issue (date) ${_lt("The date the security was initially issued.")}
+      rate (number) ${_lt("The annualized rate of interest.")}
+      yield (number) ${_lt("The expected annual yield of the security.")}
+      day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("An indicator of what day count method to use.")}
+    `),
+        returns: ["NUMBER"],
+        compute: function (settlement, maturity, issue, rate, securityYield, dayCountConvention = DEFAULT_DAY_COUNT_CONVENTION) {
+            dayCountConvention = dayCountConvention || 0;
+            const _settlement = Math.trunc(toNumber(settlement));
+            const _maturity = Math.trunc(toNumber(maturity));
+            const _issue = Math.trunc(toNumber(issue));
+            const _rate = toNumber(rate);
+            const _yield = toNumber(securityYield);
+            const _dayCount = Math.trunc(toNumber(dayCountConvention));
+            assertSettlementAndIssueDatesAreValid(_settlement, _issue);
+            assertMaturityAndSettlementDatesAreValid(_settlement, _maturity);
+            assertDayCountConventionIsValid(_dayCount);
+            assert(() => _rate >= 0, _lt("The rate (%s) must be positive or null.", _rate.toString()));
+            assert(() => _yield >= 0, _lt("The yield (%s) must be positive or null.", _yield.toString()));
+            /**
+             * https://support.microsoft.com/en-us/office/pricemat-function-52c3b4da-bc7e-476a-989f-a95f675cae77
+             *
+             * B = number of days in year, depending on year basis
+             * DSM = number of days from settlement to maturity
+             * DIM = number of days from issue to maturity
+             * DIS = number of days from issue to settlement
+             *
+             *             100 + (DIM/B * rate * 100)
+             *  PRICEMAT =  __________________________   - (DIS/B * rate * 100)
+             *              1 + (DSM/B * yield)
+             *
+             * The ratios number_of_days / days_in_year are computed using the YEARFRAC function, that handle
+             * differences due to day count conventions.
+             *
+             * Compatibility note :
+             *
+             * Contrary to GSheet and OpenOffice, Excel doesn't seems to always use its own YEARFRAC function
+             * to compute PRICEMAT, and give different values for some combinations of dates and day count
+             * conventions ( notably for leap years and dayCountConvention = 1 (Actual/Actual)).
+             *
+             * Our function PRICEMAT give us the same results as LibreOffice Calc.
+             * Google Sheet use the formula with YEARFRAC, but its YEARFRAC function results are different
+             * from the results of Excel/LibreOffice, thus we get different values with PRICEMAT.
+             *
+             */
+            const settlementToMaturity = YEARFRAC.compute(_settlement, _maturity, _dayCount);
+            const issueToSettlement = YEARFRAC.compute(_settlement, _issue, _dayCount);
+            const issueToMaturity = YEARFRAC.compute(_issue, _maturity, _dayCount);
+            const numerator = 100 + issueToMaturity * _rate * 100;
+            const denominator = 1 + settlementToMaturity * _yield;
+            const term2 = issueToSettlement * _rate * 100;
+            return numerator / denominator - term2;
+        },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // RATE
+    // -----------------------------------------------------------------------------
+    const RATE_GUESS_DEFAULT = 0.1;
+    const RATE = {
+        description: _lt("Interest rate of an annuity investment."),
+        args: args(`
+  number_of_periods (number) ${_lt("The number of payments to be made.")}
+  payment_per_period (number) ${_lt("The amount per period to be paid.")}
+  present_value (number) ${_lt("The current value of the annuity.")}
+  future_value (number, default=${DEFAULT_FUTURE_VALUE}) ${_lt("The future value remaining after the final payment has been made.")}
+  end_or_beginning (number, default=${DEFAULT_END_OR_BEGINNING}) ${_lt("Whether payments are due at the end (0) or beginning (1) of each period.")}
+  rate_guess (number, default=${RATE_GUESS_DEFAULT}) ${_lt("An estimate for what the interest rate will be.")}
+  `),
+        returns: ["NUMBER"],
+        computeFormat: () => "0%",
+        compute: function (numberOfPeriods, paymentPerPeriod, presentValue, futureValue = DEFAULT_FUTURE_VALUE, endOrBeginning = DEFAULT_END_OR_BEGINNING, rateGuess = RATE_GUESS_DEFAULT) {
+            futureValue = futureValue || 0;
+            endOrBeginning = endOrBeginning || 0;
+            rateGuess = rateGuess || RATE_GUESS_DEFAULT;
+            const n = toNumber(numberOfPeriods);
+            const payment = toNumber(paymentPerPeriod);
+            const type = toBoolean(endOrBeginning) ? 1 : 0;
+            const guess = toNumber(rateGuess);
+            let fv = toNumber(futureValue);
+            let pv = toNumber(presentValue);
+            assertNumberOfPeriodsStrictlyPositive(n);
+            assert(() => [payment, pv, fv].some((val) => val > 0) && [payment, pv, fv].some((val) => val < 0), _lt("There must be both positive and negative values in [payment_amount, present_value, future_value].", n.toString()));
+            assertRateGuessStrictlyGreaterThanMinusOne(guess);
+            fv -= payment * type;
+            pv += payment * type;
+            // https://github.com/apache/openoffice/blob/trunk/main/sc/source/core/tool/interpr2.cxx
+            const func = (rate) => {
+                const powN = Math.pow(1 + rate, n);
+                const intResult = (powN - 1) / rate;
+                return fv + pv * powN + payment * intResult;
+            };
+            const derivFunc = (rate) => {
+                const powNMinus1 = Math.pow(1 + rate, n - 1);
+                const powN = Math.pow(1 + rate, n);
+                const intResult = (powN - 1) / rate;
+                const intResultDeriv = (n * powNMinus1) / rate - intResult / rate;
+                const fTermDerivation = pv * n * powNMinus1 + payment * intResultDeriv;
+                return fTermDerivation;
+            };
+            return newtonMethod(func, derivFunc, guess, 40, 1e-5);
+        },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // RECEIVED
+    // -----------------------------------------------------------------------------
+    const RECEIVED = {
+        description: _lt("Amount received at maturity for a security."),
+        args: args(`
+      settlement (date) ${_lt("The settlement date of the security, the date after issuance when the security is delivered to the buyer.")}
+      maturity (date) ${_lt("The maturity or end date of the security, when it can be redeemed at face, or par value.")}
+      investment (number) ${_lt("The amount invested (irrespective of face value of each security).")}
+      discount (number) ${_lt("The discount rate of the security invested in.")}
+      day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("An indicator of what day count method to use.")}
+    `),
+        returns: ["NUMBER"],
+        compute: function (settlement, maturity, investment, discount, dayCountConvention = DEFAULT_DAY_COUNT_CONVENTION) {
+            dayCountConvention = dayCountConvention || 0;
+            const _settlement = Math.trunc(toNumber(settlement));
+            const _maturity = Math.trunc(toNumber(maturity));
+            const _investment = toNumber(investment);
+            const _discount = toNumber(discount);
+            const _dayCountConvention = Math.trunc(toNumber(dayCountConvention));
+            assertMaturityAndSettlementDatesAreValid(_settlement, _maturity);
+            assertDayCountConventionIsValid(_dayCountConvention);
+            assertInvestmentStrictlyPositive(_investment);
+            assertDiscountStrictlyPositive(_discount);
+            /**
+             * https://support.microsoft.com/en-us/office/received-function-7a3f8b93-6611-4f81-8576-828312c9b5e5
+             *
+             *                    investment
+             * RECEIVED = _________________________
+             *              1 - discount * DSM / B
+             *
+             * with DSM = number of days from settlement to maturity and B = number of days in a year
+             *
+             * The ratio DSM/B can be computed with the YEARFRAC function to take the dayCountConvention into account.
+             */
+            const yearsFrac = YEARFRAC.compute(_settlement, _maturity, _dayCountConvention);
+            return _investment / (1 - _discount * yearsFrac);
+        },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // RRI
+    // -----------------------------------------------------------------------------
+    const RRI = {
+        description: _lt("Computes the rate needed for an investment to reach a specific value within a specific number of periods."),
+        args: args(`
+      number_of_periods (number) ${_lt("The number of periods.")}
+      present_value (number) ${_lt("The present value of the investment.")}
+      future_value (number) ${_lt("The future value of the investment.")}
+    `),
+        returns: ["NUMBER"],
+        compute: function (numberOfPeriods, presentValue, futureValue) {
+            const n = toNumber(numberOfPeriods);
+            const pv = toNumber(presentValue);
+            const fv = toNumber(futureValue);
+            assertNumberOfPeriodsStrictlyPositive(n);
+            /**
+             * https://support.microsoft.com/en-us/office/rri-function-6f5822d8-7ef1-4233-944c-79e8172930f4
+             *
+             * RRI = (future value / present value) ^ (1 / number of periods) - 1
+             */
+            return (fv / pv) ** (1 / n) - 1;
+        },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // SLN
+    // -----------------------------------------------------------------------------
+    const SLN = {
+        description: _lt("Depreciation of an asset using the straight-line method."),
+        args: args(`
+        cost (number) ${_lt("The initial cost of the asset.")}
+        salvage (number) ${_lt("The value of the asset at the end of depreciation.")}
+        life (number) ${_lt("The number of periods over which the asset is depreciated.")}
+    `),
+        returns: ["NUMBER"],
+        computeFormat: () => "#,##0.00",
+        compute: function (cost, salvage, life) {
+            const _cost = toNumber(cost);
+            const _salvage = toNumber(salvage);
+            const _life = toNumber(life);
+            // No assertion is done on the values of the arguments to be compatible with Excel/Gsheet that don't check the values.
+            // It's up to the user to make sure the arguments make sense, which is good design because the user is smart.
+            return (_cost - _salvage) / _life;
+        },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // SYD
+    // -----------------------------------------------------------------------------
+    const SYD = {
+        description: _lt("Depreciation via sum of years digit method."),
+        args: args(`
+        cost (number) ${_lt("The initial cost of the asset.")}
+        salvage (number) ${_lt("The value of the asset at the end of depreciation.")}
+        life (number) ${_lt("The number of periods over which the asset is depreciated.")}
+        period (number) ${_lt("The single period within life for which to calculate depreciation.")}
+    `),
+        returns: ["NUMBER"],
+        computeFormat: () => "#,##0.00",
+        compute: function (cost, salvage, life, period) {
+            const _cost = toNumber(cost);
+            const _salvage = toNumber(salvage);
+            const _life = toNumber(life);
+            const _period = toNumber(period);
+            assertPeriodStrictlyPositive(_period);
+            assertLifeStrictlyPositive(_life);
+            assertPeriodSmallerOrEqualToLife(_period, _life);
+            /**
+             * This deprecation method use the sum of digits of the periods of the life as the deprecation factor.
+             * For example for a life = 5, we have a deprecation factor or 1 + 2 + 3 + 4 + 5 = 15 = life * (life + 1) / 2 = F.
+             *
+             * The deprecation for a period p is then computed based on F and the remaining lifetime at the period P.
+             *
+             * deprecation = (cost - salvage) * (number of remaining periods / F)
+             */
+            const deprecFactor = (_life * (_life + 1)) / 2;
+            const remainingPeriods = _life - _period + 1;
+            return (_cost - _salvage) * (remainingPeriods / deprecFactor);
+        },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // TBILLPRICE
+    // -----------------------------------------------------------------------------
+    const TBILLPRICE = {
+        description: _lt("Price of a US Treasury bill."),
+        args: args(`
+      settlement (date) ${_lt("The settlement date of the security, the date after issuance when the security is delivered to the buyer.")}
+      maturity (date) ${_lt("The maturity or end date of the security, when it can be redeemed at face, or par value.")}
+      discount (number) ${_lt("The discount rate of the bill at time of purchase.")}
+    `),
+        returns: ["NUMBER"],
+        compute: function (settlement, maturity, discount) {
+            const start = Math.trunc(toNumber(settlement));
+            const end = Math.trunc(toNumber(maturity));
+            const disc = toNumber(discount);
+            assertMaturityAndSettlementDatesAreValid(start, end);
+            assertSettlementLessThanOneYearBeforeMaturity(start, end);
+            assertDiscountStrictlyPositive(disc);
+            assertDiscountStrictlySmallerThanOne(disc);
+            /**
+             * https://support.microsoft.com/en-us/office/tbillprice-function-eacca992-c29d-425a-9eb8-0513fe6035a2
+             *
+             * TBILLPRICE = 100 * (1 - discount * DSM / 360)
+             *
+             * with DSM = number of days from settlement to maturity
+             *
+             * The ratio DSM/360 can be computed with the YEARFRAC function with dayCountConvention = 2 (actual/360).
+             */
+            const yearFrac = YEARFRAC.compute(start, end, 2);
+            return 100 * (1 - disc * yearFrac);
+        },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // TBILLEQ
+    // -----------------------------------------------------------------------------
+    const TBILLEQ = {
+        description: _lt("Equivalent rate of return for a US Treasury bill."),
+        args: args(`
+      settlement (date) ${_lt("The settlement date of the security, the date after issuance when the security is delivered to the buyer.")}
+      maturity (date) ${_lt("The maturity or end date of the security, when it can be redeemed at face, or par value.")}
+      discount (number) ${_lt("The discount rate of the bill at time of purchase.")}
+    `),
+        returns: ["NUMBER"],
+        compute: function (settlement, maturity, discount) {
+            const start = Math.trunc(toNumber(settlement));
+            const end = Math.trunc(toNumber(maturity));
+            const disc = toNumber(discount);
+            assertMaturityAndSettlementDatesAreValid(start, end);
+            assertSettlementLessThanOneYearBeforeMaturity(start, end);
+            assertDiscountStrictlyPositive(disc);
+            assertDiscountStrictlySmallerThanOne(disc);
+            /**
+             * https://support.microsoft.com/en-us/office/tbilleq-function-2ab72d90-9b4d-4efe-9fc2-0f81f2c19c8c
+             *
+             *               365 * discount
+             * TBILLEQ = ________________________
+             *            360 - discount * DSM
+             *
+             * with DSM = number of days from settlement to maturity
+             *
+             * What is not indicated in the Excel documentation is that this formula only works for duration between settlement
+             * and maturity that are less than 6 months (182 days). This is because US Treasury bills use semi-annual interest,
+             * and thus we have to take into account the compound interest for the calculation.
+             *
+             * For this case, the formula becomes (Treasury Securities and Derivatives, by Frank J. Fabozzi, page 49)
+             *
+             *            -2X + 2* SQRT[ X² - (2X - 1) * (1 - 100/p) ]
+             * TBILLEQ = ________________________________________________
+             *                            2X - 1
+             *
+             * with X = DSM / (number of days in a year),
+             *  and p is the price, computed with TBILLPRICE
+             *
+             * Note that from my tests in Excel, we take (number of days in a year) = 366 ONLY if DSM is 366, not if
+             * the settlement year is a leap year.
+             *
+             */
+            const nDays = DAYS.compute(end, start);
+            if (nDays <= 182) {
+                return (365 * disc) / (360 - disc * nDays);
+            }
+            const p = TBILLPRICE.compute(start, end, disc) / 100;
+            const daysInYear = nDays === 366 ? 366 : 365;
+            const x = nDays / daysInYear;
+            const num = -2 * x + 2 * Math.sqrt(x ** 2 - (2 * x - 1) * (1 - 1 / p));
+            const denom = 2 * x - 1;
+            return num / denom;
+        },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // TBILLYIELD
+    // -----------------------------------------------------------------------------
+    const TBILLYIELD = {
+        description: _lt("The yield of a US Treasury bill based on price."),
+        args: args(`
+      settlement (date) ${_lt("The settlement date of the security, the date after issuance when the security is delivered to the buyer.")}
+      maturity (date) ${_lt("The maturity or end date of the security, when it can be redeemed at face, or par value.")}
+      price (number) ${_lt("The price at which the security is bought per 100 face value.")}
+    `),
+        returns: ["NUMBER"],
+        compute: function (settlement, maturity, price) {
+            const start = Math.trunc(toNumber(settlement));
+            const end = Math.trunc(toNumber(maturity));
+            const p = toNumber(price);
+            assertMaturityAndSettlementDatesAreValid(start, end);
+            assertSettlementLessThanOneYearBeforeMaturity(start, end);
+            assertPriceStrictlyPositive(p);
+            /**
+             * https://support.microsoft.com/en-us/office/tbillyield-function-6d381232-f4b0-4cd5-8e97-45b9c03468ba
+             *
+             *              100 - price     360
+             * TBILLYIELD = ____________ * _____
+             *                 price        DSM
+             *
+             * with DSM = number of days from settlement to maturity
+             *
+             * The ratio DSM/360 can be computed with the YEARFRAC function with dayCountConvention = 2 (actual/360).
+             *
+             */
+            const yearFrac = YEARFRAC.compute(start, end, 2);
+            return ((100 - p) / p) * (1 / yearFrac);
+        },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // VDB
+    // -----------------------------------------------------------------------------
+    const DEFAULT_VDB_NO_SWITCH = false;
+    const VDB = {
+        description: _lt("Variable declining balance. WARNING : does not handle decimal periods."),
+        args: args(`
+        cost (number) ${_lt("The initial cost of the asset.")}
+        salvage (number) ${_lt("The value of the asset at the end of depreciation.")}
+        life (number) ${_lt("The number of periods over which the asset is depreciated.")}
+        start (number) ${_lt("Starting period to calculate depreciation.")}
+        end (number) ${_lt("Ending period to calculate depreciation.")}
+        factor (number, default=${DEFAULT_DDB_DEPRECIATION_FACTOR}) ${_lt("The number of months in the first year of depreciation.")}
+  no_switch (number, default=${DEFAULT_VDB_NO_SWITCH}) ${_lt("Whether to switch to straight-line depreciation when the depreciation is greater than the declining balance calculation.")}
+    `),
+        returns: ["NUMBER"],
+        compute: function (cost, salvage, life, startPeriod, endPeriod, factor = DEFAULT_DDB_DEPRECIATION_FACTOR, noSwitch = DEFAULT_VDB_NO_SWITCH) {
+            factor = factor || 0;
+            const _cost = toNumber(cost);
+            const _salvage = toNumber(salvage);
+            const _life = toNumber(life);
+            /* TODO : handle decimal periods
+             * on end_period it looks like it is a simple linear function, but I cannot understand exactly how
+             * decimals periods are handled with start_period.
+             */
+            const _startPeriod = Math.trunc(toNumber(startPeriod));
+            const _endPeriod = Math.trunc(toNumber(endPeriod));
+            const _factor = toNumber(factor);
+            const _noSwitch = toBoolean(noSwitch);
+            assertCostPositiveOrZero(_cost);
+            assertSalvagePositiveOrZero(_salvage);
+            assertStartAndEndPeriodAreValid(_startPeriod, _endPeriod, _life);
+            assertDeprecationFactorStrictlyPositive(_factor);
+            if (_cost === 0)
+                return 0;
+            if (_salvage >= _cost) {
+                return _startPeriod < 1 ? _cost - _salvage : 0;
+            }
+            const doubleDeprecFactor = _factor / _life;
+            if (doubleDeprecFactor >= 1) {
+                return _startPeriod < 1 ? _cost - _salvage : 0;
+            }
+            let previousCost = _cost;
+            let currentDeprec = 0;
+            let resultDeprec = 0;
+            let isLinearDeprec = false;
+            for (let i = 0; i < _endPeriod; i++) {
+                // compute the current deprecation, or keep the last one if we reached a stage of linear deprecation
+                if (!isLinearDeprec || _noSwitch) {
+                    const doubleDeprec = previousCost * doubleDeprecFactor;
+                    const remainingPeriods = _life - i;
+                    const linearDeprec = (previousCost - _salvage) / remainingPeriods;
+                    if (!_noSwitch && linearDeprec > doubleDeprec) {
+                        isLinearDeprec = true;
+                        currentDeprec = linearDeprec;
+                    }
+                    else {
+                        currentDeprec = doubleDeprec;
+                    }
+                }
+                const nextCost = Math.max(previousCost - currentDeprec, _salvage);
+                if (i >= _startPeriod) {
+                    resultDeprec += previousCost - nextCost;
+                }
+                previousCost = nextCost;
+            }
+            return resultDeprec;
+        },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // XIRR
+    // -----------------------------------------------------------------------------
+    const XIRR = {
+        description: _lt("Internal rate of return given non-periodic cash flows."),
+        args: args(`
+  cashflow_amounts (range<number>) ${_lt("An range containing the income or payments associated with the investment.")}
+  cashflow_dates (range<number>) ${_lt("An range with dates corresponding to the cash flows in cashflow_amounts.")}
+  rate_guess (number, default=${RATE_GUESS_DEFAULT}) ${_lt("An estimate for what the internal rate of return will be.")}
+  `),
+        returns: ["NUMBER"],
+        compute: function (cashflowAmounts, cashflowDates, rateGuess = RATE_GUESS_DEFAULT) {
+            rateGuess = rateGuess || 0;
+            const guess = toNumber(rateGuess);
+            const _cashFlows = cashflowAmounts.flat().map(toNumber);
+            const _dates = cashflowDates.flat().map(toNumber);
+            assertCashFlowsAndDatesHaveSameDimension(cashflowAmounts, cashflowDates);
+            assertCashFlowsHavePositiveAndNegativesValues(_cashFlows);
+            assertEveryDateGreaterThanFirstDateOfCashFlowDates(_dates);
+            assertRateGuessStrictlyGreaterThanMinusOne(guess);
+            const map = new Map();
+            for (const i of range(0, _dates.length)) {
+                const date = _dates[i];
+                if (map.has(date))
+                    map.set(date, map.get(date) + _cashFlows[i]);
+                else
+                    map.set(date, _cashFlows[i]);
+            }
+            const dates = Array.from(map.keys());
+            const values = dates.map((date) => map.get(date));
+            /**
+             * https://support.microsoft.com/en-us/office/xirr-function-de1242ec-6477-445b-b11b-a303ad9adc9d
+             *
+             * The rate is computed iteratively by trying to solve the equation
+             *
+             *
+             * 0 =    SUM     [ P_i * (1 + rate) ^((d_0 - d_i) / 365) ]  + P_0
+             *     i = 1 => n
+             *
+             * with P_i = price number i
+             *      d_i = date number i
+             *
+             * This function is not defined for rate < -1. For the case where we get rates < -1 in the Newton method, add
+             * a fallback for a number very close to -1 to continue the Newton method.
+             *
+             */
+            const func = (rate) => {
+                let value = values[0];
+                for (const i of range(1, values.length)) {
+                    const dateDiff = (dates[0] - dates[i]) / 365;
+                    value += values[i] * (1 + rate) ** dateDiff;
+                }
+                return value;
+            };
+            const derivFunc = (rate) => {
+                let deriv = 0;
+                for (const i of range(1, values.length)) {
+                    const dateDiff = (dates[0] - dates[i]) / 365;
+                    deriv += dateDiff * values[i] * (1 + rate) ** (dateDiff - 1);
+                }
+                return deriv;
+            };
+            const nanFallback = (previousFallback) => {
+                // -0.9 => -0.99 => -0.999 => ...
+                if (!previousFallback)
+                    return -0.9;
+                return previousFallback / 10 - 0.9;
+            };
+            return newtonMethod(func, derivFunc, guess, 40, 1e-5, nanFallback);
+        },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // XNPV
+    // -----------------------------------------------------------------------------
+    const XNPV = {
+        description: _lt("Net present value given to non-periodic cash flows.."),
+        args: args(`
+  discount (number) ${_lt("The discount rate of the investment over one period.")}
+  cashflow_amounts (number, range<number>) ${_lt("An range containing the income or payments associated with the investment.")}
+  cashflow_dates (number, range<number>) ${_lt("An range with dates corresponding to the cash flows in cashflow_amounts.")}
+  `),
+        returns: ["NUMBER"],
+        compute: function (discount, cashflowAmounts, cashflowDates) {
+            const rate = toNumber(discount);
+            const _cashFlows = Array.isArray(cashflowAmounts)
+                ? cashflowAmounts.flat().map(strictToNumber)
+                : [strictToNumber(cashflowAmounts)];
+            const _dates = Array.isArray(cashflowDates)
+                ? cashflowDates.flat().map(strictToNumber)
+                : [strictToNumber(cashflowDates)];
+            if (Array.isArray(cashflowDates) && Array.isArray(cashflowAmounts)) {
+                assertCashFlowsAndDatesHaveSameDimension(cashflowAmounts, cashflowDates);
+            }
+            else {
+                assert(() => _cashFlows.length === _dates.length, _lt("There must be the same number of values in cashflow_amounts and cashflow_dates."));
+            }
+            assertEveryDateGreaterThanFirstDateOfCashFlowDates(_dates);
+            assertRateStrictlyPositive(rate);
+            if (_cashFlows.length === 1)
+                return _cashFlows[0];
+            // aggregate values of the same date
+            const map = new Map();
+            for (const i of range(0, _dates.length)) {
+                const date = _dates[i];
+                if (map.has(date))
+                    map.set(date, map.get(date) + _cashFlows[i]);
+                else
+                    map.set(date, _cashFlows[i]);
+            }
+            const dates = Array.from(map.keys());
+            const values = dates.map((date) => map.get(date));
+            /**
+             * https://support.microsoft.com/en-us/office/xirr-function-de1242ec-6477-445b-b11b-a303ad9adc9d
+             *
+             * The present value is computed using
+             *
+             *
+             * NPV =    SUM     [ P_i *(1 + rate) ^((d_0 - d_i) / 365) ]  + P_0
+             *       i = 1 => n
+             *
+             * with P_i = price number i
+             *      d_i = date number i
+             *
+             *
+             */
+            let pv = values[0];
+            for (const i of range(1, values.length)) {
+                const dateDiff = (dates[0] - dates[i]) / 365;
+                pv += values[i] * (1 + rate) ** dateDiff;
+            }
+            return pv;
+        },
+        isExported: true,
     };
     // -----------------------------------------------------------------------------
     // YIELD
@@ -14671,12 +16252,12 @@
             const _redemption = toNumber(redemption);
             const _frequency = Math.trunc(toNumber(frequency));
             const _dayCountConvention = Math.trunc(toNumber(dayCountConvention));
-            assert(() => _maturity > _settlement, _lt("The maturity (%s) must be strictly greater than the settlement (%s).", _maturity.toString(), _settlement.toString()));
+            assertMaturityAndSettlementDatesAreValid(_settlement, _maturity);
+            assertCouponFrequencyIsValid(_frequency);
+            assertDayCountConventionIsValid(_dayCountConvention);
             assert(() => _rate >= 0, _lt("The rate (%s) must be positive or null.", _rate.toString()));
-            assert(() => _price > 0, _lt("The price (%s) must be strictly positive.", _price.toString()));
-            assert(() => _redemption > 0, _lt("The redemption (%s) must be strictly positive.", _redemption.toString()));
-            assert(() => [1, 2, 4].includes(_frequency), _lt("The frequency (%s) must be one of %s.", _frequency.toString(), [1, 2, 4].toString()));
-            assert(() => 0 <= _dayCountConvention && _dayCountConvention <= 4, _lt("The day_count_convention (%s) must between 0 and 4 inclusive.", _dayCountConvention.toString()));
+            assertPriceStrictlyPositive(_price);
+            assertRedemptionStrictlyPositive(_redemption);
             const years = YEARFRAC.compute(_settlement, _maturity, _dayCountConvention);
             const nbrRealCoupons = years * _frequency;
             const nbrFullCoupons = Math.ceil(nbrRealCoupons);
@@ -14722,6 +16303,43 @@
             const methodResult = newtonMethod(func, derivFunc, initYieldFactorPerPeriod, 100, 1e-5);
             return (methodResult - 1) * _frequency;
         },
+        isExported: true,
+    };
+    // -----------------------------------------------------------------------------
+    // YIELDDISC
+    // -----------------------------------------------------------------------------
+    const YIELDDISC = {
+        description: _lt("Annual yield of a discount security."),
+        args: args(`
+        settlement (date) ${_lt("The settlement date of the security, the date after issuance when the security is delivered to the buyer.")}
+        maturity (date) ${_lt("The maturity or end date of the security, when it can be redeemed at face, or par value.")}
+        price (number) ${_lt("The price at which the security is bought per 100 face value.")}
+        redemption (number) ${_lt("The redemption amount per 100 face value, or par.")}
+        day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("An indicator of what day count method to use.")}
+    `),
+        returns: ["NUMBER"],
+        compute: function (settlement, maturity, price, redemption, dayCountConvention = DEFAULT_DAY_COUNT_CONVENTION) {
+            dayCountConvention = dayCountConvention || 0;
+            const _settlement = Math.trunc(toNumber(settlement));
+            const _maturity = Math.trunc(toNumber(maturity));
+            const _price = toNumber(price);
+            const _redemption = toNumber(redemption);
+            const _dayCountConvention = Math.trunc(toNumber(dayCountConvention));
+            assertMaturityAndSettlementDatesAreValid(_settlement, _maturity);
+            assertDayCountConventionIsValid(_dayCountConvention);
+            assertPriceStrictlyPositive(_price);
+            assertRedemptionStrictlyPositive(_redemption);
+            /**
+             * https://wiki.documentfoundation.org/Documentation/Calc_Functions/YIELDDISC
+             *
+             *                    (redemption / price) - 1
+             * YIELDDISC = _____________________________________
+             *             YEARFRAC(settlement, maturity, basis)
+             */
+            const yearFrac = YEARFRAC.compute(settlement, maturity, dayCountConvention);
+            return (_redemption / _price - 1) / yearFrac;
+        },
+        isExported: true,
     };
     // -----------------------------------------------------------------------------
     // YIELDMAT
@@ -14745,31 +16363,70 @@
             const _rate = toNumber(rate);
             const _price = toNumber(price);
             const _dayCountConvention = Math.trunc(toNumber(dayCountConvention));
+            assertMaturityAndSettlementDatesAreValid(_settlement, _maturity);
+            assertDayCountConventionIsValid(_dayCountConvention);
             assert(() => _settlement >= _issue, _lt("The settlement (%s) must be greater than or equal to the issue (%s).", _settlement.toString(), _issue.toString()));
-            assert(() => _maturity > _settlement, _lt("The maturity (%s) must be strictly greater than the settlement (%s).", _maturity.toString(), _settlement.toString()));
             assert(() => _rate >= 0, _lt("The rate (%s) must be positive or null.", _rate.toString()));
-            assert(() => _price > 0, _lt("The price (%s) must be strictly positive.", _price.toString()));
-            assert(() => 0 <= _dayCountConvention && _dayCountConvention <= 4, _lt("The day_count_convention (%s) must be between 0 and 4 inclusive.", _dayCountConvention.toString()));
+            assertPriceStrictlyPositive(_price);
             const issueToMaturity = YEARFRAC.compute(_issue, _maturity, _dayCountConvention);
             const issueToSettlement = YEARFRAC.compute(_issue, _settlement, _dayCountConvention);
             const settlementToMaturity = YEARFRAC.compute(_settlement, _maturity, _dayCountConvention);
             const numerator = (100 * (1 + _rate * issueToMaturity)) / (_price + 100 * _rate * issueToSettlement) - 1;
             return numerator / settlementToMaturity;
         },
+        isExported: true,
     };
 
     var financial = /*#__PURE__*/Object.freeze({
         __proto__: null,
+        ACCRINTM: ACCRINTM,
+        AMORLINC: AMORLINC,
+        COUPDAYS: COUPDAYS,
+        COUPDAYBS: COUPDAYBS,
+        COUPDAYSNC: COUPDAYSNC,
+        COUPNCD: COUPNCD,
+        COUPNUM: COUPNUM,
+        COUPPCD: COUPPCD,
+        CUMIPMT: CUMIPMT,
+        CUMPRINC: CUMPRINC,
         DB: DB,
+        DDB: DDB,
+        DISC: DISC,
+        DOLLARDE: DOLLARDE,
+        DOLLARFR: DOLLARFR,
         DURATION: DURATION,
+        EFFECT: EFFECT,
         FV: FV,
+        FVSCHEDULE: FVSCHEDULE,
+        INTRATE: INTRATE,
+        IPMT: IPMT,
         IRR: IRR,
+        ISPMT: ISPMT,
         MDURATION: MDURATION,
+        MIRR: MIRR,
+        NOMINAL: NOMINAL,
+        NPER: NPER,
         NPV: NPV,
         PDURATION: PDURATION,
+        PMT: PMT,
+        PPMT: PPMT,
         PV: PV,
         PRICE: PRICE,
+        PRICEDISC: PRICEDISC,
+        PRICEMAT: PRICEMAT,
+        RATE: RATE,
+        RECEIVED: RECEIVED,
+        RRI: RRI,
+        SLN: SLN,
+        SYD: SYD,
+        TBILLPRICE: TBILLPRICE,
+        TBILLEQ: TBILLEQ,
+        TBILLYIELD: TBILLYIELD,
+        VDB: VDB,
+        XIRR: XIRR,
+        XNPV: XNPV,
         YIELD: YIELD,
+        YIELDDISC: YIELDDISC,
         YIELDMAT: YIELDMAT
     });
 
@@ -17233,7 +18890,7 @@
          * There should not be any side effects in this method.
          */
         allowDispatch(command) {
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         /**
          * This method is useful when a plugin need to perform some action before a
@@ -17271,12 +18928,12 @@
                     if (!Array.isArray(results)) {
                         results = [results];
                     }
-                    const cancelledReasons = results.filter((result) => result !== 0 /* CommandResult.Success */);
+                    const cancelledReasons = results.filter((result) => result !== 0 /* Success */);
                     if (cancelledReasons.length) {
                         return cancelledReasons;
                     }
                 }
-                return 0 /* CommandResult.Success */;
+                return 0 /* Success */;
             };
         }
         checkValidations(command, ...validations) {
@@ -17334,7 +18991,7 @@
                         return this.validateSelection(cmd.content.length, cmd.selection.start, cmd.selection.end);
                     }
                     else {
-                        return 0 /* CommandResult.Success */;
+                        return 0 /* Success */;
                     }
                 case "START_EDITION":
                     if (cmd.selection) {
@@ -17343,10 +19000,10 @@
                         return this.validateSelection(content.length, cmd.selection.start, cmd.selection.end);
                     }
                     else {
-                        return 0 /* CommandResult.Success */;
+                        return 0 /* Success */;
                     }
                 default:
-                    return 0 /* CommandResult.Success */;
+                    return 0 /* Success */;
             }
         }
         handleEvent(event) {
@@ -17543,8 +19200,8 @@
         }
         validateSelection(length, start, end) {
             return start >= 0 && start <= length && end >= 0 && end <= length
-                ? 0 /* CommandResult.Success */
-                : 43 /* CommandResult.WrongComposerSelection */;
+                ? 0 /* Success */
+                : 43 /* WrongComposerSelection */;
         }
         onColumnsRemoved(cmd) {
             if (cmd.elements.includes(this.col) && this.mode !== "inactive") {
@@ -19728,7 +21385,7 @@
                 base: this.state.base,
                 elements,
             });
-            if (!result.isSuccessful && result.reasons.includes(2 /* CommandResult.WillRemoveExistingMerge */)) {
+            if (!result.isSuccessful && result.reasons.includes(2 /* WillRemoveExistingMerge */)) {
                 this.env.raiseError(MergeErrorMessage);
             }
         }
@@ -19897,7 +21554,7 @@
                 base: this.state.base,
                 elements,
             });
-            if (!result.isSuccessful && result.reasons.includes(2 /* CommandResult.WillRemoveExistingMerge */)) {
+            if (!result.isSuccessful && result.reasons.includes(2 /* WillRemoveExistingMerge */)) {
                 this.env.raiseError(MergeErrorMessage);
             }
         }
@@ -19964,7 +21621,7 @@
 
     function useGridDrawing(refName, model, canvasSize) {
         const canvasRef = owl.useRef(refName);
-        owl.useEffect(() => drawGrid());
+        owl.useEffect(drawGrid);
         function drawGrid() {
             const canvas = canvasRef.el;
             const dpr = window.devicePixelRatio || 1;
@@ -20998,7 +22655,7 @@
                 switch (typeof value) {
                     case "number":
                         return {
-                            value,
+                            value: value || 0,
                             format,
                             type: CellValueType.number,
                         };
@@ -25292,7 +26949,7 @@
                 case "UPDATE_CELL":
                     return this.checkCellOutOfSheet(cmd.sheetId, cmd.col, cmd.row);
                 default:
-                    return 0 /* CommandResult.Success */;
+                    return 0 /* Success */;
             }
         }
         handle(cmd) {
@@ -25628,9 +27285,9 @@
         checkCellOutOfSheet(sheetId, col, row) {
             const sheet = this.getters.tryGetSheet(sheetId);
             if (!sheet)
-                return 25 /* CommandResult.InvalidSheetId */;
+                return 25 /* InvalidSheetId */;
             const sheetZone = this.getters.getSheetZone(sheetId);
-            return isInside(col, row, sheetZone) ? 0 /* CommandResult.Success */ : 16 /* CommandResult.TargetOutOfSheet */;
+            return isInside(col, row, sheetZone) ? 0 /* Success */ : 16 /* TargetOutOfSheet */;
         }
     }
     CellPlugin.getters = [
@@ -25664,7 +27321,7 @@
                 case "UPDATE_CHART":
                     return this.validateChartDefinition(cmd.definition);
                 default:
-                    return 0 /* CommandResult.Success */;
+                    return 0 /* Success */;
             }
         }
         handle(cmd) {
@@ -25888,7 +27545,7 @@
                 case "MOVE_CONDITIONAL_FORMAT":
                     return this.checkValidReordering(cmd.cfId, cmd.direction, cmd.sheetId);
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         handle(cmd) {
             switch (cmd.type) {
@@ -26020,18 +27677,18 @@
         }
         checkValidReordering(cfId, direction, sheetId) {
             if (!this.cfRules[sheetId])
-                return 25 /* CommandResult.InvalidSheetId */;
+                return 25 /* InvalidSheetId */;
             const ruleIndex = this.cfRules[sheetId].findIndex((cf) => cf.id === cfId);
             if (ruleIndex === -1)
-                return 68 /* CommandResult.InvalidConditionalFormatId */;
+                return 68 /* InvalidConditionalFormatId */;
             const cfIndex2 = direction === "up" ? ruleIndex - 1 : ruleIndex + 1;
             if (cfIndex2 < 0 || cfIndex2 >= this.cfRules[sheetId].length) {
-                return 68 /* CommandResult.InvalidConditionalFormatId */;
+                return 68 /* InvalidConditionalFormatId */;
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         checkEmptyRange(cmd) {
-            return cmd.ranges.length ? 0 /* CommandResult.Success */ : 22 /* CommandResult.EmptyRange */;
+            return cmd.ranges.length ? 0 /* Success */ : 22 /* EmptyRange */;
         }
         checkCFRule(cmd) {
             const rule = cmd.cf.rule;
@@ -26056,7 +27713,7 @@
                     return this.checkValidations(rule, this.chainValidations(this.checkInflectionPoints(this.checkNaN), this.checkLowerBiggerThanUpper), this.chainValidations(this.checkInflectionPoints(this.checkFormulaCompilation)));
                 }
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         checkOperatorArgsNumber(expectedNumber, operators) {
             if (expectedNumber > 2) {
@@ -26067,14 +27724,14 @@
                     const errors = [];
                     const isEmpty = (value) => value === undefined || value === "";
                     if (expectedNumber >= 1 && isEmpty(rule.values[0])) {
-                        errors.push(48 /* CommandResult.FirstArgMissing */);
+                        errors.push(48 /* FirstArgMissing */);
                     }
                     if (expectedNumber >= 2 && isEmpty(rule.values[1])) {
-                        errors.push(49 /* CommandResult.SecondArgMissing */);
+                        errors.push(49 /* SecondArgMissing */);
                     }
-                    return errors.length ? errors : 0 /* CommandResult.Success */;
+                    return errors.length ? errors : 0 /* Success */;
                 }
-                return 0 /* CommandResult.Success */;
+                return 0 /* Success */;
             };
         }
         checkNaN(threshold, thresholdName) {
@@ -26082,43 +27739,43 @@
                 (threshold.value === "" || isNaN(threshold.value))) {
                 switch (thresholdName) {
                     case "min":
-                        return 50 /* CommandResult.MinNaN */;
+                        return 50 /* MinNaN */;
                     case "max":
-                        return 52 /* CommandResult.MaxNaN */;
+                        return 52 /* MaxNaN */;
                     case "mid":
-                        return 51 /* CommandResult.MidNaN */;
+                        return 51 /* MidNaN */;
                     case "upperInflectionPoint":
-                        return 53 /* CommandResult.ValueUpperInflectionNaN */;
+                        return 53 /* ValueUpperInflectionNaN */;
                     case "lowerInflectionPoint":
-                        return 54 /* CommandResult.ValueLowerInflectionNaN */;
+                        return 54 /* ValueLowerInflectionNaN */;
                 }
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         checkFormulaCompilation(threshold, thresholdName) {
             if (threshold.type !== "formula")
-                return 0 /* CommandResult.Success */;
+                return 0 /* Success */;
             try {
                 compile(threshold.value || "");
             }
             catch (error) {
                 switch (thresholdName) {
                     case "min":
-                        return 55 /* CommandResult.MinInvalidFormula */;
+                        return 55 /* MinInvalidFormula */;
                     case "max":
-                        return 57 /* CommandResult.MaxInvalidFormula */;
+                        return 57 /* MaxInvalidFormula */;
                     case "mid":
-                        return 56 /* CommandResult.MidInvalidFormula */;
+                        return 56 /* MidInvalidFormula */;
                     case "upperInflectionPoint":
-                        return 58 /* CommandResult.ValueUpperInvalidFormula */;
+                        return 58 /* ValueUpperInvalidFormula */;
                     case "lowerInflectionPoint":
-                        return 59 /* CommandResult.ValueLowerInvalidFormula */;
+                        return 59 /* ValueLowerInvalidFormula */;
                 }
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         checkThresholds(check) {
-            return this.batchValidations((rule) => check(rule.minimum, "min"), (rule) => check(rule.maximum, "max"), (rule) => (rule.midpoint ? check(rule.midpoint, "mid") : 0 /* CommandResult.Success */));
+            return this.batchValidations((rule) => check(rule.minimum, "min"), (rule) => check(rule.maximum, "max"), (rule) => (rule.midpoint ? check(rule.midpoint, "mid") : 0 /* Success */));
         }
         checkInflectionPoints(check) {
             return this.batchValidations((rule) => check(rule.lowerInflectionPoint, "lowerInflectionPoint"), (rule) => check(rule.upperInflectionPoint, "upperInflectionPoint"));
@@ -26129,9 +27786,9 @@
             if (["number", "percentage", "percentile"].includes(rule.lowerInflectionPoint.type) &&
                 rule.lowerInflectionPoint.type === rule.upperInflectionPoint.type &&
                 Number(minValue) > Number(maxValue)) {
-                return 45 /* CommandResult.LowerBiggerThanUpper */;
+                return 45 /* LowerBiggerThanUpper */;
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         checkMinBiggerThanMax(rule) {
             const minValue = rule.minimum.value;
@@ -26139,9 +27796,9 @@
             if (["number", "percentage", "percentile"].includes(rule.minimum.type) &&
                 rule.minimum.type === rule.maximum.type &&
                 stringToNumber(minValue) >= stringToNumber(maxValue)) {
-                return 44 /* CommandResult.MinBiggerThanMax */;
+                return 44 /* MinBiggerThanMax */;
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         checkMidBiggerThanMax(rule) {
             var _a;
@@ -26151,9 +27808,9 @@
                 ["number", "percentage", "percentile"].includes(rule.midpoint.type) &&
                 rule.midpoint.type === rule.maximum.type &&
                 stringToNumber(midValue) >= stringToNumber(maxValue)) {
-                return 46 /* CommandResult.MidBiggerThanMax */;
+                return 46 /* MidBiggerThanMax */;
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         checkMinBiggerThanMid(rule) {
             var _a;
@@ -26163,9 +27820,9 @@
                 ["number", "percentage", "percentile"].includes(rule.midpoint.type) &&
                 rule.minimum.type === rule.midpoint.type &&
                 stringToNumber(minValue) >= stringToNumber(midValue)) {
-                return 47 /* CommandResult.MinBiggerThanMid */;
+                return 47 /* MinBiggerThanMid */;
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         removeConditionalFormatting(id, sheet) {
             const cfIndex = this.cfRules[sheet].findIndex((s) => s.id === id);
@@ -26205,7 +27862,7 @@
                 case "DELETE_FIGURE":
                     return this.checkFigureExists(cmd.sheetId, cmd.id);
                 default:
-                    return 0 /* CommandResult.Success */;
+                    return 0 /* Success */;
             }
         }
         handle(cmd) {
@@ -26262,9 +27919,9 @@
         checkFigureExists(sheetId, figureId) {
             var _a;
             if (((_a = this.figures[sheetId]) === null || _a === void 0 ? void 0 : _a[figureId]) === undefined) {
-                return 67 /* CommandResult.FigureDoesNotExist */;
+                return 67 /* FigureDoesNotExist */;
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         // ---------------------------------------------------------------------------
         // Getters
@@ -26361,36 +28018,36 @@
             switch (cmd.type) {
                 case "CREATE_FILTER_TABLE":
                     if (!areZonesContinuous(...cmd.target)) {
-                        return 78 /* CommandResult.NonContinuousTargets */;
+                        return 78 /* NonContinuousTargets */;
                     }
                     const zone = union(...cmd.target);
                     const checkFilterOverlap = () => {
                         if (this.getFilterTables(cmd.sheetId).some((filter) => overlap(filter.zone, zone))) {
-                            return 75 /* CommandResult.FilterOverlap */;
+                            return 75 /* FilterOverlap */;
                         }
-                        return 0 /* CommandResult.Success */;
+                        return 0 /* Success */;
                     };
                     const checkMergeInFilter = () => {
                         const mergesInTarget = this.getters.getMergesInZone(cmd.sheetId, zone);
                         for (let merge of mergesInTarget) {
                             if (overlap(zone, merge)) {
-                                return 77 /* CommandResult.MergeInFilter */;
+                                return 77 /* MergeInFilter */;
                             }
                         }
-                        return 0 /* CommandResult.Success */;
+                        return 0 /* Success */;
                     };
                     return this.checkValidations(cmd, checkFilterOverlap, checkMergeInFilter);
                 case "ADD_MERGE":
                     for (let merge of cmd.target) {
                         for (let filterTable of this.getFilterTables(cmd.sheetId)) {
                             if (overlap(filterTable.zone, merge)) {
-                                return 77 /* CommandResult.MergeInFilter */;
+                                return 77 /* MergeInFilter */;
                             }
                         }
                     }
                     break;
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         handle(cmd) {
             switch (cmd.type) {
@@ -26848,7 +28505,7 @@
             switch (cmd.type) {
                 case "HIDE_COLUMNS_ROWS": {
                     if (!this.hiddenHeaders[cmd.sheetId]) {
-                        return 25 /* CommandResult.InvalidSheetId */;
+                        return 25 /* InvalidSheetId */;
                     }
                     const hiddenGroup = cmd.dimension === "COL"
                         ? this.getHiddenColsGroups(cmd.sheetId)
@@ -26857,11 +28514,11 @@
                         ? this.getters.getNumberCols(cmd.sheetId)
                         : this.getters.getNumberRows(cmd.sheetId);
                     return (hiddenGroup || []).flat().concat(cmd.elements).length < elements
-                        ? 0 /* CommandResult.Success */
-                        : 63 /* CommandResult.TooManyHiddenElements */;
+                        ? 0 /* Success */
+                        : 63 /* TooManyHiddenElements */;
                 }
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         handle(cmd) {
             switch (cmd.type) {
@@ -27024,7 +28681,7 @@
                 case "UPDATE_CELL":
                     return this.checkMergedContentUpdate(cmd);
                 default:
-                    return 0 /* CommandResult.Success */;
+                    return 0 /* Success */;
             }
         }
         handle(cmd) {
@@ -27231,32 +28888,32 @@
         checkDestructiveMerge({ sheetId, target }) {
             const sheet = this.getters.tryGetSheet(sheetId);
             if (!sheet)
-                return 0 /* CommandResult.Success */;
+                return 0 /* Success */;
             const isDestructive = target.some((zone) => this.isMergeDestructive(sheetId, zone));
-            return isDestructive ? 3 /* CommandResult.MergeIsDestructive */ : 0 /* CommandResult.Success */;
+            return isDestructive ? 3 /* MergeIsDestructive */ : 0 /* Success */;
         }
         checkOverlap({ target }) {
             for (const zone of target) {
                 for (const zone2 of target) {
                     if (zone !== zone2 && overlap(zone, zone2)) {
-                        return 62 /* CommandResult.MergeOverlap */;
+                        return 62 /* MergeOverlap */;
                     }
                 }
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         checkFrozenPanes({ sheetId, target }) {
             const sheet = this.getters.tryGetSheet(sheetId);
             if (!sheet)
-                return 0 /* CommandResult.Success */;
+                return 0 /* Success */;
             const { xSplit, ySplit } = this.getters.getPaneDivisions(sheetId);
             for (const zone of target) {
                 if ((zone.left < xSplit && zone.right >= xSplit) ||
                     (zone.top < ySplit && zone.bottom >= ySplit)) {
-                    return 72 /* CommandResult.FrozenPaneOverlap */;
+                    return 72 /* FrozenPaneOverlap */;
                 }
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         /**
          * The content of a merged cell should always be empty.
@@ -27265,13 +28922,13 @@
         checkMergedContentUpdate(cmd) {
             const { col, row, sheetId, content } = cmd;
             if (content === undefined) {
-                return 0 /* CommandResult.Success */;
+                return 0 /* Success */;
             }
             const { col: mainCol, row: mainRow } = this.getMainCellPosition(sheetId, col, row);
             if (mainCol === col && mainRow === row) {
-                return 0 /* CommandResult.Success */;
+                return 0 /* Success */;
             }
-            return 4 /* CommandResult.CellIsMerged */;
+            return 4 /* CellIsMerged */;
         }
         /**
          * Merge the current selection. Note that:
@@ -27447,15 +29104,15 @@
         // ---------------------------------------------------------------------------
         allowDispatch(cmd) {
             const genericChecks = this.chainValidations(this.checkSheetExists, this.checkZones)(cmd);
-            if (genericChecks !== 0 /* CommandResult.Success */) {
+            if (genericChecks !== 0 /* Success */) {
                 return genericChecks;
             }
             switch (cmd.type) {
                 case "HIDE_SHEET": {
                     if (this.getVisibleSheetIds().length === 1) {
-                        return 8 /* CommandResult.NotEnoughSheets */;
+                        return 8 /* NotEnoughSheets */;
                     }
-                    return 0 /* CommandResult.Success */;
+                    return 0 /* Success */;
                 }
                 case "CREATE_SHEET": {
                     return this.checkValidations(cmd, this.checkSheetName, this.checkSheetPosition);
@@ -27467,43 +29124,43 @@
                             .slice(0, currentIndex)
                             .map((id) => !this.isSheetVisible(id));
                         return leftSheets.every((isHidden) => isHidden)
-                            ? 12 /* CommandResult.WrongSheetMove */
-                            : 0 /* CommandResult.Success */;
+                            ? 12 /* WrongSheetMove */
+                            : 0 /* Success */;
                     }
                     else {
                         const rightSheets = this.orderedSheetIds
                             .slice(currentIndex + 1)
                             .map((id) => !this.isSheetVisible(id));
                         return rightSheets.every((isHidden) => isHidden)
-                            ? 12 /* CommandResult.WrongSheetMove */
-                            : 0 /* CommandResult.Success */;
+                            ? 12 /* WrongSheetMove */
+                            : 0 /* Success */;
                     }
                 case "RENAME_SHEET":
                     return this.isRenameAllowed(cmd);
                 case "DELETE_SHEET":
                     return this.orderedSheetIds.length > 1
-                        ? 0 /* CommandResult.Success */
-                        : 8 /* CommandResult.NotEnoughSheets */;
+                        ? 0 /* Success */
+                        : 8 /* NotEnoughSheets */;
                 case "REMOVE_COLUMNS_ROWS": {
                     const length = cmd.dimension === "COL"
                         ? this.getNumberCols(cmd.sheetId)
                         : this.getNumberRows(cmd.sheetId);
                     return length > cmd.elements.length
-                        ? 0 /* CommandResult.Success */
-                        : 7 /* CommandResult.NotEnoughElements */;
+                        ? 0 /* Success */
+                        : 7 /* NotEnoughElements */;
                 }
                 case "FREEZE_ROWS": {
                     return cmd.quantity >= 1 && cmd.quantity < this.getNumberRows(cmd.sheetId)
-                        ? 0 /* CommandResult.Success */
-                        : 71 /* CommandResult.InvalidFreezeQuantity */;
+                        ? 0 /* Success */
+                        : 71 /* InvalidFreezeQuantity */;
                 }
                 case "FREEZE_COLUMNS": {
                     return cmd.quantity >= 1 && cmd.quantity < this.getNumberCols(cmd.sheetId)
-                        ? 0 /* CommandResult.Success */
-                        : 71 /* CommandResult.InvalidFreezeQuantity */;
+                        ? 0 /* Success */
+                        : 71 /* InvalidFreezeQuantity */;
                 }
                 default:
-                    return 0 /* CommandResult.Success */;
+                    return 0 /* Success */;
             }
         }
         handle(cmd) {
@@ -27913,24 +29570,24 @@
             const { orderedSheetIds, sheets } = this;
             const name = cmd.name && cmd.name.trim().toLowerCase();
             if (orderedSheetIds.find((id) => { var _a; return ((_a = sheets[id]) === null || _a === void 0 ? void 0 : _a.name.toLowerCase()) === name; })) {
-                return 10 /* CommandResult.DuplicatedSheetName */;
+                return 10 /* DuplicatedSheetName */;
             }
             if (FORBIDDEN_IN_EXCEL_REGEX.test(name)) {
-                return 11 /* CommandResult.ForbiddenCharactersInSheetName */;
+                return 11 /* ForbiddenCharactersInSheetName */;
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         checkSheetPosition(cmd) {
             const { orderedSheetIds } = this;
             if (cmd.position > orderedSheetIds.length || cmd.position < 0) {
-                return 13 /* CommandResult.WrongSheetPosition */;
+                return 13 /* WrongSheetPosition */;
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         isRenameAllowed(cmd) {
             const name = cmd.name && cmd.name.trim().toLowerCase();
             if (!name) {
-                return 9 /* CommandResult.MissingSheetName */;
+                return 9 /* MissingSheetName */;
             }
             return this.checkSheetName(cmd);
         }
@@ -28236,9 +29893,9 @@
          */
         checkSheetExists(cmd) {
             if (cmd.type !== "CREATE_SHEET" && "sheetId" in cmd && this.sheets[cmd.sheetId] === undefined) {
-                return 25 /* CommandResult.InvalidSheetId */;
+                return 25 /* InvalidSheetId */;
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         /**
          * Check if zones in the command are well formed and
@@ -28256,15 +29913,15 @@
                 zones.push(...cmd.ranges.map((rangeData) => this.getters.getRangeFromRangeData(rangeData).zone));
             }
             if (!zones.every(isZoneValid)) {
-                return 23 /* CommandResult.InvalidRange */;
+                return 23 /* InvalidRange */;
             }
             else if (zones.length && "sheetId" in cmd) {
                 const sheetZone = this.getSheetZone(cmd.sheetId);
                 return zones.every((zone) => isZoneInside(zone, sheetZone))
-                    ? 0 /* CommandResult.Success */
-                    : 16 /* CommandResult.TargetOutOfSheet */;
+                    ? 0 /* Success */
+                    : 16 /* TargetOutOfSheet */;
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
     }
     SheetPlugin.getters = [
@@ -28371,16 +30028,16 @@
                             ? this.lastCellSelected.row
                             : clip(cmd.row, 0, this.getters.getNumberRows(sheetId));
                     if (this.lastCellSelected.col !== undefined && this.lastCellSelected.row !== undefined) {
-                        return 0 /* CommandResult.Success */;
+                        return 0 /* Success */;
                     }
-                    return 42 /* CommandResult.InvalidAutofillSelection */;
+                    return 42 /* InvalidAutofillSelection */;
                 case "AUTOFILL_AUTO":
                     const zone = this.getters.getSelectedZone();
                     return zone.top === zone.bottom
-                        ? 0 /* CommandResult.Success */
-                        : 1 /* CommandResult.CancelledForUnknownReason */;
+                        ? 0 /* Success */
+                        : 1 /* CancelledForUnknownReason */;
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         handle(cmd) {
             switch (cmd.type) {
@@ -28434,7 +30091,7 @@
             const source = this.getters.getSelectedZone();
             const target = this.autofillZone;
             switch (this.direction) {
-                case 1 /* DIRECTION.DOWN */:
+                case 1 /* DOWN */:
                     for (let col = source.left; col <= source.right; col++) {
                         const xcs = [];
                         for (let row = source.top; row <= source.bottom; row++) {
@@ -28446,7 +30103,7 @@
                         }
                     }
                     break;
-                case 0 /* DIRECTION.UP */:
+                case 0 /* UP */:
                     for (let col = source.left; col <= source.right; col++) {
                         const xcs = [];
                         for (let row = source.bottom; row >= source.top; row--) {
@@ -28458,7 +30115,7 @@
                         }
                     }
                     break;
-                case 2 /* DIRECTION.LEFT */:
+                case 2 /* LEFT */:
                     for (let row = source.top; row <= source.bottom; row++) {
                         const xcs = [];
                         for (let col = source.right; col >= source.left; col--) {
@@ -28470,7 +30127,7 @@
                         }
                     }
                     break;
-                case 3 /* DIRECTION.RIGHT */:
+                case 3 /* RIGHT */:
                     for (let row = source.top; row <= source.bottom; row++) {
                         const xcs = [];
                         for (let col = source.left; col <= source.right; col++) {
@@ -28503,16 +30160,16 @@
             }
             this.direction = this.getDirection(col, row);
             switch (this.direction) {
-                case 0 /* DIRECTION.UP */:
+                case 0 /* UP */:
                     this.saveZone(row, source.top - 1, source.left, source.right);
                     break;
-                case 1 /* DIRECTION.DOWN */:
+                case 1 /* DOWN */:
                     this.saveZone(source.bottom + 1, row, source.left, source.right);
                     break;
-                case 2 /* DIRECTION.LEFT */:
+                case 2 /* LEFT */:
                     this.saveZone(source.top, source.bottom, col, source.left - 1);
                     break;
-                case 3 /* DIRECTION.RIGHT */:
+                case 3 /* RIGHT */:
                     this.saveZone(source.top, source.bottom, source.right + 1, col);
                     break;
             }
@@ -28620,10 +30277,10 @@
         getDirection(col, row) {
             const source = this.getters.getSelectedZone();
             const position = {
-                up: { number: source.top - row, value: 0 /* DIRECTION.UP */ },
-                down: { number: row - source.bottom, value: 1 /* DIRECTION.DOWN */ },
-                left: { number: source.left - col, value: 2 /* DIRECTION.LEFT */ },
-                right: { number: col - source.right, value: 3 /* DIRECTION.RIGHT */ },
+                up: { number: source.top - row, value: 0 /* UP */ },
+                down: { number: row - source.bottom, value: 1 /* DOWN */ },
+                left: { number: source.left - col, value: 2 /* LEFT */ },
+                right: { number: col - source.right, value: 3 /* RIGHT */ },
             };
             if (Object.values(position)
                 .map((x) => (x.number > 0 ? 1 : 0))
@@ -28681,7 +30338,7 @@
             }
         }
     }
-    AutofillPlugin.layers = [6 /* LAYERS.Autofill */];
+    AutofillPlugin.layers = [6 /* Autofill */];
     AutofillPlugin.getters = ["getAutofillTooltip"];
 
     class AutomaticSumPlugin extends UIPlugin {
@@ -28969,11 +30626,11 @@
                         cellPopoverRegistry.get(cmd.popoverType);
                     }
                     catch (error) {
-                        return 69 /* CommandResult.InvalidCellPopover */;
+                        return 69 /* InvalidCellPopover */;
                     }
-                    return 0 /* CommandResult.Success */;
+                    return 0 /* Success */;
                 default:
-                    return 0 /* CommandResult.Success */;
+                    return 0 /* Success */;
             }
         }
         handle(cmd) {
@@ -29071,10 +30728,10 @@
             this.sheetId = getters.getActiveSheetId();
         }
         isCutAllowed(target) {
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         isPasteAllowed(target, clipboardOption) {
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         /**
          * Add columns and/or rows to ensure that col + width and row + height are still
@@ -29161,21 +30818,21 @@
         }
         isCutAllowed(target) {
             if (target.length !== 1) {
-                return 17 /* CommandResult.WrongCutSelection */;
+                return 17 /* WrongCutSelection */;
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         isPasteAllowed(target, clipboardOption) {
             const sheetId = this.getters.getActiveSheetId();
             if (this.operation === "CUT" && (clipboardOption === null || clipboardOption === void 0 ? void 0 : clipboardOption.pasteOption) !== undefined) {
                 // cannot paste only format or only value if the previous operation is a CUT
-                return 19 /* CommandResult.WrongPasteOption */;
+                return 19 /* WrongPasteOption */;
             }
             if (target.length > 1) {
                 // cannot paste if we have a clipped zone larger than a cell and multiple
                 // zones selected
                 if (this.cells.length > 1 || this.cells[0].length > 1) {
-                    return 18 /* CommandResult.WrongPasteSelection */;
+                    return 18 /* WrongPasteSelection */;
                 }
             }
             const clipboardHeight = this.cells.length;
@@ -29185,7 +30842,7 @@
                     if (target.length > 1 ||
                         !this.getters.isSingleCellOrMerge(sheetId, target[0]) ||
                         clipboardHeight * clipboardWidth !== 1) {
-                        return 2 /* CommandResult.WillRemoveExistingMerge */;
+                        return 2 /* WillRemoveExistingMerge */;
                     }
                 }
             }
@@ -29193,10 +30850,10 @@
             for (const zone of this.getPasteZones(target)) {
                 if ((zone.left < xSplit && zone.right >= xSplit) ||
                     (zone.top < ySplit && zone.bottom >= ySplit)) {
-                    return 72 /* CommandResult.FrozenPaneOverlap */;
+                    return 72 /* FrozenPaneOverlap */;
                 }
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         /**
          * Paste the clipboard content in the given target
@@ -29549,16 +31206,16 @@
             this.operation = operation;
         }
         isCutAllowed(target) {
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         isPasteAllowed(target, option) {
             if (target.length === 0) {
-                return 70 /* CommandResult.EmptyTarget */;
+                return 70 /* EmptyTarget */;
             }
             if ((option === null || option === void 0 ? void 0 : option.pasteOption) !== undefined) {
-                return 20 /* CommandResult.WrongFigurePasteOption */;
+                return 20 /* WrongFigurePasteOption */;
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         /**
          * Paste the clipboard content in the given target
@@ -29608,9 +31265,9 @@
             const sheetId = this.getters.getActiveSheetId();
             const pasteZone = this.getPasteZone(target);
             if (this.getters.doesIntersectMerge(sheetId, pasteZone)) {
-                return 2 /* CommandResult.WillRemoveExistingMerge */;
+                return 2 /* WillRemoveExistingMerge */;
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         paste(target) {
             const values = this.values;
@@ -29676,7 +31333,7 @@
                     return state.isCutAllowed(zones);
                 case "PASTE":
                     if (!this.state) {
-                        return 21 /* CommandResult.EmptyClipboard */;
+                        return 21 /* EmptyClipboard */;
                     }
                     const pasteOption = cmd.pasteOption || (this._isPaintingFormat ? "onlyFormat" : undefined);
                     return this.state.isPasteAllowed(cmd.target, { pasteOption });
@@ -29695,7 +31352,7 @@
                     return state.isPasteAllowed(paste);
                 }
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         handle(cmd) {
             var _a, _b;
@@ -29869,7 +31526,7 @@
             this.state.drawClipboard(renderingContext);
         }
     }
-    ClipboardPlugin.layers = [2 /* LAYERS.Clipboard */];
+    ClipboardPlugin.layers = [2 /* Clipboard */];
     ClipboardPlugin.getters = ["getClipboardContent", "isCutOperation", "isPaintingFormat"];
 
     /**
@@ -30691,11 +32348,11 @@
             switch (cmd.type) {
                 case "UPDATE_FILTER":
                     if (!this.getters.getFilterId(cmd.sheetId, cmd.col, cmd.row)) {
-                        return 76 /* CommandResult.FilterNotFound */;
+                        return 76 /* FilterNotFound */;
                     }
                     break;
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         handle(cmd) {
             switch (cmd.type) {
@@ -31094,7 +32751,7 @@
             }
         }
     }
-    FindAndReplacePlugin.layers = [3 /* LAYERS.Search */];
+    FindAndReplacePlugin.layers = [3 /* Search */];
     FindAndReplacePlugin.getters = ["getSearchMatches", "getCurrentSelectedMatchIndex"];
 
     class FormatPlugin extends UIPlugin {
@@ -31274,7 +32931,7 @@
             }
         }
     }
-    HighlightPlugin.layers = [1 /* LAYERS.Highlights */];
+    HighlightPlugin.layers = [1 /* Highlights */];
     HighlightPlugin.getters = ["getHighlights"];
 
     class RendererPlugin extends UIPlugin {
@@ -31331,7 +32988,7 @@
         // ---------------------------------------------------------------------------
         drawGrid(renderingContext, layer) {
             switch (layer) {
-                case 0 /* LAYERS.Background */:
+                case 0 /* Background */:
                     this.boxes = this.getGridBoxes();
                     this.drawBackground(renderingContext);
                     this.drawCellBackground(renderingContext);
@@ -31340,7 +32997,7 @@
                     this.drawIcon(renderingContext);
                     this.drawFrozenPanes(renderingContext);
                     break;
-                case 7 /* LAYERS.Headers */:
+                case 7 /* Headers */:
                     if (!this.getters.isDashboard()) {
                         this.drawHeaders(renderingContext);
                         this.drawFrozenPanesHeaders(renderingContext);
@@ -31853,7 +33510,7 @@
             return boxes;
         }
     }
-    RendererPlugin.layers = [0 /* LAYERS.Background */, 7 /* LAYERS.Headers */];
+    RendererPlugin.layers = [0 /* Background */, 7 /* Headers */];
     RendererPlugin.getters = ["getColDimensionsInViewport", "getRowDimensionsInViewport"];
 
     const selectionStatisticFunctions = [
@@ -31919,12 +33576,12 @@
                         break;
                     }
                     catch (error) {
-                        return 25 /* CommandResult.InvalidSheetId */;
+                        return 25 /* InvalidSheetId */;
                     }
                 case "MOVE_COLUMNS_ROWS":
                     return this.isMoveElementAllowed(cmd);
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         handleEvent(event) {
             const anchor = event.anchor;
@@ -32364,9 +34021,9 @@
             if (doesElementsHaveCommonMerges(id, start - 1, start) ||
                 doesElementsHaveCommonMerges(id, end, end + 1) ||
                 doesElementsHaveCommonMerges(id, cmd.base - 1, cmd.base)) {
-                return 2 /* CommandResult.WillRemoveExistingMerge */;
+                return 2 /* WillRemoveExistingMerge */;
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         //-------------------------------------------
         // Helpers for extensions
@@ -32457,7 +34114,7 @@
             }
         }
     }
-    GridSelectionPlugin.layers = [5 /* LAYERS.Selection */];
+    GridSelectionPlugin.layers = [5 /* Selection */];
     GridSelectionPlugin.getters = [
         "getActiveSheet",
         "getActiveSheetId",
@@ -32506,11 +34163,11 @@
             switch (cmd.type) {
                 case "ADD_EMPTY_RANGE":
                     if (this.inputHasSingleRange && this.ranges.length === 1) {
-                        return 27 /* CommandResult.MaximumRangesReached */;
+                        return 27 /* MaximumRangesReached */;
                     }
                     break;
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         handleEvent(event) {
             const xc = zoneToXc(event.anchor.zone);
@@ -32695,7 +34352,7 @@
             return index >= 0 ? index : null;
         }
     }
-    SelectionInputPlugin.layers = [1 /* LAYERS.Highlights */];
+    SelectionInputPlugin.layers = [1 /* Highlights */];
     SelectionInputPlugin.getters = [];
 
     /**
@@ -32725,14 +34382,14 @@
                 case "FOCUS_RANGE":
                     const index = (_a = this.currentInput) === null || _a === void 0 ? void 0 : _a.getIndex(cmd.rangeId);
                     if (this.focusedInputId === cmd.id && ((_b = this.currentInput) === null || _b === void 0 ? void 0 : _b.focusedRangeIndex) === index) {
-                        return 26 /* CommandResult.InputAlreadyFocused */;
+                        return 26 /* InputAlreadyFocused */;
                     }
                     break;
             }
             if (this.currentInput) {
                 return this.currentInput.allowDispatch(cmd);
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         handle(cmd) {
             var _a;
@@ -32822,7 +34479,7 @@
             this.focusedInputId = null;
         }
     }
-    SelectionInputsManagerPlugin.layers = [1 /* LAYERS.Highlights */];
+    SelectionInputsManagerPlugin.layers = [1 /* Highlights */];
     SelectionInputsManagerPlugin.getters = [
         "getSelectionInput",
         "getSelectionInputValue",
@@ -33335,7 +34992,7 @@
         }
     }
     SelectionMultiUserPlugin.getters = ["getClientsToDisplay"];
-    SelectionMultiUserPlugin.layers = [5 /* LAYERS.Selection */];
+    SelectionMultiUserPlugin.layers = [5 /* Selection */];
 
     class InternalViewport {
         constructor(getters, sheetId, boundaries, sizeInGrid, options, offsets) {
@@ -33652,7 +35309,7 @@
             this.sheetViewHeight = DEFAULT_SHEETVIEW_SIZE;
             this.gridOffsetX = 0;
             this.gridOffsetY = 0;
-            this.sheetsWithDirtyViewports = [];
+            this.sheetsWithDirtyViewports = new Set();
         }
         // ---------------------------------------------------------------------------
         // Command Handling
@@ -33668,23 +35325,23 @@
                     const merges = this.getters.getMerges(sheetId);
                     for (let merge of merges) {
                         if (merge.left < cmd.quantity && cmd.quantity <= merge.right) {
-                            return 62 /* CommandResult.MergeOverlap */;
+                            return 62 /* MergeOverlap */;
                         }
                     }
-                    return 0 /* CommandResult.Success */;
+                    return 0 /* Success */;
                 }
                 case "FREEZE_ROWS": {
                     const sheetId = this.getters.getActiveSheetId();
                     const merges = this.getters.getMerges(sheetId);
                     for (let merge of merges) {
                         if (merge.top < cmd.quantity && cmd.quantity <= merge.bottom) {
-                            return 62 /* CommandResult.MergeOverlap */;
+                            return 62 /* MergeOverlap */;
                         }
                     }
-                    return 0 /* CommandResult.Success */;
+                    return 0 /* Success */;
                 }
                 default:
-                    return 0 /* CommandResult.Success */;
+                    return 0 /* Success */;
             }
         }
         handleEvent(event) {
@@ -33745,7 +35402,7 @@
                 case "UPDATE_CELL":
                     // update cell content or format can change hidden rows because of data filters
                     if ("content" in cmd || "format" in cmd) {
-                        this.sheetsWithDirtyViewports.push(cmd.sheetId);
+                        this.sheetsWithDirtyViewports.add(cmd.sheetId);
                     }
                     break;
                 case "ACTIVATE_SHEET":
@@ -33765,7 +35422,7 @@
             for (const sheetId of this.sheetsWithDirtyViewports) {
                 this.resetViewports(sheetId);
             }
-            this.sheetsWithDirtyViewports = [];
+            this.sheetsWithDirtyViewports = new Set();
             this.setViewports();
         }
         setViewports() {
@@ -33996,9 +35653,9 @@
         }
         checkPositiveDimension(cmd) {
             if (cmd.width < 0 || cmd.height < 0) {
-                return 65 /* CommandResult.InvalidViewportSize */;
+                return 65 /* InvalidViewportSize */;
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         checkValuesAreDifferent(cmd) {
             const { height, width } = this.getSheetViewDimension();
@@ -34006,17 +35663,17 @@
                 cmd.gridOffsetY === this.gridOffsetY &&
                 cmd.width === width &&
                 cmd.height === height) {
-                return 73 /* CommandResult.ValuesNotChanged */;
+                return 73 /* ValuesNotChanged */;
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         checkScrollingDirection({ offsetX, offsetY, }) {
             const pane = this.getMainInternalViewport(this.getters.getActiveSheetId());
             if ((!pane.canScrollHorizontally && offsetX > 0) ||
                 (!pane.canScrollVertically && offsetY > 0)) {
-                return 66 /* CommandResult.InvalidScrollingDirection */;
+                return 66 /* InvalidScrollingDirection */;
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         getMainViewport(sheetId) {
             const viewport = this.getMainInternalViewport(sheetId);
@@ -34207,7 +35864,7 @@
                     }
                     return this.checkValidations(cmd, this.checkMerge, this.checkMergeSizes);
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         handle(cmd) {
             switch (cmd.type) {
@@ -34218,21 +35875,21 @@
         }
         checkMerge({ sheetId, zone }) {
             if (!this.getters.doesIntersectMerge(sheetId, zone)) {
-                return 0 /* CommandResult.Success */;
+                return 0 /* Success */;
             }
             /*Test the presence of single cells*/
             for (let row = zone.top; row <= zone.bottom; row++) {
                 for (let col = zone.left; col <= zone.right; col++) {
                     if (!this.getters.isInMerge(sheetId, col, row)) {
-                        return 60 /* CommandResult.InvalidSortZone */;
+                        return 60 /* InvalidSortZone */;
                     }
                 }
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         checkMergeSizes({ sheetId, zone }) {
             if (!this.getters.doesIntersectMerge(sheetId, zone)) {
-                return 0 /* CommandResult.Success */;
+                return 0 /* Success */;
             }
             const merges = this.getters.getMerges(sheetId).filter((merge) => overlap(merge, zone));
             /*Test the presence of merges of different sizes*/
@@ -34245,9 +35902,9 @@
                 ];
                 return widthCurrent === widthFirst && heightCurrent === heightFirst;
             })) {
-                return 60 /* CommandResult.InvalidSortZone */;
+                return 60 /* InvalidSortZone */;
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         // getContiguousZone helpers
         /**
@@ -34530,10 +36187,10 @@
                         break;
                     }
                     catch (error) {
-                        return 25 /* CommandResult.InvalidSheetId */;
+                        return 25 /* InvalidSheetId */;
                     }
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         handle(cmd) {
             switch (cmd.type) {
@@ -34579,11 +36236,13 @@
             if (isFilterHeader) {
                 contentWidth += ICON_EDGE_LENGTH + FILTER_ICON_MARGIN;
             }
-            contentWidth += 2 * PADDING_AUTORESIZE_HORIZONTAL;
-            if (this.getters.getCellStyle(cell).wrapping === "wrap") {
-                const zone = positionToZone({ col, row });
-                const colWidth = this.getters.getColSize(this.getters.getActiveSheetId(), zone.left);
-                return Math.min(colWidth, contentWidth);
+            if (contentWidth > 0) {
+                contentWidth += 2 * PADDING_AUTORESIZE_HORIZONTAL;
+                if (this.getters.getCellStyle(cell).wrapping === "wrap") {
+                    const zone = positionToZone({ col, row });
+                    const colWidth = this.getters.getColSize(this.getters.getActiveSheetId(), zone.left);
+                    return Math.min(colWidth, contentWidth);
+                }
             }
             return contentWidth;
         }
@@ -35384,15 +37043,13 @@
     };
     function interactiveAddMerge(env, sheetId, target) {
         const result = env.model.dispatch("ADD_MERGE", { sheetId, target });
-        if (!result.isSuccessful) {
-            if (result.isCancelledBecause(3 /* CommandResult.MergeIsDestructive */)) {
-                env.askConfirmation(AddMergeInteractiveContent.MergeIsDestructive, () => {
-                    env.model.dispatch("ADD_MERGE", { sheetId, target, force: true });
-                });
-            }
-            else if (result.isCancelledBecause(77 /* CommandResult.MergeInFilter */)) {
-                env.raiseError(AddMergeInteractiveContent.MergeInFilter);
-            }
+        if (result.isCancelledBecause(77 /* MergeInFilter */)) {
+            env.raiseError(AddMergeInteractiveContent.MergeInFilter);
+        }
+        else if (result.isCancelledBecause(3 /* MergeIsDestructive */)) {
+            env.askConfirmation(AddMergeInteractiveContent.MergeIsDestructive, () => {
+                env.model.dispatch("ADD_MERGE", { sheetId, target, force: true });
+            });
         }
     }
 
@@ -37239,21 +38896,21 @@
         }
         allowDispatch(cmd) {
             if (this.isWaitingForUndoRedo) {
-                return 61 /* CommandResult.WaitingSessionConfirmation */;
+                return 61 /* WaitingSessionConfirmation */;
             }
             switch (cmd.type) {
                 case "REQUEST_UNDO":
                     if (!this.canUndo()) {
-                        return 5 /* CommandResult.EmptyUndoStack */;
+                        return 5 /* EmptyUndoStack */;
                     }
                     break;
                 case "REQUEST_REDO":
                     if (!this.canRedo()) {
-                        return 6 /* CommandResult.EmptyRedoStack */;
+                        return 6 /* EmptyRedoStack */;
                     }
                     break;
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         beforeHandle(cmd) { }
         handle(cmd) {
@@ -37320,9 +38977,9 @@
         // ---------------------------------------------------------------------------
         allowDispatch(cmd) {
             if (cmd.type === "MOVE_RANGES") {
-                return cmd.target.length === 1 ? 0 /* CommandResult.Success */ : 24 /* CommandResult.InvalidZones */;
+                return cmd.target.length === 1 ? 0 /* Success */ : 24 /* InvalidZones */;
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         beforeHandle(command) { }
         handle(cmd) {
@@ -38072,7 +39729,7 @@
         processEvent(newAnchorEvent) {
             const event = { ...newAnchorEvent, previousAnchor: deepCopy(this.anchor) };
             const commandResult = this.checkEventAnchorZone(event);
-            if (commandResult !== 0 /* CommandResult.Success */) {
+            if (commandResult !== 0 /* Success */) {
                 return new DispatchResult(commandResult);
             }
             this.anchor = event.anchor;
@@ -38085,20 +39742,20 @@
         checkAnchorZone(anchor) {
             const { cell, zone } = anchor;
             if (!isInside(cell.col, cell.row, zone)) {
-                return 14 /* CommandResult.InvalidAnchorZone */;
+                return 14 /* InvalidAnchorZone */;
             }
             const { left, right, top, bottom } = zone;
             const sheetId = this.getters.getActiveSheetId();
             const refCol = this.getters.findVisibleHeader(sheetId, "COL", range(left, right + 1));
             const refRow = this.getters.findVisibleHeader(sheetId, "ROW", range(top, bottom + 1));
             if (refRow === undefined || refCol === undefined) {
-                return 15 /* CommandResult.SelectionOutOfBound */;
+                return 15 /* SelectionOutOfBound */;
             }
-            return 0 /* CommandResult.Success */;
+            return 0 /* Success */;
         }
         checkAnchorZoneOrThrow(anchor) {
             const result = this.checkAnchorZone(anchor);
-            if (result === 14 /* CommandResult.InvalidAnchorZone */) {
+            if (result === 14 /* InvalidAnchorZone */) {
                 throw new Error(_t("The provided anchor is invalid. The cell must be part of the zone."));
             }
         }
@@ -39690,7 +41347,7 @@
             /**
              * Internal status of the model. Important for command handling coordination
              */
-            this.status = 0 /* Status.Ready */;
+            this.status = 0 /* Ready */;
             /**
              * The dispatch method is the only entry point to manipulate data in the model.
              * This is through this method that commands are dispatched most of the time
@@ -39709,15 +41366,15 @@
                 const command = { type, ...payload };
                 let status = this.status;
                 if (this.getters.isReadonly() && !canExecuteInReadonly(command)) {
-                    return new DispatchResult(64 /* CommandResult.Readonly */);
+                    return new DispatchResult(64 /* Readonly */);
                 }
                 switch (status) {
-                    case 0 /* Status.Ready */:
+                    case 0 /* Ready */:
                         const result = this.checkDispatchAllowed(command);
                         if (!result.isSuccessful) {
                             return result;
                         }
-                        this.status = 1 /* Status.Running */;
+                        this.status = 1 /* Running */;
                         const { changes, commands } = this.state.recordChanges(() => {
                             if (isCoreCommand(command)) {
                                 this.state.addCommand(command);
@@ -39726,10 +41383,10 @@
                             this.finalize();
                         });
                         this.session.save(commands, changes);
-                        this.status = 0 /* Status.Ready */;
+                        this.status = 0 /* Ready */;
                         this.trigger("update");
                         break;
-                    case 1 /* Status.Running */:
+                    case 1 /* Running */:
                         if (isCoreCommand(command)) {
                             const dispatchResult = this.checkDispatchAllowed(command);
                             if (!dispatchResult.isSuccessful) {
@@ -39742,9 +41399,9 @@
                             this.dispatchToHandlers(this.handlers, command);
                         }
                         break;
-                    case 3 /* Status.Finalizing */:
+                    case 3 /* Finalizing */:
                         throw new Error("Cannot dispatch commands in the finalize state");
-                    case 2 /* Status.RunningCore */:
+                    case 2 /* RunningCore */:
                         throw new Error("A UI plugin cannot dispatch while handling a core command");
                 }
                 return DispatchResult.Success;
@@ -39756,7 +41413,7 @@
             this.dispatchFromCorePlugin = (type, payload) => {
                 const command = { type, ...payload };
                 const previousStatus = this.status;
-                this.status = 2 /* Status.RunningCore */;
+                this.status = 2 /* RunningCore */;
                 this.dispatchToHandlers(this.handlers, command);
                 this.status = previousStatus;
                 return DispatchResult.Success;
@@ -39913,11 +41570,11 @@
             return new DispatchResult(results.flat());
         }
         finalize() {
-            this.status = 3 /* Status.Finalizing */;
+            this.status = 3 /* Finalizing */;
             for (const h of this.handlers) {
                 h.finalize();
             }
-            this.status = 0 /* Status.Ready */;
+            this.status = 0 /* Ready */;
         }
         /**
          * Dispatch the given command to the given handlers.
@@ -40128,8 +41785,8 @@
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-10-10T07:42:59.012Z';
-    exports.__info__.hash = '22b4de0';
+    exports.__info__.date = '2022-10-11T13:22:20.438Z';
+    exports.__info__.hash = '82de9cf';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
