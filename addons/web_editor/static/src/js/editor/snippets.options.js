@@ -7245,6 +7245,9 @@ registry.BackgroundPosition = SnippetOptionWidget.extend({
             this.trigger_up('activate_snippet', {$snippet: this.$target});
 
             $(document).off('click.bgposition');
+            if (this.$bgDragger) {
+                this.$bgDragger.tooltip('dispose');
+            }
             return;
         }
 
