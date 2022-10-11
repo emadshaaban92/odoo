@@ -1109,6 +1109,8 @@ class AccountMoveLine(models.Model):
         for line in self:
             if line.currency_id == line.company_id.currency_id and line.balance != line.amount_currency:
                 line.balance = line.amount_currency
+            if line.currency_id != line.company_id.currency_id:
+                line.balance = line.currency_id._convert(line.amount_currency, line.company_id.currency_id, line.company_id, line.move_id.date or fields.Date.context_today(line))
 
     @api.onchange('debit')
     def _inverse_debit(self):
