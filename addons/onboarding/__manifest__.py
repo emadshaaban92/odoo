@@ -18,5 +18,10 @@ This module allows to manage onboardings and their progress
         'views/onboarding_menus.xml',
         'security/ir.model.access.csv',
     ],
+    'assets': {
+        'web.assets_backend': [
+            'onboarding/static/src/**/*',
+        ],
+    },
     'license': 'LGPL-3',
 }
