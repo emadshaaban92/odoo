@@ -6,6 +6,7 @@ import re
 
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
+from odoo.tools import is_html_empty
 
 _logger = logging.getLogger(__name__)
 
@@ -84,12 +85,19 @@ class SlideChannelInvite(models.TransientModel):
         # optional support of default_email_layout_xmlid in context
         email_layout_xmlid = self.env.context.get('default_email_layout_xmlid', self.env.context.get('notif_layout'))
         if email_layout_xmlid:
+            model_description = self.env['ir.model']._get('slide.channel').display_name
+            message = self.env['mail.message'].sudo().new({'body': mail_values['body_html'], 'record_name': self.channel_id.name})
             # could be great to use ``_notify_by_email_prepare_rendering_context`` someday
             template_ctx = {
-                'message': self.env['mail.message'].sudo().new({'body': mail_values['body_html'], 'record_name': self.channel_id.name}),
-                'model_description': self.env['ir.model']._get('slide.channel').display_name,
+                'message': message,
+                'model_description': model_description,
+                'subtitles': [_('Your %s', model_description or 'document'),
+                              message.record_name and message.record_name.replace('/', '-') or ''],
+                'subtitles_mode': 'highlight_level2',
                 'record': slide_channel_partner,
                 'company': self.env.company,
+                'is_html_empty': is_html_empty,
+                'email_add_signature': True,
                 'signature': self.channel_id.user_id.signature,
             }
             body = self.env['ir.qweb']._render(email_layout_xmlid, template_ctx, engine='ir.qweb', minimal_qcontext=True, raise_if_not_found=False)

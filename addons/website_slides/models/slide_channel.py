@@ -634,7 +634,7 @@ class Channel(models.Model):
             default_channel_id=self.id,
             default_use_template=bool(template),
             default_template_id=template and template.id or False,
-            default_email_layout_xmlid='website_slides.mail_notification_channel_invite',
+            default_email_layout_xmlid='mail.mail_notification_layout',
         )
         return {
             'type': 'ir.actions.act_window',
