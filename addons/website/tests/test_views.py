@@ -1080,6 +1080,47 @@ class TestCowViewSaving(TestViewSavingCommon):
 
 
 @tagged('-at_install', 'post_install')
+class TestViewSavingTour(HttpCase):
+    """ Ensure no COW view is generated on save if no change was made """
+    def test_view_no_cow(self):
+        nested_view = self.env['ir.ui.view'].create({
+            'name': 'NestedView',
+            'key': 'website.nested_view',
+            'type': 'qweb',
+            'arch': '<div>Some stuff</div>',
+        })
+        extension_view = self.env['ir.ui.view'].create({
+            'name': 'ExtensionView',
+            'type': 'qweb',
+            'arch': '<xpath expr="//div" position="replace"><div>Other stuff</div></xpath>',
+            'inherit_id': nested_view.id,
+            'mode': 'extension',
+        })
+        view = self.env['ir.ui.view'].create({
+            'name': 'TestUnchanged',
+            'type': 'qweb',
+            'arch': '''<t name="Test page" t-name="website.base_view">
+                        <t t-call="website.layout">
+                            <t t-call="website.nested_view"/>
+                        </t>
+                    </t>''',
+        })
+        page = self.env['website.page'].create({
+            'view_id': view.id,
+            'url': '/test_unchanged',
+        })
+        self.start_tour('/test_unchanged', 'test_edit_save', login='admin')
+        self.assertEqual(page.view_id.id, view.id)
+        self.assertFalse(view.website_id)
+        self.assertFalse(nested_view.website_id)
+        self.assertFalse(extension_view.website_id)
+        self.assertEqual(self.env['website.page'].search_count([('url', '=', '/test_unchanged')]), 1)
+        self.assertEqual(self.env['ir.ui.view'].search_count([('name', '=', 'TestUnchanged')]), 1)
+        self.assertEqual(self.env['ir.ui.view'].search_count([('name', '=', 'NestedView')]), 1)
+        self.assertEqual(self.env['ir.ui.view'].search_count([('name', '=', 'ExtensionView')]), 1)
+
+
+@tagged('-at_install', 'post_install')
 class Crawler(HttpCase):
     def setUp(self):
         super(Crawler, self).setUp()
