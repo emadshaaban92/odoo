@@ -25,6 +25,7 @@ import {
     isVisibleEmpty,
     isNotEditableNode,
     createDOMPathGenerator,
+    setCursorStart,
 } from '../utils/utils.js';
 
 Text.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
@@ -75,6 +76,7 @@ const isDeletable = (node) => {
 HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false, offsetLimit) {
     const contentIsZWS = this.textContent === '\u200B';
     let moveDest;
+    const isFirstEl = !this.previousElementSibling && ['BLOCKQUOTE','H1','H2','H3','PRE'].includes(this.nodeName);
     if (offset) {
         const leftNode = this.childNodes[offset - 1];
         if (isUnremovable(leftNode)) {
@@ -203,7 +205,7 @@ HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false, 
     }
     if (cursorNode.nodeType !== Node.TEXT_NODE) {
         const { cType } = getState(cursorNode, cursorOffset, DIRECTIONS.LEFT);
-        if (cType & CTGROUPS.BLOCK && (!alreadyMoved || cType === CTYPES.BLOCK_OUTSIDE)) {
+        if (cType & CTGROUPS.BLOCK && !isFirstEl && (!alreadyMoved || cType === CTYPES.BLOCK_OUTSIDE)) {
             cursorNode.oDeleteBackward(cursorOffset, alreadyMoved, cursorOffset + currentNodeIndex - offset);
         } else if (!alreadyMoved) {
             // When removing a block node adjacent to a inline node,
@@ -214,10 +216,15 @@ HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false, 
             // or we would loose the line break located after the <p>.
             const cursorNodeNode = cursorNode.childNodes[cursorOffset];
             const cursorNodeRightNode = cursorNodeNode ? cursorNodeNode.nextSibling : undefined;
-            if (cursorNodeRightNode &&
+            if (cursorNodeRightNode && !isFirstEl &&
                 cursorNodeRightNode.nodeType === Node.TEXT_NODE &&
                 nextSibling === cursorNodeRightNode) {
                 moveDest[0].insertBefore(document.createElement('br'), cursorNodeRightNode);
+            } else if (isFirstEl) {
+                const currentNode = cursorNodeNode.nodeType === 3 && cursorNodeNode.textContent !== '' ?  cursorNodeNode : cursorNode.firstElementChild;
+                cursorNode.insertBefore(document.createElement('p'),currentNode);
+                cursorNode.firstElementChild.appendChild(currentNode);
+                setCursorStart(cursorNode.firstElementChild);
             }
         }
     }
