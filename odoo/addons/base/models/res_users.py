@@ -1614,12 +1614,13 @@ class UsersView(models.Model):
             missing_implied_groups = missing_implied_groups.filtered(
                 lambda g:
                 g.category_id not in (group.category_id | categories_to_ignore) and
-                g not in current_groups_by_category[g.category_id]
+                g not in current_groups_by_category[g.category_id] and (g.category_id if not self.user_has_groups('base.group_no_one') else True)
             )
             if missing_implied_groups:
                 # prepare missing group message, by categories
-                missing_groups[group] = ", ".join(f'"{missing_group.category_id.name}: {missing_group.name}"'
-                                                  for missing_group in missing_implied_groups)
+                missing_groups[group] = ", ".join(f'"{missing_group.category_id.name or _("Other")}: {missing_group.name}"'
+                                                for missing_group in missing_implied_groups)
+
         return "\n".join(
             _('Since %(user)s is a/an "%(category)s: %(group)s", they will at least obtain the right %(missing_group_message)s',
               user=user.name,
