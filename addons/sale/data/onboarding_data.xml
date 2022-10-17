@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<data noupdate="1">
+    <!-- Sale Quotation - ONBOARDING STEPS -->
+    <record id="sale_quotation_onboarding_order_confirmation_step" model="onboarding.onboarding.step">
+        <field name="title">Order Confirmation</field>
+        <field name="description">Choose between electronic signatures or online payments.</field>
+        <field name="button_text">Set payments</field>
+        <field name="panel_step_open_action_name">action_open_sale_onboarding_payment_provider</field>
+        <field name="sequence">6</field>
+    </record>
+
+    <record id="sale_quotation_onboarding_sample_quotation_step" model="onboarding.onboarding.step">
+        <field name="title">Sample Quotation</field>
+        <field name="description">Send a quotation to test the customer portal.</field>
+        <field name="button_text">Send sample</field>
+        <field name="panel_step_open_action_name">action_open_sale_onboarding_sample_quotation</field>
+        <field name="sequence">7</field>
+    </record>
+
+    <!-- Sale Quotation - ONBOARDING PANEL -->
+    <record id="sale_quotation_onboarding" model="onboarding.onboarding">
+        <field name="name">Sale Quotation Onboarding</field>
+        <field name="step_ids" eval="[
+            Command.link(ref('sale.sale_quotation_onboarding_order_confirmation_step')),
+            Command.link(ref('sale.sale_quotation_onboarding_sample_quotation_step')),
+            Command.link(ref('account.account_common_onboarding_company_step')),
+            Command.link(ref('account.account_common_onboarding_layout_step'))
+        ]"/>
+        <field name="route_name">sale_quotation</field>
+        <field name="panel_background_color">violet</field>
+        <field name="panel_background_image" type="base64" file="onboarding/static/src/img/onboarding_bg.png"/>
+        <field name="panel_close_action_name">action_close_sale_quotation_onboarding</field>
+    </record>
+
+</data>
+</odoo>

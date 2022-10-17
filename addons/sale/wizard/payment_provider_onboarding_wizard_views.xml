@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="action_open_sale_payment_provider_onboarding_wizard" model="ir.actions.act_window">
+        <field name="name">Choose how to confirm quotations</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">sale.payment.provider.onboarding.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="payment.payment_provider_onboarding_wizard_form" />
+        <field name="target">new</field>
+    </record>
+
+</odoo>

@@ -24,7 +24,7 @@ class PaymentWizard(models.TransientModel):
 
     def _set_payment_provider_onboarding_step_done(self):
         """ Override. """
-        self.env.company.sudo().set_onboarding_step_done('sale_onboarding_order_confirmation_state')
+        self.env['onboarding.onboarding.step'].action_save_sale_quotation_order_confirmation_step()
 
     def add_payment_methods(self):
         self.env.company.sale_onboarding_payment_method = self.payment_method

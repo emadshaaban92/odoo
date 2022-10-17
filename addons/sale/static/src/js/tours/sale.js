@@ -22,33 +22,33 @@ tour.register("sale_tour", {
     position: "bottom",
     edition: "enterprise"
 }, {
-    trigger: 'a.o_onboarding_step_action.btn[data-method=action_open_base_onboarding_company]',
+    trigger: 'a.o_onboarding_step_action.btn[data-method=action_open_account_common_onboarding_company]',
     extra_trigger: ".o_sale_order",
     content: _t("Start by checking your company's data."),
     position: "bottom",
-    skip_trigger: 'a[data-method=action_open_base_onboarding_company].o_onboarding_step_action__done',
+    skip_trigger: 'a[data-method=action_open_account_common_onboarding_company].o_onboarding_step_action__done',
 }, {
     trigger: 'input[id=street]',
     content: _t("Complete your company's data"),
     position: "bottom",
-    skip_trigger: 'a[data-method=action_open_base_onboarding_company].o_onboarding_step_action__done',
+    skip_trigger: 'a[data-method=action_open_account_common_onboarding_company].o_onboarding_step_action__done',
 }, {
-    trigger: ".modal-content button[name='action_save_onboarding_company_step']",
+    trigger: ".modal-content button.o_form_button_save",
     content: _t("Looks good. Let's continue."),
     position: "left",
-    skip_trigger: 'a[data-method=action_open_base_onboarding_company].o_onboarding_step_action__done',
+    skip_trigger: 'a[data-method=action_open_account_common_onboarding_company].o_onboarding_step_action__done',
 }, {
-    trigger: 'a.o_onboarding_step_action.btn[data-method=action_open_base_document_layout]',
+    trigger: 'a.o_onboarding_step_action.btn[data-method=action_open_account_common_onboarding_layout]',
     extra_trigger: ".o_sale_order",
     content: _t("Customize your quotes and orders."),
     position: "bottom",
-    skip_trigger: 'a[data-method=action_open_base_document_layout].o_onboarding_step_action__done',
+    skip_trigger: 'a[data-method=action_open_account_common_onboarding_layout].o_onboarding_step_action__done',
 }, {
     trigger: "button[name='document_layout_save']",
     extra_trigger: ".o_sale_order",
     content: _t("Good job, let's continue."),
     position: "top", // dot NOT move to bottom, it would cause a resize flicker
-    skip_trigger: 'a[data-method=action_open_base_document_layout].o_onboarding_step_action__done',
+    skip_trigger: 'a[data-method=action_open_account_common_onboarding_layout].o_onboarding_step_action__done',
 }, {
     trigger: 'a.o_onboarding_step_action.btn[data-method=action_open_sale_onboarding_payment_provider]',
     extra_trigger: ".o_sale_order",

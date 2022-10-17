@@ -11,7 +11,7 @@ class TestUi(HttpCase):
         self.start_tour("/web", 'sale_tour', login="admin", step_delay=100)
 
     def test_02_sale_tour_company_onboarding_done(self):
-        self.env.company.set_onboarding_step_done('base_onboarding_company_state')
+        self.env['onboarding.onboarding.step'].action_save_account_common_onboarding_company_step()
         self.start_tour("/web", 'sale_tour', login="admin", step_delay=100)
 
     def test_03_sale_quote_tour(self):
