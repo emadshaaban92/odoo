@@ -38,7 +38,7 @@ class BadgeUser(models.Model):
 
         for badge_user in self:
             template.send_mail(
-                badge_user.id,
+                badge_user.id, email_layout_xmlid='mail.mail_notification_layout'
             )
 
         return True

@@ -2,7 +2,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 {
     'name': 'Gamification',
-    'version': '1.0',
+    'version': '1.1',
     'sequence': 160,
     'category': 'Human Resources',
     'depends': ['mail', 'web_kanban_gauge'],
