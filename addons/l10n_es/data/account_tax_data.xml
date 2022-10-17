@@ -55,6 +55,11 @@
         <field name="country_id" ref="base.es"/>
     </record>
 
+    <record id="mod_303_150" model="account.account.tag">
+        <field name="name">mod303[150]</field>
+        <field name="applicability">taxes</field>
+        <field name="country_id" ref="base.es"/>
+    </record>
     <record id="mod_303_01" model="account.account.tag">
         <field name="name">mod303[01]</field>
         <field name="applicability">taxes</field>
@@ -62,6 +67,16 @@
     </record>
     <record id="mod_303_03" model="account.account.tag">
         <field name="name">mod303[03]</field>
+        <field name="applicability">taxes</field>
+        <field name="country_id" ref="base.es"/>
+    </record>
+    <record id="mod_303_153" model="account.account.tag">
+        <field name="name">mod303[153]</field>
+        <field name="applicability">taxes</field>
+        <field name="country_id" ref="base.es"/>
+    </record>
+    <record id="mod_303_155" model="account.account.tag">
+        <field name="name">mod303[155]</field>
         <field name="applicability">taxes</field>
         <field name="country_id" ref="base.es"/>
     </record>
@@ -117,6 +132,16 @@
     </record>
     <record id="mod_303_15" model="account.account.tag">
         <field name="name">mod303[15]purchase</field>
+        <field name="applicability">taxes</field>
+        <field name="country_id" ref="base.es"/>
+    </record>
+    <record id="mod_303_156" model="account.account.tag">
+        <field name="name">mod303[156]</field>
+        <field name="applicability">taxes</field>
+        <field name="country_id" ref="base.es"/>
+    </record>
+    <record id="mod_303_158" model="account.account.tag">
+        <field name="name">mod303[158]</field>
         <field name="applicability">taxes</field>
         <field name="country_id" ref="base.es"/>
     </record>
@@ -2080,12 +2105,12 @@
             (0,0, {
                 'factor_percent': 100,
                 'repartition_type': 'base',
-                'tag_ids': [ref('mod_303_01')],
+                'tag_ids': [ref('mod_303_153')],
             }),
             (0,0, {
                 'factor_percent': 100,
                 'repartition_type': 'tax',
-                'tag_ids': [ref('mod_303_03')],
+                'tag_ids': [ref('mod_303_155')],
                 'account_id': ref('l10n_es.account_common_477'),
             }),
         ]"/>
