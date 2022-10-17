@@ -34,3 +34,5 @@ from . import res_users
 from . import ir_actions_report
 from . import res_currency
 from . import account_report
+from . import onboarding_onboarding
+from . import onboarding_step

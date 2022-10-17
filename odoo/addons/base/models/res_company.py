@@ -296,13 +296,6 @@ class Company(models.Model):
             return (self.env['ir.actions.report'].search([('report_name', '=', report_name)], limit=1)
                         .report_action(docids))
 
-    @api.model
-    def action_open_base_onboarding_company(self):
-        """ Onboarding step for company basic information. """
-        action = self.env["ir.actions.actions"]._for_xml_id("base.action_open_base_onboarding_company")
-        action['res_id'] = self.env.company.id
-        return action
-
     def set_onboarding_step_done(self, step_name):
         if self[step_name] == 'not_done':
             self[step_name] = 'just_done'
@@ -325,10 +318,6 @@ class Company(models.Model):
                 old_values['onboarding_state'] = 'done'
             self[onboarding_state] = 'done'
         return old_values
-
-    def action_save_onboarding_company_step(self):
-        if bool(self.street):
-            self.set_onboarding_step_done('base_onboarding_company_state')
 
     @api.model
     def _get_main_company(self):

@@ -111,14 +111,9 @@ class ResCompany(models.Model):
     account_opening_date = fields.Date(string='Opening Entry', default=lambda self: fields.Date.context_today(self).replace(month=1, day=1), required=True, help="That is the date of the opening entry.")
 
     # Fields marking the completion of a setup step
-    account_setup_bank_data_state = fields.Selection(ONBOARDING_STEP_STATES, string="State of the onboarding bank data step", default='not_done')
     account_setup_fy_data_state = fields.Selection(ONBOARDING_STEP_STATES, string="State of the onboarding fiscal year step", default='not_done')
     account_setup_coa_state = fields.Selection(ONBOARDING_STEP_STATES, string="State of the onboarding charts of account step", default='not_done')
     account_setup_taxes_state = fields.Selection(ONBOARDING_STEP_STATES, string="State of the onboarding Taxes step", default='not_done')
-    account_onboarding_invoice_layout_state = fields.Selection(ONBOARDING_STEP_STATES, string="State of the onboarding invoice layout step", default='not_done')
-    account_onboarding_create_invoice_state = fields.Selection(ONBOARDING_STEP_STATES, string="State of the onboarding create invoice step", compute='_compute_account_onboarding_create_invoice_state')
-    #this field must be there to ensure that the create_invoice_state stay complete and because we can't use a dependencies on account move
-    account_onboarding_create_invoice_state_flag = fields.Boolean(default=False, store=True)
     account_onboarding_sale_tax_state = fields.Selection(ONBOARDING_STEP_STATES, string="State of the onboarding sale tax step", default='not_done')
 
     # account dashboard onboarding
@@ -214,17 +209,6 @@ class ResCompany(models.Model):
             foreign_vat_fpos = self.env['account.fiscal.position'].search([('company_id', '=', record.id), ('foreign_vat', '!=', False)])
             record.account_enabled_tax_country_ids = foreign_vat_fpos.country_id + record.account_fiscal_country_id
 
-    @api.depends('account_onboarding_create_invoice_state_flag')
-    def _compute_account_onboarding_create_invoice_state(self):
-        for record in self:
-            if record.account_onboarding_create_invoice_state_flag:
-                record.account_onboarding_create_invoice_state = 'done'
-            elif self.env['account.move'].search([('company_id', '=', record.id), ('move_type', '=', 'out_invoice')], limit=1):
-                record.account_onboarding_create_invoice_state = 'just_done'
-                record.account_onboarding_create_invoice_state_flag = True
-            else:
-                record.account_onboarding_create_invoice_state = 'not_done'
-
     @api.depends('terms_type')
     def _compute_invoice_terms_html(self):
         for company in self.filtered(lambda company: is_html_empty(company.invoice_terms_html) and company.terms_type == 'html'):
@@ -233,23 +217,6 @@ class ResCompany(models.Model):
                         raise_if_not_found=False)
             if html:
                 company.invoice_terms_html = html
-
-    def get_and_update_account_invoice_onboarding_state(self):
-        """ This method is called on the controller rendering method and ensures that the animations
-            are displayed only one time. """
-        return self._get_and_update_onboarding_state(
-            'account_invoice_onboarding_state',
-            self.get_account_invoice_onboarding_steps_states_names()
-        )
-
-    # YTI FIXME: Define only one method that returns {'account': [], 'sale': [], ...}
-    def get_account_invoice_onboarding_steps_states_names(self):
-        """ Necessary to add/edit steps from other modules (payment provider in this case). """
-        return [
-            'base_onboarding_company_state',
-            'account_onboarding_invoice_layout_state',
-            'account_onboarding_create_invoice_state',
-        ]
 
     def get_and_update_account_dashboard_onboarding_state(self):
         """ This method is called on the controller rendering method and ensures that the animations
@@ -368,7 +335,7 @@ class ResCompany(models.Model):
 
     @api.model
     def setting_init_bank_account_action(self):
-        """ Called by the 'Bank Accounts' button of the setup bar."""
+        """ Called by the 'Bank Accounts' button of the setup bar or from the Financial configuration menu."""
         view_id = self.env.ref('account.setup_bank_account_wizard').id
         return {'type': 'ir.actions.act_window',
                 'name': _('Create a Bank Account'),
@@ -523,11 +490,6 @@ class ResCompany(models.Model):
                     })
 
     @api.model
-    def action_close_account_invoice_onboarding(self):
-        """ Mark the invoice onboarding panel as closed. """
-        self.env.company.account_invoice_onboarding_state = 'closed'
-
-    @api.model
     def action_close_account_dashboard_onboarding(self):
         """ Mark the dashboard onboarding panel as closed. """
         self.env.company.account_dashboard_onboarding_state = 'closed'
@@ -538,10 +500,6 @@ class ResCompany(models.Model):
         action = self.env["ir.actions.actions"]._for_xml_id("account.action_open_account_onboarding_sale_tax")
         action['res_id'] = self.env.company.id
         return action
-
-    @api.model
-    def action_open_account_onboarding_create_invoice(self):
-        return self.env["ir.actions.actions"]._for_xml_id("account.action_open_account_onboarding_create_invoice")
 
     @api.model
     def action_open_taxes_onboarding(self):
@@ -560,11 +518,6 @@ class ResCompany(models.Model):
             'views': [[view_id_list, 'list'], [view_id_form, 'form']],
             'context': {'search_default_sale': True, 'search_default_purchase': True, 'active_test': False},
         }
-
-    def action_save_onboarding_invoice_layout(self):
-        """ Set the onboarding step as done """
-        if bool(self.external_report_layout_id):
-            self.set_onboarding_step_done('account_onboarding_invoice_layout_state')
 
     def action_save_onboarding_sale_tax(self):
         """ Set the onboarding step as done """
