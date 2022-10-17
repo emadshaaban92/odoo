@@ -308,6 +308,11 @@ class Cursor(BaseCursor):
             raise ValueError("SQL query parameters should be a tuple, list or dict; got %r" % (params,))
 
         _logger.debug("query: %s", self._format(query, params))
+        # tmp = self._format(query, params)
+        # if 'ir_attachment' in tmp and 'website.visitor' in tmp and 'res_id' in tmp and 'res_model' in tmp:
+        #     import pudb;pu.db
+        # if 'mail_channel' in tmp and 'livechat_visitor_id' in tmp and 'write_date' in tmp and 'message_main_attachment_id' not in tmp:
+        #     import pudb;pu.db
 
         start = real_time()
         try:
