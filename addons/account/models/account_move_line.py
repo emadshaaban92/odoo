@@ -6,6 +6,7 @@ from functools import lru_cache
 
 from odoo import api, fields, models, Command, _
 from odoo.exceptions import ValidationError, UserError
+from odoo.models import NewId
 from odoo.tools import frozendict, formatLang, format_date, float_is_zero, float_compare
 from odoo.tools.sql import create_index
 from odoo.addons.web.controllers.utils import clean_action
@@ -1104,13 +1105,16 @@ class AccountMoveLine(models.Model):
             line.display_type == 'product' and line.move_id.is_invoice(True)
         ))
 
-    @api.onchange('amount_currency', 'currency_id')
+    @api.onchange('amount_currency', 'currency_id', 'price_total')
     def _inverse_amount_currency(self):
         for line in self:
             if line.currency_id == line.company_id.currency_id and line.balance != line.amount_currency:
                 line.balance = line.amount_currency
-            if line.currency_id != line.company_id.currency_id:
-                line.balance = line.currency_id._convert(line.amount_currency, line.company_id.currency_id, line.company_id, line.move_id.date or fields.Date.context_today(line))
+            elif line.currency_id != line.company_currency_id and line.move_id.move_type == 'entry':
+                line._compute_currency_rate()
+                line.balance = line.currency_id.round(line.amount_currency / line.currency_rate)
+                line._compute_totals()
+                line._compute_amount_residual()
 
     @api.onchange('debit')
     def _inverse_debit(self):

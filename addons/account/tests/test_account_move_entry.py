@@ -441,14 +441,14 @@ class TestAccountMove(AccountTestInvoicingCommon):
             [
                 {
                     'currency_id': self.currency_data['currency'].id,
-                    'amount_currency': 1200.0,
+                    'amount_currency': -1200.0,
                     'debit': 0.0,
-                    'credit': 0.0,
+                    'credit': 400.0,
                 },
                 {
                     'currency_id': self.currency_data['currency'].id,
-                    'amount_currency': -1200.0,
-                    'debit': 0.0,
+                    'amount_currency': 1200.0,
+                    'debit': 400.0,
                     'credit': 0.0,
                 },
             ],
@@ -468,12 +468,12 @@ class TestAccountMove(AccountTestInvoicingCommon):
                     'currency_id': self.currency_data['currency'].id,
                     'amount_currency': -1200.0,
                     'debit': 0.0,
-                    'credit': 200.0,
+                    'credit': 600.0,
                 },
                 {
                     'currency_id': self.currency_data['currency'].id,
                     'amount_currency': 1200.0,
-                    'debit': 200.0,
+                    'debit': 600.0,
                     'credit': 0.0,
                 },
             ],
