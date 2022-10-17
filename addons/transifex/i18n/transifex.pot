@@ -4,10 +4,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server saas~14.5\n"
+"Project-Id-Version: Odoo Server 16.0+e\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-09-14 10:29+0000\n"
-"PO-Revision-Date: 2021-09-14 10:29+0000\n"
+"POT-Creation-Date: 2022-11-30 10:11+0000\n"
+"PO-Revision-Date: 2022-11-30 10:11+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -16,30 +16,122 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: transifex
-#: model_terms:ir.ui.view,arch_db:transifex.ir_translation_dialog_view_src_value_tree_transifex
-#: model_terms:ir.ui.view,arch_db:transifex.ir_translation_dialog_view_tree_transifex
-#: model_terms:ir.ui.view,arch_db:transifex.ir_translation_view_tree_transifex
+#. odoo-python
+#: code:addons/transifex/models/transifex_code_translation.py:0
+#, python-format
+msgid ""
+"<p class=\"o_view_nocontent_smiling_face\">\n"
+"                            No Code Translation\n"
+"                        </p><p>\n"
+"                            Maybe the file for code translation is missing,\n"
+"                        </p><p>\n"
+"                            or the filter condition is too restrictive,\n"
+"                        </p><p>\n"
+"                            or someone else is creating the code translation data and please do the action few seconds later\n"
+"                        </p>"
+msgstr ""
+
+#. module: transifex
+#: model:ir.model,name:transifex.model_base
+msgid "Base"
+msgstr ""
+
+#. module: transifex
+#: model:ir.model.fields,field_description:transifex.field_transifex_code_translation__source
+msgid "Code"
+msgstr ""
+
+#. module: transifex
+#: model:ir.model,name:transifex.model_transifex_code_translation
+msgid "Code Translation"
+msgstr ""
+
+#. module: transifex
+#. odoo-javascript
+#: code:addons/transifex/static/src/views/fields/translation_dialog.xml:0
+#: model_terms:ir.ui.view,arch_db:transifex.transifex_code_translation_tree_view
+#, python-format
 msgid "Contribute"
 msgstr ""
 
 #. module: transifex
-#: model:ir.model.fields,help:transifex.field_ir_translation__transifex_url
+#: model:ir.model.fields,field_description:transifex.field_transifex_code_translation__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: transifex
+#: model_terms:ir.ui.view,arch_db:transifex.transifex_code_translation_view_search
+msgid "Group By"
+msgstr ""
+
+#. module: transifex
+#: model:ir.model.fields,field_description:transifex.field_transifex_code_translation__id
+msgid "ID"
+msgstr ""
+
+#. module: transifex
+#: model:ir.model.fields,field_description:transifex.field_transifex_code_translation__lang
+msgid "Language"
+msgstr ""
+
+#. module: transifex
+#: model:ir.model.fields,field_description:transifex.field_transifex_code_translation____last_update
+msgid "Last Modified on"
+msgstr ""
+
+#. module: transifex
+#: model:ir.model.fields,field_description:transifex.field_transifex_code_translation__module
+#: model_terms:ir.ui.view,arch_db:transifex.transifex_code_translation_view_search
+msgid "Module"
+msgstr ""
+
+#. module: transifex
+#: model:ir.model.fields,help:transifex.field_transifex_code_translation__module
+msgid "Module this term belongs to"
+msgstr ""
+
+#. module: transifex
+#: model_terms:ir.ui.view,arch_db:transifex.transifex_code_translation_view_search
+msgid "Not Translated"
+msgstr ""
+
+#. module: transifex
+#: model:ir.model.fields,help:transifex.field_transifex_code_translation__transifex_url
 msgid "Propose a modification in the official version of Odoo"
 msgstr ""
 
 #. module: transifex
-#: model_terms:ir.ui.view,arch_db:transifex.ir_translation_dialog_view_src_value_tree_transifex
-#: model_terms:ir.ui.view,arch_db:transifex.ir_translation_dialog_view_tree_transifex
-#: model_terms:ir.ui.view,arch_db:transifex.ir_translation_view_tree_transifex
+#: model_terms:ir.ui.view,arch_db:transifex.transifex_code_translation_view_search
+msgid "Search Code Translations"
+msgstr ""
+
+#. module: transifex
+#: model_terms:ir.ui.view,arch_db:transifex.transifex_code_translation_tree_view
 msgid "Transifex"
 msgstr ""
 
 #. module: transifex
-#: model:ir.model.fields,field_description:transifex.field_ir_translation__transifex_url
+#: model_terms:ir.ui.view,arch_db:transifex.transifex_code_translation_tree_view
+msgid "Transifex Code Translation"
+msgstr ""
+
+#. module: transifex
+#: model:ir.actions.server,name:transifex.action_code_translations
+#: model:ir.ui.menu,name:transifex.menu_transifex_code_translations
+msgid "Transifex Code Translations"
+msgstr ""
+
+#. module: transifex
+#: model:ir.model,name:transifex.model_transifex_translation
+msgid "Transifex Translation"
+msgstr ""
+
+#. module: transifex
+#: model:ir.model.fields,field_description:transifex.field_transifex_code_translation__transifex_url
 msgid "Transifex URL"
 msgstr ""
 
 #. module: transifex
-#: model:ir.model,name:transifex.model_ir_translation
-msgid "Translation"
+#: model:ir.model.fields,field_description:transifex.field_transifex_code_translation__value
+msgid "Translation Value"
 msgstr ""

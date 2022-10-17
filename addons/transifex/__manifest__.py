@@ -13,7 +13,7 @@ Transifex integration
 This module will add a link to the Transifex project in the translation view.
 The purpose of this module is to speed up translations of the main modules.
 
-To work, Odoo uses Transifex configuration files `.tx/config` to detec the
+To work, Odoo uses Transifex configuration files `.tx/config` to detect the
 project source. Custom modules will not be translated (as not published on
 the main Transifex project).
 
@@ -22,8 +22,14 @@ project.
         """,
     'data': [
         'data/transifex_data.xml',
-        'data/ir_translation_view.xml',
+        'views/code_translation_views.xml',
+        'security/ir.model.access.csv'
     ],
-    'depends': ['base'],
+    'assets': {
+        'web.assets_backend': [
+            'transifex/static/src/views/fields/translation_dialog.xml',
+        ],
+    },
+    'depends': ['base', 'web'],
     'license': 'LGPL-3',
 }
