@@ -519,3 +519,17 @@ class TestTimesheet(TestCommonTimesheet):
             ('hr_timesheet.view_task_project_user_graph_inherited', '//field[@name="hours_planned"]', [None, 'Planned Days']),
             ('hr_timesheet.timesheets_analysis_report_pivot_employee', '//field[@name="unit_amount"]', [None, 'Days Spent']),
         ])
+
+    def test_timesheet_preprocess(self):
+        projects = self.env['project.project'].create([{'name': 'Project %s' % i} for i in range(6)])
+        tasks = self.env['project.task'].create([{
+            'name': 'Task %s (%s)' % (i, project.name),
+            'project_id': project.id,
+        } for i in range(17) for project in projects])
+        self.env.invalidate_all()
+        projects.clear_caches()
+        tasks.clear_caches()
+        with self.assertQueryCount(7):
+            self.env['account.analytic.line']._timesheet_preprocess([
+                {'task_id': task.id} for task in tasks for _i in range(10)
+            ])
