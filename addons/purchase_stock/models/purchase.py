@@ -272,7 +272,20 @@ class PurchaseOrder(models.Model):
 class PurchaseOrderLine(models.Model):
     _inherit = 'purchase.order.line'
 
-    qty_received_method = fields.Selection(selection_add=[('stock_moves', 'Stock Moves')])
+    def _ondelete_stock_moves(self):
+        fnames = ['qty_received_manual', 'qty_received_method']
+        self.flush(fnames=['qty_received'], records=self)
+        self.invalidate_cache(fnames=fnames, ids=self.ids)
+        query = '''
+            UPDATE %s
+            SET qty_received_manual = qty_received, qty_received_method = 'manual'
+            WHERE id IN %s
+        '''
+        self.env.cr.execute(query % (self._table, self._ids or (None,)))
+        self.modified(fnames)
+
+    qty_received_method = fields.Selection(selection_add=[('stock_moves', 'Stock Moves')],
+                                           ondelete={'stock_moves': _ondelete_stock_moves})
 
     move_ids = fields.One2many('stock.move', 'purchase_line_id', string='Reservation', readonly=True, copy=False)
     orderpoint_id = fields.Many2one('stock.warehouse.orderpoint', 'Orderpoint', copy=False, index='btree_not_null')
@@ -298,37 +311,36 @@ class PurchaseOrderLine(models.Model):
     def _compute_qty_received(self):
         from_stock_lines = self.filtered(lambda order_line: order_line.qty_received_method == 'stock_moves')
         super(PurchaseOrderLine, self - from_stock_lines)._compute_qty_received()
-        for line in self:
-            if line.qty_received_method == 'stock_moves':
-                total = 0.0
-                # In case of a BOM in kit, the products delivered do not correspond to the products in
-                # the PO. Therefore, we can skip them since they will be handled later on.
-                for move in line._get_po_line_moves():
-                    if move.state == 'done':
-                        if move.location_dest_id.usage == "supplier":
-                            if move.to_refund:
-                                total -= move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom, rounding_method='HALF-UP')
-                        elif move.origin_returned_move_id and move.origin_returned_move_id._is_dropshipped() and not move._is_dropshipped_returned():
-                            # Edge case: the dropship is returned to the stock, no to the supplier.
-                            # In this case, the received quantity on the PO is set although we didn't
-                            # receive the product physically in our stock. To avoid counting the
-                            # quantity twice, we do nothing.
-                            pass
-                        elif (
-                            move.location_dest_id.usage == "internal"
-                            and move.location_id.usage != "supplier"
-                            and move.warehouse_id
-                            and move.location_dest_id
-                            not in self.env["stock.location"].search(
-                                [("id", "child_of", move.warehouse_id.view_location_id.id)]
-                            )
-                        ):
-                            if move.to_refund:
-                                total -= move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom, rounding_method='HALF-UP')
-                        else:
-                            total += move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom, rounding_method='HALF-UP')
-                line._track_qty_received(total)
-                line.qty_received = total
+        for line in from_stock_lines:
+            total = 0.0
+            # In case of a BOM in kit, the products delivered do not correspond to the products in
+            # the PO. Therefore, we can skip them since they will be handled later on.
+            for move in line._get_po_line_moves():
+                if move.state == 'done':
+                    if move.location_dest_id.usage == "supplier":
+                        if move.to_refund:
+                            total -= move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom, rounding_method='HALF-UP')
+                    elif move.origin_returned_move_id and move.origin_returned_move_id._is_dropshipped() and not move._is_dropshipped_returned():
+                        # Edge case: the dropship is returned to the stock, no to the supplier.
+                        # In this case, the received quantity on the PO is set although we didn't
+                        # receive the product physically in our stock. To avoid counting the
+                        # quantity twice, we do nothing.
+                        pass
+                    elif (
+                        move.location_dest_id.usage == "internal"
+                        and move.location_id.usage != "supplier"
+                        and move.warehouse_id
+                        and move.location_dest_id
+                        not in self.env["stock.location"].search(
+                            [("id", "child_of", move.warehouse_id.view_location_id.id)]
+                        )
+                    ):
+                        if move.to_refund:
+                            total -= move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom, rounding_method='HALF-UP')
+                    else:
+                        total += move.product_uom._compute_quantity(move.product_uom_qty, line.product_uom, rounding_method='HALF-UP')
+            line._track_qty_received(total)
+            line.qty_received = total
 
     @api.depends('product_uom_qty', 'date_planned')
     def _compute_forecasted_issue(self):
