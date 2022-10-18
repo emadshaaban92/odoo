@@ -15,7 +15,6 @@ from odoo.tests.common import TransactionCase
 def img_open(data):
     return Image.open(io.BytesIO(data))
 
-
 class TestImage(TransactionCase):
     """Tests for the different image tools helpers."""
     def setUp(self):
@@ -176,6 +175,20 @@ class TestImage(TransactionCase):
         # CASE: JPEG optimize + reduced quality
         res = tools.image_process(self.img_1920x1080_jpeg)
         self.assertLessEqual(len(res), len(self.img_1920x1080_jpeg))
+
+        # CASE: JPEG optimize + bigger size => original
+        image = Image.new('RGB', (1920, 1080), color=self.bg_color)
+        offset = (image.size[0] - image.size[1]) / 2
+        draw = ImageDraw.Draw(image)
+        draw.ellipse(xy=[
+            (offset, 0),
+            (image.size[0] - offset, image.size[1])
+        ], fill=self.fill_color, outline=(240, 25, 40), width=10)
+        image = tools.image_apply_opt(image, 'JPEG')
+        res = tools.image_process(image, quality=50)
+        self.assertLess(len(res), len(image))
+        res = tools.image_process(image, quality=99)
+        self.assertEqual(len(res), len(image))
 
         # CASE: GIF doesn't apply quality, just optimize
         image = tools.image_apply_opt(Image.new('RGB', (1080, 1920)), 'GIF')

@@ -34,6 +34,9 @@ var RunningTourActionHelper = core.Class.extend({
     text_blur: function (text, element) {
         this._text_blur(this._get_action_values(element), text);
     },
+    range(text, element) {
+        this._range(this._get_action_values(element), text);
+    },
     drag_and_drop: function (to, element) {
         this._drag_and_drop_jquery(this._get_action_values(element), to);
     },
@@ -123,6 +126,10 @@ var RunningTourActionHelper = core.Class.extend({
         this._text(values, text);
         values.$element.trigger('focusout');
         values.$element.trigger('blur');
+    },
+    _range(values, text) {
+        values.$element[0].value = text;
+        values.$element.trigger('change');
     },
     _calculateCenter: function ($el, selector) {
         const center = $el.offset();
