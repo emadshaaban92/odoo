@@ -16,6 +16,10 @@ class Onboarding(models.Model):
     route_name = fields.Char('One word name', required=True)
     step_ids = fields.Many2many('onboarding.onboarding.step', string='Onboarding steps')
 
+    text_completed = fields.Char(
+        'Congratulations on completed', default='Nice work! Your configuration is done.',
+        help='Text shown on onboarding when completed')
+
     is_per_company = fields.Boolean('Should be done per company?', default=True)
 
     panel_background_color = fields.Selection(
@@ -121,6 +125,7 @@ class Onboarding(models.Model):
             'close_model': 'onboarding.onboarding',
             'steps': self.step_ids.sorted('sequence'),
             'state': self.current_progress_id._get_and_update_onboarding_state(),
+            'text_completed': self.text_completed,
         }
 
         return values

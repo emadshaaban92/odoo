@@ -3,7 +3,7 @@
     <template id="onboarding_panel">
         <t t-call="onboarding.onboarding_container">
             <t t-foreach="steps" t-as="step">
-                <t t-call="base.onboarding_step">
+                <t t-call="onboarding.onboarding_step">
                     <t t-set="title" t-value="step.title"/>
                     <t t-set="description" t-value="step.description"/>
                     <t t-set="done_icon" t-value="step.done_icon"/>
@@ -18,9 +18,5 @@
                 </t>
             </t>
         </t>
-    </template>
-
-    <template id="onboarding_container" inherit_id="base.onboarding_container">
-        <xpath expr="//div[hasclass('o_onboarding_completed_message')]" position="replace"/>
     </template>
 </odoo>

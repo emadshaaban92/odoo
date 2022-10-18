@@ -223,7 +223,6 @@ This module provides the core of the Odoo Web Client.
             'web/static/src/legacy/scss/kanban_column_progressbar.scss',
             'web/static/src/legacy/scss/kanban_view.scss',
             'web/static/src/legacy/scss/data_export.scss',
-            'base/static/src/scss/onboarding.scss',
             'web/static/src/legacy/scss/attachment_preview.scss',
             'web/static/src/legacy/scss/base_document_layout.scss',
             'web/static/src/legacy/scss/special_fields.scss',
@@ -518,9 +517,6 @@ This module provides the core of the Odoo Web Client.
         "web.dark_mode_assets_backend": [
             ('include', 'web.assets_backend'),
         ],
-        "web.dark_mode_variables": [
-            ('before', 'base/static/src/scss/onboarding.variables.scss', 'base/static/src/scss/onboarding.variables.dark.scss'),
-        ],
 
         # ---------------------------------------------------------------------
         # SUB BUNDLES
@@ -538,7 +534,6 @@ This module provides the core of the Odoo Web Client.
         'web._assets_primary_variables': [
             'web/static/src/scss/primary_variables.scss',
             'web/static/src/**/**/*.variables.scss',
-            'base/static/src/scss/onboarding.variables.scss',
         ],
         'web._assets_secondary_variables': [
             'web/static/src/scss/secondary_variables.scss',
