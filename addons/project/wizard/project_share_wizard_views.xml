@@ -23,9 +23,7 @@
                     </div>
                     <field name="partner_ids" widget="many2many_tags_email" placeholder="Add contacts to share the project..." nolabel="1" context="{'show_email': True}"/>
                 </group>
-                <group>
-                    <field name="note" placeholder="Add a note" nolabel="1"/>
-                </group>
+                <field name="note" placeholder="Add a note" nolabel="1"/>
                 <footer>
                     <button string="Send" name="action_send_mail" attrs="{'invisible': [('access_warning', '!=', '')]}" type="object" class="btn-primary" data-hotkey="q"/>
                     <button string="Discard" class="btn-secondary" special="cancel" data-hotkey="z" />
