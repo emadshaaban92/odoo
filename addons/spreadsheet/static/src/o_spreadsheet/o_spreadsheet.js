@@ -19053,6 +19053,12 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     this.cancelEdition();
                     this.resetContent();
                     break;
+                case "ACTIVATE_SHEET":
+                    if (cmd.sheetIdFrom !== cmd.sheetIdTo && !this.currentContent.startsWith("=")) {
+                        this.cancelEdition(false);
+                        this.resetContent();
+                    }
+                    break;
                 case "ADD_COLUMNS_ROWS":
                     this.onAddElements(cmd);
                     break;
@@ -19311,14 +19317,14 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 this.setContent("");
             }
         }
-        cancelEdition() {
+        cancelEdition(activateEditionSheet = true) {
             if (this.mode === "inactive") {
                 return;
             }
             this.mode = "inactive";
             this.selection.release(this);
             const sheetId = this.getters.getActiveSheetId();
-            if (sheetId !== this.sheetId) {
+            if (activateEditionSheet && sheetId !== this.sheetId) {
                 this.dispatch("ACTIVATE_SHEET", {
                     sheetIdFrom: this.getters.getActiveSheetId(),
                     sheetIdTo: this.sheetId,
@@ -22055,6 +22061,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             super(...arguments);
             this.HEADER_HEIGHT = HEADER_HEIGHT;
             this.HEADER_WIDTH = HEADER_WIDTH;
+            this.isFocused = false;
             // this map will handle most of the actions that should happen on key down. The arrow keys are managed in the key
             // down itself
             this.keyDownMapping = {
@@ -22182,7 +22189,11 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             owl.onMounted(() => this.focus());
             this.props.exposeFocus(() => this.focus());
             useGridDrawing("canvas", this.env.model, () => this.env.model.getters.getSheetViewDimensionWithHeaders());
-            owl.useEffect(() => this.focus(), () => [this.env.model.getters.getActiveSheetId()]);
+            owl.useEffect(() => {
+                if (this.isFocused) {
+                    this.focus();
+                }
+            }, () => [this.env.model.getters.getActiveSheetId()]);
             this.onMouseWheel = useWheelHandler((deltaX, deltaY) => {
                 this.moveCanvas(deltaX, deltaY);
                 this.hoveredCell.col = undefined;
@@ -22209,6 +22220,12 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             if (!this.env.model.getters.getSelectedFigureId()) {
                 this.gridRef.el.focus();
             }
+        }
+        onFocus() {
+            this.isFocused = true;
+        }
+        onBlur() {
+            this.isFocused = false;
         }
         get gridEl() {
             if (!this.gridRef.el) {
@@ -26920,6 +26937,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     class CellPlugin extends CorePlugin {
         constructor() {
             super(...arguments);
+            this.nextId = 1;
             this.cells = {};
             this.createCell = cellFactory(this.getters);
         }
@@ -27086,7 +27104,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         importCell(sheetId, cellData, normalizedStyles, normalizedFormats) {
             const style = (cellData.style && normalizedStyles[cellData.style]) || undefined;
             const format = (cellData.format && normalizedFormats[cellData.format]) || undefined;
-            const cellId = this.uuidGenerator.uuidv4();
+            const cellId = this.getNextUid();
             const properties = { format, style };
             return this.createCell(cellId, (cellData === null || cellData === void 0 ? void 0 : cellData.content) || "", properties, sheetId);
         }
@@ -27228,6 +27246,11 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             }
             return format;
         }
+        getNextUid() {
+            const id = this.nextId.toString();
+            this.history.update("nextId", this.nextId + 1);
+            return id;
+        }
         updateCell(sheetId, col, row, after) {
             var _a;
             const before = this.getters.getCell(sheetId, col, row);
@@ -27266,7 +27289,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 }
                 return;
             }
-            const cellId = (before === null || before === void 0 ? void 0 : before.id) || this.uuidGenerator.uuidv4();
+            const cellId = (before === null || before === void 0 ? void 0 : before.id) || this.getNextUid();
             const didContentChange = hasContent;
             const properties = { format, style };
             const cell = this.createCell(cellId, afterContent, properties, sheetId);
@@ -37153,7 +37176,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
           display: flex;
           align-items: center;
           margin: 2px;
-          padding: 0 3px;
+          padding: 0px 3px;
           border-radius: 2px;
           cursor: pointer;
           min-width: fit-content;
@@ -37202,6 +37225,12 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
 
         .o-dropdown {
           position: relative;
+          display: flex;
+          align-items: center;
+
+          .o-dropdown-button {
+            height: 30px;
+          }
 
           .o-text-icon {
             height: 100%;
@@ -37225,7 +37254,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             background-color: white;
 
             .o-dropdown-item {
-              padding: 7px 10px;
+              cursor: pointer;
             }
 
             .o-dropdown-item:hover {
@@ -37238,6 +37267,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
 
               .o-line-item {
                 padding: 4px;
+                width: 18px;
+                height: 18px;
+                cursor: pointer;
 
                 &:hover {
                   background-color: rgba(0, 0, 0, 0.08);
@@ -37260,6 +37292,10 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                   left: 5px;
                 }
               }
+            }
+
+            .o-dropdown-align-item {
+              padding: 7px 10px;
             }
           }
         }
@@ -37309,7 +37345,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
   `;
         }
         setup() {
-            owl.useExternalListener(window, "click", this.onClick);
+            owl.useExternalListener(window, "click", this.onExternalClick);
             owl.onWillStart(() => this.updateCellState());
             owl.onWillUpdateProps(() => this.updateCellState());
         }
@@ -37318,22 +37354,32 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 .getAll()
                 .filter((item) => !item.isVisible || item.isVisible(this.env));
         }
-        onClick(ev) {
-            if (this.openedEl && isChildEvent(this.openedEl, ev)) {
+        onExternalClick(ev) {
+            // TODO : manage click events better. We need this piece of code
+            // otherwise the event opening the menu would close it on the same frame.
+            // And we cannot stop the event propagation because it's used in an
+            // external listener of the Menu component to close the context menu when
+            // clicking on the top bar
+            if (this.openedEl === ev.target) {
                 return;
             }
             this.closeMenus();
         }
-        toogleStyle(style) {
+        onClick() {
+            this.props.onClick();
+            this.closeMenus();
+        }
+        toggleStyle(style) {
             setStyle(this.env, { [style]: !this.style[style] });
         }
-        toogleFormat(formatName) {
+        toggleFormat(formatName) {
             const formatter = FORMATS.find((f) => f.name === formatName);
             const value = (formatter && formatter.value) || "";
             setFormatter(this.env, value);
         }
         toggleAlign(align) {
             setStyle(this.env, { ["align"]: align });
+            this.onClick();
         }
         onMenuMouseOver(menu, ev) {
             if (this.isSelectingMenu) {
@@ -37422,6 +37468,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         }
         setColor(target, color) {
             setStyle(this.env, { [target]: color });
+            this.onClick();
         }
         setBorder(command) {
             this.env.model.dispatch("SET_FORMATTING", {
@@ -37429,17 +37476,16 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 target: this.env.model.getters.getSelectedZones(),
                 border: command,
             });
+            this.onClick();
         }
-        setFormat(ev) {
-            const format = ev.target.dataset.format;
-            if (format) {
-                this.toogleFormat(format);
-                return;
+        setFormat(format, custom) {
+            if (!custom) {
+                this.toggleFormat(format);
             }
-            const custom = ev.target.dataset.custom;
-            if (custom) {
-                this.openCustomFormatSidePanel(custom);
+            else {
+                this.openCustomFormatSidePanel(format);
             }
+            this.onClick();
         }
         openCustomFormatSidePanel(custom) {
             const customFormatter = CUSTOM_FORMATS.find((c) => c.name === custom);
@@ -37464,9 +37510,10 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 target: this.env.model.getters.getSelectedZones(),
             });
         }
-        setSize(ev) {
-            const fontSize = parseFloat(ev.target.dataset.size);
+        setSize(fontSizeStr) {
+            const fontSize = parseFloat(fontSizeStr);
             setStyle(this.env, { fontSize });
+            this.onClick();
         }
         doAction(action) {
             action(this.env);
@@ -41780,8 +41827,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-10-17T06:58:51.904Z';
-    exports.__info__.hash = 'ab6f7e4';
+    exports.__info__.date = '2022-10-19T14:57:30.282Z';
+    exports.__info__.hash = '21ac310';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
