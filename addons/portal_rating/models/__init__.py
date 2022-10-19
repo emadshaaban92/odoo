@@ -3,4 +3,5 @@
 
 from . import ir_http
 from . import mail_message
+from . import portal_rating
 from . import rating_rating
