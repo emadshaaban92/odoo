@@ -164,7 +164,9 @@ class MailComposer(models.TransientModel):
     auto_delete_keep_log = fields.Boolean(
         'Keep Message Copy', default=True,
         help='Do not keep a copy of the email in the document communication history (mass mailing only)')
-    mail_server_id = fields.Many2one('ir.mail_server', 'Outgoing mail server')
+    mail_server_id = fields.Many2one(
+        'ir.mail_server', string='Outgoing mail server',
+        compute='_compute_mail_server_id', readonly=False, store=True)
     scheduled_date = fields.Char(
         'Scheduled Date',
         help="In comment mode: if set, postpone notifications sending. "
@@ -303,6 +305,13 @@ class MailComposer(models.TransientModel):
             else:
                 composer.auto_delete = composer.composition_mode == 'comment'
 
+    @api.depends('template_id')
+    def _compute_mail_server_id(self):
+        """ Copy value from template when updating it. """
+        for composer in self:
+            if composer.template_id.mail_server_id:
+                composer.mail_server_id = composer.template_id.mail_server_id
+
     # Overrides of mail.render.mixin
     @api.depends('model')
     def _compute_render_model(self):
@@ -345,8 +354,6 @@ class MailComposer(models.TransientModel):
             )
             if template.attachment_ids:
                 values['attachment_ids'] = [att.id for att in template.attachment_ids]
-            if template.mail_server_id:
-                values['mail_server_id'] = template.mail_server_id.id
         elif template_id and len(res_ids) <= 1:
             # render template (mono record, comment mode) and set it as composer values
             # trick to evaluate qweb even when having no records
@@ -357,7 +364,6 @@ class MailComposer(models.TransientModel):
                 ('attachment_ids',
                  'email_cc',
                  'email_to',
-                 'mail_server_id',
                  'partner_ids',
                  'report_template_ids',
                  'scheduled_date',
@@ -385,7 +391,6 @@ class MailComposer(models.TransientModel):
                 default_res_ids=res_ids
             ).default_get(['attachment_ids',
                            'composition_mode',
-                           'mail_server_id',
                            'model',
                            'parent_id',
                            'partner_ids',
@@ -395,7 +400,6 @@ class MailComposer(models.TransientModel):
             values = dict(
                 (key, default_values[key])
                 for key in ('attachment_ids',
-                            'mail_server_id',
                             'partner_ids',
                             'scheduled_date',
                            ) if key in default_values)
@@ -702,7 +706,6 @@ class MailComposer(models.TransientModel):
                 ('attachment_ids',
                  'email_to',
                  'email_cc',
-                 'mail_server_id',
                  'partner_ids',
                  'report_template_ids',
                  'scheduled_date',
