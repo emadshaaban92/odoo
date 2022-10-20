@@ -5,6 +5,7 @@ import json
 import logging
 import werkzeug
 
+from collections import defaultdict
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
@@ -710,14 +711,8 @@ class Survey(http.Controller):
             ('Content-Disposition', report_content_disposition),
         ])
 
-    def _get_user_input_domain(self, survey, line_filter_domain, **post):
+    def _get_user_input_domain(self, survey, **post):
         user_input_domain = ['&', ('test_entry', '=', False), ('survey_id', '=', survey.id)]
-        if line_filter_domain:
-            matching_line_ids = request.env['survey.user_input.line'].sudo().search(line_filter_domain).ids
-            user_input_domain = expression.AND([
-                [('user_input_line_ids', 'in', matching_line_ids)],
-                user_input_domain
-            ])
         if post.get('finished'):
             user_input_domain = expression.AND([[('state', '=', 'done')], user_input_domain])
         else:
@@ -726,39 +721,101 @@ class Survey(http.Controller):
             user_input_domain = expression.AND([[('scoring_success', '=', False)], user_input_domain])
         elif post.get('passed'):
             user_input_domain = expression.AND([[('scoring_success', '=', True)], user_input_domain])
-
         return user_input_domain
 
     def _extract_filters_data(self, survey, post):
-        search_filters = []
-        line_filter_domain, line_choices = [], []
+        """
+            Extracts the filters from the URL and returns the related
+            user_input_line_ids and filters data.
+        """
+        # Domain matching all the URL filters
+        filters_domain = []
+        # All suggested answer ids matching the URL filters (for simple and multiple choice questions)
+        suggested_answer_ids = []
+        # Filters data for the front-end display
+        filters_data = []
+
         for data in post.get('filters', '').split('|'):
             try:
-                row_id, answer_id = (int(item) for item in data.split(','))
-            except:
+                question_type, row_id, answer_id = data.split(',')
+                row_id, answer_id = int(row_id), int(answer_id)
+            except Exception:
                 pass
             else:
-                if row_id and answer_id:
-                    line_filter_domain = expression.AND([
-                        ['&', ('matrix_row_id', '=', row_id), ('suggested_answer_id', '=', answer_id)],
-                        line_filter_domain
-                    ])
-                    answers = request.env['survey.question.answer'].browse([row_id, answer_id])
-                elif answer_id:
-                    line_choices.append(answer_id)
-                    answers = request.env['survey.question.answer'].browse([answer_id])
-                if answer_id:
-                    question_id = answers[0].matrix_question_id or answers[0].question_id
-                    search_filters.append({
-                        'row_id': row_id,
-                        'answer_id': answer_id,
-                        'question': question_id.title,
-                        'answers': '%s%s' % (answers[0].value, ': %s' % answers[1].value if len(answers) > 1 else '')
-                    })
-        if line_choices:
-            line_filter_domain = expression.AND([[('suggested_answer_id', 'in', line_choices)], line_filter_domain])
+                if not answer_id:
+                    continue
+                # For every URL filters, build the answer domain
+                answer_domain = []
 
-        user_input_domain = self._get_user_input_domain(survey, line_filter_domain, **post)
-        user_input_lines = request.env['survey.user_input'].sudo().search(user_input_domain).mapped('user_input_line_ids')
+                if question_type in ('simple_choice', 'multiple_choice'):
+                    answer = request.env['survey.question.answer'].browse([answer_id])
+                    question = answer.question_id
+                    suggested_answer_ids.append(answer_id)
+                elif question_type == 'matrix':
+                    answer = request.env['survey.question.answer'].browse([row_id, answer_id])
+                    question = answer[0].matrix_question_id
+                    answer_domain = ['&', '&', ('matrix_row_id', '=', row_id), ('suggested_answer_id', '=', answer_id), ('question_id', '=', question.id)]
+                else:
+                    answer = request.env['survey.user_input.line'].browse([answer_id])
+                    question = answer.question_id
 
-        return user_input_lines, search_filters
+                    if question_type == 'text_box':
+                        value = answer.value_text_box
+                        answer_domain = ['&', ('value_text_box', 'ilike', value), ('question_id', '=', question.id)]
+                    elif question_type == 'char_box':
+                        value = answer.value_char_box
+                        answer_domain = ['&', ('value_char_box', '=ilike', value), ('question_id', '=', question.id)]
+                    elif question_type == 'numerical_box':
+                        value = answer.value_numerical_box
+                        answer_domain = ['&', ('value_numerical_box', '=', value), ('question_id', '=', question.id)]
+                    elif question_type == 'date':
+                        value = answer.value_date
+                        answer_domain = ['&', ('value_date', '=', value), ('question_id', '=', question.id)]
+                    elif question_type == 'datetime':
+                        value = answer.value_datetime
+                        answer_domain = ['&', ('value_datetime', '=', value), ('question_id', '=', question.id)]
+
+                if question_type in ('simple_choice', 'multiple_choice', 'matrix'):
+                    value = '%s%s' % (answer[0].value, ': %s' % answer[1].value if len(answer) > 1 else '')
+
+                if answer_domain:
+                    filters_domain.append(answer_domain)
+                filters_data.append({
+                    'question_type': question_type,
+                    'row_id': row_id,
+                    'answer_id': answer_id,
+                    'question_id': question.id,
+                    'question': question.title,
+                    'answers': value
+                })
+
+        # Get the survey user inputs
+        user_input_domain = self._get_user_input_domain(survey, **post)
+        user_inputs = request.env['survey.user_input'].sudo().search(user_input_domain)
+
+        # Create the domain to collect all the user_input_lines matching the filters independently
+        input_line_domain = ['&', ('user_input_id', 'in', user_inputs.ids), ('suggested_answer_id', 'in', suggested_answer_ids)]
+        for domain in filters_domain:
+            input_line_domain = expression.OR([input_line_domain, domain])
+        results = request.env['survey.user_input.line'].search_read(
+            input_line_domain,
+            fields=['id', 'user_input_id', 'question_id', 'answer_type', 'suggested_answer_id', 'value_char_box', 'matrix_row_id']
+        )
+
+        # Then, keep only the user input ids that match all the filters
+        user_input_by_answer_id = defaultdict(list)
+        for result in results:
+            # Filtered Domain
+            if not result['suggested_answer_id']:
+                user_input_by_answer_id[result['question_id'][0]].append(result['user_input_id'][0])
+            # Suggested Answer Id
+            else:
+                user_input_by_answer_id[result['suggested_answer_id'][0]].append(result['user_input_id'][0])
+
+        # Finally, get all the user input lines of the matching user input records
+        if user_input_by_answer_id:
+            filtered_user_input_ids = set.intersection(*map(set, user_input_by_answer_id.values()))
+            user_inputs = user_inputs.browse(filtered_user_input_ids)
+        user_input_lines = user_inputs.user_input_line_ids
+
+        return user_input_lines, filters_data

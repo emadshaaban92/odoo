@@ -409,7 +409,7 @@ publicWidget.registry.SurveyResultWidget = publicWidget.Widget.extend({
     selector: '.o_survey_result',
     events: {
         'click .o_survey_results_topbar_clear_filters': '_onClearFiltersClick',
-        'click i.filter-add-answer': '_onFilterAddAnswerClick',
+        'click .filter-add-answer': '_onFilterAddAnswerClick',
         'click i.filter-remove-answer': '_onFilterRemoveAnswerClick',
         'click a.filter-finished-or-not': '_onFilterFinishedOrNotClick',
         'click a.filter-finished': '_onFilterFinishedClick',
@@ -558,20 +558,25 @@ publicWidget.registry.SurveyResultWidget = publicWidget.Widget.extend({
 
     /**
      * Returns the modified pathname string for filters after adding or removing an
-     * answer filter (from click event). Filters are formatted as `"rowX,ansX", where
-     * the row is used for matrix-type questions and set to 0 otherwise.
+     * answer filter (from click event). Filters are formatted as `"questionTypeX,rowX,ansX",
+     * where the row is used for matrix-type questions and set to 0 otherwise.
      * @private
-     * @param {String} filters Existing answer filters, formatted as `rowX,ansX|rowY,ansY...`.
+     * @param {String} filters Existing answer filters, formatted as
+     * `questionTypeX,rowX,ansX|questionTypeY,rowY,ansY...`.
      * @param {"add" | "remove"} operation Whether to add or remove the filter.
      * @param {Event} ev Event defining the filter.
      * @returns {String} Updated filters.
      */
     _prepareAnswersFilters(filters, operation, ev) {
         const cell = $(ev.target);
-        const eventFilter = `${cell.data('rowId') || 0},${cell.data('answerId')}`;
+        const eventFilter = `${cell.data('questionType')},${cell.data('rowId') || 0},${cell.data('answerId')}`;
 
         if (operation === 'add') {
-            filters = filters ? filters + `|${eventFilter}` : eventFilter;
+            if (filters) {
+                filters = !filters.split("|").includes(eventFilter) ? filters += `|${eventFilter}` : filters;
+            } else {
+                filters = eventFilter;
+            }
         } else if (operation === 'remove') {
             filters = filters
                 .split("|")

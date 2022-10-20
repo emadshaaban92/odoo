@@ -685,6 +685,8 @@ class SurveyUserInputLine(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
+            if vals.get('value_char_box'):
+                vals['value_char_box'] = vals['value_char_box'].strip()
             if not vals.get('answer_score'):
                 score_vals = self._get_answer_score_values(vals)
                 vals.update(score_vals)

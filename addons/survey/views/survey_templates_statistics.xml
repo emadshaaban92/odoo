@@ -27,6 +27,7 @@
     </template>
 
     <template id="survey_page_statistics_inner" name="Survey: result statistics content">
+        <t t-set="disabledQuestionsFilters" t-value="{filter['question_id'] for filter in search_filters}"/>
         <div t-if="survey.session_show_leaderboard" class="o_survey_session_leaderboard mb-5 mt-1">
             <h2 class="mt16 text-uppercase text-muted">Leaderboard</h2>
             <t t-call="survey.user_input_session_leaderboard"/>
@@ -172,7 +173,9 @@
                                 <span t-attf-class="btn btn-light filter-remove-answer cursor-default">
                                     <span t-esc="filter_data['question']"/> | <span t-esc="filter_data['answers']"></span>
                                     <i class="fa fa-times filter-remove-answer text-primary"
-                                       t-att-data-row-id="filter_data['row_id']" t-att-data-answer-id="filter_data['answer_id']"></i>
+                                        t-att-data-question-type="filter_data['question_type']"
+                                        t-att-data-row-id="filter_data['row_id']"
+                                        t-att-data-answer-id="filter_data['answer_id']"></i>
                                 </span>
                             </li>
                         </t>
@@ -189,38 +192,54 @@
     </template>
 
     <template id="question_result_text" name="Question: text result (text_box, char_box)">
-        <table class="table table-hover table-sm" t-att-id="'survey_table_question_%d' % question.id">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>User Responses</th>
-                </tr>
-            </thead>
-            <tbody>
-                <t t-foreach="table_data" t-as="input_line">
-                    <tr t-if="not input_line.skipped" t-att-class="'d-none' if input_line_index >= page_record_limit else ''">
-                        <td>
-                            <t t-if="no_print_url"><t t-esc="input_line_index + 1"></t></t>
-                            <t t-else="">
-                                <a t-att-href="input_line.user_input_id.get_print_url()">
-                                    <t t-esc="input_line_index + 1"></t>
-                                </a>
-                            </t>
-                        </td>
-                        <td>
-                            <t t-if="question.question_type == 'text_box'">
-                                <span t-if="no_print_url" t-field="input_line.value_text_box" />
-                                <a t-else="" t-att-href="input_line.user_input_id.get_print_url()" t-field="input_line.value_text_box"></a>
-                            </t>
-                            <t t-if="question.question_type == 'char_box'">
-                                <span t-if="no_print_url" t-field="input_line.value_char_box" />
-                                <a t-else="" t-att-href="input_line.user_input_id.get_print_url()" t-field="input_line.value_char_box"></a>
-                            </t>
-                        </td>
+        <div t-att-id="'survey_page_question_%d' % question.id">
+            <table class="table table-hover table-sm" t-att-id="'survey_table_question_%d' % question.id">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>User Responses</th>
                     </tr>
-                </t>
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    <t t-set="answered_input_index" t-value="[index for index, input_line in enumerate(table_data) if not input_line.skipped]"/>
+                    <t t-foreach="table_data" t-as="input_line">
+                        <tr t-if="not input_line.skipped" t-att-class="'d-none' if not input_line_index in answered_input_index[:page_record_limit] else ''">
+                            <td>
+                                <t t-if="no_print_url"><t t-esc="input_line_index + 1"></t></t>
+                                <t t-else="">
+                                    <a t-att-href="input_line.user_input_id.get_print_url()">
+                                        <t t-esc="input_line_index + 1"></t>
+                                    </a>
+                                </t>
+                            </td>
+                            <td>
+                                <!-- If answer already covered by filter or if there is only one line to display, do not allow filtering on it again -->
+                                <t t-if="question.id in disabledQuestionsFilters or len(table_data) == 1">
+                                    <span t-field="input_line.value_text_box" t-if="question.question_type == 'text_box'"/>
+                                    <span t-field="input_line.value_char_box" t-if="question.question_type == 'char_box'"/>
+                                </t>
+                                <t t-else="">
+                                    <a t-field="input_line.value_text_box" t-if="question.question_type == 'text_box'"
+                                        class="text-primary filter-add-answer"
+                                        t-att-data-question-type="question.question_type"
+                                        t-att-data-answer-id="input_line.id"
+                                        role="button" aria-label="Filter surveys" title="Only show survey results having selected this answer"/>
+                                    <a t-field="input_line.value_char_box" t-if="question.question_type == 'char_box'"
+                                        class="text-primary filter-add-answer"
+                                        t-att-data-question-type="question.question_type"
+                                        t-att-data-answer-id="input_line.id"
+                                        role="button" aria-label="Filter surveys" title="Only show survey results having selected this answer"/>
+                                    <i class="fa fa-filter text-primary ps-1 filter-add-answer"
+                                        t-att-data-question-type="question.question_type"
+                                        t-att-data-answer-id="input_line.id"
+                                        role="button" aria-label="Filter surveys" title="Only show survey results having selected this answer"/>
+                                </t>
+                            </td>
+                        </tr>
+                    </t>
+                </tbody>
+            </table>
+        </div>
         <t t-call="survey.question_table_pagination"/>
     </template>
 
@@ -252,6 +271,7 @@
             </li>
             <li class="nav-item">
                 <a t-att-href="'#survey_data_question_%d' % question.id"
+                    t-att-data-question_id="question.id"
                     t-att-aria-controls="'survey_data_question_%d' % question.id"
                     class="nav-link" data-bs-toggle="tab" role="tab">
                     <i class="fa fa-list-alt me-1"/>All Data
@@ -299,36 +319,60 @@
                 </table>
             </div>
             <div role="tabpanel" class="tab-pane" t-att-id="'survey_data_question_%d' % question.id">
-                <table class="table table-hover table-sm" t-att-id="'survey_table_question_%d' % question.id">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>User Responses</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <t t-foreach="table_data" t-as="input_line">
-                            <tr t-if="not input_line.skipped" t-att-class="'d-none' if input_line_index >= page_record_limit else ''">
-                                <td>
-                                    <t t-if="no_print_url"><t t-esc="input_line_index + 1"></t></t>
-                                    <t t-else="">
-                                        <a t-att-href="input_line.user_input_id.get_print_url()">
-                                            <t t-esc="input_line_index + 1"></t>
-                                        </a>
-                                    </t>
-                                </td>
-                                <td>
-                                    <a t-if="question.question_type == 'numerical_box'" t-att-href="input_line.user_input_id.get_print_url()" t-field="input_line.value_numerical_box"/>
-                                    <a t-if="question.question_type == 'date'" t-att-href="input_line.user_input_id.get_print_url()" t-field="input_line.value_date"/>
-                                    <t t-if="question.question_type == 'datetime'">
-                                        <span t-if="no_print_url" t-field="input_line.value_datetime"/>
-                                        <a t-else="" t-att-href="input_line.user_input_id.get_print_url()" t-field="input_line.value_datetime"></a>
-                                    </t>
-                                </td>
+                <div t-att-id="'survey_page_question_%d' % question.id">
+                    <table class="table table-hover table-sm" t-att-id="'survey_table_question_%d' % question.id">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>User Responses</th>
                             </tr>
-                        </t>
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            <t t-set="answered_input_index" t-value="[index for index, input_line in enumerate(table_data) if not input_line.skipped]"/>
+                            <t t-foreach="table_data" t-as="input_line">
+                                <tr t-if="not input_line.skipped" t-att-class="'d-none' if not input_line_index in answered_input_index[:page_record_limit] else ''">
+                                    <td>
+                                        <t t-if="no_print_url"><t t-esc="input_line_index + 1"></t></t>
+                                        <t t-else="">
+                                            <a t-att-href="input_line.user_input_id.get_print_url()">
+                                                <t t-esc="input_line_index + 1"></t>
+                                            </a>
+                                        </t>
+                                    </td>
+                                    <td>
+                                        <!-- If answer already covered by filter or if there is only one line to display, do not allow filtering on it again -->
+                                        <t t-if="question.id in disabledQuestionsFilters or len(table_data) == 1">
+                                            <span t-field="input_line.value_numerical_box" t-if="question.question_type == 'numerical_box'"/>
+                                            <span t-field="input_line.value_date" t-if="question.question_type == 'date'"/>
+                                            <span t-field="input_line.value_datetime" t-if="question.question_type == 'datetime'"/>
+                                        </t>
+                                        <t t-else="">
+                                            <a t-field="input_line.value_numerical_box" t-if="question.question_type == 'numerical_box'"
+                                                class="text-primary filter-add-answer"
+                                                t-att-data-question-type="question.question_type"
+                                                t-att-data-answer-id="input_line.id"
+                                                role="button" aria-label="Filter surveys" title="Only show survey results having selected this answer"/>
+                                            <a t-field="input_line.value_date" t-if="question.question_type == 'date'"
+                                                class="text-primary filter-add-answer"
+                                                t-att-data-question-type="question.question_type"
+                                                t-att-data-answer-id="input_line.id"
+                                                role="button" aria-label="Filter surveys" title="Only show survey results having selected this answer"/>
+                                            <a t-field="input_line.value_datetime" t-if="question.question_type == 'datetime'"
+                                                class="text-primary filter-add-answer"
+                                                t-att-data-question-type="question.question_type"
+                                                t-att-data-answer-id="input_line.id"
+                                                role="button" aria-label="Filter surveys" title="Only show survey results having selected this answer"/>
+                                            <i class="fa fa-filter text-primary ps-1 filter-add-answer"
+                                                t-att-data-question-type="question.question_type"
+                                                t-att-data-answer-id="input_line.id"
+                                                role="button" aria-label="Filter surveys" title="Only show survey results having selected this answer"/>
+                                        </t>
+                                    </td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </div>
                <t t-call="survey.question_table_pagination"/>
             </div>
         </div>
@@ -390,7 +434,7 @@
                                 <span t-esc="'%s Votes' % choice_data['count']" class="badge text-bg-primary"/>
                                 <i t-if="choice_data['suggested_answer'].id and choice_data['count']"
                                     class="fa fa-filter text-primary filter-add-answer"
-                                    t-att-data-question-id="question.id"
+                                    t-att-data-question-type="question.question_type"
                                     t-att-data-answer-id="choice_data['suggested_answer'].id"
                                     role="img" aria-label="Filter surveys" title="Only show survey results having selected this answer"/>
                             </td>
@@ -452,7 +496,7 @@
                                 <span t-esc="round(column_data['count'] * 100.0/ (len(question_data['answer_input_done_ids']) or 1), 2)"></span> %
                                 <span class="badge text-bg-primary" t-esc="column_data['count']"></span>
                                 <i t-if="column_data['count']" class="fa fa-filter text-primary filter-add-answer"
-                                   t-att-data-question-id="question.id"
+                                   t-att-data-question-type="question.question_type"
                                    t-att-data-row-id="choice_data['row'].id"
                                    t-att-data-answer-id="column_data['suggested_answer'].id" role="img" aria-label="Filter surveys"
                                    title="Only show survey results having selected this answer"></i>
