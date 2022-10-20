@@ -39,6 +39,9 @@
                 <field name="event_id" optional="hide" domain="['|', ('company_id', '=', False), ('company_id', '=', parent.company_id)]"/>
                 <field name="event_ticket_id" optional="hide" domain="['|', ('company_id', '=', False), ('company_id', '=', parent.company_id)]"/>
             </xpath>
+            <xpath expr="//field[@name='order_line']//tree//field[@name='product_uom_qty']" position="attributes">
+                <attribute name="widget">sol_product_quantity</attribute>
+            </xpath>
         </field>
     </record>
 </odoo>

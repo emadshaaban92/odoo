@@ -1,8 +1,11 @@
 /** @odoo-module **/
 
+import { registry } from "@web/core/registry";
+import { useService } from "@web/core/utils/hooks";
 import { patch } from "@web/core/utils/patch";
 import { SaleOrderLineProductField } from '@sale/js/sale_product_field';
-
+import { FloatField } from "@web/views/fields/float/float_field";
+const { useEffect, useState } = owl;
 
 patch(SaleOrderLineProductField.prototype, 'event_sale', {
 
@@ -59,3 +62,30 @@ patch(SaleOrderLineProductField.prototype, 'event_sale', {
         );
     },
 });
+
+export class SaleOrderLineProductQuantityField extends FloatField {
+    setup() {
+        super.setup();
+        this.action = useService("action");
+        this.orm = useService("orm");
+        this.uiService = useService("ui");
+        this.state = useState({ value: this.props.value });
+        useEffect(() => {
+            if ((this.state.value !== this.props.value || this.props.record.isNew) && this.props.record.data.state === 'sale' && this.props.record.data.event_id) {
+                this.state.value = this.props.value;
+                this.update();
+            }
+        });
+    }
+    async update() {
+        this.uiService.block();
+        await this.props.record.model.root.save({ stayInEdition: true });
+        const orderLineIds = this.props.record.model.root.data.order_line.resIds;
+        const action = await this.env.model.orm.call("sale.order.line", "update_registrations_qty", [orderLineIds]);
+        this.uiService.unblock();
+        this.action.doAction(action);
+        return true;
+    }
+}
+
+registry.category("fields").add("sol_product_quantity", SaleOrderLineProductQuantityField);

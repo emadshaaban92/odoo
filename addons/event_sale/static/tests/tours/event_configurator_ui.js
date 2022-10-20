@@ -29,7 +29,7 @@ tour.register('event_configurator_tour', {
     trigger: 'div[name="event_id"] input',
     run: 'click'
 }, {
-    trigger: 'ul.ui-autocomplete a:contains("Design")',
+    trigger: 'ul.ui-autocomplete a:contains("Music")',
     run: 'click',
     in_modal: false
 }, {

@@ -84,6 +84,14 @@ class SaleOrderLine(models.Model):
         event_lines.update({'product_uom_readonly': True})
         super(SaleOrderLine, self - event_lines)._compute_product_uom_readonly()
 
+    def update_registrations_qty(self):
+        self._update_registrations()
+        action = self.env["ir.actions.actions"]._for_xml_id("event_sale.action_sale_order_event_registration")
+        action['context'] = {
+            'default_sale_order_id': self.order_id.id,
+        }
+        return action
+
     def _update_registrations(self, confirm=True, cancel_to_draft=False, registration_data=None, mark_as_paid=False):
         """ Create or update registrations linked to a sales order line. A sale
         order line has a product_uom_qty attribute that will be the number of

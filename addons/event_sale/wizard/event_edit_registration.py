@@ -14,6 +14,21 @@ class RegistrationEditor(models.TransientModel):
     event_registration_ids = fields.One2many('registration.editor.line', 'editor_id', string='Registrations to Edit')
     seats_available_insufficient = fields.Boolean(
         'Not enough seats for all registrations', compute='_compute_seats_available_insufficient', readonly=True)
+    is_multi_event = fields.Boolean('Is Multi Event', compute="_compute_is_multi_event",
+        help="Technical field used to determine if the SO is composed of multiple events")
+    so_registration_qty_removed = fields.Boolean('# Registrations', compute="_compute_so_registration_qty_removed")
+
+    @api.depends('sale_order_id', 'event_registration_ids')
+    def _compute_so_registration_qty_removed(self):
+        for editor in self:
+            sol_registrations = editor.sale_order_id.order_line.filtered('event_id')
+            nb_registrations = len(editor.event_registration_ids)
+            editor.so_registration_qty_removed = sum(sol_registrations.mapped('product_uom_qty')) < nb_registrations
+
+    @api.depends('sale_order_id')
+    def _compute_is_multi_event(self):
+        for editor in self:
+            editor.is_multi_event = len(editor.sale_order_id.order_line.event_id) > 1
 
     @api.depends('event_registration_ids')
     def _compute_seats_available_insufficient(self):
@@ -86,6 +101,11 @@ class RegistrationEditor(models.TransientModel):
 
     def action_make_registration(self):
         self.ensure_one()
+
+        registrations_so = self.env['event.registration'].search([('sale_order_id', '=', self.sale_order_id.id), ('state', '!=', 'cancel')])
+        registrations_to_cancel = registrations_so - self.event_registration_ids.registration_id
+        registrations_to_cancel.action_cancel()
+
         registrations_to_create = []
         for registration_line in self.event_registration_ids:
             values = registration_line.get_registration_data()

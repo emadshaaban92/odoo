@@ -8,7 +8,7 @@
                 <field name="available_event_count" invisible="1"/>
                 <div attrs="{'invisible': [('available_event_count', '&gt;', 0)]}">
                     Looks like you do not have any Event available.
-                    <a href="/web#view_type=form&amp;model=event.event&amp;action=event.action_event_view"
+                    <a role="button" href="/web#view_type=form&amp;model=event.event&amp;action=event.action_event_view"
                         class="btn btn-link btn-primary">
                         <i class="fa fa-arrow-right"/> Configure Event
                     </a>
