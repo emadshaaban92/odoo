@@ -548,8 +548,7 @@ class TestComposerInternals(TestMailComposer):
                 # currently onchange necessary
                 composer._onchange_template_id_wrapper()
 
-                # values are reset with default_get call, if it returns value
-                # (aka subject for comment mode)
+                # values are reset
                 if composition_mode == 'comment' and not batch:
                     self.assertFalse(composer.body)
                     self.assertEqual(composer.subject, self.test_record._message_compute_subject())
@@ -563,8 +562,7 @@ class TestComposerInternals(TestMailComposer):
                     self.assertEqual(FieldDatetime.from_string(composer.scheduled_date), self.reference_now + timedelta(days=2))
                 else:
                     self.assertFalse(composer.body)
-                    # values are reset TDE FIXME: strange for subject
-                    self.assertEqual(composer.subject, 'Back to my amazing subject')
+                    self.assertFalse(composer.subject)
                     # TDE FIXME: server id is kept, not sure why
                     # self.assertFalse(composer.mail_server_id.id)
                     self.assertEqual(composer.mail_server_id, self.template.mail_server_id)
@@ -839,7 +837,6 @@ class TestComposerInternals(TestMailComposer):
         composer = self.env['mail.compose.message'].with_context(
             self._get_web_context(self.test_record)
         ).create({
-            'subject': 'Template Subject',
             'body': '<p>Template Body</p>',
             'template_id': template_1.id,
             'attachment_ids': template_1_attachments.ids,
@@ -848,7 +845,9 @@ class TestComposerInternals(TestMailComposer):
         composer._onchange_template_id_wrapper()
         composer._action_send_mail()
 
-        self.assertEqual(self.test_record.message_ids[0].subject, 'TemplateSubject TestRecord')
+        self.assertEqual(
+            self.test_record.message_ids[0].subject,
+            f'TemplateSubject {self.test_record.name}')
         self.assertEqual(
             sorted(self.test_record.message_ids[0].attachment_ids.mapped('name')),
             sorted(template_1_attachment_name))
