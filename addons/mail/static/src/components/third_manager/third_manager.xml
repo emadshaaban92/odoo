@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="mail.ThirdManager" owl="1">
+        <div class="o_ThirdManager" t-attf-class="{{ className }}" t-ref="root">
+            <div> this is a third manager </div>
+            <ThirdView
+                className="o_thirdView_third"
+                record="thirdManager.thirdView"
+            />
+        </div>
+    </t>
+
+</templates>

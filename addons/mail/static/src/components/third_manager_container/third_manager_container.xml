@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="mail.ThirdManagerContainer" owl="1">
+        <div> this is third manager container </div>
+        <ThirdManager t-if="messaging and messaging.thirdManager" record="messaging.thirdManager"/>
+    </t>
+</templates>

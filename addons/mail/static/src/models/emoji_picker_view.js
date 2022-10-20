@@ -11,6 +11,7 @@ Model({
         useComponentToModel({ fieldName: 'component' });
         useUpdateToModel({ methodName: 'onComponentUpdate', modelName: 'EmojiPickerView' });
     },
+    identifyingMode: 'xor',
     lifecycleHooks: {
         _created() {
             if (this.messaging.emojiRegistry.isLoaded || this.messaging.emojiRegistry.isLoading) {
@@ -122,5 +123,6 @@ Model({
             },
         }),
         popoverViewOwner: one('PopoverView', { identifying: true, inverse: 'emojiPickerView' }),
+        thirdViewOwner: one('ThirdView', { identifying: true, inverse: 'emojiPickerView' }),
     },
 });

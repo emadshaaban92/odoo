@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="mail.ThirdView" owl="1">
+        <t t-if="thirdView">
+            <div class="o_ThirdView border bg-view shadow-sm" t-attf-class="{{ className }}" t-ref="root">
+                <div>This is a third view </div>
+                <t t-if="constructor.components[thirdView.contentComponentName]"
+                    t-component="constructor.components[thirdView.contentComponentName]"
+                    className="thirdView.contentClassName"
+                    t-props="{ record: thirdView.content }"
+                />
+            </div>
+        </t>
+    </t>
+
+</templates>

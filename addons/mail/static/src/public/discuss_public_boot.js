@@ -6,6 +6,7 @@ import { messagingToLegacyEnv } from '@mail/utils/make_messaging_to_legacy_env';
 import { DialogManagerContainer } from '@mail/components/dialog_manager_container/dialog_manager_container';
 import { DiscussPublicViewContainer } from '@mail/components/discuss_public_view_container/discuss_public_view_container';
 import { PopoverManagerContainer } from '@mail/components/popover_manager_container/popover_manager_container';
+import { ThirdManagerContainer } from '@mail/components/third_manager_container/third_manager_container';
 import { messagingService } from '@mail/services/messaging_service';
 
 import { MainComponentsContainer } from '@web/core/main_components_container';
@@ -56,8 +57,10 @@ Component.env = legacyEnv;
     mainComponentsRegistry.add('DiscussPublicViewContainer', { Component: DiscussPublicViewContainer, props: { data } });
     // needed by the attachment viewer
     mainComponentsRegistry.add('DialogManagerContainer', { Component: DialogManagerContainer });
+    console.log("Pre add thirdmanager to public registry");
+    mainComponentsRegistry.add('ThirdManagerContainer', { Component: ThirdManagerContainer });
+    console.log("Post add thirdmanager to public registry");
     mainComponentsRegistry.add('PopoverManagerContainer', { Component: PopoverManagerContainer });
-
     await legacySession.is_bound;
     Object.assign(odoo, {
         info: {

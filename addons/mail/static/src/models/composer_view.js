@@ -167,11 +167,18 @@ Model({
          * Handles click on the emojis button.
          */
         onClickButtonEmojis() {
-            if (!this.emojisPopoverView) {
+            //Here I should test if the device is mobile or desktop, and open either the regular emojisPopoverView or the emojiThirdView
+            console.log("emoji button clicked");
+            if (!this.emojisThirdView) {
+                this.update({ emojisThirdView: {} });
+            } else {
+                this.update({ emojisThirdView: clear() });
+            }
+            /*if (!this.emojisPopoverView) {
                 this.update({ emojisPopoverView: {} });
             } else {
                 this.update({ emojisPopoverView: clear() });
-            }
+            }*/
         },
         /**
          * Handles click on the cancel link.
@@ -1076,6 +1083,9 @@ Model({
          * Determines the emojis popover that is active on this composer view.
          */
         emojisPopoverView: one('PopoverView', { inverse: 'composerViewOwnerAsEmoji' }),
+        emojisThirdView: one('ThirdView', {
+            inverse: 'composerViewOwnerAsEmoji',
+        }),
         extraSuggestions: many('ComposerSuggestable'),
         fileUploader: one('FileUploader', { default: {}, inverse: 'composerView', readonly: true, required: true }),
         hasCurrentPartnerAvatar: attr({ default: true,

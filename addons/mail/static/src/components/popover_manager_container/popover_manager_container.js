@@ -11,6 +11,7 @@ export class PopoverManagerContainer extends Component {
      */
     setup() {
         useMessagingContainer();
+        console.log("PopoverManager container initialized");
     }
 
     get messaging() {

@@ -368,6 +368,7 @@ Patch({
         rtc: one('Rtc', { default: {}, isCausal: true, readonly: true }),
         soundEffects: one('SoundEffects', { default: {}, isCausal: true, readonly: true }),
         starred: one('Mailbox', { default: {}, inverse: 'messagingAsStarred' }),
+        thirdManager: one('ThirdManager', { default: {}, isCausal: true, readonly: true }),
         updateImStatusRegisterThrottle: one('Throttle', { inverse: 'messagingAsUpdateImStatusRegister',
             compute() {
                 return { func: this.updateImStatusRegistration };
