@@ -78,7 +78,7 @@ class MailComposer(models.TransientModel):
             else:
                 result['res_ids'] = ''
 
-        if result.get('composition_mode') == 'comment' and (set(fields) & set(['model', 'res_ids', 'partner_ids', 'subject'])):
+        if result.get('composition_mode') == 'comment' and (set(fields) & set(['model', 'res_ids', 'partner_ids'])):
             result.update(self.get_record_data(result))
 
         # when being in new mode, create_uid is not granted -> ACLs issue may arise
@@ -89,10 +89,10 @@ class MailComposer(models.TransientModel):
         return filtered_result
 
     # content
-    subject = fields.Char('Subject', compute=False)
+    subject = fields.Char('Subject', compute='_compute_subject', readonly=False, store=True)
     body = fields.Html(
-        'Contents', render_engine='qweb', render_options={'post_process': True},
-        compute=False, default='', sanitize_style=True)
+        'Contents', render_engine='qweb', render_options={'post_process': True}, sanitize_style=True,
+        compute='_compute_body', readonly=False, store=True)
     parent_id = fields.Many2one(
         'mail.message', 'Parent Message', ondelete='set null')
     template_id = fields.Many2one('mail.template', 'Use template', domain="[('model', '=', model)]")
@@ -173,6 +173,35 @@ class MailComposer(models.TransientModel):
         """ Check domain is a valid list """
         for composer in self:
             self._parse_res_domain(composer.res_domain)
+
+    @api.depends('template_id', 'composition_mode', 'model', 'res_ids', 'parent_id', 'record_name')
+    def _compute_subject(self):
+        re_prefix = _('Re:')
+        for composer in self:
+            if composer.template_id.subject:
+                composer._set_value_from_template('subject')
+            elif not composer.template_id or not composer.subject:
+                subject = False
+                replying_subject = composer.parent_id.subject if composer.parent_id else False
+                if not replying_subject:
+                    replying_subject = composer.record_name if composer.record_name else False
+
+                if replying_subject and not (replying_subject.startswith('Re:') or replying_subject.startswith(re_prefix)):
+                    subject = "%s %s" % (re_prefix, replying_subject)
+                elif replying_subject:
+                    subject = replying_subject
+                composer.subject = subject
+
+    @api.depends('template_id', 'composition_mode', 'model', 'res_ids')
+    def _compute_body(self):
+        """ When changing template, update body (rendered in comment or raw in
+        mass mode). When removing template, reset body otherwise mail content
+        may not be complete. """
+        for composer in self:
+            if composer.template_id.body_html:
+                composer._set_value_from_template('body_html', 'body')
+            elif not composer.template_id or not composer.body:
+                composer.body = False
 
     @api.depends('template_id', 'author_id', 'composition_mode', 'model', 'res_ids')
     def _compute_email_from(self):
@@ -267,25 +296,15 @@ class MailComposer(models.TransientModel):
         wizard when sending an email related a previous email (parent_id) or
         a document (model, res_id). This is based on previously computed default
         values. """
-        result, subject = {}, False
-        res_ids = self._parse_res_ids(values['res_ids']) if values.get('res_ids') else []
+        result = {}
         if values.get('parent_id'):
             parent = self.env['mail.message'].browse(values.get('parent_id'))
-            subject = tools.ustr(parent.subject or parent.record_name or '')
             if not values.get('model'):
                 result['model'] = parent.model
             if not values.get('res_id'):
                 result['res_ids'] = [parent.res_id]
             partner_ids = values.get('partner_ids', list()) + parent.partner_ids.ids
             result['partner_ids'] = partner_ids
-        elif values.get('model') and len(res_ids) == 1:
-            doc_name_get = self.env[values.get('model')].browse(res_ids[0]).name_get()
-            subject = tools.ustr(doc_name_get and doc_name_get[0][1] or '')
-
-        re_prefix = _('Re:')
-        if subject and not (subject.startswith('Re:') or subject.startswith(re_prefix)):
-            subject = "%s %s" % (re_prefix, subject)
-        result['subject'] = subject
 
         return result
 
@@ -756,14 +775,13 @@ class MailComposer(models.TransientModel):
             - normal mode: return rendered values
             /!\ for x2many field, this onchange return command instead of ids
         """
+        values = {}
         if template_id and (composition_mode == 'mass_mail' or len(res_ids) > 1):
             template = self.env['mail.template'].browse(template_id)
             values = dict(
                 (field, template[field])
-                for field in ('body_html',
-                              'mail_server_id',
+                for field in ('mail_server_id',
                               'scheduled_date',
-                              'subject',
                              )
                 if template[field]
             )
@@ -771,8 +789,6 @@ class MailComposer(models.TransientModel):
                 values['attachment_ids'] = [att.id for att in template.attachment_ids]
             if template.mail_server_id:
                 values['mail_server_id'] = template.mail_server_id.id
-            if values.get('body_html'):
-                values['body'] = values.pop('body_html')
         elif template_id and len(res_ids) <= 1:
             # trick to evaluate qweb even when having no records
             template_res_ids = res_ids if res_ids else [0]
@@ -780,14 +796,12 @@ class MailComposer(models.TransientModel):
                 self.env['mail.template'].browse(template_id),
                 template_res_ids,
                 ('attachment_ids',
-                 'body_html',
                  'email_cc',
                  'email_to',
                  'mail_server_id',
                  'partner_ids',
                  'report_template_ids',
                  'scheduled_date',
-                 'subject',
                 )
             )[template_res_ids[0]]
             # transform attachments into attachment_ids; not attached to the document because this will
@@ -811,7 +825,6 @@ class MailComposer(models.TransientModel):
                 default_model=model,
                 default_res_ids=res_ids
             ).default_get(['attachment_ids',
-                           'body',
                            'composition_mode',
                            'mail_server_id',
                            'model',
@@ -819,16 +832,13 @@ class MailComposer(models.TransientModel):
                            'partner_ids',
                            'res_ids',
                            'scheduled_date',
-                           'subject',
                           ])
             values = dict(
                 (key, default_values[key])
                 for key in ('attachment_ids',
-                            'body',
                             'mail_server_id',
                             'partner_ids',
                             'scheduled_date',
-                            'subject',
                            ) if key in default_values)
 
         # This onchange should return command instead of ids for x2many field.
