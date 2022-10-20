@@ -157,7 +157,9 @@ class MailComposer(models.TransientModel):
     auto_delete = fields.Boolean('Delete Emails',
         help='This option permanently removes any track of email after it\'s been sent, including from the Technical menu in the Settings, in order to preserve storage space of your Odoo database.')
     auto_delete_message = fields.Boolean('Delete Message Copy', help='Do not keep a copy of the email in the document communication history (mass mailing only)')
-    mail_server_id = fields.Many2one('ir.mail_server', 'Outgoing mail server')
+    mail_server_id = fields.Many2one(
+        'ir.mail_server', string='Outgoing mail server',
+        compute='_compute_mail_server_id', readonly=False, store=True)
     scheduled_date = fields.Char(
         'Scheduled Date',
         help="In comment mode: if set, postpone notifications sending. In mass mail mode: if sent, send emails after that date. This date is considered as being in UTC timezone.")
@@ -266,6 +268,14 @@ class MailComposer(models.TransientModel):
     def _inverse_reply_to_mode(self):
         for composer in self:
             composer.reply_to_force_new = composer.reply_to_mode == 'new'
+
+    @api.depends('template_id')
+    def _compute_mail_server_id(self):
+        for composer in self:
+            if composer.template_id.mail_server_id:
+                composer.mail_server_id = composer.template_id.mail_server_id
+            elif not composer.mail_server_id:
+                composer.mail_server_id = False
 
     # Overrides of mail.render.mixin
     @api.depends('model')
@@ -575,7 +585,6 @@ class MailComposer(models.TransientModel):
                  'auto_delete',
                  'email_to',
                  'email_cc',
-                 'mail_server_id',
                  'partner_ids',
                  'report_template_ids',
                  'scheduled_date',
@@ -780,15 +789,12 @@ class MailComposer(models.TransientModel):
             template = self.env['mail.template'].browse(template_id)
             values = dict(
                 (field, template[field])
-                for field in ('mail_server_id',
-                              'scheduled_date',
+                for field in ('scheduled_date',
                              )
                 if template[field]
             )
             if template.attachment_ids:
                 values['attachment_ids'] = [att.id for att in template.attachment_ids]
-            if template.mail_server_id:
-                values['mail_server_id'] = template.mail_server_id.id
         elif template_id and len(res_ids) <= 1:
             # trick to evaluate qweb even when having no records
             template_res_ids = res_ids if res_ids else [0]
@@ -798,7 +804,6 @@ class MailComposer(models.TransientModel):
                 ('attachment_ids',
                  'email_cc',
                  'email_to',
-                 'mail_server_id',
                  'partner_ids',
                  'report_template_ids',
                  'scheduled_date',
@@ -826,7 +831,6 @@ class MailComposer(models.TransientModel):
                 default_res_ids=res_ids
             ).default_get(['attachment_ids',
                            'composition_mode',
-                           'mail_server_id',
                            'model',
                            'parent_id',
                            'partner_ids',
@@ -836,7 +840,6 @@ class MailComposer(models.TransientModel):
             values = dict(
                 (key, default_values[key])
                 for key in ('attachment_ids',
-                            'mail_server_id',
                             'partner_ids',
                             'scheduled_date',
                            ) if key in default_values)

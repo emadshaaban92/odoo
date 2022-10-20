@@ -439,8 +439,6 @@ class TestComposerInternals(TestMailComposer):
 
             # changing template should update its content
             composer.write({'template_id': self.template.id})
-            # currently onchange necessary
-            composer._onchange_template_id_wrapper()
 
             # values come from template
             if composition_mode == 'comment':
@@ -460,8 +458,6 @@ class TestComposerInternals(TestMailComposer):
 
             # reset template should reset values
             composer.write({'template_id': False})
-            # currently onchange necessary
-            composer._onchange_template_id_wrapper()
 
             # values are reset
             if composition_mode == 'comment':
@@ -484,8 +480,6 @@ class TestComposerInternals(TestMailComposer):
             composer = self.env['mail.compose.message'].with_context(ctx).create({
                 'template_id': self.template.id,
             })
-            # currently onchange necessary
-            composer._onchange_template_id_wrapper()
 
             # values come from template
             if composition_mode == 'comment':
@@ -504,8 +498,6 @@ class TestComposerInternals(TestMailComposer):
             composer = self.env['mail.compose.message'].with_context(ctx).create({
                 'template_id': self.template.id,
             })
-            # currently onchange necessary
-            composer._onchange_template_id_wrapper()
 
             # values come from template
             if composition_mode == 'comment':
