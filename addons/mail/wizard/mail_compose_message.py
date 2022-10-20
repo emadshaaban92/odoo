@@ -81,11 +81,6 @@ class MailComposer(models.TransientModel):
         if result.get('composition_mode') == 'comment' and (set(fields_list) & set(['model', 'res_ids', 'partner_ids', 'subject'])):
             result.update(self.get_record_data(result))
 
-        # threading support check: 'update' requires to use message_update/post
-        if 'reply_to_mode' in fields_list and 'reply_to_mode' not in result and result.get('model'):
-            if result['model'] not in self.env or not hasattr(self.env[result['model']], 'message_post'):
-                result['reply_to_mode'] = 'new'
-
         # when being in new mode, create_uid is not granted -> ACLs issue may arise
         if 'create_uid' in fields_list and 'create_uid' not in result:
             result['create_uid'] = self.env.uid
@@ -144,9 +139,12 @@ class MailComposer(models.TransientModel):
         default=lambda self: self.env['ir.model.data']._xmlid_to_res_id('mail.mt_comment'))
     mail_activity_type_id = fields.Many2one('mail.activity.type', 'Mail Activity Type', ondelete='set null')
     # destination
-    reply_to = fields.Char('Reply To', help='Reply email address. Setting the reply_to bypasses the automatic thread creation.')
+    reply_to = fields.Char(
+        'Reply To', compute='_compute_reply_to', readonly=False, store=True,
+        help='Reply email address. Setting the reply_to bypasses the automatic thread creation.')
     reply_to_force_new = fields.Boolean(
         string='Considers answers as new thread',
+        compute='_compute_reply_to_force_new', readonly=False, store=True,
         help='Manage answers as new incoming emails instead of replies going to the same thread.')
     reply_to_mode = fields.Selection([
         ('update', 'Store email and replies in the chatter of each record'),
@@ -245,6 +243,18 @@ class MailComposer(models.TransientModel):
             elif composer.model and len(res_ids) == 1:
                 composer.record_name = self.env[composer.model].browse(res_ids).display_name
 
+    @api.depends('composition_mode', 'model', 'res_ids', 'template_id')
+    def _compute_reply_to(self):
+        for composer in self:
+            if composer.template_id.reply_to:
+                composer._set_value_from_template('reply_to')
+
+    @api.depends('model')
+    def _compute_reply_to_force_new(self):
+        for composer in self:
+            if not composer.model or not hasattr(self.env[composer.model], 'message_post'):
+                composer.reply_to_force_new = True
+
     @api.depends('reply_to_force_new')
     def _compute_reply_to_mode(self):
         for composer in self:
@@ -301,8 +311,7 @@ class MailComposer(models.TransientModel):
             template = self.env['mail.template'].browse(template_id)
             values = dict(
                 (field, template[field])
-                for field in ('reply_to',
-                              'scheduled_date',
+                for field in ('scheduled_date',
                               'subject',
                              )
                 if template[field]
@@ -326,7 +335,6 @@ class MailComposer(models.TransientModel):
                  'email_to',
                  'mail_server_id',
                  'partner_ids',
-                 'reply_to',
                  'report_template_ids',
                  'scheduled_date',
                  'subject',
@@ -359,7 +367,6 @@ class MailComposer(models.TransientModel):
                            'model',
                            'parent_id',
                            'partner_ids',
-                           'reply_to',
                            'res_ids',
                            'scheduled_date',
                            'subject',
@@ -370,7 +377,6 @@ class MailComposer(models.TransientModel):
                             'body',
                             'mail_server_id',
                             'partner_ids',
-                            'reply_to',
                             'scheduled_date',
                             'subject',
                            ) if key in default_values)
