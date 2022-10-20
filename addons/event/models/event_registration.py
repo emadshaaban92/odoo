@@ -19,7 +19,7 @@ class EventRegistration(models.Model):
         'event.event', string='Event', required=True,
         readonly=True, states={'draft': [('readonly', False)]})
     event_ticket_id = fields.Many2one(
-        'event.event.ticket', string='Event Ticket', readonly=True, ondelete='restrict',
+        'event.event.ticket', string='Ticket Type', readonly=True, ondelete='restrict',
         states={'draft': [('readonly', False)]})
     active = fields.Boolean(default=True)
     # utm informations

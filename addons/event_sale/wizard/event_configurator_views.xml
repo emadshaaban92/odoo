@@ -5,7 +5,15 @@
         <field name="model">event.event.configurator</field>
         <field name="arch" type="xml">
             <form js_class="event_configurator_form">
-                <group>
+                <field name="available_event_count" invisible="1"/>
+                <div attrs="{'invisible': [('available_event_count', '&gt;', 0)]}">
+                    Looks like you do not have any Event available.
+                    <a href="/web#view_type=form&amp;model=event.event&amp;action=event.action_event_view"
+                        class="btn btn-link btn-primary">
+                        <i class="fa fa-arrow-right"/> Configure Event
+                    </a>
+                </div>
+                <group attrs="{'invisible': [('available_event_count', '=', 0)]}">
                     <field
                         name="event_id"
                         domain="[
@@ -29,7 +37,8 @@
                     <field name="product_id" invisible="1"/>
                 </group>
                 <footer>
-                    <button string="Ok" class="btn-primary o_event_sale_js_event_configurator_ok" special="save" data-hotkey="v"/>
+                    <button string="Confirm" attrs="{'invisible': [('available_event_count', '=', 0)]}"
+                        class="btn-primary o_event_sale_js_event_configurator_ok" special="save" data-hotkey="v"/>
                     <button string="Cancel" class="btn-secondary" special="cancel" data-hotkey="z"/>
                 </footer>
             </form>
@@ -37,7 +46,7 @@
     </record>
 
     <record id="event_configurator_action" model="ir.actions.act_window">
-        <field name="name">Configure an event</field>
+        <field name="name">Select an Event</field>
         <field name="res_model">event.event.configurator</field>
         <field name="view_mode">form</field>
         <field name="target">new</field>

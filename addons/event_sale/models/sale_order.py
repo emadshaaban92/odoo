@@ -67,7 +67,7 @@ class SaleOrderLine(models.Model):
         compute="_compute_event_id", store=True, readonly=False, precompute=True,
         help="Choose an event and it will automatically create a registration for this event.")
     event_ticket_id = fields.Many2one(
-        'event.event.ticket', string='Event Ticket',
+        'event.event.ticket', string='Ticket Type',
         compute="_compute_event_ticket_id", store=True, readonly=False, precompute=True,
         help="Choose an event ticket and it will automatically create a registration for this event ticket.")
     # TODO in master: remove this field, unused anymore
