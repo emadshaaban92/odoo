@@ -64,16 +64,6 @@ class MailComposer(models.TransientModel):
 
         result = super().default_get(fields_list)
 
-        # author
-        missing_author = 'author_id' in fields_list and 'author_id' not in result
-        missing_email_from = 'email_from' in fields_list and 'email_from' not in result
-        if missing_author or missing_email_from:
-            author_id, email_from = self.env['mail.thread']._message_compute_author(result.get('author_id'), result.get('email_from'), raise_on_email=False)
-            if missing_email_from:
-                result['email_from'] = email_from
-            if missing_author:
-                result['author_id'] = author_id
-
         # record context management
         if 'model' in fields_list and 'model' not in result:
             result['model'] = self.env.context.get('active_model')
@@ -119,9 +109,12 @@ class MailComposer(models.TransientModel):
     email_layout_xmlid = fields.Char('Email Notification Layout', copy=False)
     email_add_signature = fields.Boolean(default=True)
     # origin
-    email_from = fields.Char('From', help="Email address of the sender. This field is set when no matching partner is found and replaces the author_id field in the chatter.")
+    email_from = fields.Char(
+        'From', compute='_compute_email_from', readonly=False, store=True,
+        help="Email address of the sender. This field is set when no matching partner is found and replaces the author_id field in the chatter.")
     author_id = fields.Many2one(
-        'res.partner', 'Author',
+        'res.partner', string='Author',
+        compute='_compute_author_id', readonly=False, store=True,
         help="Author of the message. If not set, email_from may hold an email address that did not match any partner.")
     # composition
     composition_mode = fields.Selection(
@@ -192,6 +185,38 @@ class MailComposer(models.TransientModel):
         as a Falsy leaf. """
         for composer in self:
             composer._evaluate_res_domain()
+
+    @api.depends('author_id', 'composition_mode', 'model', 'res_ids', 'template_id')
+    def _compute_email_from(self):
+        for composer in self:
+            if composer.template_id.email_from:
+                composer._set_value_from_template('email_from')
+            elif not composer.template_id:
+                composer.email_from = self.env.user.partner_id.email_formatted
+                # directly update author_id, fields are inter dependent
+                composer.author_id = self.env.user.partner_id
+            elif not composer.email_from and composer.author_id:
+                composer.email_from = composer.author_id.email_formatted
+
+    @api.depends('composition_mode', 'email_from', 'model', 'res_ids')
+    def _compute_author_id(self):
+        for composer in self.filtered(lambda composer: not composer.author_id):
+            if (composer.email_from and composer.composition_mode == 'comment'
+                and not composer.composition_batch
+                # the next condition is added to match pre-compute field behavior
+                # to improve and tweak in an upcoming task/commit/PR
+                and not composer.template_id):
+                author = self.env['mail.thread']._mail_find_partner_from_emails(
+                    [composer.email_from],
+                    force_create=False,
+                )[0]
+            else:
+                author = self.env.user.partner_id
+            composer.author_id = author.id
+            # ensure email_from is set (inter dependent fields are hard to model
+            # in a compute)
+            if not composer.email_from and author:
+                composer.email_from = author.email_formatted
 
     @api.depends('res_ids')
     def _compute_composition_batch(self):
@@ -276,8 +301,7 @@ class MailComposer(models.TransientModel):
             template = self.env['mail.template'].browse(template_id)
             values = dict(
                 (field, template[field])
-                for field in ('email_from',
-                              'reply_to',
+                for field in ('reply_to',
                               'scheduled_date',
                               'subject',
                              )
@@ -299,7 +323,6 @@ class MailComposer(models.TransientModel):
                 ('attachment_ids',
                  'body_html',
                  'email_cc',
-                 'email_from',
                  'email_to',
                  'mail_server_id',
                  'partner_ids',
@@ -332,7 +355,6 @@ class MailComposer(models.TransientModel):
             ).default_get(['attachment_ids',
                            'body',
                            'composition_mode',
-                           'email_from',
                            'mail_server_id',
                            'model',
                            'parent_id',
@@ -346,7 +368,6 @@ class MailComposer(models.TransientModel):
                 (key, default_values[key])
                 for key in ('attachment_ids',
                             'body',
-                            'email_from',
                             'mail_server_id',
                             'partner_ids',
                             'reply_to',
@@ -980,3 +1001,33 @@ class MailComposer(models.TransientModel):
         if not tools.is_list_of(res_ids, int):
             raise ValidationError(error_msg)
         return res_ids
+
+    def _set_value_from_template(self, template_fname, composer_fname=False, force_void=False):
+        """ Get composer value from its template counterpart. In monorecord
+        comment mode, we get directly the rendered value, giving the real
+        value to the user. Otherwise we get the raw (unrendered) value from
+        template, as it will be rendered at send time (for mass mail, whatever
+        the number of contextual records to mail) or before posting on records
+        (for comment in batch).
+
+        :param str template_fname: name of field on template model, used to
+          fetch the value (and maybe render it);
+        :param str composer_fname: name of field on composer model, when field
+          names do not match (e.g. body_html on template used to populate body
+          on composer);
+        :param bool force_void: if False, do not propagate a falsy template
+          value on composer, allowing to keep the previous composer value
+          instead of voiding it with template falsy value;
+        """
+        self.ensure_one()
+        composer_fname = composer_fname or template_fname
+        if self.template_id and (self.template_id[template_fname] or force_void):
+            if self.composition_mode == 'comment' and not self.composition_batch:
+                res_ids = self._evaluate_res_ids()
+                rendering_res_ids = res_ids or [False]
+                self[composer_fname] = self.template_id._generate_template(
+                    rendering_res_ids,
+                    {template_fname},
+                )[rendering_res_ids[0]][template_fname]
+            else:
+                self[composer_fname] = self.template_id[template_fname]
