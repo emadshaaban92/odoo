@@ -11,12 +11,15 @@ from odoo import http
 from odoo.exceptions import ValidationError
 from odoo.http import request
 
+from odoo.addons.payment import utils as payment_utils
+
 _logger = logging.getLogger(__name__)
 
 
 class PaypalController(http.Controller):
-    _return_url = '/payment/paypal/return/'
-    _webhook_url = '/payment/paypal/webhook/'
+    _return_url = '/payment/paypal/return'
+    _cancel_url = '/payment/paypal/cancel'
+    _webhook_url = '/payment/paypal/webhook'
 
     @http.route(
         _return_url, type='http', auth='public', methods=['GET', 'POST'], csrf=False,
@@ -26,16 +29,12 @@ class PaypalController(http.Controller):
         """ Process the PDT notification sent by PayPal after redirection from checkout.
 
         The PDT (Payment Data Transfer) notification contains the parameters necessary to verify the
-        origin of the notification and retrieve the actual notification data, if PDT is enabled on
-        the account. See https://developer.paypal.com/api/nvp-soap/payment-data-transfer/.
-
-        If PDT is not enabled on the account, the origin of the notification cannot be verified and
-        the latter directly contains the notification data that must be processed.
+        origin of the notification and retrieve the actual notification data.
+        See https://developer.paypal.com/api/nvp-soap/payment-data-transfer/.
 
         The route accepts both GET and POST requests because PayPal seems to switch between the two
-        depending on whether PDT is enabled, whether the customer pays anonymously (without logging
-        in on PayPal), whether the customer cancels the payment, whether they click on "Return to
-        Merchant" after paying, etc.
+        depending on whether the customer pays anonymously (without logging
+        in on PayPal), whether they click on "Return to Merchant" after paying, etc.
 
         The route is flagged with `save_session=False` to prevent Odoo from assigning a new session
         to the user if they are redirected to this route with a POST request. Indeed, as the session
@@ -46,20 +45,40 @@ class PaypalController(http.Controller):
         retrieved and with it the transaction which will be immediately post-processed.
         """
         _logger.info("handling redirection from PayPal with data:\n%s", pprint.pformat(pdt_data))
-        if not pdt_data:  # The customer has canceled or paid then clicked on "Return to Merchant"
-            pass  # Redirect them to the status page to browse the (currently) draft transaction
+        # Check the origin of the notification
+        tx_sudo = request.env['payment.transaction'].sudo()._get_tx_from_notification_data(
+            'paypal', pdt_data
+        )
+        try:
+            notification_data = self._verify_pdt_notification_origin(pdt_data, tx_sudo)
+        except Forbidden:
+            _logger.exception("could not verify the origin of the PDT; discarding it")
         else:
-            # Check the origin of the notification
-            tx_sudo = request.env['payment.transaction'].sudo()._get_tx_from_notification_data(
-                'paypal', pdt_data
-            )
-            try:
-                notification_data = self._verify_pdt_notification_origin(pdt_data, tx_sudo)
-            except Forbidden:
-                _logger.exception("could not verify the origin of the PDT; discarding it")
-            else:
-                # Handle the notification data
-                tx_sudo._handle_notification_data('paypal', notification_data)
+            # Handle the notification data
+            tx_sudo._handle_notification_data('paypal', notification_data)
+
+        return request.redirect('/payment/status')
+
+    @http.route(
+        _cancel_url, type='http', auth='public', methods=['GET'], csrf=False,
+        save_session=False
+    )
+    def paypal_return_from_checkout_before_paying(self, transaction_reference, access_token):
+        """Process payment after the customer has canceled payment.
+
+            :param str transaction_reference: The reference of the transaction.
+            :param str access_token: The access token of the transaction.
+        """
+        _logger.info(
+            "handling redirect from Paypal for cancellation with reference:\n%s",
+            transaction_reference
+        )
+        tx_sudo = request.env['payment.transaction'].sudo()._get_tx_from_notification_data(
+        'paypal', {'item_number': transaction_reference}
+        )
+        if not payment_utils.check_access_token(access_token, transaction_reference):
+            raise Forbidden()
+        tx_sudo._handle_notification_data('paypal', {})
 
         return request.redirect('/payment/status')
 

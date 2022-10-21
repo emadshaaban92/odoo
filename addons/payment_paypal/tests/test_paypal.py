@@ -1,4 +1,5 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
+from werkzeug import urls
 
 from unittest.mock import patch
 
@@ -16,11 +17,16 @@ class PaypalTest(PaypalCommon, PaymentHttpCommon):
 
     def _get_expected_values(self):
         return_url = self._build_url(PaypalController._return_url)
+        url_params = {
+            'transaction_reference': self.reference,
+            'access_token': self._generate_test_access_token(self.reference),
+        }
+        cancel_url = self._build_url(PaypalController._cancel_url)
         values = {
             'address1': 'Huge Street 2/543',
             'amount': str(self.amount),
             'business': self.paypal.paypal_email_account,
-            'cancel_return': return_url,
+            'cancel_return': f'{cancel_url}?{urls.url_encode(url_params)}',
             'city': 'Sin City',
             'cmd': '_xclick',
             'country': 'BE',
@@ -47,8 +53,12 @@ class PaypalTest(PaypalCommon, PaymentHttpCommon):
 
     def test_redirect_form_values(self):
         tx = self._create_transaction(flow='redirect')
-        with mute_logger('odoo.addons.payment.models.payment_transaction'):
-            processing_values = tx._get_processing_values()
+        with patch(
+            "odoo.addons.payment.utils.generate_access_token",
+            new=self._generate_test_access_token,
+        ):
+            with mute_logger('odoo.addons.payment.models.payment_transaction'):
+                processing_values = tx._get_processing_values()
 
         form_info = self._extract_values_from_html_form(processing_values['redirect_form_html'])
         self.assertEqual(
@@ -56,9 +66,10 @@ class PaypalTest(PaypalCommon, PaymentHttpCommon):
             'https://www.sandbox.paypal.com/cgi-bin/webscr')
 
         expected_values = self._get_expected_values()
+        self.maxDiff = 1000
         self.assertDictEqual(
             expected_values, form_info['inputs'],
-            "Paypal: invalid inputs specified in the redirect form.")
+            "Paypal: invalid inputs specified in the redirect form.",)
 
     def test_redirect_form_with_fees(self):
         self.paypal.write({
@@ -71,11 +82,16 @@ class PaypalTest(PaypalCommon, PaymentHttpCommon):
         expected_values = self._get_expected_values()
 
         tx = self._create_transaction(flow='redirect')
-        with mute_logger('odoo.addons.payment.models.payment_transaction'):
-            processing_values = tx._get_processing_values()
-        form_info = self._extract_values_from_html_form(processing_values['redirect_form_html'])
+        with patch(
+            "odoo.addons.payment.utils.generate_access_token",
+            new=self._generate_test_access_token,
+        ):
+            with mute_logger('odoo.addons.payment.models.payment_transaction'):
+                processing_values = tx._get_processing_values()
+            form_info = self._extract_values_from_html_form(processing_values['redirect_form_html'])
 
         self.assertEqual(form_info['action'], 'https://www.sandbox.paypal.com/cgi-bin/webscr')
+        self.maxDiff = None
         self.assertDictEqual(
             expected_values, form_info['inputs'],
             "Paypal: invalid inputs specified in the redirect form.")

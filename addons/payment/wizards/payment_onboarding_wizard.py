@@ -13,12 +13,7 @@ class PaymentWizard(models.TransientModel):
         ('paypal', "PayPal"),
         ('manual', "Custom payment instructions"),
     ], string="Payment Method", default=lambda self: self._get_default_payment_provider_onboarding_value('payment_method'))
-
-    paypal_user_type = fields.Selection([
-        ('new_user', "I don't have a Paypal account"),
-        ('existing_user', 'I have a Paypal account')], string="Paypal User Type", default='new_user')
     paypal_email_account = fields.Char("Email", default=lambda self: self._get_default_payment_provider_onboarding_value('paypal_email_account'))
-    paypal_seller_account = fields.Char("Merchant Account ID", default=lambda self: self._get_default_payment_provider_onboarding_value('paypal_seller_account'))
     paypal_pdt_token = fields.Char("PDT Identity Token", default=lambda self: self._get_default_payment_provider_onboarding_value('paypal_pdt_token'))
 
     # Account-specific logic. It's kept here rather than moved in `account_payment` as it's not used by `account` module.
@@ -65,9 +60,10 @@ class PaymentWizard(models.TransientModel):
 
         if 'payment_paypal' in installed_modules:
             provider = self.env.ref('payment.payment_provider_paypal')
-            self._payment_provider_onboarding_cache['paypal_email_account'] = provider['paypal_email_account'] or self.env.user.email or ''
-            self._payment_provider_onboarding_cache['paypal_seller_account'] = provider['paypal_seller_account']
+            self._payment_provider_onboarding_cache['paypal_email_account'] = provider['paypal_email_account'] or self.env.company.email
             self._payment_provider_onboarding_cache['paypal_pdt_token'] = provider['paypal_pdt_token']
+        else:
+            self._payment_provider_onboarding_cache['paypal_email_account'] = self.env.company.email
 
         manual_payment = self._get_manual_payment_provider()
         journal = manual_payment.journal_id
@@ -96,7 +92,6 @@ class PaymentWizard(models.TransientModel):
             if self.payment_method == 'paypal':
                 new_env.ref('payment.payment_provider_paypal').write({
                     'paypal_email_account': self.paypal_email_account,
-                    'paypal_seller_account': self.paypal_seller_account,
                     'paypal_pdt_token': self.paypal_pdt_token,
                     'state': 'enabled',
                 })
