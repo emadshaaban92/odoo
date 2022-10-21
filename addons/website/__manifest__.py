@@ -129,6 +129,7 @@
             'website/static/src/js/content/compatibility.js',
             'website/static/src/js/content/menu.js',
             'website/static/src/js/content/snippets.animation.js',
+            'website/static/src/js/shared_blocks.js',
             'website/static/src/js/show_password.js',
             'website/static/src/js/post_link.js',
             'website/static/src/js/plausible.js',
