@@ -19053,12 +19053,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     this.cancelEdition();
                     this.resetContent();
                     break;
-                case "ACTIVATE_SHEET":
-                    if (cmd.sheetIdFrom !== cmd.sheetIdTo && !this.currentContent.startsWith("=")) {
-                        this.cancelEdition(false);
-                        this.resetContent();
-                    }
-                    break;
                 case "ADD_COLUMNS_ROWS":
                     this.onAddElements(cmd);
                     break;
@@ -19101,6 +19095,10 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     this.selectionEnd = this.currentContent.length;
                     break;
                 case "ACTIVATE_SHEET":
+                    if (!this.currentContent.startsWith("=")) {
+                        this.cancelEdition(false);
+                        this.resetContent();
+                    }
                     if (cmd.sheetIdFrom !== cmd.sheetIdTo) {
                         const { col, row } = this.getters.getNextVisibleCellPosition(cmd.sheetIdTo, 0, 0);
                         const zone = this.getters.expandZone(cmd.sheetIdTo, positionToZone({ col, row }));
@@ -41827,8 +41825,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-10-19T14:57:30.282Z';
-    exports.__info__.hash = '21ac310';
+    exports.__info__.date = '2022-10-21T10:29:47.250Z';
+    exports.__info__.hash = '6c484a7';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
