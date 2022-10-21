@@ -22165,6 +22165,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 },
                 PAGEDOWN: () => this.env.model.dispatch("SHIFT_VIEWPORT_DOWN"),
                 PAGEUP: () => this.env.model.dispatch("SHIFT_VIEWPORT_UP"),
+                "CTRL+K": () => INSERT_LINK(this.env),
             };
         }
         setup() {
@@ -26920,6 +26921,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     class CellPlugin extends CorePlugin {
         constructor() {
             super(...arguments);
+            this.nextId = 1;
             this.cells = {};
             this.createCell = cellFactory(this.getters);
         }
@@ -27086,7 +27088,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         importCell(sheetId, cellData, normalizedStyles, normalizedFormats) {
             const style = (cellData.style && normalizedStyles[cellData.style]) || undefined;
             const format = (cellData.format && normalizedFormats[cellData.format]) || undefined;
-            const cellId = this.uuidGenerator.uuidv4();
+            const cellId = this.getNextUid();
             const properties = { format, style };
             return this.createCell(cellId, (cellData === null || cellData === void 0 ? void 0 : cellData.content) || "", properties, sheetId);
         }
@@ -27228,6 +27230,11 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             }
             return format;
         }
+        getNextUid() {
+            const id = this.nextId.toString();
+            this.history.update("nextId", this.nextId + 1);
+            return id;
+        }
         updateCell(sheetId, col, row, after) {
             var _a;
             const before = this.getters.getCell(sheetId, col, row);
@@ -27266,7 +27273,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 }
                 return;
             }
-            const cellId = (before === null || before === void 0 ? void 0 : before.id) || this.uuidGenerator.uuidv4();
+            const cellId = (before === null || before === void 0 ? void 0 : before.id) || this.getNextUid();
             const didContentChange = hasContent;
             const properties = { format, style };
             const cell = this.createCell(cellId, afterContent, properties, sheetId);
@@ -32353,13 +32360,26 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             return 0 /* CommandResult.Success */;
         }
         handle(cmd) {
+            var _a;
             switch (cmd.type) {
                 case "UNDO":
                 case "REDO":
                 case "UPDATE_CELL":
                 case "EVALUATE_CELLS":
                 case "ACTIVATE_SHEET":
+                case "REMOVE_FILTER_TABLE":
                     this.isEvaluationDirty = true;
+                    break;
+                case "START":
+                    for (const sheetId of this.getters.getSheetIds()) {
+                        this.filterValues[sheetId] = {};
+                        for (const filter of this.getters.getFilters(sheetId)) {
+                            this.filterValues[sheetId][filter.id] = [];
+                        }
+                    }
+                    break;
+                case "CREATE_SHEET":
+                    this.filterValues[cmd.sheetId] = {};
                     break;
                 case "UPDATE_FILTER":
                     this.updateFilter(cmd);
@@ -32370,7 +32390,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     for (const copiedFilter of this.getters.getFilters(cmd.sheetId)) {
                         const zone = copiedFilter.zoneWithHeaders;
                         const newFilter = this.getters.getFilter(cmd.sheetIdTo, zone.left, zone.top);
-                        filterValues[newFilter.id] = this.filterValues[cmd.sheetId][copiedFilter.id];
+                        filterValues[newFilter.id] = ((_a = this.filterValues[cmd.sheetId]) === null || _a === void 0 ? void 0 : _a[copiedFilter.id]) || [];
                     }
                     this.filterValues[cmd.sheetIdTo] = filterValues;
                     break;
@@ -35353,6 +35373,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             }
         }
         handle(cmd) {
+            var _a;
             this.cleanViewports();
             switch (cmd.type) {
                 case "START":
@@ -35394,7 +35415,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     break;
                 case "UPDATE_CELL":
                     // update cell content or format can change hidden rows because of data filters
-                    if ("content" in cmd || "format" in cmd) {
+                    if ("content" in cmd || "format" in cmd || ((_a = cmd.style) === null || _a === void 0 ? void 0 : _a.fontSize) !== undefined) {
                         this.sheetsWithDirtyViewports.add(cmd.sheetId);
                     }
                     break;
@@ -37153,7 +37174,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
           display: flex;
           align-items: center;
           margin: 2px;
-          padding: 0 3px;
+          padding: 0px 3px;
           border-radius: 2px;
           cursor: pointer;
           min-width: fit-content;
@@ -37202,6 +37223,12 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
 
         .o-dropdown {
           position: relative;
+          display: flex;
+          align-items: center;
+
+          .o-dropdown-button {
+            height: 30px;
+          }
 
           .o-text-icon {
             height: 100%;
@@ -37225,7 +37252,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             background-color: white;
 
             .o-dropdown-item {
-              padding: 7px 10px;
+              cursor: pointer;
             }
 
             .o-dropdown-item:hover {
@@ -37238,6 +37265,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
 
               .o-line-item {
                 padding: 4px;
+                width: 18px;
+                height: 18px;
+                cursor: pointer;
 
                 &:hover {
                   background-color: rgba(0, 0, 0, 0.08);
@@ -37260,6 +37290,10 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                   left: 5px;
                 }
               }
+            }
+
+            .o-dropdown-align-item {
+              padding: 7px 10px;
             }
           }
         }
@@ -37309,7 +37343,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
   `;
         }
         setup() {
-            owl.useExternalListener(window, "click", this.onClick);
+            owl.useExternalListener(window, "click", this.onExternalClick);
             owl.onWillStart(() => this.updateCellState());
             owl.onWillUpdateProps(() => this.updateCellState());
         }
@@ -37318,22 +37352,32 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 .getAll()
                 .filter((item) => !item.isVisible || item.isVisible(this.env));
         }
-        onClick(ev) {
-            if (this.openedEl && isChildEvent(this.openedEl, ev)) {
+        onExternalClick(ev) {
+            // TODO : manage click events better. We need this piece of code
+            // otherwise the event opening the menu would close it on the same frame.
+            // And we cannot stop the event propagation because it's used in an
+            // external listener of the Menu component to close the context menu when
+            // clicking on the top bar
+            if (this.openedEl === ev.target) {
                 return;
             }
             this.closeMenus();
         }
-        toogleStyle(style) {
+        onClick() {
+            this.props.onClick();
+            this.closeMenus();
+        }
+        toggleStyle(style) {
             setStyle(this.env, { [style]: !this.style[style] });
         }
-        toogleFormat(formatName) {
+        toggleFormat(formatName) {
             const formatter = FORMATS.find((f) => f.name === formatName);
             const value = (formatter && formatter.value) || "";
             setFormatter(this.env, value);
         }
         toggleAlign(align) {
             setStyle(this.env, { ["align"]: align });
+            this.onClick();
         }
         onMenuMouseOver(menu, ev) {
             if (this.isSelectingMenu) {
@@ -37422,6 +37466,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         }
         setColor(target, color) {
             setStyle(this.env, { [target]: color });
+            this.onClick();
         }
         setBorder(command) {
             this.env.model.dispatch("SET_FORMATTING", {
@@ -37429,17 +37474,16 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 target: this.env.model.getters.getSelectedZones(),
                 border: command,
             });
+            this.onClick();
         }
-        setFormat(ev) {
-            const format = ev.target.dataset.format;
-            if (format) {
-                this.toogleFormat(format);
-                return;
+        setFormat(format, custom) {
+            if (!custom) {
+                this.toggleFormat(format);
             }
-            const custom = ev.target.dataset.custom;
-            if (custom) {
-                this.openCustomFormatSidePanel(custom);
+            else {
+                this.openCustomFormatSidePanel(format);
             }
+            this.onClick();
         }
         openCustomFormatSidePanel(custom) {
             const customFormatter = CUSTOM_FORMATS.find((c) => c.name === custom);
@@ -37464,9 +37508,10 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 target: this.env.model.getters.getSelectedZones(),
             });
         }
-        setSize(ev) {
-            const fontSize = parseFloat(ev.target.dataset.size);
+        setSize(fontSizeStr) {
+            const fontSize = parseFloat(fontSizeStr);
             setStyle(this.env, { fontSize });
+            this.onClick();
         }
         doAction(action) {
             action(this.env);
@@ -41780,8 +41825,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-10-17T06:58:51.904Z';
-    exports.__info__.hash = 'ab6f7e4';
+    exports.__info__.date = '2022-10-21T12:14:35.644Z';
+    exports.__info__.hash = 'e5a2c0e';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
