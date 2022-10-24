@@ -503,8 +503,6 @@ class TestComposerInternals(TestMailComposer):
 
                 # changing template should update its content
                 composer.write({'template_id': self.template.id})
-                # currently onchange necessary
-                composer._onchange_template_id_wrapper()
 
                 # values come from template
                 if composition_mode == 'comment' and not batch:
@@ -531,8 +529,7 @@ class TestComposerInternals(TestMailComposer):
                 # update with template with void values: void value is not forced in
                 # rendering mode as well as when copying template values
                 composer.write({'template_id': template_void.id})
-                # currently onchange necessary
-                composer._onchange_template_id_wrapper()
+
                 if composition_mode == 'comment' and not batch:
                     self.assertEqual(composer.body, 'Back to my amazing body')
                     self.assertEqual(composer.subject, 'Back to my amazing subject')
@@ -545,8 +542,6 @@ class TestComposerInternals(TestMailComposer):
                 # reset template should reset values
                 composer.write({'body': 'Back to my amazing body'})
                 composer.write({'template_id': False})
-                # currently onchange necessary
-                composer._onchange_template_id_wrapper()
 
                 # values are reset
                 if composition_mode == 'comment' and not batch:
@@ -558,8 +553,7 @@ class TestComposerInternals(TestMailComposer):
                     # self.assertFalse(composer.mail_server_id.id)
                     self.assertEqual(composer.mail_server_id, self.template.mail_server_id)
                     self.assertEqual(composer.record_name, self.test_record.name)
-                    # TDE FIXME: scheduled date is kept, not sure why
-                    self.assertEqual(FieldDatetime.from_string(composer.scheduled_date), self.reference_now + timedelta(days=2))
+                    self.assertFalse(composer.scheduled_date)
                 else:
                     self.assertFalse(composer.body)
                     self.assertFalse(composer.subject)
@@ -567,16 +561,13 @@ class TestComposerInternals(TestMailComposer):
                     # self.assertFalse(composer.mail_server_id.id)
                     self.assertEqual(composer.mail_server_id, self.template.mail_server_id)
                     self.assertFalse(composer.record_name)
-                    # TDE FIXME: scheduled_Date is kept, not sure why
-                    self.assertEqual(composer.scheduled_date, self.template.scheduled_date)
+                    self.assertFalse(composer.scheduled_date)
 
                 # 2. check with default
                 ctx['default_template_id'] = self.template.id
                 composer = self.env['mail.compose.message'].with_context(ctx).create({
                     'template_id': self.template.id,
                 })
-                # currently onchange necessary
-                composer._onchange_template_id_wrapper()
 
                 # values come from template
                 if composition_mode == 'comment' and not batch:
@@ -597,8 +588,6 @@ class TestComposerInternals(TestMailComposer):
                 composer = self.env['mail.compose.message'].with_context(ctx).create({
                     'template_id': self.template.id,
                 })
-                # currently onchange necessary
-                composer._onchange_template_id_wrapper()
 
                 # values come from template
                 if composition_mode == 'comment' and not batch:
@@ -621,6 +610,7 @@ class TestComposerInternals(TestMailComposer):
                     'body': '<p>Test Body</p>',
                     'mail_server_id': False,
                     'record_name': 'CustomName',
+                    'scheduled_date': f'{self.reference_now}',
                 })
 
                 # creation values are taken
@@ -628,7 +618,7 @@ class TestComposerInternals(TestMailComposer):
                 self.assertEqual(composer.body, '<p>Test Body</p>')
                 self.assertEqual(composer.mail_server_id.id, False)
                 self.assertEqual(composer.record_name, 'CustomName')
-                self.assertFalse(composer.scheduled_date)
+                self.assertEqual(composer.scheduled_date, f'{self.reference_now}')
 
     @users('employee')
     @mute_logger('odoo.models.unlink')
