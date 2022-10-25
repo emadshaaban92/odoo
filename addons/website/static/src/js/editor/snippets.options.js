@@ -93,10 +93,12 @@ const FontFamilyPickerUserValueWidget = SelectUserValueWidget.extend({
         const nbFonts = parseInt(weUtils.getCSSVariableValue('number-of-fonts', style));
         const googleFontsProperty = weUtils.getCSSVariableValue('google-fonts', style);
         this.googleFonts = googleFontsProperty ? googleFontsProperty.split(/\s*,\s*/g) : [];
+        this.googleFonts = [...new Set(this.googleFonts)]; // Remove duplicates.
         this.googleFonts = this.googleFonts.map(font => font.substring(1, font.length - 1)); // Unquote
         const googleLocalFontsProperty = weUtils.getCSSVariableValue('google-local-fonts', style);
         this.googleLocalFonts = googleLocalFontsProperty ?
             googleLocalFontsProperty.slice(1, -1).split(/\s*,\s*/g) : [];
+        this.allFonts = [];
 
         await this._super(...arguments);
 
@@ -108,10 +110,23 @@ const FontFamilyPickerUserValueWidget = SelectUserValueWidget.extend({
             const fontEl = document.createElement('we-button');
             fontEl.classList.add(`o_we_option_font_${realFontNb}`);
             fontEl.dataset.variable = variable;
-            fontEl.dataset[methodName] = weUtils.getCSSVariableValue(`font-number-${realFontNb}`, style);
+            const font = weUtils.getCSSVariableValue(`font-number-${realFontNb}`, style);
+            this.allFonts.push(font.substring(1, font.length - 1));
+            fontEl.dataset[methodName] = font;
             fontEl.dataset.font = realFontNb;
             fontEls.push(fontEl);
             this.menuEl.appendChild(fontEl);
+        });
+
+        const userFontsNb = this.googleLocalFonts.length + this.googleFonts.length;
+        // the .slice() creates a shallow copy.
+        fontEls.slice().reverse().forEach((el, index) => {
+            if (index > (userFontsNb - 1)) {
+                const cloudIconEl = document.createElement('span');
+                // TODO: change 'ml-2' to 'ms-2' in the right version.
+                cloudIconEl.classList.add('text-info', 'ml-2', 'fa', 'fa-cloud');
+                el.appendChild(cloudIconEl);
+            }
         });
 
         if (this.googleLocalFonts.length) {
@@ -207,6 +222,14 @@ const FontFamilyPickerUserValueWidget = SelectUserValueWidget.extend({
 
                         const font = m[1].replace(/\+/g, ' ');
                         const googleFontServe = dialog.el.querySelector('#google_font_serve').checked;
+                        // Prevents adding the same font twice.
+                        if (this.allFonts.includes(font)) {
+                            inputEl.classList.add('is-invalid');
+                            // Show custom validity error message.
+                            inputEl.setCustomValidity(_t("This font already exists, delete it first if you want to add it again."));
+                            inputEl.reportValidity();
+                            return;
+                        }
                         if (googleFontServe) {
                             this.googleFonts.push(font);
                         } else {
