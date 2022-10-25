@@ -22,6 +22,21 @@ class TestCRMLead(TestCrmCommon):
         cls.country_ref = cls.env.ref('base.be')
         cls.test_email = '"Test Email" <test.email@example.com>'
         cls.test_phone = '0485112233'
+        cls.lead_details_for_contact = {
+            'title': cls.env.ref('base.res_partner_title_mister').id,
+            'street': '3rd Floor, Room 3-C',
+            'street2': '123 Arlington Avenue',
+            'zip': '13202',
+            'city': 'New York',
+            'country_id': cls.env.ref('base.us').id,
+            'state_id': cls.env.ref('base.state_us_39').id,
+            'website': 'https://www.arlington123.com/3f3c',
+            'phone': '678-728-0949',
+            'mobile': '661-606-0781',
+            'function': 'Delivery Boy',
+            'team_id': cls.sales_team_1.id,
+            'user_id': cls.user_sales_manager.id,
+        }
 
     def assertLeadAddress(self, lead, street, street2, city, lead_zip, state, country):
         self.assertEqual(lead.street, street)
@@ -661,7 +676,10 @@ class TestCRMLead(TestCrmCommon):
             'lang_id': lang_fr.id,
         })
         data = lead1._message_get_suggested_recipients()[lead1.id]
-        self.assertEqual(data, [(False, self.test_email, None, 'Customer Email')])
+        self.assertEqual(len(data), 1)
+        default_create_values = data[0][-1]
+        self.assertEqual(data[0][:-1], (False, self.test_email, None, 'Customer Email'))
+        self.assertFalse(default_create_values.get('lang'))
 
         # Create a lead with an active language -> should keep the preset language for recipients
         lang_en = ResLang.search([('code', '=', 'en_US')])
@@ -676,7 +694,51 @@ class TestCRMLead(TestCrmCommon):
             'lang_id': lang_en.id,
         })
         data = lead2._message_get_suggested_recipients()[lead2.id]
-        self.assertEqual(data, [(False, self.test_email, "en_US", 'Customer Email')])
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0][:-1], (False, self.test_email, "en_US", 'Customer Email'))
+        default_create_values = data[0][-1]
+        self.assertEqual(default_create_values['lang'], lang_en.code)
+
+    @users('user_sales_manager')
+    def test_message_recipient_partner_auto_creation(self):
+        """Check default creates value for auto creation of recipient (customer)."""
+        ResPartner = self.env['res.partner']
+        for partner_name, name, email in [
+            (False, 'Test', 'test_default_create@example.com'),
+            ('Delivery Boy company', 'Test With Company', 'default_create_with_partner@example.com'),
+            ('Delivery Boy company', '', 'default_create_with_partner_no_name@example.com'),
+        ]:
+            formatted_email = f'"{name}" <{email}>'
+            with self.subTest(partner_name=partner_name):
+                lang = self.env['res.lang'].sudo().search([], limit=1)[0]
+                description = '<p>Top</p>'
+                lead1 = self.env['crm.lead'].create({
+                    'name': 'TestLead',
+                    'contact_name': name,
+                    'email_from': formatted_email,
+                    'lang_id': lang.id,
+                    'description': description,
+                    'partner_name': partner_name,
+                    **self.lead_details_for_contact,
+                })
+                data = lead1._message_get_suggested_recipients()[lead1.id]
+                default_create_values = lead1._related_res_partner_default_create_values(email)
+                # ..._get_suggested_recipients uses _related_res_partner_default_create_values -> test both in one go
+                self.assertEqual(default_create_values, data[0][-1])
+                self.assertEqual(data[0][:-1], (False, formatted_email, lang.code, 'Customer Email'))
+                for field, value in self.lead_details_for_contact.items():
+                    self.assertEqual(default_create_values.get(field), value)
+                expected_name = partner_name if partner_name and not name else name
+                self.assertEqual(default_create_values['name'], expected_name)
+                self.assertEqual(default_create_values['comment'], description)  # description -> comment
+                # Parent company not created even if partner_name is set
+                self.assertFalse(default_create_values.get('parent_id'))  # not supported, even if partner_name set
+                self.assertEqual(default_create_values['company_name'], partner_name)  # partner_name -> company_name
+                expected_company_type = 'company' if partner_name and not name else 'person'
+                self.assertEqual(default_create_values.get('company_type', 'person'), expected_company_type)
+                # Check that the creation of the contact won't fail
+                ResPartner.create(default_create_values)
+                ResPartner.search([('email_normalized', '=', email)]).unlink()
 
     @users('user_sales_manager')
     def test_phone_mobile_search(self):

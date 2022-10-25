@@ -1822,6 +1822,22 @@ class Lead(models.Model):
             return partner_company
         return Partner.create(self._prepare_customer_values(self.name, is_company=False))
 
+    def _related_res_partner_default_create_values(self, normalized_email):
+        values = super()._related_res_partner_default_create_values(normalized_email)
+        if not self.email_normalized or normalized_email != self.email_normalized:
+            return values
+
+        Partner = self.env['res.partner']
+        contact_name = self.contact_name or self.partner_name or (
+                Partner._parse_partner_name(self.email_from)[0] or self.email_from)
+        # Note that we don't attempt to create the parent company even if partner name is set, but we set company_name
+        values.update(self._prepare_customer_values(contact_name, is_company=False))
+        values['company_name'] = self.partner_name
+        if contact_name == self.partner_name:
+            values['company_type'] = 'company'
+
+        return values
+
     def _prepare_customer_values(self, partner_name, is_company=False, parent_id=False):
         """ Extract data from lead to create a partner.
 
@@ -1853,7 +1869,7 @@ class Lead(models.Model):
             'is_company': is_company,
             'type': 'contact'
         }
-        if self.lang_id:
+        if self.lang_id.active:
             res['lang'] = self.lang_id.code
         return res
 
