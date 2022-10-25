@@ -59,7 +59,7 @@
                     </t>
 
                     <t t-name="HasSequenceHoles">
-                        <a t-if="dashboard.has_sequence_holes and journal_type == 'sale'" name="show_sequence_holes" type="object" class="text-warning">
+                        <a t-if="dashboard.has_sequence_holes and journal_type in ('sale', 'purchase')" name="show_sequence_holes" type="object" class="text-warning">
                             <i class="fa fa-exclamation-triangle"/>
                             Gaps in the sequence
                         </a>
