@@ -78,8 +78,13 @@ class Partner(models.Model):
 
     @api.model
     @api.returns('self', lambda value: value.id)
-    def find_or_create(self, email, assert_valid_email=False):
-        """ Override to use the email_normalized field. """
+    def find_or_create(self, email, assert_valid_email=False, default_create_values_getter=None):
+        """ Override to use the email_normalized field and add an optional parameter for getting default create values.
+
+        :param function default_create_values_getter: (normalized_email) -> dict: default create values
+        if set and the partner is not found, it will be called to get the default values for the record creation. Fields
+        _rec_name and email doesn't need to be provided by this function unless you want to override them.
+        """
         if not email:
             raise ValueError(_('An email is required for find_or_create to work'))
 
@@ -100,6 +105,8 @@ class Partner(models.Model):
         create_values = {self._rec_name: parsed_name or parsed_email}
         if parsed_email:  # otherwise keep default_email in context
             create_values['email'] = parsed_email
+        if default_create_values_getter:
+            create_values.update(default_create_values_getter(parsed_email))
         return self.create(create_values)
 
     # ------------------------------------------------------------

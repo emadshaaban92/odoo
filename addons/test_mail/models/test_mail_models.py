@@ -2,6 +2,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from odoo import api, fields, models
+from odoo.tools import email_normalize
 
 
 class MailTestSimple(models.Model):
@@ -108,6 +109,7 @@ class MailTestTicket(models.Model):
 
     name = fields.Char()
     email_from = fields.Char(tracking=True)
+    mobile = fields.Char()
     count = fields.Integer(default=1)
     datetime = fields.Datetime(default=fields.Datetime.now)
     mail_template = fields.Many2one('mail.template', 'Template')
@@ -158,6 +160,13 @@ class MailTestTicket(models.Model):
         if 'container_id' in init_values and self.container_id:
             return self.env.ref('test_mail.st_mail_test_ticket_container_upd')
         return super(MailTestTicket, self)._track_subtype(init_values)
+
+    def _related_res_partner_default_create_values(self, normalized_email):
+        values = super()._related_res_partner_default_create_values(normalized_email)
+        email_from_normalized = email_normalize(self.email_from)
+        if email_from_normalized and normalized_email == email_from_normalized:
+            values['mobile'] = self.mobile
+        return values
 
 
 class MailTestTicketMC(models.Model):

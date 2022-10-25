@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
+from itertools import product
 from unittest.mock import patch
 
 from odoo.addons.mail.tests.common import mail_new_test_user
@@ -46,6 +47,7 @@ class TestMailComposer(TestMailCommon, TestRecipients):
             'name': 'TestRecord',
             'customer_id': cls.partner_1.id,
             'user_id': cls.user_employee_2.id,
+            'mobile': '0123456789',
         })
         cls.test_records, cls.test_partners = cls._create_records_for_batch(
             'mail.test.ticket', 2,
@@ -594,8 +596,12 @@ class TestComposerInternals(TestMailComposer):
     def test_mail_composer_recipients(self):
         """ Test content management (partner_ids, reply_to) in both comment and
         mass mailing mode. Template update is also tested. Add some tests for
-        partner creation based on unknown emails as this is part of the process. """
+        partner creation based on unknown emails as this is part of the process.
+        Add autopopulate test of created partner based on data from the related
+        record. """
         base_recipients = self.partner_1 + self.partner_2
+        main_manual_recipient = 'newpartner@example.com'
+        all_manual_recipients = ['test.cc.1@test.example.com', 'test.cc.2@test.example.com', main_manual_recipient]
         self.template.write({
             'email_cc': 'test.cc.1@test.example.com, test.cc.2@test.example.com'
         })
@@ -606,17 +612,26 @@ class TestComposerInternals(TestMailComposer):
             'reply_to': False,
         })
 
-        for composition_mode, batch in (('comment', False), ('mass_mail', True)):
-            with self.subTest(composition_mode=composition_mode, batch=batch):
-                self.assertFalse(
-                    self.env['res.partner'].search([
-                        ('email_normalized', 'in', ['test.cc.1@test.example.com',
-                                                    'test.cc.2@test.example.com'])
-                    ])
-                )
+        for is_manual_main_recipient, (composition_mode, batch) in \
+                product((True, False), (('comment', False), ('mass_mail', True))):
+            with self.subTest(is_manual_main_recipient=is_manual_main_recipient,
+                              composition_mode=composition_mode, batch=batch):
+                self.assertFalse(self.env['res.partner'].search([('email_normalized', 'in', all_manual_recipients)]))
 
                 test_records = self.test_records if batch else self.test_record
+                template = self.template
+                if is_manual_main_recipient:
+                    test_records = self.env['mail.test.ticket'].browse(
+                        rec.copy({'customer_id': False, 'email_from': main_manual_recipient}).id
+                        for rec in test_records)
+                    template = template.copy()
+                    template.write({
+                        'partner_to': False,
+                        'email_to': main_manual_recipient,
+                    })
                 ctx = self._get_web_context(test_records, add_web=False, composition_mode=composition_mode)
+
+                self.assertFalse(self.env['res.partner'].search([('email_normalized', 'in', all_manual_recipients)]))
 
                 # 1. check without template + template update
                 composer = self.env['mail.compose.message'].with_context(ctx).create({
@@ -648,17 +663,20 @@ class TestComposerInternals(TestMailComposer):
                     self.assertFalse(composer.reply_to_force_new)
 
                 # changing template should update its content
-                composer.write({'template_id': self.template.id})
+                composer.write({'template_id': template.id})
                 # currently onchange necessary
                 composer._onchange_template_id_wrapper()
-                new_partners = self.env['res.partner'].search(
-                    [('email_normalized', 'in', ['test.cc.1@test.example.com',
-                                                 'test.cc.2@test.example.com'])
-                    ]
-                )
+                new_partners = self.env['res.partner'].search([('email_normalized', 'in', all_manual_recipients)])
 
                 # values come from template
-                if composition_mode == 'comment':
+                if composition_mode == 'comment' and is_manual_main_recipient:
+                    self.assertEqual(len(new_partners), 3)
+                    self.assertEqual(composer.partner_ids, new_partners, 'partner created from email_to')
+                    # main_recipient partner must have been populated with value of test_record (here mobile field)
+                    main_recipient = new_partners.filtered(lambda p: p.email_normalized == main_manual_recipient)
+                    self.assertTrue(test_records.mobile)
+                    self.assertEqual(main_recipient.mobile, test_records.mobile)
+                elif composition_mode == 'comment':
                     self.assertEqual(len(new_partners), 2)
                     self.assertEqual(composer.partner_ids, self.partner_1 + new_partners, 'Template took customer_id as set on record')
                     self.assertEqual(composer.reply_to, 'info@test.example.com', 'Template was rendered')
@@ -666,7 +684,7 @@ class TestComposerInternals(TestMailComposer):
                 else:
                     self.assertEqual(len(new_partners), 0)
                     self.assertEqual(composer.partner_ids, base_recipients, 'Mass mode: kept original values')
-                    self.assertEqual(composer.reply_to, self.template.reply_to, 'Mass mode: raw template value')
+                    self.assertEqual(composer.reply_to, template.reply_to, 'Mass mode: raw template value')
                     self.assertFalse(composer.reply_to_force_new)  # should probably become True, not supported currently
 
                 # manual values is kept over template
@@ -689,47 +707,53 @@ class TestComposerInternals(TestMailComposer):
                     self.assertFalse(composer.reply_to_force_new)
 
                 # 2. check with default
-                ctx['default_template_id'] = self.template.id
+                ctx['default_template_id'] = template.id
                 composer = self.env['mail.compose.message'].with_context(ctx).create({
-                    'template_id': self.template.id,
+                    'template_id': template.id,
                 })
                 # currently onchange necessary
                 composer._onchange_template_id_wrapper()
 
                 # values come from template
-                if composition_mode == 'comment':
+                if composition_mode == 'comment' and is_manual_main_recipient:
+                    self.assertEqual(len(new_partners), 3)
+                    self.assertEqual(composer.partner_ids, new_partners)
+                elif composition_mode == 'comment':
                     self.assertEqual(composer.partner_ids, self.partner_1 + new_partners)
                 else:
                     self.assertFalse(composer.partner_ids)
                 if composition_mode == 'comment':
                     self.assertEqual(composer.reply_to, "info@test.example.com")
                 else:
-                    self.assertEqual(composer.reply_to, self.template.reply_to)
+                    self.assertEqual(composer.reply_to, template.reply_to)
                 self.assertFalse(composer.reply_to_force_new)  # note: this should be updated with reply-to
                 self.assertEqual(composer.reply_to_mode, 'update')  # note: this should be updated with reply-to
 
                 # 3. check at create
                 ctx.pop('default_template_id')
                 composer = self.env['mail.compose.message'].with_context(ctx).create({
-                    'template_id': self.template.id,
+                    'template_id': template.id,
                 })
                 # currently onchange necessary
                 composer._onchange_template_id_wrapper()
 
                 # values come from template
-                if composition_mode == 'comment':
+                if composition_mode == 'comment' and is_manual_main_recipient:
+                    self.assertEqual(len(new_partners), 3)
+                    self.assertEqual(composer.partner_ids, new_partners)
+                elif composition_mode == 'comment':
                     self.assertEqual(composer.partner_ids, self.partner_1 + new_partners)
                 else:
                     self.assertFalse(composer.partner_ids)
                 if composition_mode == 'comment':
                     self.assertEqual(composer.reply_to, "info@test.example.com")
                 else:
-                    self.assertEqual(composer.reply_to, self.template.reply_to)
+                    self.assertEqual(composer.reply_to, template.reply_to)
                 self.assertFalse(composer.reply_to_force_new)
                 self.assertEqual(composer.reply_to_mode, 'update')
 
                 # 4. template + user input
-                ctx['default_template_id'] = self.template.id
+                ctx['default_template_id'] = template.id
                 composer = self.env['mail.compose.message'].with_context(ctx).create({
                     'body': '<p>Test Body</p>',
                     'partner_ids': base_recipients.ids,
@@ -743,10 +767,7 @@ class TestComposerInternals(TestMailComposer):
                 self.assertFalse(composer.reply_to_force_new)
                 self.assertEqual(composer.reply_to_mode, 'update')
 
-                self.env['res.partner'].search([
-                    ('email_normalized', 'in', ['test.cc.1@test.example.com',
-                                                'test.cc.2@test.example.com'])
-                ]).unlink()
+                self.env['res.partner'].search([('email_normalized', 'in', all_manual_recipients)]).unlink()
 
     @users('employee')
     @mute_logger('odoo.tests', 'odoo.addons.mail.models.mail_mail', 'odoo.models.unlink')

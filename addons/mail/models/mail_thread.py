@@ -1606,7 +1606,7 @@ class MailThread(models.AbstractModel):
     def _message_add_suggested_recipient(self, result, partner=None, email=None, lang=None, reason=''):
         """ Called by _message_get_suggested_recipients, to add a suggested
             recipient in the result dictionary. The form is :
-                partner_id, partner_name<partner_email> or partner_name, reason """
+                partner_id, partner_name<partner_email> or partner_name, reason, default_create_value """
         self.ensure_one()
         if email and not partner:
             # get partner info from email
@@ -3401,3 +3401,14 @@ class MailThread(models.AbstractModel):
         if 'suggestedRecipients' in request_list:
             res['suggestedRecipients'] = self._message_get_suggested_recipients()[self.id]
         return res
+
+    def _related_res_partner_default_create_values(self, normalized_email):
+        """Initial values of related res_partner that can be extracted from the record.
+
+        The goal of this method is to offer an extension point to subclasses to expose the values from the record that
+        can be used as initial values for the automatic creation of related res_partner.
+
+        :param str normalized_email:  normalized contact email
+        :return dict: res_partner default create values
+        """
+        return {}

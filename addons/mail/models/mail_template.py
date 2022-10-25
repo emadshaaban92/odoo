@@ -210,7 +210,8 @@ class MailTemplate(models.Model):
             records = self.env[self.model].browse(results.keys()).read(['company_id'])
             records_company = {rec['id']: (rec['company_id'][0] if rec['company_id'] else None) for rec in records}
 
-        for res_id, values in results.items():
+        sudoed_records = self.env[self.model].browse(results.keys()).sudo()
+        for sudoed_record, (res_id, values) in zip(sudoed_records, results.items()):
             partner_ids = values.get('partner_ids', list())
             if self._context.get('tpl_partners_only'):
                 mails = tools.email_split(values.pop('email_to', '')) + tools.email_split(values.pop('email_cc', ''))
@@ -218,7 +219,7 @@ class MailTemplate(models.Model):
                 if records_company:
                     Partner = Partner.with_context(default_company_id=records_company[res_id])
                 for mail in mails:
-                    partner = Partner.find_or_create(mail)
+                    partner = Partner.find_or_create(mail, default_create_values_getter=sudoed_record._related_res_partner_default_create_values)
                     partner_ids.append(partner.id)
             partner_to = values.pop('partner_to', '')
             if partner_to:
