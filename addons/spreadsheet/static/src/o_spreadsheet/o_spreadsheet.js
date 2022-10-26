@@ -368,7 +368,6 @@
     const MENU_SEPARATOR_BORDER_WIDTH = 1;
     const MENU_SEPARATOR_PADDING = 5;
     const MENU_SEPARATOR_HEIGHT = MENU_SEPARATOR_BORDER_WIDTH + 2 * MENU_SEPARATOR_PADDING;
-    const FIGURE_BORDER_SIZE = 1;
     // Fonts
     const DEFAULT_FONT_WEIGHT = "400";
     const DEFAULT_FONT_SIZE = 10;
@@ -388,6 +387,8 @@
     // Figure
     const DEFAULT_FIGURE_HEIGHT = 335;
     const DEFAULT_FIGURE_WIDTH = 536;
+    const FIGURE_BORDER_WIDTH = 1;
+    const MIN_FIG_SIZE = 80;
     // Chart
     const MAX_CHAR_LABEL = 20;
     const DEFAULT_GAUGE_LOWER_COLOR = "#cc0000";
@@ -10263,14 +10264,14 @@
     ChartFigure.template = "o-spreadsheet-ChartFigure";
     ChartFigure.components = { Menu };
 
-    function startDnd(onMouseMove, onMouseUp, onMouseDown = () => { }) {
+    function startDnd(onMouseMove, onMouseUp, onMouseDown = () => { }, onWheel) {
         const _onMouseUp = (ev) => {
             onMouseUp(ev);
             window.removeEventListener("mousedown", onMouseDown);
             window.removeEventListener("mouseup", _onMouseUp);
             window.removeEventListener("dragstart", _onDragStart);
             window.removeEventListener("mousemove", onMouseMove);
-            window.removeEventListener("wheel", onMouseMove);
+            window.removeEventListener("wheel", onWheel || onMouseMove);
         };
         function _onDragStart(ev) {
             ev.preventDefault();
@@ -10279,7 +10280,7 @@
         window.addEventListener("mouseup", _onMouseUp);
         window.addEventListener("dragstart", _onDragStart);
         window.addEventListener("mousemove", onMouseMove);
-        window.addEventListener("wheel", onMouseMove);
+        window.addEventListener("wheel", onWheel || onMouseMove);
     }
     /**
      * Function to be used during a mousedown event, this function allows to
@@ -20505,13 +20506,266 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         gridPosition: { x: 0, y: 0 },
     };
 
+    const SNAP_MARGIN = 5;
+    class FigureDndManager {
+        constructor(draggedFigure, otherFigures, initialMousePosition) {
+            this.otherFigures = otherFigures;
+            this.initialMousePosition = initialMousePosition;
+            this.currentHorizontalSnapLine = undefined;
+            this.currentVerticalSnapLine = undefined;
+            this.initialFigure = { ...draggedFigure };
+            this.dnd = { ...draggedFigure };
+        }
+        getDnd() {
+            return this.dnd;
+        }
+        /**
+         * Get the position of horizontal borders for the given figure
+         *
+         * @param figure the figure
+         * @param borders the list of border names to return the positions of
+         */
+        getHorizontalFigureBordersPositions(figure, borders) {
+            const allBorders = [
+                { border: "top", position: this.getBorderPosition(figure, "top") },
+                { border: "vCenter", position: this.getBorderPosition(figure, "vCenter") },
+                { border: "bottom", position: this.getBorderPosition(figure, "bottom") },
+            ];
+            return allBorders.filter((p) => borders.includes(p.border));
+        }
+        /**
+         * Get the position of vertical borders for the given figure
+         *
+         * @param figure the figure
+         * @param borders the list of border names to return the positions of
+         */
+        getVerticalFigureBorders(figure, borders) {
+            const allBorders = [
+                { border: "left", position: this.getBorderPosition(figure, "left") },
+                { border: "hCenter", position: this.getBorderPosition(figure, "hCenter") },
+                { border: "right", position: this.getBorderPosition(figure, "right") },
+            ];
+            return allBorders.filter((p) => borders.includes(p.border));
+        }
+        /**
+         * Get a horizontal snap line for the given figure, if the figure can snap to any other figure
+         *
+         * @param dnd figure to get the snap line for
+         * @param bordersOfDraggedToMatch borders of the given figure to be considered to find a snap match
+         * @param bordersOfOthersToMatch borders of the other figures to be considered to find a snap match
+         */
+        getHorizontalSnapLine(dnd, bordersOfDraggedToMatch, bordersOfOthersToMatch) {
+            const dndBorders = this.getHorizontalFigureBordersPositions(dnd, bordersOfDraggedToMatch);
+            let match = undefined;
+            for (const matchedFig of this.otherFigures) {
+                const matchedBorders = this.getHorizontalFigureBordersPositions(matchedFig, bordersOfOthersToMatch);
+                for (const dndBorder of dndBorders) {
+                    for (const matchedBorder of matchedBorders) {
+                        if (this.canSnap(dndBorder.position, matchedBorder.position)) {
+                            const offset = Math.abs(dndBorder.position - matchedBorder.position);
+                            if (match && offset === match.offset) {
+                                match.match.matchedFigs.push(matchedFig);
+                            }
+                            else if (!match || offset <= match.offset) {
+                                match = {
+                                    match: {
+                                        border: dndBorder.border,
+                                        matchedFigs: [matchedFig],
+                                        y: matchedBorder.position,
+                                    },
+                                    offset,
+                                };
+                            }
+                        }
+                    }
+                }
+            }
+            return match === null || match === void 0 ? void 0 : match.match;
+        }
+        /**
+         * Get a vertical snap line for the given figure, if the figure can snap to any other figure
+         *
+         * @param dnd figure to get the snap line for
+         * @param bordersOfDraggedToMatch borders of the given figure to be considered to find  snap match
+         * @param bordersOfOthersToMatch borders of the other figures to be considered to find a snap match
+         */
+        getVerticalSnapLine(dnd, bordersOfDraggedToMatch, bordersOfOthersToMatch) {
+            const dndBorders = this.getVerticalFigureBorders(dnd, bordersOfDraggedToMatch);
+            let match = undefined;
+            for (const matchedFig of this.otherFigures) {
+                const matchedBorders = this.getVerticalFigureBorders(matchedFig, bordersOfOthersToMatch);
+                for (const dndBorder of dndBorders) {
+                    for (const matchedBorder of matchedBorders) {
+                        if (this.canSnap(dndBorder.position, matchedBorder.position)) {
+                            const offset = Math.abs(dndBorder.position - matchedBorder.position);
+                            if (match && offset === match.offset) {
+                                match.match.matchedFigs.push(matchedFig);
+                            }
+                            else if (!match || offset < match.offset) {
+                                match = {
+                                    match: {
+                                        border: dndBorder.border,
+                                        matchedFigs: [matchedFig],
+                                        x: matchedBorder.position,
+                                    },
+                                    offset,
+                                };
+                            }
+                        }
+                    }
+                }
+            }
+            return match === null || match === void 0 ? void 0 : match.match;
+        }
+        /** Check if two borders are close enough to snap */
+        canSnap(borderPosition1, borderPosition2) {
+            return Math.abs(borderPosition1 - borderPosition2) <= SNAP_MARGIN;
+        }
+        hasHorizontalSnap() {
+            return !!this.currentHorizontalSnapLine;
+        }
+        hasVerticalSnap() {
+            return !!this.currentVerticalSnapLine;
+        }
+        getCurrentHorizontalSnapLine() {
+            return this.currentHorizontalSnapLine;
+        }
+        getCurrentVerticalSnapLine() {
+            return this.currentVerticalSnapLine;
+        }
+        /** Get the position of a border of a figure */
+        getBorderPosition(fig, border) {
+            switch (border) {
+                case "top":
+                    return fig.y;
+                case "bottom":
+                    return fig.y + fig.height + FIGURE_BORDER_WIDTH;
+                case "vCenter":
+                    return fig.y + Math.ceil((fig.height + FIGURE_BORDER_WIDTH) / 2);
+                case "left":
+                    return fig.x;
+                case "right":
+                    return fig.x + fig.width + FIGURE_BORDER_WIDTH;
+                case "hCenter":
+                    return fig.x + Math.ceil((fig.width + FIGURE_BORDER_WIDTH) / 2);
+            }
+        }
+    }
+    class FigureDnDMoveManager extends FigureDndManager {
+        constructor(draggedFigure, otherFigures, initialMousePosition, initialScrollInfo, mainViewportPosition, frozenPaneOffset) {
+            super(draggedFigure, otherFigures, initialMousePosition);
+            this.initialScrollInfo = initialScrollInfo;
+            this.mainViewportPosition = mainViewportPosition;
+            this.frozenPaneOffset = frozenPaneOffset;
+        }
+        drag(mousePosition, scrollInfo) {
+            const initialMouseX = this.initialMousePosition.x;
+            const mouseX = mousePosition.x;
+            const viewportX = this.mainViewportPosition.x;
+            const initialMouseY = this.initialMousePosition.y;
+            const mouseY = mousePosition.y;
+            const viewportY = this.mainViewportPosition.y;
+            const deltaX = initialMouseX - mouseX + (this.initialScrollInfo.offsetX - scrollInfo.offsetX);
+            let newX = this.initialFigure.x - deltaX;
+            // Freeze panes: always display the figure above the panes
+            if (viewportX > 0) {
+                const isInitialXInFrozenPane = this.initialFigure.x < viewportX - this.frozenPaneOffset;
+                const isNewXInFrozenPane = newX < viewportX - this.frozenPaneOffset;
+                const isNewXBelowFrozenPane = newX < scrollInfo.offsetX + viewportX - this.frozenPaneOffset;
+                if (isInitialXInFrozenPane && !isNewXInFrozenPane) {
+                    newX += scrollInfo.offsetX;
+                }
+                else if (!isInitialXInFrozenPane && isNewXBelowFrozenPane) {
+                    newX -= scrollInfo.offsetX;
+                }
+            }
+            newX = Math.max(newX, 0);
+            const deltaY = initialMouseY - mouseY + (this.initialScrollInfo.offsetY - scrollInfo.offsetY);
+            let newY = this.initialFigure.y - deltaY;
+            // Freeze panes: always display the figure above the panes
+            if (viewportY > 0) {
+                const isInitialYInFrozenPane = this.initialFigure.y < viewportY - this.frozenPaneOffset;
+                const isNewYInFrozenPane = newY < viewportY - this.frozenPaneOffset;
+                const isNewYBelowFrozenPane = newY < scrollInfo.offsetY + viewportY - this.frozenPaneOffset;
+                if (isInitialYInFrozenPane && !isNewYInFrozenPane) {
+                    newY += scrollInfo.offsetY;
+                }
+                else if (!isInitialYInFrozenPane && isNewYBelowFrozenPane) {
+                    newY -= scrollInfo.offsetY;
+                }
+            }
+            newY = Math.max(newY, 0);
+            const dnd = { ...this.dnd, x: newX, y: newY };
+            let dndX = newX;
+            const vSnap = this.getVerticalSnapLine(dnd, ["left", "right", "hCenter"], ["left", "right", "hCenter"]);
+            if (vSnap) {
+                const offset = this.getBorderPosition(this.dnd, vSnap.border) - this.dnd.x;
+                dndX = vSnap.x - offset;
+            }
+            let dndY = newY;
+            const hSnap = this.getHorizontalSnapLine(dnd, ["top", "bottom", "vCenter"], ["top", "bottom", "vCenter"]);
+            if (hSnap) {
+                const offset = this.getBorderPosition(this.dnd, hSnap.border) - this.dnd.y;
+                dndY = hSnap.y - offset;
+            }
+            this.currentHorizontalSnapLine = hSnap;
+            this.currentVerticalSnapLine = vSnap;
+            this.dnd.x = Math.round(dndX);
+            this.dnd.y = Math.round(dndY);
+        }
+    }
+    class FigureDnDResizeManager extends FigureDndManager {
+        resize(dirX, dirY, mousePosition) {
+            this.currentHorizontalSnapLine = undefined;
+            this.currentVerticalSnapLine = undefined;
+            const deltaX = dirX * (mousePosition.x - this.initialMousePosition.x);
+            const deltaY = dirY * (mousePosition.y - this.initialMousePosition.y);
+            let { width, height, x, y } = this.initialFigure;
+            width = Math.max(this.initialFigure.width + deltaX, MIN_FIG_SIZE);
+            height = Math.max(this.initialFigure.height + deltaY, MIN_FIG_SIZE);
+            if (dirX < 0) {
+                x = this.initialFigure.x - deltaX;
+            }
+            if (dirY < 0) {
+                y = this.initialFigure.y - deltaY;
+            }
+            const dnd = { ...this.dnd, x, y, width, height };
+            const vSnap = this.getVerticalSnapLine(dnd, [dirX < 0 ? "left" : "right"], ["left", "right"]);
+            if (vSnap) {
+                if (dirX > 0) {
+                    dnd.width = vSnap.x - dnd.x - FIGURE_BORDER_WIDTH;
+                }
+                else if (dirX < 0) {
+                    const rightPositionBeforeSnap = dnd.x + dnd.width;
+                    dnd.x = vSnap.x;
+                    dnd.width = rightPositionBeforeSnap - dnd.x;
+                }
+            }
+            const hSnap = this.getHorizontalSnapLine(dnd, [dirY < 0 ? "top" : "bottom"], ["top", "bottom"]);
+            if (hSnap) {
+                if (dirY > 0) {
+                    dnd.height = hSnap.y - dnd.y - FIGURE_BORDER_WIDTH;
+                }
+                else if (dirY < 0) {
+                    const bottomPositionBeforeSnap = dnd.y + dnd.height;
+                    dnd.y = hSnap.y;
+                    dnd.height = bottomPositionBeforeSnap - dnd.y;
+                }
+            }
+            this.currentHorizontalSnapLine = dirY ? hSnap : undefined;
+            this.currentVerticalSnapLine = dirX ? vSnap : undefined;
+            this.dnd.x = Math.round(dnd.x);
+            this.dnd.y = Math.round(dnd.y);
+            this.dnd.height = Math.round(dnd.height);
+            this.dnd.width = Math.round(dnd.width);
+        }
+    }
+
     // -----------------------------------------------------------------------------
     // STYLE
     // -----------------------------------------------------------------------------
     const ANCHOR_SIZE = 8;
-    const BORDER_WIDTH = 1;
     const ACTIVE_BORDER_WIDTH = 2;
-    const MIN_FIG_SIZE = 80;
     css /*SCSS*/ `
   div.o-figure {
     box-sizing: content-box;
@@ -20551,7 +20805,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
       width: ${ANCHOR_SIZE}px;
       height: ${ANCHOR_SIZE}px;
       background-color: #1a73e8;
-      outline: ${BORDER_WIDTH}px solid white;
+      outline: ${FIGURE_BORDER_WIDTH}px solid white;
 
       &.o-top {
         cursor: n-resize;
@@ -20579,25 +20833,37 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
       }
     }
   }
+
+  .o-figure-snap-border {
+    position: absolute;
+    z-index: ${ComponentsImportance.ChartAnchor + 1};
+    &.vertical {
+      width: 0px;
+      border-left: 1px dashed black;
+    }
+    &.horizontal {
+      border-top: 1px dashed black;
+      height: 0px;
+    }
+  }
 `;
     class FigureComponent extends owl.Component {
         constructor() {
             super(...arguments);
             this.figureRegistry = figureRegistry;
             this.figureRef = owl.useRef("figure");
-            this.dnd = owl.useState({
-                isActive: false,
-                x: 0,
-                y: 0,
-                width: 0,
-                height: 0,
-            });
+            this.dndManager = undefined;
         }
         get displayedFigure() {
-            return this.dnd.isActive ? { ...this.props.figure, ...this.dnd } : this.props.figure;
+            return this.dndManager
+                ? { ...this.props.figure, ...this.dndManager.getDnd() }
+                : this.props.figure;
         }
         get isSelected() {
             return this.env.model.getters.getSelectedFigureId() === this.props.figure.id;
+        }
+        get isFigureVisible() {
+            return this.env.model.getters.isFigureVisible(this.displayedFigure);
         }
         /** Get the current figure size, which is either the stored figure size of the DnD figure size */
         getFigureSize() {
@@ -20610,7 +20876,10 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             return { width: width + borders, height: height + borders };
         }
         getBorderWidth() {
-            return this.isSelected ? ACTIVE_BORDER_WIDTH : this.env.isDashboard() ? 0 : BORDER_WIDTH;
+            return this.isSelected ? ACTIVE_BORDER_WIDTH : this.env.isDashboard() ? 0 : FIGURE_BORDER_WIDTH;
+        }
+        getBorderShift() {
+            return ANCHOR_SIZE / 2;
         }
         getFigureStyle() {
             const { width, height } = this.displayedFigure;
@@ -20624,7 +20893,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             let x, y;
             // Visually, the content of the container is slightly shifted as it includes borders and/or corners.
             // If we want to make assertions on the position of the content, we need to take this shift into account
-            const borderShift = ANCHOR_SIZE / 2;
+            const borderShift = this.getBorderShift();
             if (target.x + borderShift < offsetCorrectionX) {
                 x = target.x;
             }
@@ -20648,7 +20917,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             if (width < 0 || height < 0) {
                 return `display:none;`;
             }
-            const borderOffset = BORDER_WIDTH - this.getBorderWidth();
+            const borderOffset = FIGURE_BORDER_WIDTH - this.getBorderWidth();
             // TODO : remove the +1 once 2951210 is fixed
             return (`top:${y + borderOffset + 1}px;` +
                 `left:${x + borderOffset}px;` +
@@ -20664,7 +20933,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             let y = 0;
             const { x: offsetCorrectionX, y: offsetCorrectionY } = this.env.model.getters.getMainViewportCoordinates();
             const { offsetX, offsetY } = this.env.model.getters.getActiveSheetScrollInfo();
-            const borderShift = ANCHOR_SIZE / 2;
+            const borderShift = this.getBorderShift();
             if (target.x + borderShift < offsetCorrectionX) {
                 x = 0;
             }
@@ -20717,44 +20986,36 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         resize(dirX, dirY, ev) {
             const figure = this.props.figure;
             ev.stopPropagation();
-            const initialX = ev.clientX;
-            const initialY = ev.clientY;
-            this.dnd.isActive = true;
-            this.dnd.x = figure.x;
-            this.dnd.y = figure.y;
-            this.dnd.width = figure.width;
-            this.dnd.height = figure.height;
+            const visibleFigures = this.env.model.getters.getVisibleFigures();
+            const otherFigures = visibleFigures.filter((fig) => fig.id !== figure.id);
+            const mousePosition = { x: ev.clientX, y: ev.clientY };
+            const dndManager = new FigureDnDResizeManager(figure, otherFigures, mousePosition);
+            this.dndManager = dndManager;
             const onMouseMove = (ev) => {
-                const deltaX = dirX * (ev.clientX - initialX);
-                const deltaY = dirY * (ev.clientY - initialY);
-                this.dnd.width = Math.max(figure.width + deltaX, MIN_FIG_SIZE);
-                this.dnd.height = Math.max(figure.height + deltaY, MIN_FIG_SIZE);
-                if (dirX < 0) {
-                    this.dnd.x = figure.x - deltaX;
-                }
-                if (dirY < 0) {
-                    this.dnd.y = figure.y - deltaY;
-                }
+                dndManager.resize(dirX, dirY, { x: ev.clientX, y: ev.clientY });
+                this.render();
             };
             const onMouseUp = (ev) => {
-                this.dnd.isActive = false;
+                const dnd = dndManager.getDnd();
                 const update = {
-                    x: this.dnd.x,
-                    y: this.dnd.y,
+                    x: dnd.x,
+                    y: dnd.y,
                 };
                 if (dirX) {
-                    update.width = this.dnd.width;
+                    update.width = dnd.width;
                 }
                 if (dirY) {
-                    update.height = this.dnd.height;
+                    update.height = dnd.height;
                 }
                 this.env.model.dispatch("UPDATE_FIGURE", {
                     sheetId: this.env.model.getters.getActiveSheetId(),
                     id: figure.id,
                     ...update,
                 });
+                this.dndManager = undefined;
+                this.render();
             };
-            startDnd(onMouseMove, onMouseUp);
+            startDnd(onMouseMove, onMouseUp, () => { }, onMouseUp);
         }
         onMouseDown(ev) {
             const figure = this.props.figure;
@@ -20769,44 +21030,26 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             if (this.props.sidePanelIsOpen) {
                 this.env.openSidePanel("ChartPanel");
             }
-            const position = gridOverlayPosition();
-            const { x: offsetCorrectionX, y: offsetCorrectionY } = this.env.model.getters.getMainViewportCoordinates();
-            const { offsetX, offsetY } = this.env.model.getters.getActiveSheetScrollInfo();
-            const initialX = ev.clientX - position.left;
-            const initialY = ev.clientY - position.top;
-            this.dnd.isActive = true;
-            this.dnd.x = figure.x;
-            this.dnd.y = figure.y;
-            this.dnd.width = figure.width;
-            this.dnd.height = figure.height;
+            const visibleFigures = this.env.model.getters.getVisibleFigures();
+            const otherFigures = visibleFigures.filter((fig) => fig.id !== figure.id);
+            const mousePosition = { x: ev.clientX, y: ev.clientY };
+            const mainViewportPosition = this.env.model.getters.getMainViewportCoordinates();
+            const dndManager = new FigureDnDMoveManager(figure, otherFigures, mousePosition, this.env.model.getters.getActiveSheetScrollInfo(), mainViewportPosition, this.getBorderShift());
+            this.dndManager = dndManager;
             const onMouseMove = (ev) => {
-                const newX = ev.clientX - position.left;
-                let deltaX = newX - initialX;
-                if (newX > offsetCorrectionX && initialX < offsetCorrectionX) {
-                    deltaX += offsetX;
-                }
-                else if (newX < offsetCorrectionX && initialX > offsetCorrectionX) {
-                    deltaX -= offsetX;
-                }
-                this.dnd.x = Math.max(figure.x + deltaX, 0);
-                const newY = ev.clientY - position.top;
-                let deltaY = newY - initialY;
-                if (newY > offsetCorrectionY && initialY < offsetCorrectionY) {
-                    deltaY += offsetY;
-                }
-                else if (newY < offsetCorrectionY && initialY > offsetCorrectionY) {
-                    deltaY -= offsetY;
-                }
-                this.dnd.y = Math.max(figure.y + deltaY, 0);
+                dndManager.drag({ x: ev.clientX, y: ev.clientY }, this.env.model.getters.getActiveSheetScrollInfo());
+                this.render();
             };
             const onMouseUp = (ev) => {
-                this.dnd.isActive = false;
+                const dnd = dndManager.getDnd();
                 this.env.model.dispatch("UPDATE_FIGURE", {
                     sheetId: this.env.model.getters.getActiveSheetId(),
                     id: figure.id,
-                    x: this.dnd.x,
-                    y: this.dnd.y,
+                    x: dnd.x,
+                    y: dnd.y,
                 });
+                this.dndManager = undefined;
+                this.render();
             };
             startDnd(onMouseMove, onMouseUp);
         }
@@ -20842,13 +21085,43 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     break;
             }
         }
+        get horizontalSnapLineStyle() {
+            if (!this.dndManager)
+                return "";
+            const snap = this.dndManager.getCurrentHorizontalSnapLine();
+            const dnd = this.dndManager.getDnd();
+            const { offsetX, offsetY } = this.env.model.getters.getActiveSheetScrollInfo();
+            if (!snap || snap.y < offsetY)
+                return "";
+            const leftMost = Math.min(dnd.x, ...snap.matchedFigs.map((fig) => fig.x));
+            const rightMost = Math.max(dnd.x + dnd.width, ...snap.matchedFigs.map((fig) => fig.x + fig.width));
+            const overflowX = offsetX - leftMost > 0 ? offsetX - leftMost : 0;
+            const overflowY = offsetY - dnd.y > 0 ? offsetY - dnd.y : 0;
+            const left = leftMost === dnd.x ? 0 : leftMost - dnd.x + overflowX;
+            return `left: ${left}px;width: ${rightMost - leftMost - overflowX}px;top:${snap.y - dnd.y + FIGURE_BORDER_WIDTH - overflowY}px`;
+        }
+        get verticalSnapLineStyle() {
+            if (!this.dndManager)
+                return "";
+            const snap = this.dndManager.getCurrentVerticalSnapLine();
+            const dnd = this.dndManager.getDnd();
+            const { offsetX, offsetY } = this.env.model.getters.getActiveSheetScrollInfo();
+            if (!snap || snap.x < offsetX)
+                return "";
+            const topMost = Math.min(dnd.y, ...snap.matchedFigs.map((fig) => fig.y));
+            const bottomMost = Math.max(dnd.y + dnd.height, ...snap.matchedFigs.map((fig) => fig.y + fig.height));
+            const overflowY = offsetY - topMost > 0 ? offsetY - topMost : 0;
+            const overflowX = offsetX - dnd.x > 0 ? offsetX - dnd.x : 0;
+            const top = topMost === dnd.y ? 0 : topMost - dnd.y + overflowY;
+            return `top: ${top}px;height: ${bottomMost - topMost - overflowY}px;left:${snap.x - dnd.x + FIGURE_BORDER_WIDTH - overflowX}px`;
+        }
     }
     FigureComponent.template = "o-spreadsheet-FigureComponent";
     FigureComponent.components = {};
 
     class FiguresContainer extends owl.Component {
-        getVisibleFigures() {
-            return this.env.model.getters.getVisibleFigures();
+        getFigures() {
+            return this.env.model.getters.getFigures(this.env.model.getters.getActiveSheetId());
         }
         setup() {
             owl.onMounted(() => {
@@ -35799,25 +36072,27 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         }
         getVisibleFigures() {
             const sheetId = this.getters.getActiveSheetId();
-            const result = [];
             const figures = this.getters.getFigures(sheetId);
+            return figures.filter((fig) => this.isFigureVisible(fig));
+        }
+        isFigureVisible(figure) {
+            const sheetId = this.getters.getActiveSheetId();
+            if (!figure)
+                return false;
             const { offsetX, offsetY } = this.getSheetScrollInfo(sheetId);
             const { x: offsetCorrectionX, y: offsetCorrectionY } = this.getters.getMainViewportCoordinates();
             const { width, height } = this.getters.getSheetViewDimensionWithHeaders();
-            for (const figure of figures) {
-                if (figure.x >= offsetCorrectionX &&
-                    (figure.x + figure.width <= offsetCorrectionX + offsetX ||
-                        figure.x >= width + offsetX + offsetCorrectionX)) {
-                    continue;
-                }
-                if (figure.y >= offsetCorrectionY &&
-                    (figure.y + figure.height <= offsetCorrectionY + offsetY ||
-                        figure.y >= height + offsetY + offsetCorrectionY)) {
-                    continue;
-                }
-                result.push(figure);
+            if (figure.x >= offsetCorrectionX &&
+                (figure.x + figure.width <= offsetCorrectionX + offsetX ||
+                    figure.x >= width + offsetX + offsetCorrectionX)) {
+                return false;
             }
-            return result;
+            if (figure.y >= offsetCorrectionY &&
+                (figure.y + figure.height <= offsetCorrectionY + offsetY ||
+                    figure.y >= height + offsetY + offsetCorrectionY)) {
+                return false;
+            }
+            return true;
         }
         getFrozenSheetViewRatio(sheetId) {
             const { xSplit, ySplit } = this.getters.getPaneDivisions(sheetId);
@@ -35846,6 +36121,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         "getSheetViewVisibleCols",
         "getSheetViewVisibleRows",
         "getFrozenSheetViewRatio",
+        "isFigureVisible",
     ];
 
     class SortPlugin extends UIPlugin {
@@ -40794,7 +41070,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             if (currentPosition <= position && position < currentPosition + header.size) {
                 return {
                     index: parseInt(headerIndex),
-                    offset: convertDotValueToEMU(position - currentPosition + FIGURE_BORDER_SIZE),
+                    offset: convertDotValueToEMU(position - currentPosition + FIGURE_BORDER_WIDTH),
                 };
             }
             else {
@@ -40803,7 +41079,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         }
         return {
             index: headers.length - 1,
-            offset: convertDotValueToEMU(position - currentPosition + FIGURE_BORDER_SIZE),
+            offset: convertDotValueToEMU(position - currentPosition + FIGURE_BORDER_WIDTH),
         };
     }
 
@@ -41780,8 +42056,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-10-17T06:58:51.904Z';
-    exports.__info__.hash = 'ab6f7e4';
+    exports.__info__.date = '2022-10-26T07:23:15.458Z';
+    exports.__info__.hash = 'ceec78d';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map

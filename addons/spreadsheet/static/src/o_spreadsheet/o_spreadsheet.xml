@@ -357,13 +357,13 @@
   </t>
 
   <t t-name="o-spreadsheet-FigureComponent" owl="1">
-    <div class="o-figure-wrapper" t-att-style="getContainerStyle()">
+    <div class="o-figure-wrapper" t-if="isFigureVisible" t-att-style="getContainerStyle()">
       <div class="o-figure-overflow-wrapper">
         <div
           class="o-figure"
           t-on-mousedown.stop="(ev) => this.onMouseDown(ev)"
           t-att-style="getFigureStyle()"
-          t-att-class="{active: isSelected, 'o-dragging': dnd.isActive}"
+          t-att-class="{active: isSelected, 'o-dragging': !!dndManager}"
           t-ref="figure"
           tabindex="0"
           t-on-keydown.stop="(ev) => this.onKeyDown(ev)"
@@ -378,6 +378,16 @@
         </div>
       </div>
       <t t-if="isSelected">
+        <div
+          t-if="dndManager and dndManager.hasHorizontalSnap()"
+          class="o-figure-snap-border horizontal"
+          t-att-style="horizontalSnapLineStyle"
+        />
+        <div
+          t-if="dndManager and dndManager.hasVerticalSnap()"
+          class="o-figure-snap-border vertical"
+          t-att-style="verticalSnapLineStyle"
+        />
         <div
           class="o-anchor o-top"
           t-att-style="this.getAnchorPosition('top')"
@@ -453,7 +463,7 @@
 
   <t t-name="o-spreadsheet-FiguresContainer" owl="1">
     <div>
-      <t t-foreach="getVisibleFigures()" t-as="figure" t-key="figure.id">
+      <t t-foreach="getFigures()" t-as="figure" t-key="figure.id">
         <FigureComponent
           sidePanelIsOpen="this.props.sidePanelIsOpen"
           onFigureDeleted="this.props.onFigureDeleted"
