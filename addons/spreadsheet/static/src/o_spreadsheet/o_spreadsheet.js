@@ -22193,12 +22193,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             owl.onMounted(() => {
                 this.scrollbar.el = this.scrollbarRef.el;
             });
-            // TODO improve useEffect dependencies typing in owl
-            owl.useEffect(() => {
-                if (this.scrollbar.scroll !== this.props.offset) {
-                    this.scrollbar.scroll = this.props.offset;
-                }
-            }, () => [this.scrollbar.scroll, this.props.offset]);
+            owl.onWillUpdateProps((nextProps) => {
+                this.scrollbar.scroll = nextProps.offset;
+            });
         }
         get sizeCss() {
             return cssPropertiesToCss({
@@ -42056,8 +42053,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-10-26T07:23:15.458Z';
-    exports.__info__.hash = 'ceec78d';
+    exports.__info__.date = '2022-10-26T09:37:50.260Z';
+    exports.__info__.hash = 'de338fd';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
