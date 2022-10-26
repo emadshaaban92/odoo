@@ -70,6 +70,7 @@
                 <!-- In case we want to repeat the header, remove "display: table-row-group" -->
                 <thead style="display: table-row-group">
                     <tr>
+                        <th name="th_img" class="text-start">Image</th>
                         <th name="th_description" class="text-start">Description</th>
                         <th name="th_quantity" class="text-end">Quantity</th>
                         <th name="th_priceunit" class="text-end">Unit Price</th>
@@ -94,6 +95,12 @@
 
                         <tr t-att-class="'bg-200 fw-bold o_line_section' if line.display_type == 'line_section' else 'fst-italic o_line_note' if line.display_type == 'line_note' else ''">
                             <t t-if="not line.display_type">
+                                <td name="td_img" class="td-img" style="max-width: 100px;">
+                                    <img t-if="line.product_id.image_128"
+                                        class="img o_image_64_max"
+                                        style="max-width: 64px; max-height: 64px;"
+                                        t-att-src="image_data_uri(line.product_id.image_128)"/>
+                                </td>
                                 <td name="td_name"><span t-field="line.name"/></td>
                                 <td name="td_quantity" class="text-end">
                                     <span t-field="line.product_uom_qty"/>
