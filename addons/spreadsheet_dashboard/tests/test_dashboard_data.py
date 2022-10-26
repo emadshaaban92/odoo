@@ -18,4 +18,4 @@ class TestSpreadsheetDashboardData(ValidateSpreadsheetData):
             ):
                 continue
             with self.subTest(dashboard.name):
-                self.validate_spreadsheet_data(dashboard.raw, dashboard.name)
+                self.validate_spreadsheet_data(dashboard.spreadsheet_data, dashboard.name)
