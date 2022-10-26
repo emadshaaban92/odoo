@@ -3453,6 +3453,7 @@ export class RelationalModel extends Model {
 
         // list of models for which the DataManager's cache should be cleared on create, update and delete operations
         this.noCacheModels = ["ir.actions.act_window", "ir.filters", "ir.ui.view", "res.currency"];
+        this.preventNotify = false;
     }
 
     /**
@@ -3539,6 +3540,22 @@ export class RelationalModel extends Model {
      */
     getGroups() {
         return this.root.groups && this.root.groups.length ? this.root.groups : null;
+    }
+
+    /**
+     * @override
+     */
+    notify() {
+        if (!this.preventNotify) {
+            super.notify();
+        }
+    }
+
+    forceNotify() {
+        const preventNotify = this.preventNotify;
+        this.preventNotify = false;
+        this.notify();
+        this.preventNotify = preventNotify;
     }
 
     /**
