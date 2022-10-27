@@ -25,14 +25,6 @@ MONTH_SELECTION = [
     ('12', 'December'),
 ]
 
-ONBOARDING_STEP_STATES = [
-    ('not_done', "Not done"),
-    ('just_done', "Just done"),
-    ('done', "Done"),
-]
-DASHBOARD_ONBOARDING_STATES = ONBOARDING_STEP_STATES + [('closed', 'Closed')]
-
-
 class ResCompany(models.Model):
     _name = "res.company"
     _inherit = ["res.company", "mail.thread"]
@@ -110,22 +102,11 @@ class ResCompany(models.Model):
     account_opening_journal_id = fields.Many2one(string='Opening Journal', comodel_name='account.journal', related='account_opening_move_id.journal_id', help="Journal where the opening entry of this company's accounting has been posted.", readonly=False)
     account_opening_date = fields.Date(string='Opening Entry', default=lambda self: fields.Date.context_today(self).replace(month=1, day=1), required=True, help="That is the date of the opening entry.")
 
-    # Fields marking the completion of a setup step
-    account_setup_fy_data_state = fields.Selection(ONBOARDING_STEP_STATES, string="State of the onboarding fiscal year step", default='not_done')
-    account_setup_coa_state = fields.Selection(ONBOARDING_STEP_STATES, string="State of the onboarding charts of account step", default='not_done')
-    account_setup_taxes_state = fields.Selection(ONBOARDING_STEP_STATES, string="State of the onboarding Taxes step", default='not_done')
-    account_onboarding_sale_tax_state = fields.Selection(ONBOARDING_STEP_STATES, string="State of the onboarding sale tax step", default='not_done')
-
-    # account dashboard onboarding
-    account_invoice_onboarding_state = fields.Selection(DASHBOARD_ONBOARDING_STATES, string="State of the account invoice onboarding panel", default='not_done')
-    account_dashboard_onboarding_state = fields.Selection(DASHBOARD_ONBOARDING_STATES, string="State of the account dashboard onboarding panel", default='not_done')
     invoice_terms = fields.Html(string='Default Terms and Conditions', translate=True)
     terms_type = fields.Selection([('plain', 'Add a Note'), ('html', 'Add a link to a Web Page')],
                                   string='Terms & Conditions format', default='plain')
     invoice_terms_html = fields.Html(string='Default Terms and Conditions as a Web page', translate=True,
                                      compute='_compute_invoice_terms_html', store=True, readonly=False)
-
-    account_setup_bill_state = fields.Selection(ONBOARDING_STEP_STATES, string="State of the onboarding bill step", default='not_done')
 
     # Needed in the Point of Sale
     account_default_pos_receivable_account_id = fields.Many2one('account.account', string="Default PoS Receivable Account")
@@ -217,23 +198,6 @@ class ResCompany(models.Model):
                         raise_if_not_found=False)
             if html:
                 company.invoice_terms_html = html
-
-    def get_and_update_account_dashboard_onboarding_state(self):
-        """ This method is called on the controller rendering method and ensures that the animations
-            are displayed only one time. """
-        return self._get_and_update_onboarding_state(
-            'account_dashboard_onboarding_state',
-            self.get_account_dashboard_onboarding_steps_states_names()
-        )
-
-    def get_account_dashboard_onboarding_steps_states_names(self):
-        """ Necessary to add/edit steps from other modules (account_winbooks_import in this case). """
-        return [
-            'account_setup_bank_data_state',
-            'account_setup_fy_data_state',
-            'account_setup_coa_state',
-            'account_setup_taxes_state',
-        ]
 
     def get_new_account_code(self, current_code, old_prefix, new_prefix):
         digits = len(current_code)
@@ -346,52 +310,6 @@ class ResCompany(models.Model):
         }
 
     @api.model
-    def setting_init_fiscal_year_action(self):
-        """ Called by the 'Fiscal Year Opening' button of the setup bar."""
-        company = self.env.company
-        company.create_op_move_if_non_existant()
-        new_wizard = self.env['account.financial.year.op'].create({'company_id': company.id})
-        view_id = self.env.ref('account.setup_financial_year_opening_form').id
-
-        return {
-            'type': 'ir.actions.act_window',
-            'name': _('Accounting Periods'),
-            'view_mode': 'form',
-            'res_model': 'account.financial.year.op',
-            'target': 'new',
-            'res_id': new_wizard.id,
-            'views': [[view_id, 'form']],
-        }
-
-    @api.model
-    def setting_chart_of_accounts_action(self):
-        """ Called by the 'Chart of Accounts' button of the setup bar."""
-        company = self.env.company
-        company.sudo().set_onboarding_step_done('account_setup_coa_state')
-
-        # If an opening move has already been posted, we open the tree view showing all the accounts
-        if company.opening_move_posted():
-            return 'account.action_account_form'
-
-        # Otherwise, we create the opening move
-        company.create_op_move_if_non_existant()
-
-        # Then, we open will open a custom tree view allowing to edit opening balances of the account
-        view_id = self.env.ref('account.init_accounts_tree').id
-        # Hide the current year earnings account as it is automatically computed
-        domain = [('account_type', '!=', 'equity_unaffected'), ('company_id', '=', company.id)]
-        return {
-            'type': 'ir.actions.act_window',
-            'name': _('Chart of Accounts'),
-            'res_model': 'account.account',
-            'view_mode': 'tree',
-            'limit': 99999999,
-            'search_view_id': [self.env.ref('account.view_account_search').id],
-            'views': [[view_id, 'list']],
-            'domain': domain,
-        }
-
-    @api.model
     def create_op_move_if_non_existant(self):
         """ Creates an empty opening move in 'draft' state for the current company
         if there wasn't already one defined. For this, the function needs at least
@@ -489,39 +407,9 @@ class ResCompany(models.Model):
                         'credit': debit_diff,
                     })
 
-    @api.model
-    def action_close_account_dashboard_onboarding(self):
-        """ Mark the dashboard onboarding panel as closed. """
-        self.env.company.account_dashboard_onboarding_state = 'closed'
-
-    @api.model
-    def action_open_account_onboarding_sale_tax(self):
-        """ Onboarding step for the invoice layout. """
-        action = self.env["ir.actions.actions"]._for_xml_id("account.action_open_account_onboarding_sale_tax")
-        action['res_id'] = self.env.company.id
-        return action
-
-    @api.model
-    def action_open_taxes_onboarding(self):
-        """ Called by the 'Taxes' button of the setup bar."""
-
-        company = self.env.company
-        company.sudo().set_onboarding_step_done('account_setup_taxes_state')
-        view_id_list = self.env.ref('account.view_onboarding_tax_tree').id
-        view_id_form = self.env.ref('account.view_tax_form').id
-
-        return {
-            'type': 'ir.actions.act_window',
-            'name': _('Taxes'),
-            'res_model': 'account.tax',
-            'target': 'current',
-            'views': [[view_id_list, 'list'], [view_id_form, 'form']],
-            'context': {'search_default_sale': True, 'search_default_purchase': True, 'active_test': False},
-        }
-
     def action_save_onboarding_sale_tax(self):
         """ Set the onboarding step as done """
-        self.set_onboarding_step_done('account_onboarding_sale_tax_state')
+        self.env['onboarding.onboarding.step'].action_save_account_onboarding_sale_tax_step()
 
     def get_chart_of_accounts_or_fail(self):
         account = self.env['account.account'].search([('company_id', '=', self.id)], limit=1)

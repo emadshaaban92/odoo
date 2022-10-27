@@ -60,7 +60,7 @@ class FinancialYearOpeningWizard(models.TransientModel):
         return super().write(vals)
 
     def action_save_onboarding_fiscal_year(self):
-        self.env.company.sudo().set_onboarding_step_done('account_setup_fy_data_state')
+        self.env['onboarding.onboarding.step'].action_safe_set_just_done('account.account_dashboard_onboarding_fiscal_year_step')
 
 
 class SetupBarBankConfigWizard(models.TransientModel):

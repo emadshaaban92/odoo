@@ -461,7 +461,7 @@ class account_journal(models.Model):
         """ This function is called by the "Import" button of Vendor Bills,
         visible on dashboard if no bill has been created yet.
         """
-        self.env.company.sudo().set_onboarding_step_done('account_setup_bill_state')
+        self.env['onboarding.onboarding.step'].action_save_account_onboarding_setup_bill_step()
 
         new_wizard = self.env['account.tour.upload.bill'].create({})
         view_id = self.env.ref('account.account_tour_upload_bill').id

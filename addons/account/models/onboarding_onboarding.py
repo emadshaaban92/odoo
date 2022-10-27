@@ -21,3 +21,8 @@ class Onboarding(models.Model):
                                                     ('move_type', '=', 'out_invoice')], limit=1):
                     create_invoice_step.action_set_just_done()
         return super()._prepare_rendering_values()
+
+    # Dashboard Onboarding
+    @api.model
+    def action_close_account_dashboard_onboarding(self):
+        self.action_safe_close('account.account_dashboard_onboarding')
