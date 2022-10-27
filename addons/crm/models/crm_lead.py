@@ -488,7 +488,6 @@ class Lead(models.Model):
         for lead in self:
             lead.is_automated_probability = tools.float_compare(lead.probability, lead.automated_probability, 2) == 0
 
-    @api.depends(lambda self: ['stage_id', 'team_id'] + self._pls_get_safe_fields())
     def _compute_probabilities(self):
         lead_probabilities = self._pls_get_naive_bayes_probabilities()
         for lead in self:
@@ -726,6 +725,8 @@ class Lead(models.Model):
         return leads
 
     def write(self, vals):
+        # print("Self: %s" % self)
+        # print(" Vals %s" % vals)
         if vals.get('website'):
             vals['website'] = self.env['res.partner']._clean_website(vals['website'])
 
@@ -748,17 +749,36 @@ class Lead(models.Model):
         if any(field in ['active', 'stage_id'] for field in vals):
             self._handle_won_lost(vals)
 
-        if not stage_is_won:
-            return super(Lead, self).write(vals)
+        from_lead_values = {}
+        pls_fields = set([field for field in vals]) & set(['stage_id', 'team_id'] + self._pls_get_safe_fields())
+        # print(pls_fields)
+        for lead in self:
+            from_lead_values.update({
+                lead.id: {
+                    field: lead[field] for field in pls_fields
+                }
+            })
 
-        # stage change between two won stages: does not change the date_closed
-        leads_already_won = self.filtered(lambda lead: lead.stage_id.is_won)
+        leads_already_won = self.filtered(lambda r: r.stage_id.is_won)
         remaining = self - leads_already_won
+        result = True
+
+        # print(" -> Vals %s" % vals)
         if remaining:
             result = super(Lead, remaining).write(vals)
         if leads_already_won:
             vals.pop('date_closed', False)
+            # print("   -> date_closed Removed")
+            # print("   -> new vals %s" % vals)
             result = super(Lead, leads_already_won).write(vals)
+
+        # Recompute the probabilities for a lead if one of its pls fields / stage / team has changed
+        leads_to_recompute = self.filtered(lambda lead: any([lead[field] != from_lead_values[lead.id][field] for field in pls_fields]))
+        if leads_to_recompute:
+            # print("Recompute: %s" % leads_to_recompute)
+            # self.flush_recordset(['probability', 'automated_probability'])
+            leads_to_recompute._compute_probabilities()
+
         return result
 
     @api.model
