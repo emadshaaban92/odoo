@@ -393,6 +393,9 @@
     const DEFAULT_GAUGE_LOWER_COLOR = "#cc0000";
     const DEFAULT_GAUGE_MIDDLE_COLOR = "#f1c232";
     const DEFAULT_GAUGE_UPPER_COLOR = "#6aa84f";
+    const DEFAULT_SCORECARD_BASELINE_MODE = "difference";
+    const DEFAULT_SCORECARD_BASELINE_COLOR_UP = "#00A04A";
+    const DEFAULT_SCORECARD_BASELINE_COLOR_DOWN = "#DC6965";
     const LINE_FILL_TRANSPARENCY = 0.4;
     // session
     const DEBOUNCE_TIME = 200;
@@ -4537,1957 +4540,6 @@
         ];
     }
 
-    const SORT_TYPES = [
-        CellValueType.number,
-        CellValueType.error,
-        CellValueType.text,
-        CellValueType.boolean,
-    ];
-    function convertCell(cell, index) {
-        return {
-            index,
-            type: cell ? cell.evaluated.type : CellValueType.empty,
-            value: cell ? cell.evaluated.value : "",
-        };
-    }
-    function sortCells(cells, sortDirection, emptyCellAsZero) {
-        const cellsWithIndex = cells.map(convertCell);
-        let emptyCells = cellsWithIndex.filter((x) => x.type === CellValueType.empty);
-        let nonEmptyCells = cellsWithIndex.filter((x) => x.type !== CellValueType.empty);
-        if (emptyCellAsZero) {
-            nonEmptyCells.push(...emptyCells.map((emptyCell) => ({ ...emptyCell, type: CellValueType.number, value: 0 })));
-            emptyCells = [];
-        }
-        const inverse = sortDirection === "descending" ? -1 : 1;
-        return nonEmptyCells
-            .sort((left, right) => {
-            let typeOrder = SORT_TYPES.indexOf(left.type) - SORT_TYPES.indexOf(right.type);
-            if (typeOrder === 0) {
-                if (left.type === CellValueType.text || left.type === CellValueType.error) {
-                    typeOrder = left.value.localeCompare(right.value);
-                }
-                else
-                    typeOrder = left.value - right.value;
-            }
-            return inverse * typeOrder;
-        })
-            .concat(emptyCells);
-    }
-    function interactiveSortSelection(env, sheetId, anchor, zone, sortDirection) {
-        let result = DispatchResult.Success;
-        //several columns => bypass the contiguity check
-        let multiColumns = zone.right > zone.left;
-        if (env.model.getters.doesIntersectMerge(sheetId, zone)) {
-            multiColumns = false;
-            let table;
-            for (let r = zone.top; r <= zone.bottom; r++) {
-                table = [];
-                for (let c = zone.left; c <= zone.right; c++) {
-                    let merge = env.model.getters.getMerge(sheetId, c, r);
-                    if (merge && !table.includes(merge.id.toString())) {
-                        table.push(merge.id.toString());
-                    }
-                }
-                if (table.length >= 2) {
-                    multiColumns = true;
-                    break;
-                }
-            }
-        }
-        const { col, row } = anchor;
-        if (multiColumns) {
-            result = env.model.dispatch("SORT_CELLS", { sheetId, col, row, zone, sortDirection });
-        }
-        else {
-            // check contiguity
-            const contiguousZone = env.model.getters.getContiguousZone(sheetId, zone);
-            if (isEqual(contiguousZone, zone)) {
-                // merge as it is
-                result = env.model.dispatch("SORT_CELLS", {
-                    sheetId,
-                    col,
-                    row,
-                    zone,
-                    sortDirection,
-                });
-            }
-            else {
-                env.askConfirmation(_lt("We found data next to your selection. Since this data was not selected, it will not be sorted. Do you want to extend your selection?"), () => {
-                    zone = contiguousZone;
-                    result = env.model.dispatch("SORT_CELLS", {
-                        sheetId,
-                        col,
-                        row,
-                        zone,
-                        sortDirection,
-                    });
-                }, () => {
-                    result = env.model.dispatch("SORT_CELLS", {
-                        sheetId,
-                        col,
-                        row,
-                        zone,
-                        sortDirection,
-                    });
-                });
-            }
-        }
-        if (result.isCancelledBecause(60 /* CommandResult.InvalidSortZone */)) {
-            const { col, row } = anchor;
-            env.model.selection.selectZone({ cell: { col, row }, zone });
-            env.raiseError(_lt("Cannot sort. To sort, select only cells or only merges that have the same size."));
-        }
-    }
-
-    function interactiveCut(env) {
-        const result = env.model.dispatch("CUT");
-        if (!result.isSuccessful) {
-            if (result.isCancelledBecause(17 /* CommandResult.WrongCutSelection */)) {
-                env.raiseError(_lt("This operation is not allowed with multiple selections."));
-            }
-        }
-    }
-
-    const AddFilterInteractiveContent = {
-        filterOverlap: _lt("You cannot create overlapping filters."),
-        nonContinuousTargets: _lt("A filter can only be created on a continuous selection."),
-        mergeInFilter: _lt("You can't create a filter over a range that contains a merge."),
-    };
-    function interactiveAddFilter(env, sheetId, target) {
-        const result = env.model.dispatch("CREATE_FILTER_TABLE", { target, sheetId });
-        if (result.isCancelledBecause(75 /* CommandResult.FilterOverlap */)) {
-            env.raiseError(AddFilterInteractiveContent.filterOverlap);
-        }
-        else if (result.isCancelledBecause(77 /* CommandResult.MergeInFilter */)) {
-            env.raiseError(AddFilterInteractiveContent.mergeInFilter);
-        }
-        else if (result.isCancelledBecause(78 /* CommandResult.NonContinuousTargets */)) {
-            env.raiseError(AddFilterInteractiveContent.nonContinuousTargets);
-        }
-    }
-
-    const PasteInteractiveContent = {
-        wrongPasteSelection: _lt("This operation is not allowed with multiple selections."),
-        willRemoveExistingMerge: _lt("This operation is not possible due to a merge. Please remove the merges first than try again."),
-        wrongFigurePasteOption: _lt("Cannot do a special paste of a figure."),
-        frozenPaneOverlap: _lt("Cannot paste merged cells over a frozen pane."),
-    };
-    function handlePasteResult(env, result) {
-        if (!result.isSuccessful) {
-            if (result.reasons.includes(18 /* CommandResult.WrongPasteSelection */)) {
-                env.raiseError(PasteInteractiveContent.wrongPasteSelection);
-            }
-            else if (result.reasons.includes(2 /* CommandResult.WillRemoveExistingMerge */)) {
-                env.raiseError(PasteInteractiveContent.willRemoveExistingMerge);
-            }
-            else if (result.reasons.includes(20 /* CommandResult.WrongFigurePasteOption */)) {
-                env.raiseError(PasteInteractiveContent.wrongFigurePasteOption);
-            }
-            else if (result.reasons.includes(72 /* CommandResult.FrozenPaneOverlap */)) {
-                env.raiseError(PasteInteractiveContent.frozenPaneOverlap);
-            }
-        }
-    }
-    function interactivePaste(env, target, pasteOption) {
-        const result = env.model.dispatch("PASTE", { target, pasteOption });
-        handlePasteResult(env, result);
-    }
-    function interactivePasteFromOS(env, target, text) {
-        const result = env.model.dispatch("PASTE_FROM_OS_CLIPBOARD", { target, text });
-        handlePasteResult(env, result);
-    }
-
-    //------------------------------------------------------------------------------
-    // Helpers
-    //------------------------------------------------------------------------------
-    function getColumnsNumber(env) {
-        const activeCols = env.model.getters.getActiveCols();
-        if (activeCols.size) {
-            return activeCols.size;
-        }
-        else {
-            const zone = env.model.getters.getSelectedZones()[0];
-            return zone.right - zone.left + 1;
-        }
-    }
-    function getRowsNumber(env) {
-        const activeRows = env.model.getters.getActiveRows();
-        if (activeRows.size) {
-            return activeRows.size;
-        }
-        else {
-            const zone = env.model.getters.getSelectedZones()[0];
-            return zone.bottom - zone.top + 1;
-        }
-    }
-    function setFormatter(env, format) {
-        env.model.dispatch("SET_FORMATTING", {
-            sheetId: env.model.getters.getActiveSheetId(),
-            target: env.model.getters.getSelectedZones(),
-            format,
-        });
-    }
-    function setStyle(env, style) {
-        env.model.dispatch("SET_FORMATTING", {
-            sheetId: env.model.getters.getActiveSheetId(),
-            target: env.model.getters.getSelectedZones(),
-            style,
-        });
-    }
-    async function readOsClipboard(env) {
-        try {
-            return await env.clipboard.readText();
-        }
-        catch (e) {
-            // Permission is required to read the clipboard.
-            console.warn("The OS clipboard could not be read.");
-            console.error(e);
-            return undefined;
-        }
-    }
-    //------------------------------------------------------------------------------
-    // Simple actions
-    //------------------------------------------------------------------------------
-    const UNDO_ACTION = (env) => env.model.dispatch("REQUEST_UNDO");
-    const REDO_ACTION = (env) => env.model.dispatch("REQUEST_REDO");
-    const COPY_ACTION = async (env) => {
-        env.model.dispatch("COPY");
-        await env.clipboard.writeText(env.model.getters.getClipboardContent());
-    };
-    const CUT_ACTION = async (env) => {
-        interactiveCut(env);
-        await env.clipboard.writeText(env.model.getters.getClipboardContent());
-    };
-    const PASTE_ACTION = async (env) => {
-        const spreadsheetClipboard = env.model.getters.getClipboardContent();
-        const osClipboard = await readOsClipboard(env);
-        const target = env.model.getters.getSelectedZones();
-        if (osClipboard && osClipboard !== spreadsheetClipboard) {
-            interactivePasteFromOS(env, target, osClipboard);
-        }
-        else {
-            interactivePaste(env, target);
-        }
-    };
-    const PASTE_VALUE_ACTION = async (env) => {
-        const spreadsheetClipboard = env.model.getters.getClipboardContent();
-        const osClipboard = await readOsClipboard(env);
-        const target = env.model.getters.getSelectedZones();
-        if (osClipboard && osClipboard !== spreadsheetClipboard) {
-            env.model.dispatch("PASTE_FROM_OS_CLIPBOARD", {
-                target,
-                text: osClipboard,
-            });
-        }
-        else {
-            env.model.dispatch("PASTE", {
-                target: env.model.getters.getSelectedZones(),
-                pasteOption: "onlyValue",
-            });
-        }
-    };
-    const PASTE_FORMAT_ACTION = (env) => interactivePaste(env, env.model.getters.getSelectedZones(), "onlyFormat");
-    const DELETE_CONTENT_ACTION = (env) => env.model.dispatch("DELETE_CONTENT", {
-        sheetId: env.model.getters.getActiveSheetId(),
-        target: env.model.getters.getSelectedZones(),
-    });
-    const SET_FORMULA_VISIBILITY_ACTION = (env) => env.model.dispatch("SET_FORMULA_VISIBILITY", { show: !env.model.getters.shouldShowFormulas() });
-    const SET_GRID_LINES_VISIBILITY_ACTION = (env) => {
-        const sheetId = env.model.getters.getActiveSheetId();
-        env.model.dispatch("SET_GRID_LINES_VISIBILITY", {
-            sheetId,
-            areGridLinesVisible: !env.model.getters.getGridLinesVisibility(sheetId),
-        });
-    };
-    const IS_NOT_CUT_OPERATION = (env) => {
-        return !env.model.getters.isCutOperation();
-    };
-    //------------------------------------------------------------------------------
-    // Grid manipulations
-    //------------------------------------------------------------------------------
-    const DELETE_CONTENT_ROWS_NAME = (env) => {
-        if (env.model.getters.getSelectedZones().length > 1) {
-            return _lt("Clear rows");
-        }
-        let first;
-        let last;
-        const activesRows = env.model.getters.getActiveRows();
-        if (activesRows.size !== 0) {
-            first = Math.min(...activesRows);
-            last = Math.max(...activesRows);
-        }
-        else {
-            const zone = env.model.getters.getSelectedZones()[0];
-            first = zone.top;
-            last = zone.bottom;
-        }
-        if (first === last) {
-            return _lt("Clear row %s", (first + 1).toString());
-        }
-        return _lt("Clear rows %s - %s", (first + 1).toString(), (last + 1).toString());
-    };
-    const DELETE_CONTENT_ROWS_ACTION = (env) => {
-        const sheetId = env.model.getters.getActiveSheetId();
-        const target = [...env.model.getters.getActiveRows()].map((index) => env.model.getters.getRowsZone(sheetId, index, index));
-        env.model.dispatch("DELETE_CONTENT", {
-            target,
-            sheetId: env.model.getters.getActiveSheetId(),
-        });
-    };
-    const DELETE_CONTENT_COLUMNS_NAME = (env) => {
-        if (env.model.getters.getSelectedZones().length > 1) {
-            return _lt("Clear columns");
-        }
-        let first;
-        let last;
-        const activeCols = env.model.getters.getActiveCols();
-        if (activeCols.size !== 0) {
-            first = Math.min(...activeCols);
-            last = Math.max(...activeCols);
-        }
-        else {
-            const zone = env.model.getters.getSelectedZones()[0];
-            first = zone.left;
-            last = zone.right;
-        }
-        if (first === last) {
-            return _lt("Clear column %s", numberToLetters(first));
-        }
-        return _lt("Clear columns %s - %s", numberToLetters(first), numberToLetters(last));
-    };
-    const DELETE_CONTENT_COLUMNS_ACTION = (env) => {
-        const sheetId = env.model.getters.getActiveSheetId();
-        const target = [...env.model.getters.getActiveCols()].map((index) => env.model.getters.getColsZone(sheetId, index, index));
-        env.model.dispatch("DELETE_CONTENT", {
-            target,
-            sheetId: env.model.getters.getActiveSheetId(),
-        });
-    };
-    const REMOVE_ROWS_NAME = (env) => {
-        if (env.model.getters.getSelectedZones().length > 1) {
-            return _lt("Delete rows");
-        }
-        let first;
-        let last;
-        const activesRows = env.model.getters.getActiveRows();
-        if (activesRows.size !== 0) {
-            first = Math.min(...activesRows);
-            last = Math.max(...activesRows);
-        }
-        else {
-            const zone = env.model.getters.getSelectedZones()[0];
-            first = zone.top;
-            last = zone.bottom;
-        }
-        if (first === last) {
-            return _lt("Delete row %s", (first + 1).toString());
-        }
-        return _lt("Delete rows %s - %s", (first + 1).toString(), (last + 1).toString());
-    };
-    const REMOVE_ROWS_ACTION = (env) => {
-        let rows = [...env.model.getters.getActiveRows()];
-        if (!rows.length) {
-            const zone = env.model.getters.getSelectedZones()[0];
-            for (let i = zone.top; i <= zone.bottom; i++) {
-                rows.push(i);
-            }
-        }
-        env.model.dispatch("REMOVE_COLUMNS_ROWS", {
-            sheetId: env.model.getters.getActiveSheetId(),
-            dimension: "ROW",
-            elements: rows,
-        });
-    };
-    const REMOVE_COLUMNS_NAME = (env) => {
-        if (env.model.getters.getSelectedZones().length > 1) {
-            return _lt("Delete columns");
-        }
-        let first;
-        let last;
-        const activeCols = env.model.getters.getActiveCols();
-        if (activeCols.size !== 0) {
-            first = Math.min(...activeCols);
-            last = Math.max(...activeCols);
-        }
-        else {
-            const zone = env.model.getters.getSelectedZones()[0];
-            first = zone.left;
-            last = zone.right;
-        }
-        if (first === last) {
-            return _lt("Delete column %s", numberToLetters(first));
-        }
-        return _lt("Delete columns %s - %s", numberToLetters(first), numberToLetters(last));
-    };
-    const REMOVE_COLUMNS_ACTION = (env) => {
-        let columns = [...env.model.getters.getActiveCols()];
-        if (!columns.length) {
-            const zone = env.model.getters.getSelectedZones()[0];
-            for (let i = zone.left; i <= zone.right; i++) {
-                columns.push(i);
-            }
-        }
-        env.model.dispatch("REMOVE_COLUMNS_ROWS", {
-            sheetId: env.model.getters.getActiveSheetId(),
-            dimension: "COL",
-            elements: columns,
-        });
-    };
-    const INSERT_CELL_SHIFT_DOWN = (env) => {
-        const zone = env.model.getters.getSelectedZone();
-        const result = env.model.dispatch("INSERT_CELL", { zone, shiftDimension: "ROW" });
-        handlePasteResult(env, result);
-    };
-    const INSERT_CELL_SHIFT_RIGHT = (env) => {
-        const zone = env.model.getters.getSelectedZone();
-        const result = env.model.dispatch("INSERT_CELL", { zone, shiftDimension: "COL" });
-        handlePasteResult(env, result);
-    };
-    const DELETE_CELL_SHIFT_UP = (env) => {
-        const zone = env.model.getters.getSelectedZone();
-        const result = env.model.dispatch("DELETE_CELL", { zone, shiftDimension: "ROW" });
-        handlePasteResult(env, result);
-    };
-    const DELETE_CELL_SHIFT_LEFT = (env) => {
-        const zone = env.model.getters.getSelectedZone();
-        const result = env.model.dispatch("DELETE_CELL", { zone, shiftDimension: "COL" });
-        handlePasteResult(env, result);
-    };
-    const MENU_INSERT_ROWS_BEFORE_NAME = (env) => {
-        const number = getRowsNumber(env);
-        if (number === 1) {
-            return _lt("Row above");
-        }
-        return _lt("%s Rows above", number.toString());
-    };
-    const ROW_INSERT_ROWS_BEFORE_NAME = (env) => {
-        const number = getRowsNumber(env);
-        return number === 1 ? _lt("Insert row above") : _lt("Insert %s rows above", number.toString());
-    };
-    const CELL_INSERT_ROWS_BEFORE_NAME = (env) => {
-        const number = getRowsNumber(env);
-        if (number === 1) {
-            return _lt("Insert row");
-        }
-        return _lt("Insert %s rows", number.toString());
-    };
-    const INSERT_ROWS_BEFORE_ACTION = (env) => {
-        const activeRows = env.model.getters.getActiveRows();
-        let row;
-        let quantity;
-        if (activeRows.size) {
-            row = Math.min(...activeRows);
-            quantity = activeRows.size;
-        }
-        else {
-            const zone = env.model.getters.getSelectedZones()[0];
-            row = zone.top;
-            quantity = zone.bottom - zone.top + 1;
-        }
-        env.model.dispatch("ADD_COLUMNS_ROWS", {
-            sheetId: env.model.getters.getActiveSheetId(),
-            position: "before",
-            base: row,
-            quantity,
-            dimension: "ROW",
-        });
-    };
-    const MENU_INSERT_ROWS_AFTER_NAME = (env) => {
-        const number = getRowsNumber(env);
-        if (number === 1) {
-            return _lt("Row below");
-        }
-        return _lt("%s Rows below", number.toString());
-    };
-    const ROW_INSERT_ROWS_AFTER_NAME = (env) => {
-        const number = getRowsNumber(env);
-        return number === 1 ? _lt("Insert row below") : _lt("Insert %s rows below", number.toString());
-    };
-    const INSERT_ROWS_AFTER_ACTION = (env) => {
-        const activeRows = env.model.getters.getActiveRows();
-        let row;
-        let quantity;
-        if (activeRows.size) {
-            row = Math.max(...activeRows);
-            quantity = activeRows.size;
-        }
-        else {
-            const zone = env.model.getters.getSelectedZones()[0];
-            row = zone.bottom;
-            quantity = zone.bottom - zone.top + 1;
-        }
-        env.model.dispatch("ADD_COLUMNS_ROWS", {
-            sheetId: env.model.getters.getActiveSheetId(),
-            position: "after",
-            base: row,
-            quantity,
-            dimension: "ROW",
-        });
-    };
-    const MENU_INSERT_COLUMNS_BEFORE_NAME = (env) => {
-        const number = getColumnsNumber(env);
-        if (number === 1) {
-            return _lt("Column left");
-        }
-        return _lt("%s Columns left", number.toString());
-    };
-    const COLUMN_INSERT_COLUMNS_BEFORE_NAME = (env) => {
-        const number = getColumnsNumber(env);
-        return number === 1
-            ? _lt("Insert column left")
-            : _lt("Insert %s columns left", number.toString());
-    };
-    const CELL_INSERT_COLUMNS_BEFORE_NAME = (env) => {
-        const number = getColumnsNumber(env);
-        if (number === 1) {
-            return _lt("Insert column");
-        }
-        return _lt("Insert %s columns", number.toString());
-    };
-    const INSERT_COLUMNS_BEFORE_ACTION = (env) => {
-        const activeCols = env.model.getters.getActiveCols();
-        let column;
-        let quantity;
-        if (activeCols.size) {
-            column = Math.min(...activeCols);
-            quantity = activeCols.size;
-        }
-        else {
-            const zone = env.model.getters.getSelectedZones()[0];
-            column = zone.left;
-            quantity = zone.right - zone.left + 1;
-        }
-        env.model.dispatch("ADD_COLUMNS_ROWS", {
-            sheetId: env.model.getters.getActiveSheetId(),
-            position: "before",
-            dimension: "COL",
-            base: column,
-            quantity,
-        });
-    };
-    const MENU_INSERT_COLUMNS_AFTER_NAME = (env) => {
-        const number = getColumnsNumber(env);
-        if (number === 1) {
-            return _lt("Column right");
-        }
-        return _lt("%s Columns right", number.toString());
-    };
-    const COLUMN_INSERT_COLUMNS_AFTER_NAME = (env) => {
-        const number = getColumnsNumber(env);
-        return number === 1
-            ? _lt("Insert column right")
-            : _lt("Insert %s columns right", number.toString());
-    };
-    const INSERT_COLUMNS_AFTER_ACTION = (env) => {
-        const activeCols = env.model.getters.getActiveCols();
-        let column;
-        let quantity;
-        if (activeCols.size) {
-            column = Math.max(...activeCols);
-            quantity = activeCols.size;
-        }
-        else {
-            const zone = env.model.getters.getSelectedZones()[0];
-            column = zone.right;
-            quantity = zone.right - zone.left + 1;
-        }
-        env.model.dispatch("ADD_COLUMNS_ROWS", {
-            sheetId: env.model.getters.getActiveSheetId(),
-            position: "after",
-            dimension: "COL",
-            base: column,
-            quantity,
-        });
-    };
-    const HIDE_COLUMNS_NAME = (env) => {
-        const cols = env.model.getters.getElementsFromSelection("COL");
-        let first = cols[0];
-        let last = cols[cols.length - 1];
-        if (cols.length === 1) {
-            return _lt("Hide column %s", numberToLetters(first).toString());
-        }
-        else if (last - first + 1 === cols.length) {
-            return _lt("Hide columns %s - %s", numberToLetters(first).toString(), numberToLetters(last).toString());
-        }
-        else {
-            return _lt("Hide columns");
-        }
-    };
-    const HIDE_COLUMNS_ACTION = (env) => {
-        const columns = env.model.getters.getElementsFromSelection("COL");
-        env.model.dispatch("HIDE_COLUMNS_ROWS", {
-            sheetId: env.model.getters.getActiveSheetId(),
-            dimension: "COL",
-            elements: columns,
-        });
-    };
-    const UNHIDE_ALL_COLUMNS_ACTION = (env) => {
-        const sheetId = env.model.getters.getActiveSheetId();
-        env.model.dispatch("UNHIDE_COLUMNS_ROWS", {
-            sheetId,
-            dimension: "COL",
-            elements: Array.from(Array(env.model.getters.getNumberCols(sheetId)).keys()),
-        });
-    };
-    const UNHIDE_COLUMNS_ACTION = (env) => {
-        const columns = env.model.getters.getElementsFromSelection("COL");
-        env.model.dispatch("UNHIDE_COLUMNS_ROWS", {
-            sheetId: env.model.getters.getActiveSheetId(),
-            dimension: "COL",
-            elements: columns,
-        });
-    };
-    const HIDE_ROWS_NAME = (env) => {
-        const rows = env.model.getters.getElementsFromSelection("ROW");
-        let first = rows[0];
-        let last = rows[rows.length - 1];
-        if (rows.length === 1) {
-            return _lt("Hide row %s", (first + 1).toString());
-        }
-        else if (last - first + 1 === rows.length) {
-            return _lt("Hide rows %s - %s", (first + 1).toString(), (last + 1).toString());
-        }
-        else {
-            return _lt("Hide rows");
-        }
-    };
-    const HIDE_ROWS_ACTION = (env) => {
-        const rows = env.model.getters.getElementsFromSelection("ROW");
-        env.model.dispatch("HIDE_COLUMNS_ROWS", {
-            sheetId: env.model.getters.getActiveSheetId(),
-            dimension: "ROW",
-            elements: rows,
-        });
-    };
-    const UNHIDE_ALL_ROWS_ACTION = (env) => {
-        const sheetId = env.model.getters.getActiveSheetId();
-        env.model.dispatch("UNHIDE_COLUMNS_ROWS", {
-            sheetId,
-            dimension: "ROW",
-            elements: Array.from(Array(env.model.getters.getNumberRows(sheetId)).keys()),
-        });
-    };
-    const UNHIDE_ROWS_ACTION = (env) => {
-        const columns = env.model.getters.getElementsFromSelection("ROW");
-        env.model.dispatch("UNHIDE_COLUMNS_ROWS", {
-            sheetId: env.model.getters.getActiveSheetId(),
-            dimension: "ROW",
-            elements: columns,
-        });
-    };
-    //------------------------------------------------------------------------------
-    // Sheets
-    //------------------------------------------------------------------------------
-    const CREATE_SHEET_ACTION = (env) => {
-        const activeSheetId = env.model.getters.getActiveSheetId();
-        const position = env.model.getters.getSheetIds().indexOf(activeSheetId) + 1;
-        const sheetId = env.model.uuidGenerator.uuidv4();
-        env.model.dispatch("CREATE_SHEET", { sheetId, position });
-        env.model.dispatch("ACTIVATE_SHEET", { sheetIdFrom: activeSheetId, sheetIdTo: sheetId });
-    };
-    //------------------------------------------------------------------------------
-    // Charts
-    //------------------------------------------------------------------------------
-    const CREATE_CHART = (env) => {
-        const getters = env.model.getters;
-        const zone = getters.getSelectedZone();
-        let dataSetZone = zone;
-        const id = env.model.uuidGenerator.uuidv4();
-        let labelRange;
-        if (zone.left !== zone.right) {
-            dataSetZone = { ...zone, left: zone.left + 1 };
-        }
-        const dataSets = [zoneToXc(dataSetZone)];
-        const sheetId = getters.getActiveSheetId();
-        const { x: offsetCorrectionX, y: offsetCorrectionY } = getters.getMainViewportCoordinates();
-        const { offsetX, offsetY } = getters.getActiveSheetScrollInfo();
-        const { width, height } = getters.getSheetViewDimension();
-        const size = { width: DEFAULT_FIGURE_WIDTH, height: DEFAULT_FIGURE_HEIGHT };
-        const rect = getters.getVisibleRect(getters.getActiveMainViewport());
-        const scrollableViewportWidth = Math.min(rect.width, width - offsetCorrectionX);
-        const scrollableViewportHeight = Math.min(rect.height, height - offsetCorrectionY);
-        const position = {
-            x: offsetCorrectionX +
-                offsetX +
-                Math.max(0, (scrollableViewportWidth - DEFAULT_FIGURE_WIDTH) / 2),
-            y: offsetCorrectionY +
-                offsetY +
-                Math.max(0, (scrollableViewportHeight - DEFAULT_FIGURE_HEIGHT) / 2),
-        }; // Position at the center of the scrollable viewport
-        let title = "";
-        const cells = env.model.getters.getCellsInZone(sheetId, {
-            ...dataSetZone,
-            bottom: dataSetZone.top,
-        });
-        const dataSetsHaveTitle = !!cells.find((cell) => cell && cell.evaluated.type !== CellValueType.number);
-        if (dataSetsHaveTitle) {
-            const texts = cells.reduce((acc, cell) => {
-                const text = cell && cell.evaluated.type !== CellValueType.error && env.model.getters.getCellText(cell);
-                if (text) {
-                    acc.push(text);
-                }
-                return acc;
-            }, []);
-            const lastElement = texts.splice(-1)[0];
-            title = texts.join(", ");
-            if (lastElement) {
-                title += (title ? " " + env._t("and") + " " : "") + lastElement;
-            }
-        }
-        if (zone.left !== zone.right) {
-            labelRange = zoneToXc({
-                ...zone,
-                right: zone.left,
-                top: dataSetsHaveTitle ? zone.top + 1 : zone.top,
-            });
-        }
-        const newLegendPos = dataSetZone.right === dataSetZone.left ? "none" : "top"; //Using the same variable as above to identify number of columns involved.
-        env.model.dispatch("CREATE_CHART", {
-            sheetId,
-            id,
-            position,
-            size,
-            definition: {
-                title,
-                dataSets,
-                labelRange,
-                type: "bar",
-                background: BACKGROUND_CHART_COLOR,
-                stacked: false,
-                dataSetsHaveTitle,
-                verticalAxisPosition: "left",
-                legendPosition: newLegendPos,
-            },
-        });
-        env.model.dispatch("SELECT_FIGURE", { id });
-        env.openSidePanel("ChartPanel");
-    };
-    //------------------------------------------------------------------------------
-    // Style/Format
-    //------------------------------------------------------------------------------
-    const FORMAT_AUTOMATIC_ACTION = (env) => setFormatter(env, "");
-    const FORMAT_NUMBER_ACTION = (env) => setFormatter(env, "#,##0.00");
-    const FORMAT_PERCENT_ACTION = (env) => setFormatter(env, "0.00%");
-    const FORMAT_CURRENCY_ACTION = (env) => setFormatter(env, "[$$]#,##0.00");
-    const FORMAT_CURRENCY_ROUNDED_ACTION = (env) => setFormatter(env, "[$$]#,##0");
-    const FORMAT_DATE_ACTION = (env) => setFormatter(env, "m/d/yyyy");
-    const FORMAT_TIME_ACTION = (env) => setFormatter(env, "hh:mm:ss a");
-    const FORMAT_DATE_TIME_ACTION = (env) => setFormatter(env, "m/d/yyyy hh:mm:ss");
-    const FORMAT_DURATION_ACTION = (env) => setFormatter(env, "hhhh:mm:ss");
-    const FORMAT_BOLD_ACTION = (env) => setStyle(env, { bold: !env.model.getters.getCurrentStyle().bold });
-    const FORMAT_ITALIC_ACTION = (env) => setStyle(env, { italic: !env.model.getters.getCurrentStyle().italic });
-    const FORMAT_STRIKETHROUGH_ACTION = (env) => setStyle(env, { strikethrough: !env.model.getters.getCurrentStyle().strikethrough });
-    const FORMAT_UNDERLINE_ACTION = (env) => setStyle(env, { underline: !env.model.getters.getCurrentStyle().underline });
-    const FORMAT_CLEARFORMAT_ACTION = (env) => {
-        env.model.dispatch("CLEAR_FORMATTING", {
-            sheetId: env.model.getters.getActiveSheetId(),
-            target: env.model.getters.getSelectedZones(),
-        });
-    };
-    //------------------------------------------------------------------------------
-    // Side panel
-    //------------------------------------------------------------------------------
-    const OPEN_CF_SIDEPANEL_ACTION = (env) => {
-        env.openSidePanel("ConditionalFormatting", { selection: env.model.getters.getSelectedZones() });
-    };
-    const OPEN_FAR_SIDEPANEL_ACTION = (env) => {
-        env.openSidePanel("FindAndReplace", {});
-    };
-    const OPEN_CUSTOM_CURRENCY_SIDEPANEL_ACTION = (env) => {
-        env.openSidePanel("CustomCurrency", {});
-    };
-    const INSERT_LINK = (env) => {
-        let { col, row } = env.model.getters.getPosition();
-        env.model.dispatch("OPEN_CELL_POPOVER", { col, row, popoverType: "LinkEditor" });
-    };
-    //------------------------------------------------------------------------------
-    // Filters action
-    //------------------------------------------------------------------------------
-    const FILTERS_CREATE_FILTER_TABLE = (env) => {
-        const sheetId = env.model.getters.getActiveSheetId();
-        const selection = env.model.getters.getSelection().zones;
-        interactiveAddFilter(env, sheetId, selection);
-    };
-    const FILTERS_REMOVE_FILTER_TABLE = (env) => {
-        const sheetId = env.model.getters.getActiveSheetId();
-        env.model.dispatch("REMOVE_FILTER_TABLE", {
-            sheetId,
-            target: env.model.getters.getSelectedZones(),
-        });
-    };
-    const SELECTION_CONTAINS_FILTER = (env) => {
-        const sheetId = env.model.getters.getActiveSheetId();
-        const selectedZones = env.model.getters.getSelectedZones();
-        return env.model.getters.doesZonesContainFilter(sheetId, selectedZones);
-    };
-    const SELECTION_IS_CONTINUOUS = (env) => {
-        const selectedZones = env.model.getters.getSelectedZones();
-        return areZonesContinuous(...selectedZones);
-    };
-    //------------------------------------------------------------------------------
-    // Sorting action
-    //------------------------------------------------------------------------------
-    const SORT_CELLS_ASCENDING = (env) => {
-        const { anchor, zones } = env.model.getters.getSelection();
-        const sheetId = env.model.getters.getActiveSheetId();
-        interactiveSortSelection(env, sheetId, anchor.cell, zones[0], "ascending");
-    };
-    const SORT_CELLS_DESCENDING = (env) => {
-        const { anchor, zones } = env.model.getters.getSelection();
-        const sheetId = env.model.getters.getActiveSheetId();
-        interactiveSortSelection(env, sheetId, anchor.cell, zones[0], "descending");
-    };
-    const IS_ONLY_ONE_RANGE = (env) => {
-        return env.model.getters.getSelectedZones().length === 1;
-    };
-
-    //------------------------------------------------------------------------------
-    // Context Menu Registry
-    //------------------------------------------------------------------------------
-    const cellMenuRegistry = new MenuItemRegistry();
-    cellMenuRegistry
-        .add("cut", {
-        name: _lt("Cut"),
-        description: "Ctrl+X",
-        sequence: 10,
-        action: CUT_ACTION,
-    })
-        .add("copy", {
-        name: _lt("Copy"),
-        description: "Ctrl+C",
-        sequence: 20,
-        isReadonlyAllowed: true,
-        action: COPY_ACTION,
-    })
-        .add("paste", {
-        name: _lt("Paste"),
-        description: "Ctrl+V",
-        sequence: 30,
-        action: PASTE_ACTION,
-    })
-        .add("paste_special", {
-        name: _lt("Paste special"),
-        sequence: 40,
-        separator: true,
-        isVisible: IS_NOT_CUT_OPERATION,
-    })
-        .addChild("paste_value_only", ["paste_special"], {
-        name: _lt("Paste values only"),
-        sequence: 10,
-        action: PASTE_VALUE_ACTION,
-    })
-        .addChild("paste_format_only", ["paste_special"], {
-        name: _lt("Paste format only"),
-        sequence: 20,
-        action: PASTE_FORMAT_ACTION,
-    })
-        .add("add_row_before", {
-        name: CELL_INSERT_ROWS_BEFORE_NAME,
-        sequence: 70,
-        action: INSERT_ROWS_BEFORE_ACTION,
-        isVisible: IS_ONLY_ONE_RANGE,
-    })
-        .add("add_column_before", {
-        name: CELL_INSERT_COLUMNS_BEFORE_NAME,
-        sequence: 90,
-        action: INSERT_COLUMNS_BEFORE_ACTION,
-        isVisible: IS_ONLY_ONE_RANGE,
-    })
-        .add("insert_cell", {
-        name: _lt("Insert cells"),
-        sequence: 100,
-        isVisible: IS_ONLY_ONE_RANGE,
-        separator: true,
-    })
-        .addChild("insert_cell_down", ["insert_cell"], {
-        name: _lt("Shift down"),
-        sequence: 10,
-        action: INSERT_CELL_SHIFT_DOWN,
-    })
-        .addChild("insert_cell_right", ["insert_cell"], {
-        name: _lt("Shift right"),
-        sequence: 20,
-        action: INSERT_CELL_SHIFT_RIGHT,
-    })
-        .add("delete_row", {
-        name: REMOVE_ROWS_NAME,
-        sequence: 110,
-        action: REMOVE_ROWS_ACTION,
-        isVisible: IS_ONLY_ONE_RANGE,
-    })
-        .add("delete_column", {
-        name: REMOVE_COLUMNS_NAME,
-        sequence: 120,
-        action: REMOVE_COLUMNS_ACTION,
-        isVisible: IS_ONLY_ONE_RANGE,
-    })
-        .add("delete_cell", {
-        name: _lt("Delete cells"),
-        sequence: 130,
-        isVisible: IS_ONLY_ONE_RANGE,
-    })
-        .addChild("delete_cell_up", ["delete_cell"], {
-        name: _lt("Shift up"),
-        sequence: 10,
-        action: DELETE_CELL_SHIFT_UP,
-    })
-        .addChild("delete_cell_down", ["delete_cell"], {
-        name: _lt("Shift left"),
-        sequence: 20,
-        action: DELETE_CELL_SHIFT_LEFT,
-    })
-        .add("insert_link", {
-        name: _lt("Insert link"),
-        separator: true,
-        sequence: 150,
-        action: INSERT_LINK,
-    });
-
-    const colMenuRegistry = new MenuItemRegistry();
-    colMenuRegistry
-        .add("cut", {
-        name: _lt("Cut"),
-        description: "Ctrl+X",
-        sequence: 10,
-        action: CUT_ACTION,
-    })
-        .add("copy", {
-        name: _lt("Copy"),
-        description: "Ctrl+C",
-        sequence: 20,
-        isReadonlyAllowed: true,
-        action: COPY_ACTION,
-    })
-        .add("paste", {
-        name: _lt("Paste"),
-        description: "Ctrl+V",
-        sequence: 30,
-        action: PASTE_ACTION,
-    })
-        .add("paste_special", {
-        name: _lt("Paste special"),
-        sequence: 40,
-        separator: true,
-        isVisible: IS_NOT_CUT_OPERATION,
-    })
-        .addChild("paste_value_only", ["paste_special"], {
-        name: _lt("Paste value only"),
-        sequence: 10,
-        action: PASTE_VALUE_ACTION,
-    })
-        .addChild("paste_format_only", ["paste_special"], {
-        name: _lt("Paste format only"),
-        sequence: 20,
-        action: PASTE_FORMAT_ACTION,
-    })
-        .add("sort_columns", {
-        name: (env) => env.model.getters.getActiveCols().size > 1 ? _lt("Sort columns") : _lt("Sort column"),
-        sequence: 50,
-        isVisible: IS_ONLY_ONE_RANGE,
-        separator: true,
-    })
-        .addChild("sort_ascending", ["sort_columns"], {
-        name: _lt("Ascending (A ⟶ Z)"),
-        sequence: 10,
-        action: SORT_CELLS_ASCENDING,
-    })
-        .addChild("sort_descending", ["sort_columns"], {
-        name: _lt("Descending (Z ⟶ A)"),
-        sequence: 20,
-        action: SORT_CELLS_DESCENDING,
-    })
-        .add("add_column_before", {
-        name: COLUMN_INSERT_COLUMNS_BEFORE_NAME,
-        sequence: 70,
-        action: INSERT_COLUMNS_BEFORE_ACTION,
-    })
-        .add("add_column_after", {
-        name: COLUMN_INSERT_COLUMNS_AFTER_NAME,
-        sequence: 80,
-        action: INSERT_COLUMNS_AFTER_ACTION,
-    })
-        .add("delete_column", {
-        name: REMOVE_COLUMNS_NAME,
-        sequence: 90,
-        action: REMOVE_COLUMNS_ACTION,
-    })
-        .add("clear_column", {
-        name: DELETE_CONTENT_COLUMNS_NAME,
-        sequence: 100,
-        action: DELETE_CONTENT_COLUMNS_ACTION,
-    })
-        .add("hide_columns", {
-        name: HIDE_COLUMNS_NAME,
-        sequence: 85,
-        action: HIDE_COLUMNS_ACTION,
-        isVisible: (env) => {
-            const sheetId = env.model.getters.getActiveSheetId();
-            const hiddenCols = env.model.getters.getHiddenColsGroups(sheetId).flat();
-            return (env.model.getters.getNumberCols(sheetId) >
-                hiddenCols.length + env.model.getters.getElementsFromSelection("COL").length);
-        },
-        separator: true,
-    })
-        .add("unhide_columns", {
-        name: "Unhide columns",
-        sequence: 86,
-        action: UNHIDE_COLUMNS_ACTION,
-        isVisible: (env) => {
-            const hiddenCols = env.model.getters
-                .getHiddenColsGroups(env.model.getters.getActiveSheetId())
-                .flat();
-            const currentCols = env.model.getters.getElementsFromSelection("COL");
-            return currentCols.some((col) => hiddenCols.includes(col));
-        },
-        separator: true,
-    })
-        .add("conditional_formatting", {
-        name: _lt("Conditional formatting"),
-        sequence: 110,
-        action: OPEN_CF_SIDEPANEL_ACTION,
-    });
-
-    const rowMenuRegistry = new MenuItemRegistry();
-    rowMenuRegistry
-        .add("cut", {
-        name: _lt("Cut"),
-        sequence: 10,
-        description: "Ctrl+X",
-        action: CUT_ACTION,
-    })
-        .add("copy", {
-        name: _lt("Copy"),
-        description: "Ctrl+C",
-        sequence: 20,
-        isReadonlyAllowed: true,
-        action: COPY_ACTION,
-    })
-        .add("paste", {
-        name: _lt("Paste"),
-        description: "Ctrl+V",
-        sequence: 30,
-        action: PASTE_ACTION,
-    })
-        .add("paste_special", {
-        name: _lt("Paste special"),
-        sequence: 40,
-        separator: true,
-        isVisible: IS_NOT_CUT_OPERATION,
-    })
-        .addChild("paste_value_only", ["paste_special"], {
-        name: _lt("Paste value only"),
-        sequence: 10,
-        action: PASTE_VALUE_ACTION,
-    })
-        .addChild("paste_format_only", ["paste_special"], {
-        name: _lt("Paste format only"),
-        sequence: 20,
-        action: PASTE_FORMAT_ACTION,
-    })
-        .add("add_row_before", {
-        name: ROW_INSERT_ROWS_BEFORE_NAME,
-        sequence: 50,
-        action: INSERT_ROWS_BEFORE_ACTION,
-    })
-        .add("add_row_after", {
-        name: ROW_INSERT_ROWS_AFTER_NAME,
-        sequence: 60,
-        action: INSERT_ROWS_AFTER_ACTION,
-    })
-        .add("delete_row", {
-        name: REMOVE_ROWS_NAME,
-        sequence: 70,
-        action: REMOVE_ROWS_ACTION,
-    })
-        .add("clear_row", {
-        name: DELETE_CONTENT_ROWS_NAME,
-        sequence: 80,
-        action: DELETE_CONTENT_ROWS_ACTION,
-    })
-        .add("hide_rows", {
-        name: HIDE_ROWS_NAME,
-        sequence: 85,
-        action: HIDE_ROWS_ACTION,
-        isVisible: (env) => {
-            const sheetId = env.model.getters.getActiveSheetId();
-            const hiddenRows = env.model.getters.getHiddenRowsGroups(sheetId).flat();
-            return (env.model.getters.getNumberRows(sheetId) >
-                hiddenRows.length + env.model.getters.getElementsFromSelection("ROW").length);
-        },
-        separator: true,
-    })
-        .add("unhide_rows", {
-        name: "Unhide rows",
-        sequence: 86,
-        action: UNHIDE_ROWS_ACTION,
-        isVisible: (env) => {
-            const hiddenRows = env.model.getters
-                .getHiddenRowsGroups(env.model.getters.getActiveSheetId())
-                .flat();
-            const currentRows = env.model.getters.getElementsFromSelection("ROW");
-            return currentRows.some((col) => hiddenRows.includes(col));
-        },
-        separator: true,
-    })
-        .add("conditional_formatting", {
-        name: _lt("Conditional formatting"),
-        sequence: 90,
-        action: OPEN_CF_SIDEPANEL_ACTION,
-    });
-
-    function interactiveRenameSheet(env, sheetId, errorText) {
-        const placeholder = env.model.getters.getSheetName(sheetId);
-        const title = _lt("Rename Sheet");
-        const callback = (name) => {
-            if (name === null || name === placeholder) {
-                return;
-            }
-            if (name === "") {
-                interactiveRenameSheet(env, sheetId, _lt("The sheet name cannot be empty."));
-            }
-            const result = env.model.dispatch("RENAME_SHEET", { sheetId, name });
-            if (!result.isSuccessful) {
-                if (result.reasons.includes(10 /* CommandResult.DuplicatedSheetName */)) {
-                    interactiveRenameSheet(env, sheetId, _lt("A sheet with the name %s already exists. Please select another name.", name));
-                }
-                if (result.reasons.includes(11 /* CommandResult.ForbiddenCharactersInSheetName */)) {
-                    interactiveRenameSheet(env, sheetId, _lt("Some used characters are not allowed in a sheet name (Forbidden characters are %s).", FORBIDDEN_SHEET_CHARS.join(" ")));
-                }
-            }
-        };
-        env.editText(title, callback, {
-            placeholder: placeholder,
-            error: errorText,
-        });
-    }
-
-    const sheetMenuRegistry = new MenuItemRegistry();
-    sheetMenuRegistry
-        .add("delete", {
-        name: _lt("Delete"),
-        sequence: 10,
-        isVisible: (env) => {
-            return env.model.getters.getSheetIds().length > 1;
-        },
-        action: (env) => env.askConfirmation(_lt("Are you sure you want to delete this sheet ?"), () => {
-            env.model.dispatch("DELETE_SHEET", { sheetId: env.model.getters.getActiveSheetId() });
-        }),
-    })
-        .add("duplicate", {
-        name: _lt("Duplicate"),
-        sequence: 20,
-        action: (env) => {
-            const sheetIdFrom = env.model.getters.getActiveSheetId();
-            const sheetIdTo = env.model.uuidGenerator.uuidv4();
-            env.model.dispatch("DUPLICATE_SHEET", {
-                sheetId: sheetIdFrom,
-                sheetIdTo,
-            });
-            env.model.dispatch("ACTIVATE_SHEET", { sheetIdFrom, sheetIdTo });
-        },
-    })
-        .add("rename", {
-        name: _lt("Rename"),
-        sequence: 30,
-        action: (env) => interactiveRenameSheet(env, env.model.getters.getActiveSheetId()),
-    })
-        .add("move_right", {
-        name: _lt("Move right"),
-        sequence: 40,
-        isVisible: (env) => {
-            const sheetId = env.model.getters.getActiveSheetId();
-            const sheetIds = env.model.getters.getVisibleSheetIds();
-            return sheetIds.indexOf(sheetId) !== sheetIds.length - 1;
-        },
-        action: (env) => env.model.dispatch("MOVE_SHEET", {
-            sheetId: env.model.getters.getActiveSheetId(),
-            direction: "right",
-        }),
-    })
-        .add("move_left", {
-        name: _lt("Move left"),
-        sequence: 50,
-        isVisible: (env) => {
-            const sheetId = env.model.getters.getActiveSheetId();
-            return env.model.getters.getVisibleSheetIds()[0] !== sheetId;
-        },
-        action: (env) => env.model.dispatch("MOVE_SHEET", {
-            sheetId: env.model.getters.getActiveSheetId(),
-            direction: "left",
-        }),
-    })
-        .add("hide_sheet", {
-        name: _lt("Hide sheet"),
-        sequence: 60,
-        isVisible: (env) => env.model.getters.getVisibleSheetIds().length !== 1,
-        action: (env) => env.model.dispatch("HIDE_SHEET", { sheetId: env.model.getters.getActiveSheetId() }),
-    });
-
-    const CfTerms = {
-        Errors: {
-            [23 /* CommandResult.InvalidRange */]: _lt("The range is invalid"),
-            [48 /* CommandResult.FirstArgMissing */]: _lt("The argument is missing. Please provide a value"),
-            [49 /* CommandResult.SecondArgMissing */]: _lt("The second argument is missing. Please provide a value"),
-            [50 /* CommandResult.MinNaN */]: _lt("The minpoint must be a number"),
-            [51 /* CommandResult.MidNaN */]: _lt("The midpoint must be a number"),
-            [52 /* CommandResult.MaxNaN */]: _lt("The maxpoint must be a number"),
-            [53 /* CommandResult.ValueUpperInflectionNaN */]: _lt("The first value must be a number"),
-            [54 /* CommandResult.ValueLowerInflectionNaN */]: _lt("The second value must be a number"),
-            [44 /* CommandResult.MinBiggerThanMax */]: _lt("Minimum must be smaller then Maximum"),
-            [47 /* CommandResult.MinBiggerThanMid */]: _lt("Minimum must be smaller then Midpoint"),
-            [46 /* CommandResult.MidBiggerThanMax */]: _lt("Midpoint must be smaller then Maximum"),
-            [45 /* CommandResult.LowerBiggerThanUpper */]: _lt("Lower inflection point must be smaller than upper inflection point"),
-            [55 /* CommandResult.MinInvalidFormula */]: _lt("Invalid Minpoint formula"),
-            [57 /* CommandResult.MaxInvalidFormula */]: _lt("Invalid Maxpoint formula"),
-            [56 /* CommandResult.MidInvalidFormula */]: _lt("Invalid Midpoint formula"),
-            [58 /* CommandResult.ValueUpperInvalidFormula */]: _lt("Invalid upper inflection point formula"),
-            [59 /* CommandResult.ValueLowerInvalidFormula */]: _lt("Invalid lower inflection point formula"),
-            [22 /* CommandResult.EmptyRange */]: _lt("A range needs to be defined"),
-            Unexpected: _lt("The rule is invalid for an unknown reason"),
-        },
-        ColorScale: _lt("Color scale"),
-        IconSet: _lt("Icon set"),
-    };
-    const CellIsOperators = {
-        IsEmpty: _lt("Is empty"),
-        IsNotEmpty: _lt("Is not empty"),
-        ContainsText: _lt("Contains"),
-        NotContains: _lt("Does not contain"),
-        BeginsWith: _lt("Starts with"),
-        EndsWith: _lt("Ends with"),
-        Equal: _lt("Is equal to"),
-        NotEqual: _lt("Is not equal to"),
-        GreaterThan: _lt("Is greater than"),
-        GreaterThanOrEqual: _lt("Is greater than or equal to"),
-        LessThan: _lt("Is less than"),
-        LessThanOrEqual: _lt("Is less than or equal to"),
-        Between: _lt("Is between"),
-        NotBetween: _lt("Is not between"),
-    };
-    const ChartTerms = {
-        Series: _lt("Series"),
-        Errors: {
-            Unexpected: _lt("The chart definition is invalid for an unknown reason"),
-            // BASIC CHART ERRORS (LINE | BAR | PIE)
-            [29 /* CommandResult.InvalidDataSet */]: _lt("The dataset is invalid"),
-            [30 /* CommandResult.InvalidLabelRange */]: _lt("Labels are invalid"),
-            // SCORECARD CHART ERRORS
-            [31 /* CommandResult.InvalidScorecardKeyValue */]: _lt("The key value is invalid"),
-            [32 /* CommandResult.InvalidScorecardBaseline */]: _lt("The baseline value is invalid"),
-            // GAUGE CHART ERRORS
-            [33 /* CommandResult.InvalidGaugeDataRange */]: _lt("The data range is invalid"),
-            [34 /* CommandResult.EmptyGaugeRangeMin */]: _lt("A minimum range limit value is needed"),
-            [35 /* CommandResult.GaugeRangeMinNaN */]: _lt("The minimum range limit value must be a number"),
-            [36 /* CommandResult.EmptyGaugeRangeMax */]: _lt("A maximum range limit value is needed"),
-            [37 /* CommandResult.GaugeRangeMaxNaN */]: _lt("The maximum range limit value must be a number"),
-            [38 /* CommandResult.GaugeRangeMinBiggerThanRangeMax */]: _lt("Minimum range limit must be smaller than maximum range limit"),
-            [39 /* CommandResult.GaugeLowerInflectionPointNaN */]: _lt("The lower inflection point value must be a number"),
-            [40 /* CommandResult.GaugeUpperInflectionPointNaN */]: _lt("The upper inflection point value must be a number"),
-        },
-    };
-    const NumberFormatTerms = {
-        Automatic: _lt("Automatic"),
-        Number: _lt("Number"),
-        Percent: _lt("Percent"),
-        Currency: _lt("Currency"),
-        CurrencyRounded: _lt("Currency rounded"),
-        Date: _lt("Date"),
-        Time: _lt("Time"),
-        DateTime: _lt("Date time"),
-        Duration: _lt("Duration"),
-        CustomCurrency: _lt("Custom currency"),
-    };
-    const CustomCurrencyTerms = {
-        Custom: _lt("Custom"),
-    };
-    const MergeErrorMessage = _lt("Merged cells are preventing this operation. Unmerge those cells and try again.");
-
-    function interactiveFreezeColumnsRows(env, dimension, base) {
-        const sheetId = env.model.getters.getActiveSheetId();
-        const cmd = dimension === "COL" ? "FREEZE_COLUMNS" : "FREEZE_ROWS";
-        const result = env.model.dispatch(cmd, { sheetId, quantity: base });
-        if (result.isCancelledBecause(62 /* CommandResult.MergeOverlap */)) {
-            env.raiseError(MergeErrorMessage);
-        }
-    }
-
-    const topbarMenuRegistry = new MenuItemRegistry();
-    topbarMenuRegistry
-        .add("file", { name: _lt("File"), sequence: 10 })
-        .add("edit", { name: _lt("Edit"), sequence: 20 })
-        .add("view", { name: _lt("View"), sequence: 30 })
-        .add("insert", { name: _lt("Insert"), sequence: 40 })
-        .add("format", { name: _lt("Format"), sequence: 50 })
-        .add("data", { name: _lt("Data"), sequence: 60 })
-        .addChild("save", ["file"], {
-        name: _lt("Save"),
-        description: "Ctrl+S",
-        sequence: 10,
-        action: () => console.log("Not implemented"),
-    })
-        .addChild("undo", ["edit"], {
-        name: _lt("Undo"),
-        description: "Ctrl+Z",
-        sequence: 10,
-        action: UNDO_ACTION,
-    })
-        .addChild("redo", ["edit"], {
-        name: _lt("Redo"),
-        description: "Ctrl+Y",
-        sequence: 20,
-        action: REDO_ACTION,
-        separator: true,
-    })
-        .addChild("copy", ["edit"], {
-        name: _lt("Copy"),
-        description: "Ctrl+C",
-        sequence: 30,
-        isReadonlyAllowed: true,
-        action: COPY_ACTION,
-    })
-        .addChild("cut", ["edit"], {
-        name: _lt("Cut"),
-        description: "Ctrl+X",
-        sequence: 40,
-        action: CUT_ACTION,
-    })
-        .addChild("paste", ["edit"], {
-        name: _lt("Paste"),
-        description: "Ctrl+V",
-        sequence: 50,
-        action: PASTE_ACTION,
-    })
-        .addChild("paste_special", ["edit"], {
-        name: _lt("Paste special"),
-        sequence: 60,
-        separator: true,
-        isVisible: IS_NOT_CUT_OPERATION,
-    })
-        .addChild("paste_special_value", ["edit", "paste_special"], {
-        name: _lt("Paste value only"),
-        sequence: 10,
-        action: PASTE_VALUE_ACTION,
-    })
-        .addChild("paste_special_format", ["edit", "paste_special"], {
-        name: _lt("Paste format only"),
-        sequence: 20,
-        action: PASTE_FORMAT_ACTION,
-    })
-        .addChild("sort_range", ["data"], {
-        name: _lt("Sort range"),
-        sequence: 62,
-        isVisible: IS_ONLY_ONE_RANGE,
-        separator: true,
-    })
-        .addChild("sort_ascending", ["data", "sort_range"], {
-        name: _lt("Ascending (A ⟶ Z)"),
-        sequence: 10,
-        action: SORT_CELLS_ASCENDING,
-    })
-        .addChild("sort_descending", ["data", "sort_range"], {
-        name: _lt("Descending (Z ⟶ A)"),
-        sequence: 20,
-        action: SORT_CELLS_DESCENDING,
-    })
-        .addChild("find_and_replace", ["edit"], {
-        name: _lt("Find and replace"),
-        description: "Ctrl+H",
-        sequence: 65,
-        isReadonlyAllowed: true,
-        action: OPEN_FAR_SIDEPANEL_ACTION,
-        separator: true,
-    })
-        .addChild("edit_delete_cell_values", ["edit"], {
-        name: _lt("Delete values"),
-        sequence: 70,
-        action: DELETE_CONTENT_ACTION,
-    })
-        .addChild("edit_delete_row", ["edit"], {
-        name: REMOVE_ROWS_NAME,
-        sequence: 80,
-        action: REMOVE_ROWS_ACTION,
-    })
-        .addChild("edit_delete_column", ["edit"], {
-        name: REMOVE_COLUMNS_NAME,
-        sequence: 90,
-        action: REMOVE_COLUMNS_ACTION,
-    })
-        .addChild("edit_delete_cell_shift_up", ["edit"], {
-        name: _lt("Delete cell and shift up"),
-        sequence: 93,
-        action: DELETE_CELL_SHIFT_UP,
-    })
-        .addChild("edit_delete_cell_shift_left", ["edit"], {
-        name: _lt("Delete cell and shift left"),
-        sequence: 97,
-        action: DELETE_CELL_SHIFT_LEFT,
-    })
-        .addChild("edit_unhide_columns", ["edit"], {
-        name: _lt("Unhide all columns"),
-        sequence: 100,
-        action: UNHIDE_ALL_COLUMNS_ACTION,
-        isVisible: (env) => env.model.getters.getHiddenColsGroups(env.model.getters.getActiveSheetId()).length > 0,
-    })
-        .addChild("edit_unhide_rows", ["edit"], {
-        name: _lt("Unhide all rows"),
-        sequence: 100,
-        action: UNHIDE_ALL_ROWS_ACTION,
-        isVisible: (env) => env.model.getters.getHiddenRowsGroups(env.model.getters.getActiveSheetId()).length > 0,
-    })
-        .addChild("insert_row_before", ["insert"], {
-        name: MENU_INSERT_ROWS_BEFORE_NAME,
-        sequence: 10,
-        action: INSERT_ROWS_BEFORE_ACTION,
-        isVisible: (env) => env.model.getters.getActiveCols().size === 0,
-    })
-        .addChild("insert_row_after", ["insert"], {
-        name: MENU_INSERT_ROWS_AFTER_NAME,
-        sequence: 20,
-        action: INSERT_ROWS_AFTER_ACTION,
-        isVisible: (env) => env.model.getters.getActiveCols().size === 0,
-        separator: true,
-    })
-        .addChild("insert_column_before", ["insert"], {
-        name: MENU_INSERT_COLUMNS_BEFORE_NAME,
-        sequence: 30,
-        action: INSERT_COLUMNS_BEFORE_ACTION,
-        isVisible: (env) => env.model.getters.getActiveRows().size === 0,
-    })
-        .addChild("insert_column_after", ["insert"], {
-        name: MENU_INSERT_COLUMNS_AFTER_NAME,
-        sequence: 40,
-        action: INSERT_COLUMNS_AFTER_ACTION,
-        isVisible: (env) => env.model.getters.getActiveRows().size === 0,
-        separator: true,
-    })
-        .addChild("insert_insert_cell_shift_down", ["insert"], {
-        name: _lt("Insert cells and shift down"),
-        sequence: 43,
-        action: INSERT_CELL_SHIFT_DOWN,
-    })
-        .addChild("insert_insert_cell_shift_right", ["insert"], {
-        name: _lt("Insert cells and shift right"),
-        sequence: 47,
-        action: INSERT_CELL_SHIFT_RIGHT,
-        separator: true,
-    })
-        .addChild("insert_chart", ["insert"], {
-        name: _lt("Chart"),
-        sequence: 50,
-        action: CREATE_CHART,
-    })
-        .addChild("insert_link", ["insert"], {
-        name: _lt("Link"),
-        separator: true,
-        sequence: 60,
-        action: INSERT_LINK,
-    })
-        .addChild("insert_sheet", ["insert"], {
-        name: _lt("New sheet"),
-        sequence: 70,
-        action: CREATE_SHEET_ACTION,
-        separator: true,
-    })
-        .addChild("unfreeze_panes", ["view"], {
-        name: _lt("Unfreeze"),
-        sequence: 4,
-        isVisible: (env) => {
-            const { xSplit, ySplit } = env.model.getters.getPaneDivisions(env.model.getters.getActiveSheetId());
-            return xSplit + ySplit > 0;
-        },
-        action: (env) => env.model.dispatch("UNFREEZE_COLUMNS_ROWS", {
-            sheetId: env.model.getters.getActiveSheetId(),
-        }),
-    })
-        .addChild("freeze_panes", ["view"], {
-        name: _lt("Freeze"),
-        sequence: 5,
-        separator: true,
-    })
-        .addChild("unfreeze_rows", ["view", "freeze_panes"], {
-        name: _lt("No rows"),
-        action: (env) => env.model.dispatch("UNFREEZE_ROWS", {
-            sheetId: env.model.getters.getActiveSheetId(),
-        }),
-        isReadonlyAllowed: true,
-        sequence: 5,
-        isVisible: (env) => !!env.model.getters.getPaneDivisions(env.model.getters.getActiveSheetId()).ySplit,
-    })
-        .addChild("freeze_first_row", ["view", "freeze_panes"], {
-        name: _lt("1 row"),
-        action: (env) => interactiveFreezeColumnsRows(env, "ROW", 1),
-        isReadonlyAllowed: true,
-        sequence: 10,
-    })
-        .addChild("freeze_second_row", ["view", "freeze_panes"], {
-        name: _lt("2 rows"),
-        action: (env) => interactiveFreezeColumnsRows(env, "ROW", 2),
-        isReadonlyAllowed: true,
-        sequence: 15,
-    })
-        .addChild("freeze_current_row", ["view", "freeze_panes"], {
-        name: _lt("Up to current row"),
-        action: (env) => {
-            const { bottom } = env.model.getters.getSelectedZone();
-            interactiveFreezeColumnsRows(env, "ROW", bottom + 1);
-        },
-        isReadonlyAllowed: true,
-        sequence: 20,
-        separator: true,
-    })
-        .addChild("unfreeze_columns", ["view", "freeze_panes"], {
-        name: _lt("No columns"),
-        action: (env) => env.model.dispatch("UNFREEZE_COLUMNS", {
-            sheetId: env.model.getters.getActiveSheetId(),
-        }),
-        isReadonlyAllowed: true,
-        sequence: 25,
-        isVisible: (env) => !!env.model.getters.getPaneDivisions(env.model.getters.getActiveSheetId()).xSplit,
-    })
-        .addChild("freeze_first_col", ["view", "freeze_panes"], {
-        name: _lt("1 column"),
-        action: (env) => interactiveFreezeColumnsRows(env, "COL", 1),
-        isReadonlyAllowed: true,
-        sequence: 30,
-    })
-        .addChild("freeze_second_col", ["view", "freeze_panes"], {
-        name: _lt("2 columns"),
-        action: (env) => interactiveFreezeColumnsRows(env, "COL", 2),
-        isReadonlyAllowed: true,
-        sequence: 35,
-    })
-        .addChild("freeze_current_col", ["view", "freeze_panes"], {
-        name: _lt("Up to current column"),
-        action: (env) => {
-            const { right } = env.model.getters.getSelectedZone();
-            interactiveFreezeColumnsRows(env, "COL", right + 1);
-        },
-        isReadonlyAllowed: true,
-        sequence: 40,
-    })
-        .addChild("view_gridlines", ["view"], {
-        name: (env) => env.model.getters.getGridLinesVisibility(env.model.getters.getActiveSheetId())
-            ? _lt("Hide gridlines")
-            : _lt("Show gridlines"),
-        action: SET_GRID_LINES_VISIBILITY_ACTION,
-        sequence: 10,
-    })
-        .addChild("view_formulas", ["view"], {
-        name: (env) => env.model.getters.shouldShowFormulas() ? _lt("Hide formulas") : _lt("Show formulas"),
-        action: SET_FORMULA_VISIBILITY_ACTION,
-        isReadonlyAllowed: true,
-        sequence: 15,
-    })
-        .addChild("format_number", ["format"], {
-        name: _lt("Numbers"),
-        sequence: 10,
-        separator: true,
-    })
-        .addChild("format_number_automatic", ["format", "format_number"], {
-        name: NumberFormatTerms.Automatic,
-        sequence: 10,
-        separator: true,
-        action: FORMAT_AUTOMATIC_ACTION,
-    })
-        .addChild("format_number_number", ["format", "format_number"], {
-        name: NumberFormatTerms.Number,
-        description: "1,000.12",
-        sequence: 20,
-        action: FORMAT_NUMBER_ACTION,
-    })
-        .addChild("format_number_percent", ["format", "format_number"], {
-        name: NumberFormatTerms.Percent,
-        description: "10.12%",
-        sequence: 30,
-        separator: true,
-        action: FORMAT_PERCENT_ACTION,
-    })
-        .addChild("format_number_currency", ["format", "format_number"], {
-        name: NumberFormatTerms.Currency,
-        description: "$1,000.12",
-        sequence: 37,
-        action: FORMAT_CURRENCY_ACTION,
-    })
-        .addChild("format_number_currency_rounded", ["format", "format_number"], {
-        name: NumberFormatTerms.CurrencyRounded,
-        description: "$1,000",
-        sequence: 38,
-        action: FORMAT_CURRENCY_ROUNDED_ACTION,
-    })
-        .addChild("format_custom_currency", ["format", "format_number"], {
-        name: NumberFormatTerms.CustomCurrency,
-        sequence: 39,
-        separator: true,
-        action: OPEN_CUSTOM_CURRENCY_SIDEPANEL_ACTION,
-    })
-        .addChild("format_number_date", ["format", "format_number"], {
-        name: NumberFormatTerms.Date,
-        description: "9/26/2008",
-        sequence: 40,
-        action: FORMAT_DATE_ACTION,
-    })
-        .addChild("format_number_time", ["format", "format_number"], {
-        name: NumberFormatTerms.Time,
-        description: "10:43:00 PM",
-        sequence: 50,
-        action: FORMAT_TIME_ACTION,
-    })
-        .addChild("format_number_date_time", ["format", "format_number"], {
-        name: NumberFormatTerms.DateTime,
-        description: "9/26/2008 22:43:00",
-        sequence: 60,
-        action: FORMAT_DATE_TIME_ACTION,
-    })
-        .addChild("format_number_duration", ["format", "format_number"], {
-        name: NumberFormatTerms.Duration,
-        description: "27:51:38",
-        sequence: 70,
-        separator: true,
-        action: FORMAT_DURATION_ACTION,
-    })
-        .addChild("format_bold", ["format"], {
-        name: _lt("Bold"),
-        sequence: 20,
-        description: "Ctrl+B",
-        action: FORMAT_BOLD_ACTION,
-    })
-        .addChild("format_italic", ["format"], {
-        name: _lt("Italic"),
-        sequence: 30,
-        description: "Ctrl+I",
-        action: FORMAT_ITALIC_ACTION,
-    })
-        .addChild("format_underline", ["format"], {
-        name: _lt("Underline"),
-        description: "Ctrl+U",
-        sequence: 40,
-        action: FORMAT_UNDERLINE_ACTION,
-    })
-        .addChild("format_strikethrough", ["format"], {
-        name: _lt("Strikethrough"),
-        sequence: 50,
-        action: FORMAT_STRIKETHROUGH_ACTION,
-        separator: true,
-    })
-        .addChild("format_font_size", ["format"], {
-        name: _lt("Font size"),
-        sequence: 60,
-    })
-        .addChild("format_wrapping", ["format"], {
-        name: _lt("Wrapping"),
-        sequence: 70,
-        separator: true,
-    })
-        .addChild("format_wrapping_overflow", ["format", "format_wrapping"], {
-        name: "Overflow",
-        sequence: 10,
-        action: (env) => setStyle(env, { wrapping: "overflow" }),
-    })
-        .addChild("format_wrapping_wrap", ["format", "format_wrapping"], {
-        name: "Wrap",
-        sequence: 20,
-        action: (env) => setStyle(env, { wrapping: "wrap" }),
-    })
-        .addChild("format_wrapping_clip", ["format", "format_wrapping"], {
-        name: "Clip",
-        sequence: 30,
-        action: (env) => setStyle(env, { wrapping: "clip" }),
-    })
-        .addChild("format_cf", ["format"], {
-        name: _lt("Conditional formatting"),
-        sequence: 80,
-        action: OPEN_CF_SIDEPANEL_ACTION,
-        separator: true,
-    })
-        .addChild("format_clearFormat", ["format"], {
-        name: _lt("Clear formatting"),
-        sequence: 90,
-        action: FORMAT_CLEARFORMAT_ACTION,
-        separator: true,
-    })
-        .addChild("add_data_filter", ["data"], {
-        name: _lt("Add Filter"),
-        sequence: 20,
-        action: FILTERS_CREATE_FILTER_TABLE,
-        isVisible: (env) => !SELECTION_CONTAINS_FILTER(env),
-        isEnabled: (env) => SELECTION_IS_CONTINUOUS(env),
-    })
-        .addChild("remove_data_filter", ["data"], {
-        name: _lt("Remove Filter"),
-        sequence: 20,
-        action: FILTERS_REMOVE_FILTER_TABLE,
-        isVisible: SELECTION_CONTAINS_FILTER,
-    });
-    // Font-sizes
-    for (let fs of fontSizes) {
-        topbarMenuRegistry.addChild(`format_font_size_${fs.pt}`, ["format", "format_font_size"], {
-            name: fs.pt.toString(),
-            sequence: fs.pt,
-            action: (env) => setStyle(env, { fontSize: fs.pt }),
-        });
-    }
-
-    class OTRegistry extends Registry {
-        /**
-         * Add a transformation function to the registry. When the executed command
-         * happened, all the commands in toTransforms should be transformed using the
-         * transformation function given
-         */
-        addTransformation(executed, toTransforms, fn) {
-            for (let toTransform of toTransforms) {
-                if (!this.content[toTransform]) {
-                    this.content[toTransform] = new Map();
-                }
-                this.content[toTransform].set(executed, fn);
-            }
-            return this;
-        }
-        /**
-         * Get the transformation function to transform the command toTransform, after
-         * that the executed command happened.
-         */
-        getTransformation(toTransform, executed) {
-            return this.content[toTransform] && this.content[toTransform].get(executed);
-        }
-    }
-    const otRegistry = new OTRegistry();
-
-    const uuidGenerator$1 = new UuidGenerator();
-    css /* scss */ `
-  .o-selection {
-    .o-selection-input {
-      display: flex;
-      flex-direction: row;
-
-      input {
-        padding: 4px 6px;
-        border-radius: 4px;
-        box-sizing: border-box;
-        flex-grow: 2;
-      }
-      input:focus {
-        outline: none;
-      }
-      input.o-required,
-      input.o-focused {
-        border-width: 2px;
-        padding: 3px 5px;
-      }
-      input.o-focused {
-        border-color: ${SELECTION_BORDER_COLOR};
-      }
-      input.o-invalid {
-        border-color: red;
-      }
-      button.o-btn {
-        background: transparent;
-        border: none;
-        color: #333;
-        cursor: pointer;
-      }
-      button.o-btn-action {
-        margin: 8px 1px;
-        border-radius: 4px;
-        background: transparent;
-        border: 1px solid #dadce0;
-        color: #188038;
-        font-weight: bold;
-        font-size: 14px;
-        height: 25px;
-      }
-    }
-  }
-`;
-    /**
-     * This component can be used when the user needs to input some
-     * ranges. He can either input the ranges with the regular DOM `<input/>`
-     * displayed or by selecting zones on the grid.
-     *
-     * onSelectionChanged is called every time the input value
-     * changes.
-     */
-    class SelectionInput extends owl.Component {
-        constructor() {
-            super(...arguments);
-            this.id = uuidGenerator$1.uuidv4();
-            this.previousRanges = this.props.ranges || [];
-            this.originSheet = this.env.model.getters.getActiveSheetId();
-            this.state = owl.useState({
-                isMissing: false,
-            });
-        }
-        get ranges() {
-            const existingSelectionRange = this.env.model.getters.getSelectionInput(this.id);
-            const ranges = existingSelectionRange.length
-                ? existingSelectionRange
-                : this.props.ranges
-                    ? this.props.ranges.map((xc, i) => ({
-                        xc,
-                        id: i.toString(),
-                        isFocused: false,
-                    }))
-                    : [];
-            return ranges.map((range) => ({
-                ...range,
-                isValidRange: range.xc === "" || this.env.model.getters.isRangeValid(range.xc),
-            }));
-        }
-        get hasFocus() {
-            return this.ranges.filter((i) => i.isFocused).length > 0;
-        }
-        get canAddRange() {
-            return !this.props.hasSingleRange;
-        }
-        get isInvalid() {
-            return this.props.isInvalid || this.state.isMissing;
-        }
-        setup() {
-            owl.onMounted(() => this.enableNewSelectionInput());
-            owl.onWillUnmount(async () => this.disableNewSelectionInput());
-            owl.onPatched(() => this.checkChange());
-        }
-        enableNewSelectionInput() {
-            this.env.model.dispatch("ENABLE_NEW_SELECTION_INPUT", {
-                id: this.id,
-                initialRanges: this.props.ranges,
-                hasSingleRange: this.props.hasSingleRange,
-            });
-        }
-        disableNewSelectionInput() {
-            this.env.model.dispatch("DISABLE_SELECTION_INPUT", { id: this.id });
-        }
-        checkChange() {
-            const value = this.env.model.getters.getSelectionInputValue(this.id);
-            if (this.previousRanges.join() !== value.join()) {
-                this.triggerChange();
-            }
-        }
-        getColor(range) {
-            const color = range.color || "#000";
-            return "color: " + color + ";";
-        }
-        triggerChange() {
-            var _a, _b;
-            const ranges = this.env.model.getters.getSelectionInputValue(this.id);
-            (_b = (_a = this.props).onSelectionChanged) === null || _b === void 0 ? void 0 : _b.call(_a, ranges);
-            this.previousRanges = ranges;
-        }
-        focus(rangeId) {
-            this.state.isMissing = false;
-            this.env.model.dispatch("FOCUS_RANGE", {
-                id: this.id,
-                rangeId,
-            });
-        }
-        addEmptyInput() {
-            this.env.model.dispatch("ADD_EMPTY_RANGE", { id: this.id });
-        }
-        removeInput(rangeId) {
-            var _a, _b;
-            this.env.model.dispatch("REMOVE_RANGE", { id: this.id, rangeId });
-            this.triggerChange();
-            (_b = (_a = this.props).onSelectionConfirmed) === null || _b === void 0 ? void 0 : _b.call(_a);
-        }
-        onInputChanged(rangeId, ev) {
-            const target = ev.target;
-            this.env.model.dispatch("CHANGE_RANGE", {
-                id: this.id,
-                rangeId,
-                value: target.value,
-            });
-            target.blur();
-            this.triggerChange();
-        }
-        disable() {
-            var _a, _b;
-            this.env.model.dispatch("UNFOCUS_SELECTION_INPUT");
-            const ranges = this.env.model.getters.getSelectionInputValue(this.id);
-            if (this.props.required && ranges.length === 0) {
-                this.state.isMissing = true;
-            }
-            const activeSheetId = this.env.model.getters.getActiveSheetId();
-            if (this.originSheet !== activeSheetId) {
-                this.env.model.dispatch("ACTIVATE_SHEET", {
-                    sheetIdFrom: activeSheetId,
-                    sheetIdTo: this.originSheet,
-                });
-            }
-            (_b = (_a = this.props).onSelectionConfirmed) === null || _b === void 0 ? void 0 : _b.call(_a);
-        }
-    }
-    SelectionInput.template = "o-spreadsheet-SelectionInput";
-
-    class LineBarPieConfigPanel extends owl.Component {
-        constructor() {
-            super(...arguments);
-            this.state = owl.useState({
-                datasetDispatchResult: undefined,
-                labelsDispatchResult: undefined,
-            });
-            this.dataSeriesRanges = [];
-        }
-        setup() {
-            this.dataSeriesRanges = this.props.definition.dataSets;
-            this.labelRange = this.props.definition.labelRange;
-        }
-        get errorMessages() {
-            var _a, _b;
-            const cancelledReasons = [
-                ...(((_a = this.state.datasetDispatchResult) === null || _a === void 0 ? void 0 : _a.reasons) || []),
-                ...(((_b = this.state.labelsDispatchResult) === null || _b === void 0 ? void 0 : _b.reasons) || []),
-            ];
-            return cancelledReasons.map((error) => ChartTerms.Errors[error] || ChartTerms.Errors.Unexpected);
-        }
-        get isDatasetInvalid() {
-            var _a;
-            return !!((_a = this.state.datasetDispatchResult) === null || _a === void 0 ? void 0 : _a.isCancelledBecause(29 /* CommandResult.InvalidDataSet */));
-        }
-        get isLabelInvalid() {
-            var _a;
-            return !!((_a = this.state.labelsDispatchResult) === null || _a === void 0 ? void 0 : _a.isCancelledBecause(30 /* CommandResult.InvalidLabelRange */));
-        }
-        onUpdateDataSetsHaveTitle(ev) {
-            this.props.updateChart({
-                dataSetsHaveTitle: ev.target.checked,
-            });
-        }
-        /**
-         * Change the local dataSeriesRanges. The model should be updated when the
-         * button "confirm" is clicked
-         */
-        onDataSeriesRangesChanged(ranges) {
-            this.dataSeriesRanges = ranges;
-        }
-        onDataSeriesConfirmed() {
-            this.state.datasetDispatchResult = this.props.updateChart({
-                dataSets: this.dataSeriesRanges,
-            });
-        }
-        /**
-         * Change the local labelRange. The model should be updated when the
-         * button "confirm" is clicked
-         */
-        onLabelRangeChanged(ranges) {
-            this.labelRange = ranges[0];
-        }
-        onLabelRangeConfirmed() {
-            this.state.labelsDispatchResult = this.props.updateChart({
-                labelRange: this.labelRange,
-            });
-        }
-    }
-    LineBarPieConfigPanel.template = "o-spreadsheet-LineBarPieConfigPanel";
-    LineBarPieConfigPanel.components = { SelectionInput };
-
-    class BarConfigPanel extends LineBarPieConfigPanel {
-        onUpdateStacked(ev) {
-            this.props.updateChart({
-                stacked: ev.target.checked,
-            });
-        }
-    }
-    BarConfigPanel.template = "o-spreadsheet-BarConfigPanel";
-
     /**
      * AbstractChart is the class from which every Chart should inherit.
      * The role of this class is to maintain the state of each chart.
@@ -6865,6 +4917,85 @@
         }
         return "neutral";
     }
+
+    const CfTerms = {
+        Errors: {
+            [23 /* CommandResult.InvalidRange */]: _lt("The range is invalid"),
+            [48 /* CommandResult.FirstArgMissing */]: _lt("The argument is missing. Please provide a value"),
+            [49 /* CommandResult.SecondArgMissing */]: _lt("The second argument is missing. Please provide a value"),
+            [50 /* CommandResult.MinNaN */]: _lt("The minpoint must be a number"),
+            [51 /* CommandResult.MidNaN */]: _lt("The midpoint must be a number"),
+            [52 /* CommandResult.MaxNaN */]: _lt("The maxpoint must be a number"),
+            [53 /* CommandResult.ValueUpperInflectionNaN */]: _lt("The first value must be a number"),
+            [54 /* CommandResult.ValueLowerInflectionNaN */]: _lt("The second value must be a number"),
+            [44 /* CommandResult.MinBiggerThanMax */]: _lt("Minimum must be smaller then Maximum"),
+            [47 /* CommandResult.MinBiggerThanMid */]: _lt("Minimum must be smaller then Midpoint"),
+            [46 /* CommandResult.MidBiggerThanMax */]: _lt("Midpoint must be smaller then Maximum"),
+            [45 /* CommandResult.LowerBiggerThanUpper */]: _lt("Lower inflection point must be smaller than upper inflection point"),
+            [55 /* CommandResult.MinInvalidFormula */]: _lt("Invalid Minpoint formula"),
+            [57 /* CommandResult.MaxInvalidFormula */]: _lt("Invalid Maxpoint formula"),
+            [56 /* CommandResult.MidInvalidFormula */]: _lt("Invalid Midpoint formula"),
+            [58 /* CommandResult.ValueUpperInvalidFormula */]: _lt("Invalid upper inflection point formula"),
+            [59 /* CommandResult.ValueLowerInvalidFormula */]: _lt("Invalid lower inflection point formula"),
+            [22 /* CommandResult.EmptyRange */]: _lt("A range needs to be defined"),
+            Unexpected: _lt("The rule is invalid for an unknown reason"),
+        },
+        ColorScale: _lt("Color scale"),
+        IconSet: _lt("Icon set"),
+    };
+    const CellIsOperators = {
+        IsEmpty: _lt("Is empty"),
+        IsNotEmpty: _lt("Is not empty"),
+        ContainsText: _lt("Contains"),
+        NotContains: _lt("Does not contain"),
+        BeginsWith: _lt("Starts with"),
+        EndsWith: _lt("Ends with"),
+        Equal: _lt("Is equal to"),
+        NotEqual: _lt("Is not equal to"),
+        GreaterThan: _lt("Is greater than"),
+        GreaterThanOrEqual: _lt("Is greater than or equal to"),
+        LessThan: _lt("Is less than"),
+        LessThanOrEqual: _lt("Is less than or equal to"),
+        Between: _lt("Is between"),
+        NotBetween: _lt("Is not between"),
+    };
+    const ChartTerms = {
+        Series: _lt("Series"),
+        Errors: {
+            Unexpected: _lt("The chart definition is invalid for an unknown reason"),
+            // BASIC CHART ERRORS (LINE | BAR | PIE)
+            [29 /* CommandResult.InvalidDataSet */]: _lt("The dataset is invalid"),
+            [30 /* CommandResult.InvalidLabelRange */]: _lt("Labels are invalid"),
+            // SCORECARD CHART ERRORS
+            [31 /* CommandResult.InvalidScorecardKeyValue */]: _lt("The key value is invalid"),
+            [32 /* CommandResult.InvalidScorecardBaseline */]: _lt("The baseline value is invalid"),
+            // GAUGE CHART ERRORS
+            [33 /* CommandResult.InvalidGaugeDataRange */]: _lt("The data range is invalid"),
+            [34 /* CommandResult.EmptyGaugeRangeMin */]: _lt("A minimum range limit value is needed"),
+            [35 /* CommandResult.GaugeRangeMinNaN */]: _lt("The minimum range limit value must be a number"),
+            [36 /* CommandResult.EmptyGaugeRangeMax */]: _lt("A maximum range limit value is needed"),
+            [37 /* CommandResult.GaugeRangeMaxNaN */]: _lt("The maximum range limit value must be a number"),
+            [38 /* CommandResult.GaugeRangeMinBiggerThanRangeMax */]: _lt("Minimum range limit must be smaller than maximum range limit"),
+            [39 /* CommandResult.GaugeLowerInflectionPointNaN */]: _lt("The lower inflection point value must be a number"),
+            [40 /* CommandResult.GaugeUpperInflectionPointNaN */]: _lt("The upper inflection point value must be a number"),
+        },
+    };
+    const NumberFormatTerms = {
+        Automatic: _lt("Automatic"),
+        Number: _lt("Number"),
+        Percent: _lt("Percent"),
+        Currency: _lt("Currency"),
+        CurrencyRounded: _lt("Currency rounded"),
+        Date: _lt("Date"),
+        Time: _lt("Time"),
+        DateTime: _lt("Date time"),
+        Duration: _lt("Duration"),
+        CustomCurrency: _lt("Custom currency"),
+    };
+    const CustomCurrencyTerms = {
+        Custom: _lt("Custom"),
+    };
+    const MergeErrorMessage = _lt("Merged cells are preventing this operation. Unmerge those cells and try again.");
 
     /**
      * This file contains helpers that are common to different runtime charts (mainly
@@ -7763,8 +5894,8 @@
         }
         return { labels: newLabels, dataSetsValues: newDatasets };
     }
-    function canChartParseLabels(chart, getters) {
-        return canBeDateChart(chart, getters) || canBeLinearChart(chart, getters);
+    function canChartParseLabels(labelRange, getters) {
+        return canBeDateChart(labelRange, getters) || canBeLinearChart(labelRange, getters);
     }
     function getChartAxisType(chart, getters) {
         if (isDateChart(chart, getters)) {
@@ -7776,24 +5907,24 @@
         return "category";
     }
     function isDateChart(chart, getters) {
-        return !chart.labelsAsText && canBeDateChart(chart, getters);
+        return !chart.labelsAsText && canBeDateChart(chart.labelRange, getters);
     }
     function isLinearChart(chart, getters) {
-        return !chart.labelsAsText && canBeLinearChart(chart, getters);
+        return !chart.labelsAsText && canBeLinearChart(chart.labelRange, getters);
     }
-    function canBeDateChart(chart, getters) {
+    function canBeDateChart(labelRange, getters) {
         var _a;
-        if (!chart.labelRange || !chart.dataSets || !canBeLinearChart(chart, getters)) {
+        if (!labelRange || !canBeLinearChart(labelRange, getters)) {
             return false;
         }
-        const labelFormat = (_a = getters.getCell(chart.labelRange.sheetId, chart.labelRange.zone.left, chart.labelRange.zone.top)) === null || _a === void 0 ? void 0 : _a.evaluated.format;
+        const labelFormat = (_a = getters.getCell(labelRange.sheetId, labelRange.zone.left, labelRange.zone.top)) === null || _a === void 0 ? void 0 : _a.evaluated.format;
         return Boolean(labelFormat && timeFormatMomentCompatible.test(labelFormat));
     }
-    function canBeLinearChart(chart, getters) {
-        if (!chart.labelRange || !chart.dataSets) {
+    function canBeLinearChart(labelRange, getters) {
+        if (!labelRange) {
             return false;
         }
-        const labels = getters.getRangeValues(chart.labelRange);
+        const labels = getters.getRangeValues(labelRange);
         if (labels.some((label) => isNaN(Number(label)) && label)) {
             return false;
         }
@@ -8090,9 +6221,9 @@
                 type: "scorecard",
                 keyValue: context.range ? context.range[0] : undefined,
                 title: context.title || "",
-                baselineMode: "difference",
-                baselineColorUp: "#00A04A",
-                baselineColorDown: "#DC6965",
+                baselineMode: DEFAULT_SCORECARD_BASELINE_MODE,
+                baselineColorUp: DEFAULT_SCORECARD_BASELINE_COLOR_UP,
+                baselineColorDown: DEFAULT_SCORECARD_BASELINE_COLOR_DOWN,
                 baseline: context.auxiliaryRange || "",
             };
         }
@@ -8194,6 +6325,1916 @@
             keyValueStyle: keyValueCell === null || keyValueCell === void 0 ? void 0 : keyValueCell.style,
         };
     }
+
+    const SORT_TYPES = [
+        CellValueType.number,
+        CellValueType.error,
+        CellValueType.text,
+        CellValueType.boolean,
+    ];
+    function convertCell(cell, index) {
+        return {
+            index,
+            type: cell ? cell.evaluated.type : CellValueType.empty,
+            value: cell ? cell.evaluated.value : "",
+        };
+    }
+    function sortCells(cells, sortDirection, emptyCellAsZero) {
+        const cellsWithIndex = cells.map(convertCell);
+        let emptyCells = cellsWithIndex.filter((x) => x.type === CellValueType.empty);
+        let nonEmptyCells = cellsWithIndex.filter((x) => x.type !== CellValueType.empty);
+        if (emptyCellAsZero) {
+            nonEmptyCells.push(...emptyCells.map((emptyCell) => ({ ...emptyCell, type: CellValueType.number, value: 0 })));
+            emptyCells = [];
+        }
+        const inverse = sortDirection === "descending" ? -1 : 1;
+        return nonEmptyCells
+            .sort((left, right) => {
+            let typeOrder = SORT_TYPES.indexOf(left.type) - SORT_TYPES.indexOf(right.type);
+            if (typeOrder === 0) {
+                if (left.type === CellValueType.text || left.type === CellValueType.error) {
+                    typeOrder = left.value.localeCompare(right.value);
+                }
+                else
+                    typeOrder = left.value - right.value;
+            }
+            return inverse * typeOrder;
+        })
+            .concat(emptyCells);
+    }
+    function interactiveSortSelection(env, sheetId, anchor, zone, sortDirection) {
+        let result = DispatchResult.Success;
+        //several columns => bypass the contiguity check
+        let multiColumns = zone.right > zone.left;
+        if (env.model.getters.doesIntersectMerge(sheetId, zone)) {
+            multiColumns = false;
+            let table;
+            for (let r = zone.top; r <= zone.bottom; r++) {
+                table = [];
+                for (let c = zone.left; c <= zone.right; c++) {
+                    let merge = env.model.getters.getMerge(sheetId, c, r);
+                    if (merge && !table.includes(merge.id.toString())) {
+                        table.push(merge.id.toString());
+                    }
+                }
+                if (table.length >= 2) {
+                    multiColumns = true;
+                    break;
+                }
+            }
+        }
+        const { col, row } = anchor;
+        if (multiColumns) {
+            result = env.model.dispatch("SORT_CELLS", { sheetId, col, row, zone, sortDirection });
+        }
+        else {
+            // check contiguity
+            const contiguousZone = env.model.getters.getContiguousZone(sheetId, zone);
+            if (isEqual(contiguousZone, zone)) {
+                // merge as it is
+                result = env.model.dispatch("SORT_CELLS", {
+                    sheetId,
+                    col,
+                    row,
+                    zone,
+                    sortDirection,
+                });
+            }
+            else {
+                env.askConfirmation(_lt("We found data next to your selection. Since this data was not selected, it will not be sorted. Do you want to extend your selection?"), () => {
+                    zone = contiguousZone;
+                    result = env.model.dispatch("SORT_CELLS", {
+                        sheetId,
+                        col,
+                        row,
+                        zone,
+                        sortDirection,
+                    });
+                }, () => {
+                    result = env.model.dispatch("SORT_CELLS", {
+                        sheetId,
+                        col,
+                        row,
+                        zone,
+                        sortDirection,
+                    });
+                });
+            }
+        }
+        if (result.isCancelledBecause(60 /* CommandResult.InvalidSortZone */)) {
+            const { col, row } = anchor;
+            env.model.selection.selectZone({ cell: { col, row }, zone });
+            env.raiseError(_lt("Cannot sort. To sort, select only cells or only merges that have the same size."));
+        }
+    }
+
+    function interactiveCut(env) {
+        const result = env.model.dispatch("CUT");
+        if (!result.isSuccessful) {
+            if (result.isCancelledBecause(17 /* CommandResult.WrongCutSelection */)) {
+                env.raiseError(_lt("This operation is not allowed with multiple selections."));
+            }
+        }
+    }
+
+    const AddFilterInteractiveContent = {
+        filterOverlap: _lt("You cannot create overlapping filters."),
+        nonContinuousTargets: _lt("A filter can only be created on a continuous selection."),
+        mergeInFilter: _lt("You can't create a filter over a range that contains a merge."),
+    };
+    function interactiveAddFilter(env, sheetId, target) {
+        const result = env.model.dispatch("CREATE_FILTER_TABLE", { target, sheetId });
+        if (result.isCancelledBecause(75 /* CommandResult.FilterOverlap */)) {
+            env.raiseError(AddFilterInteractiveContent.filterOverlap);
+        }
+        else if (result.isCancelledBecause(77 /* CommandResult.MergeInFilter */)) {
+            env.raiseError(AddFilterInteractiveContent.mergeInFilter);
+        }
+        else if (result.isCancelledBecause(78 /* CommandResult.NonContinuousTargets */)) {
+            env.raiseError(AddFilterInteractiveContent.nonContinuousTargets);
+        }
+    }
+
+    const PasteInteractiveContent = {
+        wrongPasteSelection: _lt("This operation is not allowed with multiple selections."),
+        willRemoveExistingMerge: _lt("This operation is not possible due to a merge. Please remove the merges first than try again."),
+        wrongFigurePasteOption: _lt("Cannot do a special paste of a figure."),
+        frozenPaneOverlap: _lt("Cannot paste merged cells over a frozen pane."),
+    };
+    function handlePasteResult(env, result) {
+        if (!result.isSuccessful) {
+            if (result.reasons.includes(18 /* CommandResult.WrongPasteSelection */)) {
+                env.raiseError(PasteInteractiveContent.wrongPasteSelection);
+            }
+            else if (result.reasons.includes(2 /* CommandResult.WillRemoveExistingMerge */)) {
+                env.raiseError(PasteInteractiveContent.willRemoveExistingMerge);
+            }
+            else if (result.reasons.includes(20 /* CommandResult.WrongFigurePasteOption */)) {
+                env.raiseError(PasteInteractiveContent.wrongFigurePasteOption);
+            }
+            else if (result.reasons.includes(72 /* CommandResult.FrozenPaneOverlap */)) {
+                env.raiseError(PasteInteractiveContent.frozenPaneOverlap);
+            }
+        }
+    }
+    function interactivePaste(env, target, pasteOption) {
+        const result = env.model.dispatch("PASTE", { target, pasteOption });
+        handlePasteResult(env, result);
+    }
+    function interactivePasteFromOS(env, target, text) {
+        const result = env.model.dispatch("PASTE_FROM_OS_CLIPBOARD", { target, text });
+        handlePasteResult(env, result);
+    }
+
+    //------------------------------------------------------------------------------
+    // Helpers
+    //------------------------------------------------------------------------------
+    function getColumnsNumber(env) {
+        const activeCols = env.model.getters.getActiveCols();
+        if (activeCols.size) {
+            return activeCols.size;
+        }
+        else {
+            const zone = env.model.getters.getSelectedZones()[0];
+            return zone.right - zone.left + 1;
+        }
+    }
+    function getRowsNumber(env) {
+        const activeRows = env.model.getters.getActiveRows();
+        if (activeRows.size) {
+            return activeRows.size;
+        }
+        else {
+            const zone = env.model.getters.getSelectedZones()[0];
+            return zone.bottom - zone.top + 1;
+        }
+    }
+    function setFormatter(env, format) {
+        env.model.dispatch("SET_FORMATTING", {
+            sheetId: env.model.getters.getActiveSheetId(),
+            target: env.model.getters.getSelectedZones(),
+            format,
+        });
+    }
+    function setStyle(env, style) {
+        env.model.dispatch("SET_FORMATTING", {
+            sheetId: env.model.getters.getActiveSheetId(),
+            target: env.model.getters.getSelectedZones(),
+            style,
+        });
+    }
+    async function readOsClipboard(env) {
+        try {
+            return await env.clipboard.readText();
+        }
+        catch (e) {
+            // Permission is required to read the clipboard.
+            console.warn("The OS clipboard could not be read.");
+            console.error(e);
+            return undefined;
+        }
+    }
+    //------------------------------------------------------------------------------
+    // Simple actions
+    //------------------------------------------------------------------------------
+    const UNDO_ACTION = (env) => env.model.dispatch("REQUEST_UNDO");
+    const REDO_ACTION = (env) => env.model.dispatch("REQUEST_REDO");
+    const COPY_ACTION = async (env) => {
+        env.model.dispatch("COPY");
+        await env.clipboard.writeText(env.model.getters.getClipboardContent());
+    };
+    const CUT_ACTION = async (env) => {
+        interactiveCut(env);
+        await env.clipboard.writeText(env.model.getters.getClipboardContent());
+    };
+    const PASTE_ACTION = async (env) => {
+        const spreadsheetClipboard = env.model.getters.getClipboardContent();
+        const osClipboard = await readOsClipboard(env);
+        const target = env.model.getters.getSelectedZones();
+        if (osClipboard && osClipboard !== spreadsheetClipboard) {
+            interactivePasteFromOS(env, target, osClipboard);
+        }
+        else {
+            interactivePaste(env, target);
+        }
+    };
+    const PASTE_VALUE_ACTION = async (env) => {
+        const spreadsheetClipboard = env.model.getters.getClipboardContent();
+        const osClipboard = await readOsClipboard(env);
+        const target = env.model.getters.getSelectedZones();
+        if (osClipboard && osClipboard !== spreadsheetClipboard) {
+            env.model.dispatch("PASTE_FROM_OS_CLIPBOARD", {
+                target,
+                text: osClipboard,
+            });
+        }
+        else {
+            env.model.dispatch("PASTE", {
+                target: env.model.getters.getSelectedZones(),
+                pasteOption: "onlyValue",
+            });
+        }
+    };
+    const PASTE_FORMAT_ACTION = (env) => interactivePaste(env, env.model.getters.getSelectedZones(), "onlyFormat");
+    const DELETE_CONTENT_ACTION = (env) => env.model.dispatch("DELETE_CONTENT", {
+        sheetId: env.model.getters.getActiveSheetId(),
+        target: env.model.getters.getSelectedZones(),
+    });
+    const SET_FORMULA_VISIBILITY_ACTION = (env) => env.model.dispatch("SET_FORMULA_VISIBILITY", { show: !env.model.getters.shouldShowFormulas() });
+    const SET_GRID_LINES_VISIBILITY_ACTION = (env) => {
+        const sheetId = env.model.getters.getActiveSheetId();
+        env.model.dispatch("SET_GRID_LINES_VISIBILITY", {
+            sheetId,
+            areGridLinesVisible: !env.model.getters.getGridLinesVisibility(sheetId),
+        });
+    };
+    const IS_NOT_CUT_OPERATION = (env) => {
+        return !env.model.getters.isCutOperation();
+    };
+    //------------------------------------------------------------------------------
+    // Grid manipulations
+    //------------------------------------------------------------------------------
+    const DELETE_CONTENT_ROWS_NAME = (env) => {
+        if (env.model.getters.getSelectedZones().length > 1) {
+            return _lt("Clear rows");
+        }
+        let first;
+        let last;
+        const activesRows = env.model.getters.getActiveRows();
+        if (activesRows.size !== 0) {
+            first = Math.min(...activesRows);
+            last = Math.max(...activesRows);
+        }
+        else {
+            const zone = env.model.getters.getSelectedZones()[0];
+            first = zone.top;
+            last = zone.bottom;
+        }
+        if (first === last) {
+            return _lt("Clear row %s", (first + 1).toString());
+        }
+        return _lt("Clear rows %s - %s", (first + 1).toString(), (last + 1).toString());
+    };
+    const DELETE_CONTENT_ROWS_ACTION = (env) => {
+        const sheetId = env.model.getters.getActiveSheetId();
+        const target = [...env.model.getters.getActiveRows()].map((index) => env.model.getters.getRowsZone(sheetId, index, index));
+        env.model.dispatch("DELETE_CONTENT", {
+            target,
+            sheetId: env.model.getters.getActiveSheetId(),
+        });
+    };
+    const DELETE_CONTENT_COLUMNS_NAME = (env) => {
+        if (env.model.getters.getSelectedZones().length > 1) {
+            return _lt("Clear columns");
+        }
+        let first;
+        let last;
+        const activeCols = env.model.getters.getActiveCols();
+        if (activeCols.size !== 0) {
+            first = Math.min(...activeCols);
+            last = Math.max(...activeCols);
+        }
+        else {
+            const zone = env.model.getters.getSelectedZones()[0];
+            first = zone.left;
+            last = zone.right;
+        }
+        if (first === last) {
+            return _lt("Clear column %s", numberToLetters(first));
+        }
+        return _lt("Clear columns %s - %s", numberToLetters(first), numberToLetters(last));
+    };
+    const DELETE_CONTENT_COLUMNS_ACTION = (env) => {
+        const sheetId = env.model.getters.getActiveSheetId();
+        const target = [...env.model.getters.getActiveCols()].map((index) => env.model.getters.getColsZone(sheetId, index, index));
+        env.model.dispatch("DELETE_CONTENT", {
+            target,
+            sheetId: env.model.getters.getActiveSheetId(),
+        });
+    };
+    const REMOVE_ROWS_NAME = (env) => {
+        if (env.model.getters.getSelectedZones().length > 1) {
+            return _lt("Delete rows");
+        }
+        let first;
+        let last;
+        const activesRows = env.model.getters.getActiveRows();
+        if (activesRows.size !== 0) {
+            first = Math.min(...activesRows);
+            last = Math.max(...activesRows);
+        }
+        else {
+            const zone = env.model.getters.getSelectedZones()[0];
+            first = zone.top;
+            last = zone.bottom;
+        }
+        if (first === last) {
+            return _lt("Delete row %s", (first + 1).toString());
+        }
+        return _lt("Delete rows %s - %s", (first + 1).toString(), (last + 1).toString());
+    };
+    const REMOVE_ROWS_ACTION = (env) => {
+        let rows = [...env.model.getters.getActiveRows()];
+        if (!rows.length) {
+            const zone = env.model.getters.getSelectedZones()[0];
+            for (let i = zone.top; i <= zone.bottom; i++) {
+                rows.push(i);
+            }
+        }
+        env.model.dispatch("REMOVE_COLUMNS_ROWS", {
+            sheetId: env.model.getters.getActiveSheetId(),
+            dimension: "ROW",
+            elements: rows,
+        });
+    };
+    const REMOVE_COLUMNS_NAME = (env) => {
+        if (env.model.getters.getSelectedZones().length > 1) {
+            return _lt("Delete columns");
+        }
+        let first;
+        let last;
+        const activeCols = env.model.getters.getActiveCols();
+        if (activeCols.size !== 0) {
+            first = Math.min(...activeCols);
+            last = Math.max(...activeCols);
+        }
+        else {
+            const zone = env.model.getters.getSelectedZones()[0];
+            first = zone.left;
+            last = zone.right;
+        }
+        if (first === last) {
+            return _lt("Delete column %s", numberToLetters(first));
+        }
+        return _lt("Delete columns %s - %s", numberToLetters(first), numberToLetters(last));
+    };
+    const REMOVE_COLUMNS_ACTION = (env) => {
+        let columns = [...env.model.getters.getActiveCols()];
+        if (!columns.length) {
+            const zone = env.model.getters.getSelectedZones()[0];
+            for (let i = zone.left; i <= zone.right; i++) {
+                columns.push(i);
+            }
+        }
+        env.model.dispatch("REMOVE_COLUMNS_ROWS", {
+            sheetId: env.model.getters.getActiveSheetId(),
+            dimension: "COL",
+            elements: columns,
+        });
+    };
+    const INSERT_CELL_SHIFT_DOWN = (env) => {
+        const zone = env.model.getters.getSelectedZone();
+        const result = env.model.dispatch("INSERT_CELL", { zone, shiftDimension: "ROW" });
+        handlePasteResult(env, result);
+    };
+    const INSERT_CELL_SHIFT_RIGHT = (env) => {
+        const zone = env.model.getters.getSelectedZone();
+        const result = env.model.dispatch("INSERT_CELL", { zone, shiftDimension: "COL" });
+        handlePasteResult(env, result);
+    };
+    const DELETE_CELL_SHIFT_UP = (env) => {
+        const zone = env.model.getters.getSelectedZone();
+        const result = env.model.dispatch("DELETE_CELL", { zone, shiftDimension: "ROW" });
+        handlePasteResult(env, result);
+    };
+    const DELETE_CELL_SHIFT_LEFT = (env) => {
+        const zone = env.model.getters.getSelectedZone();
+        const result = env.model.dispatch("DELETE_CELL", { zone, shiftDimension: "COL" });
+        handlePasteResult(env, result);
+    };
+    const MENU_INSERT_ROWS_BEFORE_NAME = (env) => {
+        const number = getRowsNumber(env);
+        if (number === 1) {
+            return _lt("Row above");
+        }
+        return _lt("%s Rows above", number.toString());
+    };
+    const ROW_INSERT_ROWS_BEFORE_NAME = (env) => {
+        const number = getRowsNumber(env);
+        return number === 1 ? _lt("Insert row above") : _lt("Insert %s rows above", number.toString());
+    };
+    const CELL_INSERT_ROWS_BEFORE_NAME = (env) => {
+        const number = getRowsNumber(env);
+        if (number === 1) {
+            return _lt("Insert row");
+        }
+        return _lt("Insert %s rows", number.toString());
+    };
+    const INSERT_ROWS_BEFORE_ACTION = (env) => {
+        const activeRows = env.model.getters.getActiveRows();
+        let row;
+        let quantity;
+        if (activeRows.size) {
+            row = Math.min(...activeRows);
+            quantity = activeRows.size;
+        }
+        else {
+            const zone = env.model.getters.getSelectedZones()[0];
+            row = zone.top;
+            quantity = zone.bottom - zone.top + 1;
+        }
+        env.model.dispatch("ADD_COLUMNS_ROWS", {
+            sheetId: env.model.getters.getActiveSheetId(),
+            position: "before",
+            base: row,
+            quantity,
+            dimension: "ROW",
+        });
+    };
+    const MENU_INSERT_ROWS_AFTER_NAME = (env) => {
+        const number = getRowsNumber(env);
+        if (number === 1) {
+            return _lt("Row below");
+        }
+        return _lt("%s Rows below", number.toString());
+    };
+    const ROW_INSERT_ROWS_AFTER_NAME = (env) => {
+        const number = getRowsNumber(env);
+        return number === 1 ? _lt("Insert row below") : _lt("Insert %s rows below", number.toString());
+    };
+    const INSERT_ROWS_AFTER_ACTION = (env) => {
+        const activeRows = env.model.getters.getActiveRows();
+        let row;
+        let quantity;
+        if (activeRows.size) {
+            row = Math.max(...activeRows);
+            quantity = activeRows.size;
+        }
+        else {
+            const zone = env.model.getters.getSelectedZones()[0];
+            row = zone.bottom;
+            quantity = zone.bottom - zone.top + 1;
+        }
+        env.model.dispatch("ADD_COLUMNS_ROWS", {
+            sheetId: env.model.getters.getActiveSheetId(),
+            position: "after",
+            base: row,
+            quantity,
+            dimension: "ROW",
+        });
+    };
+    const MENU_INSERT_COLUMNS_BEFORE_NAME = (env) => {
+        const number = getColumnsNumber(env);
+        if (number === 1) {
+            return _lt("Column left");
+        }
+        return _lt("%s Columns left", number.toString());
+    };
+    const COLUMN_INSERT_COLUMNS_BEFORE_NAME = (env) => {
+        const number = getColumnsNumber(env);
+        return number === 1
+            ? _lt("Insert column left")
+            : _lt("Insert %s columns left", number.toString());
+    };
+    const CELL_INSERT_COLUMNS_BEFORE_NAME = (env) => {
+        const number = getColumnsNumber(env);
+        if (number === 1) {
+            return _lt("Insert column");
+        }
+        return _lt("Insert %s columns", number.toString());
+    };
+    const INSERT_COLUMNS_BEFORE_ACTION = (env) => {
+        const activeCols = env.model.getters.getActiveCols();
+        let column;
+        let quantity;
+        if (activeCols.size) {
+            column = Math.min(...activeCols);
+            quantity = activeCols.size;
+        }
+        else {
+            const zone = env.model.getters.getSelectedZones()[0];
+            column = zone.left;
+            quantity = zone.right - zone.left + 1;
+        }
+        env.model.dispatch("ADD_COLUMNS_ROWS", {
+            sheetId: env.model.getters.getActiveSheetId(),
+            position: "before",
+            dimension: "COL",
+            base: column,
+            quantity,
+        });
+    };
+    const MENU_INSERT_COLUMNS_AFTER_NAME = (env) => {
+        const number = getColumnsNumber(env);
+        if (number === 1) {
+            return _lt("Column right");
+        }
+        return _lt("%s Columns right", number.toString());
+    };
+    const COLUMN_INSERT_COLUMNS_AFTER_NAME = (env) => {
+        const number = getColumnsNumber(env);
+        return number === 1
+            ? _lt("Insert column right")
+            : _lt("Insert %s columns right", number.toString());
+    };
+    const INSERT_COLUMNS_AFTER_ACTION = (env) => {
+        const activeCols = env.model.getters.getActiveCols();
+        let column;
+        let quantity;
+        if (activeCols.size) {
+            column = Math.max(...activeCols);
+            quantity = activeCols.size;
+        }
+        else {
+            const zone = env.model.getters.getSelectedZones()[0];
+            column = zone.right;
+            quantity = zone.right - zone.left + 1;
+        }
+        env.model.dispatch("ADD_COLUMNS_ROWS", {
+            sheetId: env.model.getters.getActiveSheetId(),
+            position: "after",
+            dimension: "COL",
+            base: column,
+            quantity,
+        });
+    };
+    const HIDE_COLUMNS_NAME = (env) => {
+        const cols = env.model.getters.getElementsFromSelection("COL");
+        let first = cols[0];
+        let last = cols[cols.length - 1];
+        if (cols.length === 1) {
+            return _lt("Hide column %s", numberToLetters(first).toString());
+        }
+        else if (last - first + 1 === cols.length) {
+            return _lt("Hide columns %s - %s", numberToLetters(first).toString(), numberToLetters(last).toString());
+        }
+        else {
+            return _lt("Hide columns");
+        }
+    };
+    const HIDE_COLUMNS_ACTION = (env) => {
+        const columns = env.model.getters.getElementsFromSelection("COL");
+        env.model.dispatch("HIDE_COLUMNS_ROWS", {
+            sheetId: env.model.getters.getActiveSheetId(),
+            dimension: "COL",
+            elements: columns,
+        });
+    };
+    const UNHIDE_ALL_COLUMNS_ACTION = (env) => {
+        const sheetId = env.model.getters.getActiveSheetId();
+        env.model.dispatch("UNHIDE_COLUMNS_ROWS", {
+            sheetId,
+            dimension: "COL",
+            elements: Array.from(Array(env.model.getters.getNumberCols(sheetId)).keys()),
+        });
+    };
+    const UNHIDE_COLUMNS_ACTION = (env) => {
+        const columns = env.model.getters.getElementsFromSelection("COL");
+        env.model.dispatch("UNHIDE_COLUMNS_ROWS", {
+            sheetId: env.model.getters.getActiveSheetId(),
+            dimension: "COL",
+            elements: columns,
+        });
+    };
+    const HIDE_ROWS_NAME = (env) => {
+        const rows = env.model.getters.getElementsFromSelection("ROW");
+        let first = rows[0];
+        let last = rows[rows.length - 1];
+        if (rows.length === 1) {
+            return _lt("Hide row %s", (first + 1).toString());
+        }
+        else if (last - first + 1 === rows.length) {
+            return _lt("Hide rows %s - %s", (first + 1).toString(), (last + 1).toString());
+        }
+        else {
+            return _lt("Hide rows");
+        }
+    };
+    const HIDE_ROWS_ACTION = (env) => {
+        const rows = env.model.getters.getElementsFromSelection("ROW");
+        env.model.dispatch("HIDE_COLUMNS_ROWS", {
+            sheetId: env.model.getters.getActiveSheetId(),
+            dimension: "ROW",
+            elements: rows,
+        });
+    };
+    const UNHIDE_ALL_ROWS_ACTION = (env) => {
+        const sheetId = env.model.getters.getActiveSheetId();
+        env.model.dispatch("UNHIDE_COLUMNS_ROWS", {
+            sheetId,
+            dimension: "ROW",
+            elements: Array.from(Array(env.model.getters.getNumberRows(sheetId)).keys()),
+        });
+    };
+    const UNHIDE_ROWS_ACTION = (env) => {
+        const columns = env.model.getters.getElementsFromSelection("ROW");
+        env.model.dispatch("UNHIDE_COLUMNS_ROWS", {
+            sheetId: env.model.getters.getActiveSheetId(),
+            dimension: "ROW",
+            elements: columns,
+        });
+    };
+    //------------------------------------------------------------------------------
+    // Sheets
+    //------------------------------------------------------------------------------
+    const CREATE_SHEET_ACTION = (env) => {
+        const activeSheetId = env.model.getters.getActiveSheetId();
+        const position = env.model.getters.getSheetIds().indexOf(activeSheetId) + 1;
+        const sheetId = env.model.uuidGenerator.uuidv4();
+        env.model.dispatch("CREATE_SHEET", { sheetId, position });
+        env.model.dispatch("ACTIVATE_SHEET", { sheetIdFrom: activeSheetId, sheetIdTo: sheetId });
+    };
+    //------------------------------------------------------------------------------
+    // Charts
+    //------------------------------------------------------------------------------
+    function getCreateChartDefinition(env) {
+        const getters = env.model.getters;
+        let zone = getters.getSelectedZone();
+        if (getZoneArea(zone) === 1) {
+            env.model.selection.loopSelection("table");
+            zone = getters.getSelectedZone();
+        }
+        let dataSetZone = zone;
+        if (zone.left !== zone.right) {
+            dataSetZone = { ...zone, left: zone.left + 1 };
+        }
+        const dataSets = [zoneToXc(dataSetZone)];
+        const sheetId = getters.getActiveSheetId();
+        const topLeftCell = getters.getCell(sheetId, zone.left, zone.top);
+        if (getZoneArea(zone) === 1 && (topLeftCell === null || topLeftCell === void 0 ? void 0 : topLeftCell.content)) {
+            return {
+                type: "scorecard",
+                title: "",
+                background: BACKGROUND_CHART_COLOR,
+                keyValue: zoneToXc(zone),
+                baselineMode: DEFAULT_SCORECARD_BASELINE_MODE,
+                baselineColorUp: DEFAULT_SCORECARD_BASELINE_COLOR_UP,
+                baselineColorDown: DEFAULT_SCORECARD_BASELINE_COLOR_DOWN,
+            };
+        }
+        let title = "";
+        const cells = env.model.getters.getCellsInZone(sheetId, {
+            ...dataSetZone,
+            bottom: dataSetZone.top,
+        });
+        const dataSetsHaveTitle = !!cells.find((cell) => cell && cell.evaluated.type !== CellValueType.number);
+        if (dataSetsHaveTitle) {
+            const texts = cells.reduce((acc, cell) => {
+                const text = cell && cell.evaluated.type !== CellValueType.error && env.model.getters.getCellText(cell);
+                if (text) {
+                    acc.push(text);
+                }
+                return acc;
+            }, []);
+            const lastElement = texts.splice(-1)[0];
+            title = texts.join(", ");
+            if (lastElement) {
+                title += (title ? " " + env._t("and") + " " : "") + lastElement;
+            }
+        }
+        let labelRangeXc;
+        if (zone.left !== zone.right) {
+            labelRangeXc = zoneToXc({
+                ...zone,
+                right: zone.left,
+                top: dataSetsHaveTitle ? zone.top + 1 : zone.top,
+            });
+        }
+        const newLegendPos = dataSetZone.right === dataSetZone.left ? "none" : "top"; //Using the same variable as above to identify number of columns involved.
+        const labelRange = labelRangeXc ? getters.getRangeFromSheetXC(sheetId, labelRangeXc) : undefined;
+        if (labelRange && canChartParseLabels(labelRange, getters)) {
+            return {
+                title,
+                dataSets,
+                labelsAsText: false,
+                stacked: false,
+                labelRange: labelRangeXc,
+                type: "line",
+                background: BACKGROUND_CHART_COLOR,
+                dataSetsHaveTitle,
+                verticalAxisPosition: "left",
+                legendPosition: newLegendPos,
+            };
+        }
+        return {
+            title,
+            dataSets,
+            labelRange: labelRangeXc,
+            type: "bar",
+            background: BACKGROUND_CHART_COLOR,
+            stacked: false,
+            dataSetsHaveTitle,
+            verticalAxisPosition: "left",
+            legendPosition: newLegendPos,
+        };
+    }
+    const CREATE_CHART = (env) => {
+        const getters = env.model.getters;
+        const id = env.model.uuidGenerator.uuidv4();
+        const sheetId = getters.getActiveSheetId();
+        const { x: offsetCorrectionX, y: offsetCorrectionY } = getters.getMainViewportCoordinates();
+        const { offsetX, offsetY } = getters.getActiveSheetScrollInfo();
+        const { width, height } = getters.getSheetViewDimension();
+        const size = { width: DEFAULT_FIGURE_WIDTH, height: DEFAULT_FIGURE_HEIGHT };
+        const rect = getters.getVisibleRect(getters.getActiveMainViewport());
+        const scrollableViewportWidth = Math.min(rect.width, width - offsetCorrectionX);
+        const scrollableViewportHeight = Math.min(rect.height, height - offsetCorrectionY);
+        const position = {
+            x: offsetCorrectionX +
+                offsetX +
+                Math.max(0, (scrollableViewportWidth - DEFAULT_FIGURE_WIDTH) / 2),
+            y: offsetCorrectionY +
+                offsetY +
+                Math.max(0, (scrollableViewportHeight - DEFAULT_FIGURE_HEIGHT) / 2),
+        }; // Position at the center of the scrollable viewport
+        const result = env.model.dispatch("CREATE_CHART", {
+            sheetId,
+            id,
+            position,
+            size,
+            definition: getCreateChartDefinition(env),
+        });
+        if (result.isSuccessful) {
+            env.model.dispatch("SELECT_FIGURE", { id });
+            env.openSidePanel("ChartPanel");
+        }
+    };
+    //------------------------------------------------------------------------------
+    // Style/Format
+    //------------------------------------------------------------------------------
+    const FORMAT_AUTOMATIC_ACTION = (env) => setFormatter(env, "");
+    const FORMAT_NUMBER_ACTION = (env) => setFormatter(env, "#,##0.00");
+    const FORMAT_PERCENT_ACTION = (env) => setFormatter(env, "0.00%");
+    const FORMAT_CURRENCY_ACTION = (env) => setFormatter(env, "[$$]#,##0.00");
+    const FORMAT_CURRENCY_ROUNDED_ACTION = (env) => setFormatter(env, "[$$]#,##0");
+    const FORMAT_DATE_ACTION = (env) => setFormatter(env, "m/d/yyyy");
+    const FORMAT_TIME_ACTION = (env) => setFormatter(env, "hh:mm:ss a");
+    const FORMAT_DATE_TIME_ACTION = (env) => setFormatter(env, "m/d/yyyy hh:mm:ss");
+    const FORMAT_DURATION_ACTION = (env) => setFormatter(env, "hhhh:mm:ss");
+    const FORMAT_BOLD_ACTION = (env) => setStyle(env, { bold: !env.model.getters.getCurrentStyle().bold });
+    const FORMAT_ITALIC_ACTION = (env) => setStyle(env, { italic: !env.model.getters.getCurrentStyle().italic });
+    const FORMAT_STRIKETHROUGH_ACTION = (env) => setStyle(env, { strikethrough: !env.model.getters.getCurrentStyle().strikethrough });
+    const FORMAT_UNDERLINE_ACTION = (env) => setStyle(env, { underline: !env.model.getters.getCurrentStyle().underline });
+    const FORMAT_CLEARFORMAT_ACTION = (env) => {
+        env.model.dispatch("CLEAR_FORMATTING", {
+            sheetId: env.model.getters.getActiveSheetId(),
+            target: env.model.getters.getSelectedZones(),
+        });
+    };
+    //------------------------------------------------------------------------------
+    // Side panel
+    //------------------------------------------------------------------------------
+    const OPEN_CF_SIDEPANEL_ACTION = (env) => {
+        env.openSidePanel("ConditionalFormatting", { selection: env.model.getters.getSelectedZones() });
+    };
+    const OPEN_FAR_SIDEPANEL_ACTION = (env) => {
+        env.openSidePanel("FindAndReplace", {});
+    };
+    const OPEN_CUSTOM_CURRENCY_SIDEPANEL_ACTION = (env) => {
+        env.openSidePanel("CustomCurrency", {});
+    };
+    const INSERT_LINK = (env) => {
+        let { col, row } = env.model.getters.getPosition();
+        env.model.dispatch("OPEN_CELL_POPOVER", { col, row, popoverType: "LinkEditor" });
+    };
+    //------------------------------------------------------------------------------
+    // Filters action
+    //------------------------------------------------------------------------------
+    const FILTERS_CREATE_FILTER_TABLE = (env) => {
+        const sheetId = env.model.getters.getActiveSheetId();
+        const selection = env.model.getters.getSelection().zones;
+        interactiveAddFilter(env, sheetId, selection);
+    };
+    const FILTERS_REMOVE_FILTER_TABLE = (env) => {
+        const sheetId = env.model.getters.getActiveSheetId();
+        env.model.dispatch("REMOVE_FILTER_TABLE", {
+            sheetId,
+            target: env.model.getters.getSelectedZones(),
+        });
+    };
+    const SELECTION_CONTAINS_FILTER = (env) => {
+        const sheetId = env.model.getters.getActiveSheetId();
+        const selectedZones = env.model.getters.getSelectedZones();
+        return env.model.getters.doesZonesContainFilter(sheetId, selectedZones);
+    };
+    const SELECTION_IS_CONTINUOUS = (env) => {
+        const selectedZones = env.model.getters.getSelectedZones();
+        return areZonesContinuous(...selectedZones);
+    };
+    //------------------------------------------------------------------------------
+    // Sorting action
+    //------------------------------------------------------------------------------
+    const SORT_CELLS_ASCENDING = (env) => {
+        const { anchor, zones } = env.model.getters.getSelection();
+        const sheetId = env.model.getters.getActiveSheetId();
+        interactiveSortSelection(env, sheetId, anchor.cell, zones[0], "ascending");
+    };
+    const SORT_CELLS_DESCENDING = (env) => {
+        const { anchor, zones } = env.model.getters.getSelection();
+        const sheetId = env.model.getters.getActiveSheetId();
+        interactiveSortSelection(env, sheetId, anchor.cell, zones[0], "descending");
+    };
+    const IS_ONLY_ONE_RANGE = (env) => {
+        return env.model.getters.getSelectedZones().length === 1;
+    };
+
+    //------------------------------------------------------------------------------
+    // Context Menu Registry
+    //------------------------------------------------------------------------------
+    const cellMenuRegistry = new MenuItemRegistry();
+    cellMenuRegistry
+        .add("cut", {
+        name: _lt("Cut"),
+        description: "Ctrl+X",
+        sequence: 10,
+        action: CUT_ACTION,
+    })
+        .add("copy", {
+        name: _lt("Copy"),
+        description: "Ctrl+C",
+        sequence: 20,
+        isReadonlyAllowed: true,
+        action: COPY_ACTION,
+    })
+        .add("paste", {
+        name: _lt("Paste"),
+        description: "Ctrl+V",
+        sequence: 30,
+        action: PASTE_ACTION,
+    })
+        .add("paste_special", {
+        name: _lt("Paste special"),
+        sequence: 40,
+        separator: true,
+        isVisible: IS_NOT_CUT_OPERATION,
+    })
+        .addChild("paste_value_only", ["paste_special"], {
+        name: _lt("Paste values only"),
+        sequence: 10,
+        action: PASTE_VALUE_ACTION,
+    })
+        .addChild("paste_format_only", ["paste_special"], {
+        name: _lt("Paste format only"),
+        sequence: 20,
+        action: PASTE_FORMAT_ACTION,
+    })
+        .add("add_row_before", {
+        name: CELL_INSERT_ROWS_BEFORE_NAME,
+        sequence: 70,
+        action: INSERT_ROWS_BEFORE_ACTION,
+        isVisible: IS_ONLY_ONE_RANGE,
+    })
+        .add("add_column_before", {
+        name: CELL_INSERT_COLUMNS_BEFORE_NAME,
+        sequence: 90,
+        action: INSERT_COLUMNS_BEFORE_ACTION,
+        isVisible: IS_ONLY_ONE_RANGE,
+    })
+        .add("insert_cell", {
+        name: _lt("Insert cells"),
+        sequence: 100,
+        isVisible: IS_ONLY_ONE_RANGE,
+        separator: true,
+    })
+        .addChild("insert_cell_down", ["insert_cell"], {
+        name: _lt("Shift down"),
+        sequence: 10,
+        action: INSERT_CELL_SHIFT_DOWN,
+    })
+        .addChild("insert_cell_right", ["insert_cell"], {
+        name: _lt("Shift right"),
+        sequence: 20,
+        action: INSERT_CELL_SHIFT_RIGHT,
+    })
+        .add("delete_row", {
+        name: REMOVE_ROWS_NAME,
+        sequence: 110,
+        action: REMOVE_ROWS_ACTION,
+        isVisible: IS_ONLY_ONE_RANGE,
+    })
+        .add("delete_column", {
+        name: REMOVE_COLUMNS_NAME,
+        sequence: 120,
+        action: REMOVE_COLUMNS_ACTION,
+        isVisible: IS_ONLY_ONE_RANGE,
+    })
+        .add("delete_cell", {
+        name: _lt("Delete cells"),
+        sequence: 130,
+        isVisible: IS_ONLY_ONE_RANGE,
+    })
+        .addChild("delete_cell_up", ["delete_cell"], {
+        name: _lt("Shift up"),
+        sequence: 10,
+        action: DELETE_CELL_SHIFT_UP,
+    })
+        .addChild("delete_cell_down", ["delete_cell"], {
+        name: _lt("Shift left"),
+        sequence: 20,
+        action: DELETE_CELL_SHIFT_LEFT,
+    })
+        .add("insert_link", {
+        name: _lt("Insert link"),
+        separator: true,
+        sequence: 150,
+        action: INSERT_LINK,
+    });
+
+    const colMenuRegistry = new MenuItemRegistry();
+    colMenuRegistry
+        .add("cut", {
+        name: _lt("Cut"),
+        description: "Ctrl+X",
+        sequence: 10,
+        action: CUT_ACTION,
+    })
+        .add("copy", {
+        name: _lt("Copy"),
+        description: "Ctrl+C",
+        sequence: 20,
+        isReadonlyAllowed: true,
+        action: COPY_ACTION,
+    })
+        .add("paste", {
+        name: _lt("Paste"),
+        description: "Ctrl+V",
+        sequence: 30,
+        action: PASTE_ACTION,
+    })
+        .add("paste_special", {
+        name: _lt("Paste special"),
+        sequence: 40,
+        separator: true,
+        isVisible: IS_NOT_CUT_OPERATION,
+    })
+        .addChild("paste_value_only", ["paste_special"], {
+        name: _lt("Paste value only"),
+        sequence: 10,
+        action: PASTE_VALUE_ACTION,
+    })
+        .addChild("paste_format_only", ["paste_special"], {
+        name: _lt("Paste format only"),
+        sequence: 20,
+        action: PASTE_FORMAT_ACTION,
+    })
+        .add("sort_columns", {
+        name: (env) => env.model.getters.getActiveCols().size > 1 ? _lt("Sort columns") : _lt("Sort column"),
+        sequence: 50,
+        isVisible: IS_ONLY_ONE_RANGE,
+        separator: true,
+    })
+        .addChild("sort_ascending", ["sort_columns"], {
+        name: _lt("Ascending (A ⟶ Z)"),
+        sequence: 10,
+        action: SORT_CELLS_ASCENDING,
+    })
+        .addChild("sort_descending", ["sort_columns"], {
+        name: _lt("Descending (Z ⟶ A)"),
+        sequence: 20,
+        action: SORT_CELLS_DESCENDING,
+    })
+        .add("add_column_before", {
+        name: COLUMN_INSERT_COLUMNS_BEFORE_NAME,
+        sequence: 70,
+        action: INSERT_COLUMNS_BEFORE_ACTION,
+    })
+        .add("add_column_after", {
+        name: COLUMN_INSERT_COLUMNS_AFTER_NAME,
+        sequence: 80,
+        action: INSERT_COLUMNS_AFTER_ACTION,
+    })
+        .add("delete_column", {
+        name: REMOVE_COLUMNS_NAME,
+        sequence: 90,
+        action: REMOVE_COLUMNS_ACTION,
+    })
+        .add("clear_column", {
+        name: DELETE_CONTENT_COLUMNS_NAME,
+        sequence: 100,
+        action: DELETE_CONTENT_COLUMNS_ACTION,
+    })
+        .add("hide_columns", {
+        name: HIDE_COLUMNS_NAME,
+        sequence: 85,
+        action: HIDE_COLUMNS_ACTION,
+        isVisible: (env) => {
+            const sheetId = env.model.getters.getActiveSheetId();
+            const hiddenCols = env.model.getters.getHiddenColsGroups(sheetId).flat();
+            return (env.model.getters.getNumberCols(sheetId) >
+                hiddenCols.length + env.model.getters.getElementsFromSelection("COL").length);
+        },
+        separator: true,
+    })
+        .add("unhide_columns", {
+        name: "Unhide columns",
+        sequence: 86,
+        action: UNHIDE_COLUMNS_ACTION,
+        isVisible: (env) => {
+            const hiddenCols = env.model.getters
+                .getHiddenColsGroups(env.model.getters.getActiveSheetId())
+                .flat();
+            const currentCols = env.model.getters.getElementsFromSelection("COL");
+            return currentCols.some((col) => hiddenCols.includes(col));
+        },
+        separator: true,
+    })
+        .add("conditional_formatting", {
+        name: _lt("Conditional formatting"),
+        sequence: 110,
+        action: OPEN_CF_SIDEPANEL_ACTION,
+    });
+
+    const rowMenuRegistry = new MenuItemRegistry();
+    rowMenuRegistry
+        .add("cut", {
+        name: _lt("Cut"),
+        sequence: 10,
+        description: "Ctrl+X",
+        action: CUT_ACTION,
+    })
+        .add("copy", {
+        name: _lt("Copy"),
+        description: "Ctrl+C",
+        sequence: 20,
+        isReadonlyAllowed: true,
+        action: COPY_ACTION,
+    })
+        .add("paste", {
+        name: _lt("Paste"),
+        description: "Ctrl+V",
+        sequence: 30,
+        action: PASTE_ACTION,
+    })
+        .add("paste_special", {
+        name: _lt("Paste special"),
+        sequence: 40,
+        separator: true,
+        isVisible: IS_NOT_CUT_OPERATION,
+    })
+        .addChild("paste_value_only", ["paste_special"], {
+        name: _lt("Paste value only"),
+        sequence: 10,
+        action: PASTE_VALUE_ACTION,
+    })
+        .addChild("paste_format_only", ["paste_special"], {
+        name: _lt("Paste format only"),
+        sequence: 20,
+        action: PASTE_FORMAT_ACTION,
+    })
+        .add("add_row_before", {
+        name: ROW_INSERT_ROWS_BEFORE_NAME,
+        sequence: 50,
+        action: INSERT_ROWS_BEFORE_ACTION,
+    })
+        .add("add_row_after", {
+        name: ROW_INSERT_ROWS_AFTER_NAME,
+        sequence: 60,
+        action: INSERT_ROWS_AFTER_ACTION,
+    })
+        .add("delete_row", {
+        name: REMOVE_ROWS_NAME,
+        sequence: 70,
+        action: REMOVE_ROWS_ACTION,
+    })
+        .add("clear_row", {
+        name: DELETE_CONTENT_ROWS_NAME,
+        sequence: 80,
+        action: DELETE_CONTENT_ROWS_ACTION,
+    })
+        .add("hide_rows", {
+        name: HIDE_ROWS_NAME,
+        sequence: 85,
+        action: HIDE_ROWS_ACTION,
+        isVisible: (env) => {
+            const sheetId = env.model.getters.getActiveSheetId();
+            const hiddenRows = env.model.getters.getHiddenRowsGroups(sheetId).flat();
+            return (env.model.getters.getNumberRows(sheetId) >
+                hiddenRows.length + env.model.getters.getElementsFromSelection("ROW").length);
+        },
+        separator: true,
+    })
+        .add("unhide_rows", {
+        name: "Unhide rows",
+        sequence: 86,
+        action: UNHIDE_ROWS_ACTION,
+        isVisible: (env) => {
+            const hiddenRows = env.model.getters
+                .getHiddenRowsGroups(env.model.getters.getActiveSheetId())
+                .flat();
+            const currentRows = env.model.getters.getElementsFromSelection("ROW");
+            return currentRows.some((col) => hiddenRows.includes(col));
+        },
+        separator: true,
+    })
+        .add("conditional_formatting", {
+        name: _lt("Conditional formatting"),
+        sequence: 90,
+        action: OPEN_CF_SIDEPANEL_ACTION,
+    });
+
+    function interactiveRenameSheet(env, sheetId, errorText) {
+        const placeholder = env.model.getters.getSheetName(sheetId);
+        const title = _lt("Rename Sheet");
+        const callback = (name) => {
+            if (name === null || name === placeholder) {
+                return;
+            }
+            if (name === "") {
+                interactiveRenameSheet(env, sheetId, _lt("The sheet name cannot be empty."));
+            }
+            const result = env.model.dispatch("RENAME_SHEET", { sheetId, name });
+            if (!result.isSuccessful) {
+                if (result.reasons.includes(10 /* CommandResult.DuplicatedSheetName */)) {
+                    interactiveRenameSheet(env, sheetId, _lt("A sheet with the name %s already exists. Please select another name.", name));
+                }
+                if (result.reasons.includes(11 /* CommandResult.ForbiddenCharactersInSheetName */)) {
+                    interactiveRenameSheet(env, sheetId, _lt("Some used characters are not allowed in a sheet name (Forbidden characters are %s).", FORBIDDEN_SHEET_CHARS.join(" ")));
+                }
+            }
+        };
+        env.editText(title, callback, {
+            placeholder: placeholder,
+            error: errorText,
+        });
+    }
+
+    const sheetMenuRegistry = new MenuItemRegistry();
+    sheetMenuRegistry
+        .add("delete", {
+        name: _lt("Delete"),
+        sequence: 10,
+        isVisible: (env) => {
+            return env.model.getters.getSheetIds().length > 1;
+        },
+        action: (env) => env.askConfirmation(_lt("Are you sure you want to delete this sheet ?"), () => {
+            env.model.dispatch("DELETE_SHEET", { sheetId: env.model.getters.getActiveSheetId() });
+        }),
+    })
+        .add("duplicate", {
+        name: _lt("Duplicate"),
+        sequence: 20,
+        action: (env) => {
+            const sheetIdFrom = env.model.getters.getActiveSheetId();
+            const sheetIdTo = env.model.uuidGenerator.uuidv4();
+            env.model.dispatch("DUPLICATE_SHEET", {
+                sheetId: sheetIdFrom,
+                sheetIdTo,
+            });
+            env.model.dispatch("ACTIVATE_SHEET", { sheetIdFrom, sheetIdTo });
+        },
+    })
+        .add("rename", {
+        name: _lt("Rename"),
+        sequence: 30,
+        action: (env) => interactiveRenameSheet(env, env.model.getters.getActiveSheetId()),
+    })
+        .add("move_right", {
+        name: _lt("Move right"),
+        sequence: 40,
+        isVisible: (env) => {
+            const sheetId = env.model.getters.getActiveSheetId();
+            const sheetIds = env.model.getters.getVisibleSheetIds();
+            return sheetIds.indexOf(sheetId) !== sheetIds.length - 1;
+        },
+        action: (env) => env.model.dispatch("MOVE_SHEET", {
+            sheetId: env.model.getters.getActiveSheetId(),
+            direction: "right",
+        }),
+    })
+        .add("move_left", {
+        name: _lt("Move left"),
+        sequence: 50,
+        isVisible: (env) => {
+            const sheetId = env.model.getters.getActiveSheetId();
+            return env.model.getters.getVisibleSheetIds()[0] !== sheetId;
+        },
+        action: (env) => env.model.dispatch("MOVE_SHEET", {
+            sheetId: env.model.getters.getActiveSheetId(),
+            direction: "left",
+        }),
+    })
+        .add("hide_sheet", {
+        name: _lt("Hide sheet"),
+        sequence: 60,
+        isVisible: (env) => env.model.getters.getVisibleSheetIds().length !== 1,
+        action: (env) => env.model.dispatch("HIDE_SHEET", { sheetId: env.model.getters.getActiveSheetId() }),
+    });
+
+    function interactiveFreezeColumnsRows(env, dimension, base) {
+        const sheetId = env.model.getters.getActiveSheetId();
+        const cmd = dimension === "COL" ? "FREEZE_COLUMNS" : "FREEZE_ROWS";
+        const result = env.model.dispatch(cmd, { sheetId, quantity: base });
+        if (result.isCancelledBecause(62 /* CommandResult.MergeOverlap */)) {
+            env.raiseError(MergeErrorMessage);
+        }
+    }
+
+    const topbarMenuRegistry = new MenuItemRegistry();
+    topbarMenuRegistry
+        .add("file", { name: _lt("File"), sequence: 10 })
+        .add("edit", { name: _lt("Edit"), sequence: 20 })
+        .add("view", { name: _lt("View"), sequence: 30 })
+        .add("insert", { name: _lt("Insert"), sequence: 40 })
+        .add("format", { name: _lt("Format"), sequence: 50 })
+        .add("data", { name: _lt("Data"), sequence: 60 })
+        .addChild("save", ["file"], {
+        name: _lt("Save"),
+        description: "Ctrl+S",
+        sequence: 10,
+        action: () => console.log("Not implemented"),
+    })
+        .addChild("undo", ["edit"], {
+        name: _lt("Undo"),
+        description: "Ctrl+Z",
+        sequence: 10,
+        action: UNDO_ACTION,
+    })
+        .addChild("redo", ["edit"], {
+        name: _lt("Redo"),
+        description: "Ctrl+Y",
+        sequence: 20,
+        action: REDO_ACTION,
+        separator: true,
+    })
+        .addChild("copy", ["edit"], {
+        name: _lt("Copy"),
+        description: "Ctrl+C",
+        sequence: 30,
+        isReadonlyAllowed: true,
+        action: COPY_ACTION,
+    })
+        .addChild("cut", ["edit"], {
+        name: _lt("Cut"),
+        description: "Ctrl+X",
+        sequence: 40,
+        action: CUT_ACTION,
+    })
+        .addChild("paste", ["edit"], {
+        name: _lt("Paste"),
+        description: "Ctrl+V",
+        sequence: 50,
+        action: PASTE_ACTION,
+    })
+        .addChild("paste_special", ["edit"], {
+        name: _lt("Paste special"),
+        sequence: 60,
+        separator: true,
+        isVisible: IS_NOT_CUT_OPERATION,
+    })
+        .addChild("paste_special_value", ["edit", "paste_special"], {
+        name: _lt("Paste value only"),
+        sequence: 10,
+        action: PASTE_VALUE_ACTION,
+    })
+        .addChild("paste_special_format", ["edit", "paste_special"], {
+        name: _lt("Paste format only"),
+        sequence: 20,
+        action: PASTE_FORMAT_ACTION,
+    })
+        .addChild("sort_range", ["data"], {
+        name: _lt("Sort range"),
+        sequence: 62,
+        isVisible: IS_ONLY_ONE_RANGE,
+        separator: true,
+    })
+        .addChild("sort_ascending", ["data", "sort_range"], {
+        name: _lt("Ascending (A ⟶ Z)"),
+        sequence: 10,
+        action: SORT_CELLS_ASCENDING,
+    })
+        .addChild("sort_descending", ["data", "sort_range"], {
+        name: _lt("Descending (Z ⟶ A)"),
+        sequence: 20,
+        action: SORT_CELLS_DESCENDING,
+    })
+        .addChild("find_and_replace", ["edit"], {
+        name: _lt("Find and replace"),
+        description: "Ctrl+H",
+        sequence: 65,
+        isReadonlyAllowed: true,
+        action: OPEN_FAR_SIDEPANEL_ACTION,
+        separator: true,
+    })
+        .addChild("edit_delete_cell_values", ["edit"], {
+        name: _lt("Delete values"),
+        sequence: 70,
+        action: DELETE_CONTENT_ACTION,
+    })
+        .addChild("edit_delete_row", ["edit"], {
+        name: REMOVE_ROWS_NAME,
+        sequence: 80,
+        action: REMOVE_ROWS_ACTION,
+    })
+        .addChild("edit_delete_column", ["edit"], {
+        name: REMOVE_COLUMNS_NAME,
+        sequence: 90,
+        action: REMOVE_COLUMNS_ACTION,
+    })
+        .addChild("edit_delete_cell_shift_up", ["edit"], {
+        name: _lt("Delete cell and shift up"),
+        sequence: 93,
+        action: DELETE_CELL_SHIFT_UP,
+    })
+        .addChild("edit_delete_cell_shift_left", ["edit"], {
+        name: _lt("Delete cell and shift left"),
+        sequence: 97,
+        action: DELETE_CELL_SHIFT_LEFT,
+    })
+        .addChild("edit_unhide_columns", ["edit"], {
+        name: _lt("Unhide all columns"),
+        sequence: 100,
+        action: UNHIDE_ALL_COLUMNS_ACTION,
+        isVisible: (env) => env.model.getters.getHiddenColsGroups(env.model.getters.getActiveSheetId()).length > 0,
+    })
+        .addChild("edit_unhide_rows", ["edit"], {
+        name: _lt("Unhide all rows"),
+        sequence: 100,
+        action: UNHIDE_ALL_ROWS_ACTION,
+        isVisible: (env) => env.model.getters.getHiddenRowsGroups(env.model.getters.getActiveSheetId()).length > 0,
+    })
+        .addChild("insert_row_before", ["insert"], {
+        name: MENU_INSERT_ROWS_BEFORE_NAME,
+        sequence: 10,
+        action: INSERT_ROWS_BEFORE_ACTION,
+        isVisible: (env) => env.model.getters.getActiveCols().size === 0,
+    })
+        .addChild("insert_row_after", ["insert"], {
+        name: MENU_INSERT_ROWS_AFTER_NAME,
+        sequence: 20,
+        action: INSERT_ROWS_AFTER_ACTION,
+        isVisible: (env) => env.model.getters.getActiveCols().size === 0,
+        separator: true,
+    })
+        .addChild("insert_column_before", ["insert"], {
+        name: MENU_INSERT_COLUMNS_BEFORE_NAME,
+        sequence: 30,
+        action: INSERT_COLUMNS_BEFORE_ACTION,
+        isVisible: (env) => env.model.getters.getActiveRows().size === 0,
+    })
+        .addChild("insert_column_after", ["insert"], {
+        name: MENU_INSERT_COLUMNS_AFTER_NAME,
+        sequence: 40,
+        action: INSERT_COLUMNS_AFTER_ACTION,
+        isVisible: (env) => env.model.getters.getActiveRows().size === 0,
+        separator: true,
+    })
+        .addChild("insert_insert_cell_shift_down", ["insert"], {
+        name: _lt("Insert cells and shift down"),
+        sequence: 43,
+        action: INSERT_CELL_SHIFT_DOWN,
+    })
+        .addChild("insert_insert_cell_shift_right", ["insert"], {
+        name: _lt("Insert cells and shift right"),
+        sequence: 47,
+        action: INSERT_CELL_SHIFT_RIGHT,
+        separator: true,
+    })
+        .addChild("insert_chart", ["insert"], {
+        name: _lt("Chart"),
+        sequence: 50,
+        action: CREATE_CHART,
+    })
+        .addChild("insert_link", ["insert"], {
+        name: _lt("Link"),
+        separator: true,
+        sequence: 60,
+        action: INSERT_LINK,
+    })
+        .addChild("insert_sheet", ["insert"], {
+        name: _lt("New sheet"),
+        sequence: 70,
+        action: CREATE_SHEET_ACTION,
+        separator: true,
+    })
+        .addChild("unfreeze_panes", ["view"], {
+        name: _lt("Unfreeze"),
+        sequence: 4,
+        isVisible: (env) => {
+            const { xSplit, ySplit } = env.model.getters.getPaneDivisions(env.model.getters.getActiveSheetId());
+            return xSplit + ySplit > 0;
+        },
+        action: (env) => env.model.dispatch("UNFREEZE_COLUMNS_ROWS", {
+            sheetId: env.model.getters.getActiveSheetId(),
+        }),
+    })
+        .addChild("freeze_panes", ["view"], {
+        name: _lt("Freeze"),
+        sequence: 5,
+        separator: true,
+    })
+        .addChild("unfreeze_rows", ["view", "freeze_panes"], {
+        name: _lt("No rows"),
+        action: (env) => env.model.dispatch("UNFREEZE_ROWS", {
+            sheetId: env.model.getters.getActiveSheetId(),
+        }),
+        isReadonlyAllowed: true,
+        sequence: 5,
+        isVisible: (env) => !!env.model.getters.getPaneDivisions(env.model.getters.getActiveSheetId()).ySplit,
+    })
+        .addChild("freeze_first_row", ["view", "freeze_panes"], {
+        name: _lt("1 row"),
+        action: (env) => interactiveFreezeColumnsRows(env, "ROW", 1),
+        isReadonlyAllowed: true,
+        sequence: 10,
+    })
+        .addChild("freeze_second_row", ["view", "freeze_panes"], {
+        name: _lt("2 rows"),
+        action: (env) => interactiveFreezeColumnsRows(env, "ROW", 2),
+        isReadonlyAllowed: true,
+        sequence: 15,
+    })
+        .addChild("freeze_current_row", ["view", "freeze_panes"], {
+        name: _lt("Up to current row"),
+        action: (env) => {
+            const { bottom } = env.model.getters.getSelectedZone();
+            interactiveFreezeColumnsRows(env, "ROW", bottom + 1);
+        },
+        isReadonlyAllowed: true,
+        sequence: 20,
+        separator: true,
+    })
+        .addChild("unfreeze_columns", ["view", "freeze_panes"], {
+        name: _lt("No columns"),
+        action: (env) => env.model.dispatch("UNFREEZE_COLUMNS", {
+            sheetId: env.model.getters.getActiveSheetId(),
+        }),
+        isReadonlyAllowed: true,
+        sequence: 25,
+        isVisible: (env) => !!env.model.getters.getPaneDivisions(env.model.getters.getActiveSheetId()).xSplit,
+    })
+        .addChild("freeze_first_col", ["view", "freeze_panes"], {
+        name: _lt("1 column"),
+        action: (env) => interactiveFreezeColumnsRows(env, "COL", 1),
+        isReadonlyAllowed: true,
+        sequence: 30,
+    })
+        .addChild("freeze_second_col", ["view", "freeze_panes"], {
+        name: _lt("2 columns"),
+        action: (env) => interactiveFreezeColumnsRows(env, "COL", 2),
+        isReadonlyAllowed: true,
+        sequence: 35,
+    })
+        .addChild("freeze_current_col", ["view", "freeze_panes"], {
+        name: _lt("Up to current column"),
+        action: (env) => {
+            const { right } = env.model.getters.getSelectedZone();
+            interactiveFreezeColumnsRows(env, "COL", right + 1);
+        },
+        isReadonlyAllowed: true,
+        sequence: 40,
+    })
+        .addChild("view_gridlines", ["view"], {
+        name: (env) => env.model.getters.getGridLinesVisibility(env.model.getters.getActiveSheetId())
+            ? _lt("Hide gridlines")
+            : _lt("Show gridlines"),
+        action: SET_GRID_LINES_VISIBILITY_ACTION,
+        sequence: 10,
+    })
+        .addChild("view_formulas", ["view"], {
+        name: (env) => env.model.getters.shouldShowFormulas() ? _lt("Hide formulas") : _lt("Show formulas"),
+        action: SET_FORMULA_VISIBILITY_ACTION,
+        isReadonlyAllowed: true,
+        sequence: 15,
+    })
+        .addChild("format_number", ["format"], {
+        name: _lt("Numbers"),
+        sequence: 10,
+        separator: true,
+    })
+        .addChild("format_number_automatic", ["format", "format_number"], {
+        name: NumberFormatTerms.Automatic,
+        sequence: 10,
+        separator: true,
+        action: FORMAT_AUTOMATIC_ACTION,
+    })
+        .addChild("format_number_number", ["format", "format_number"], {
+        name: NumberFormatTerms.Number,
+        description: "1,000.12",
+        sequence: 20,
+        action: FORMAT_NUMBER_ACTION,
+    })
+        .addChild("format_number_percent", ["format", "format_number"], {
+        name: NumberFormatTerms.Percent,
+        description: "10.12%",
+        sequence: 30,
+        separator: true,
+        action: FORMAT_PERCENT_ACTION,
+    })
+        .addChild("format_number_currency", ["format", "format_number"], {
+        name: NumberFormatTerms.Currency,
+        description: "$1,000.12",
+        sequence: 37,
+        action: FORMAT_CURRENCY_ACTION,
+    })
+        .addChild("format_number_currency_rounded", ["format", "format_number"], {
+        name: NumberFormatTerms.CurrencyRounded,
+        description: "$1,000",
+        sequence: 38,
+        action: FORMAT_CURRENCY_ROUNDED_ACTION,
+    })
+        .addChild("format_custom_currency", ["format", "format_number"], {
+        name: NumberFormatTerms.CustomCurrency,
+        sequence: 39,
+        separator: true,
+        action: OPEN_CUSTOM_CURRENCY_SIDEPANEL_ACTION,
+    })
+        .addChild("format_number_date", ["format", "format_number"], {
+        name: NumberFormatTerms.Date,
+        description: "9/26/2008",
+        sequence: 40,
+        action: FORMAT_DATE_ACTION,
+    })
+        .addChild("format_number_time", ["format", "format_number"], {
+        name: NumberFormatTerms.Time,
+        description: "10:43:00 PM",
+        sequence: 50,
+        action: FORMAT_TIME_ACTION,
+    })
+        .addChild("format_number_date_time", ["format", "format_number"], {
+        name: NumberFormatTerms.DateTime,
+        description: "9/26/2008 22:43:00",
+        sequence: 60,
+        action: FORMAT_DATE_TIME_ACTION,
+    })
+        .addChild("format_number_duration", ["format", "format_number"], {
+        name: NumberFormatTerms.Duration,
+        description: "27:51:38",
+        sequence: 70,
+        separator: true,
+        action: FORMAT_DURATION_ACTION,
+    })
+        .addChild("format_bold", ["format"], {
+        name: _lt("Bold"),
+        sequence: 20,
+        description: "Ctrl+B",
+        action: FORMAT_BOLD_ACTION,
+    })
+        .addChild("format_italic", ["format"], {
+        name: _lt("Italic"),
+        sequence: 30,
+        description: "Ctrl+I",
+        action: FORMAT_ITALIC_ACTION,
+    })
+        .addChild("format_underline", ["format"], {
+        name: _lt("Underline"),
+        description: "Ctrl+U",
+        sequence: 40,
+        action: FORMAT_UNDERLINE_ACTION,
+    })
+        .addChild("format_strikethrough", ["format"], {
+        name: _lt("Strikethrough"),
+        sequence: 50,
+        action: FORMAT_STRIKETHROUGH_ACTION,
+        separator: true,
+    })
+        .addChild("format_font_size", ["format"], {
+        name: _lt("Font size"),
+        sequence: 60,
+    })
+        .addChild("format_wrapping", ["format"], {
+        name: _lt("Wrapping"),
+        sequence: 70,
+        separator: true,
+    })
+        .addChild("format_wrapping_overflow", ["format", "format_wrapping"], {
+        name: "Overflow",
+        sequence: 10,
+        action: (env) => setStyle(env, { wrapping: "overflow" }),
+    })
+        .addChild("format_wrapping_wrap", ["format", "format_wrapping"], {
+        name: "Wrap",
+        sequence: 20,
+        action: (env) => setStyle(env, { wrapping: "wrap" }),
+    })
+        .addChild("format_wrapping_clip", ["format", "format_wrapping"], {
+        name: "Clip",
+        sequence: 30,
+        action: (env) => setStyle(env, { wrapping: "clip" }),
+    })
+        .addChild("format_cf", ["format"], {
+        name: _lt("Conditional formatting"),
+        sequence: 80,
+        action: OPEN_CF_SIDEPANEL_ACTION,
+        separator: true,
+    })
+        .addChild("format_clearFormat", ["format"], {
+        name: _lt("Clear formatting"),
+        sequence: 90,
+        action: FORMAT_CLEARFORMAT_ACTION,
+        separator: true,
+    })
+        .addChild("add_data_filter", ["data"], {
+        name: _lt("Add Filter"),
+        sequence: 20,
+        action: FILTERS_CREATE_FILTER_TABLE,
+        isVisible: (env) => !SELECTION_CONTAINS_FILTER(env),
+        isEnabled: (env) => SELECTION_IS_CONTINUOUS(env),
+    })
+        .addChild("remove_data_filter", ["data"], {
+        name: _lt("Remove Filter"),
+        sequence: 20,
+        action: FILTERS_REMOVE_FILTER_TABLE,
+        isVisible: SELECTION_CONTAINS_FILTER,
+    });
+    // Font-sizes
+    for (let fs of fontSizes) {
+        topbarMenuRegistry.addChild(`format_font_size_${fs.pt}`, ["format", "format_font_size"], {
+            name: fs.pt.toString(),
+            sequence: fs.pt,
+            action: (env) => setStyle(env, { fontSize: fs.pt }),
+        });
+    }
+
+    class OTRegistry extends Registry {
+        /**
+         * Add a transformation function to the registry. When the executed command
+         * happened, all the commands in toTransforms should be transformed using the
+         * transformation function given
+         */
+        addTransformation(executed, toTransforms, fn) {
+            for (let toTransform of toTransforms) {
+                if (!this.content[toTransform]) {
+                    this.content[toTransform] = new Map();
+                }
+                this.content[toTransform].set(executed, fn);
+            }
+            return this;
+        }
+        /**
+         * Get the transformation function to transform the command toTransform, after
+         * that the executed command happened.
+         */
+        getTransformation(toTransform, executed) {
+            return this.content[toTransform] && this.content[toTransform].get(executed);
+        }
+    }
+    const otRegistry = new OTRegistry();
+
+    const uuidGenerator$1 = new UuidGenerator();
+    css /* scss */ `
+  .o-selection {
+    .o-selection-input {
+      display: flex;
+      flex-direction: row;
+
+      input {
+        padding: 4px 6px;
+        border-radius: 4px;
+        box-sizing: border-box;
+        flex-grow: 2;
+      }
+      input:focus {
+        outline: none;
+      }
+      input.o-required,
+      input.o-focused {
+        border-width: 2px;
+        padding: 3px 5px;
+      }
+      input.o-focused {
+        border-color: ${SELECTION_BORDER_COLOR};
+      }
+      input.o-invalid {
+        border-color: red;
+      }
+      button.o-btn {
+        background: transparent;
+        border: none;
+        color: #333;
+        cursor: pointer;
+      }
+      button.o-btn-action {
+        margin: 8px 1px;
+        border-radius: 4px;
+        background: transparent;
+        border: 1px solid #dadce0;
+        color: #188038;
+        font-weight: bold;
+        font-size: 14px;
+        height: 25px;
+      }
+    }
+  }
+`;
+    /**
+     * This component can be used when the user needs to input some
+     * ranges. He can either input the ranges with the regular DOM `<input/>`
+     * displayed or by selecting zones on the grid.
+     *
+     * onSelectionChanged is called every time the input value
+     * changes.
+     */
+    class SelectionInput extends owl.Component {
+        constructor() {
+            super(...arguments);
+            this.id = uuidGenerator$1.uuidv4();
+            this.previousRanges = this.props.ranges || [];
+            this.originSheet = this.env.model.getters.getActiveSheetId();
+            this.state = owl.useState({
+                isMissing: false,
+            });
+        }
+        get ranges() {
+            const existingSelectionRange = this.env.model.getters.getSelectionInput(this.id);
+            const ranges = existingSelectionRange.length
+                ? existingSelectionRange
+                : this.props.ranges
+                    ? this.props.ranges.map((xc, i) => ({
+                        xc,
+                        id: i.toString(),
+                        isFocused: false,
+                    }))
+                    : [];
+            return ranges.map((range) => ({
+                ...range,
+                isValidRange: range.xc === "" || this.env.model.getters.isRangeValid(range.xc),
+            }));
+        }
+        get hasFocus() {
+            return this.ranges.filter((i) => i.isFocused).length > 0;
+        }
+        get canAddRange() {
+            return !this.props.hasSingleRange;
+        }
+        get isInvalid() {
+            return this.props.isInvalid || this.state.isMissing;
+        }
+        setup() {
+            owl.onMounted(() => this.enableNewSelectionInput());
+            owl.onWillUnmount(async () => this.disableNewSelectionInput());
+            owl.onPatched(() => this.checkChange());
+        }
+        enableNewSelectionInput() {
+            this.env.model.dispatch("ENABLE_NEW_SELECTION_INPUT", {
+                id: this.id,
+                initialRanges: this.props.ranges,
+                hasSingleRange: this.props.hasSingleRange,
+            });
+        }
+        disableNewSelectionInput() {
+            this.env.model.dispatch("DISABLE_SELECTION_INPUT", { id: this.id });
+        }
+        checkChange() {
+            const value = this.env.model.getters.getSelectionInputValue(this.id);
+            if (this.previousRanges.join() !== value.join()) {
+                this.triggerChange();
+            }
+        }
+        getColor(range) {
+            const color = range.color || "#000";
+            return "color: " + color + ";";
+        }
+        triggerChange() {
+            var _a, _b;
+            const ranges = this.env.model.getters.getSelectionInputValue(this.id);
+            (_b = (_a = this.props).onSelectionChanged) === null || _b === void 0 ? void 0 : _b.call(_a, ranges);
+            this.previousRanges = ranges;
+        }
+        focus(rangeId) {
+            this.state.isMissing = false;
+            this.env.model.dispatch("FOCUS_RANGE", {
+                id: this.id,
+                rangeId,
+            });
+        }
+        addEmptyInput() {
+            this.env.model.dispatch("ADD_EMPTY_RANGE", { id: this.id });
+        }
+        removeInput(rangeId) {
+            var _a, _b;
+            this.env.model.dispatch("REMOVE_RANGE", { id: this.id, rangeId });
+            this.triggerChange();
+            (_b = (_a = this.props).onSelectionConfirmed) === null || _b === void 0 ? void 0 : _b.call(_a);
+        }
+        onInputChanged(rangeId, ev) {
+            const target = ev.target;
+            this.env.model.dispatch("CHANGE_RANGE", {
+                id: this.id,
+                rangeId,
+                value: target.value,
+            });
+            target.blur();
+            this.triggerChange();
+        }
+        disable() {
+            var _a, _b;
+            this.env.model.dispatch("UNFOCUS_SELECTION_INPUT");
+            const ranges = this.env.model.getters.getSelectionInputValue(this.id);
+            if (this.props.required && ranges.length === 0) {
+                this.state.isMissing = true;
+            }
+            const activeSheetId = this.env.model.getters.getActiveSheetId();
+            if (this.originSheet !== activeSheetId) {
+                this.env.model.dispatch("ACTIVATE_SHEET", {
+                    sheetIdFrom: activeSheetId,
+                    sheetIdTo: this.originSheet,
+                });
+            }
+            (_b = (_a = this.props).onSelectionConfirmed) === null || _b === void 0 ? void 0 : _b.call(_a);
+        }
+    }
+    SelectionInput.template = "o-spreadsheet-SelectionInput";
+
+    class LineBarPieConfigPanel extends owl.Component {
+        constructor() {
+            super(...arguments);
+            this.state = owl.useState({
+                datasetDispatchResult: undefined,
+                labelsDispatchResult: undefined,
+            });
+            this.dataSeriesRanges = [];
+        }
+        setup() {
+            this.dataSeriesRanges = this.props.definition.dataSets;
+            this.labelRange = this.props.definition.labelRange;
+        }
+        get errorMessages() {
+            var _a, _b;
+            const cancelledReasons = [
+                ...(((_a = this.state.datasetDispatchResult) === null || _a === void 0 ? void 0 : _a.reasons) || []),
+                ...(((_b = this.state.labelsDispatchResult) === null || _b === void 0 ? void 0 : _b.reasons) || []),
+            ];
+            return cancelledReasons.map((error) => ChartTerms.Errors[error] || ChartTerms.Errors.Unexpected);
+        }
+        get isDatasetInvalid() {
+            var _a;
+            return !!((_a = this.state.datasetDispatchResult) === null || _a === void 0 ? void 0 : _a.isCancelledBecause(29 /* CommandResult.InvalidDataSet */));
+        }
+        get isLabelInvalid() {
+            var _a;
+            return !!((_a = this.state.labelsDispatchResult) === null || _a === void 0 ? void 0 : _a.isCancelledBecause(30 /* CommandResult.InvalidLabelRange */));
+        }
+        onUpdateDataSetsHaveTitle(ev) {
+            this.props.updateChart({
+                dataSetsHaveTitle: ev.target.checked,
+            });
+        }
+        /**
+         * Change the local dataSeriesRanges. The model should be updated when the
+         * button "confirm" is clicked
+         */
+        onDataSeriesRangesChanged(ranges) {
+            this.dataSeriesRanges = ranges;
+        }
+        onDataSeriesConfirmed() {
+            this.state.datasetDispatchResult = this.props.updateChart({
+                dataSets: this.dataSeriesRanges,
+            });
+        }
+        /**
+         * Change the local labelRange. The model should be updated when the
+         * button "confirm" is clicked
+         */
+        onLabelRangeChanged(ranges) {
+            this.labelRange = ranges[0];
+        }
+        onLabelRangeConfirmed() {
+            this.state.labelsDispatchResult = this.props.updateChart({
+                labelRange: this.labelRange,
+            });
+        }
+    }
+    LineBarPieConfigPanel.template = "o-spreadsheet-LineBarPieConfigPanel";
+    LineBarPieConfigPanel.components = { SelectionInput };
+
+    class BarConfigPanel extends LineBarPieConfigPanel {
+        onUpdateStacked(ev) {
+            this.props.updateChart({
+                stacked: ev.target.checked,
+            });
+        }
+    }
+    BarConfigPanel.template = "o-spreadsheet-BarConfigPanel";
 
     const PICKER_PADDING = 6;
     const LINE_VERTICAL_PADDING = 1;
@@ -8624,7 +8665,7 @@
         get canTreatLabelsAsText() {
             const chart = this.env.model.getters.getChart(this.props.figureId);
             if (chart && chart instanceof LineChart) {
-                return canChartParseLabels(chart, this.env.model.getters);
+                return canChartParseLabels(chart.labelRange, this.env.model.getters);
             }
             return false;
         }
@@ -22084,7 +22125,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                         target: this.env.model.getters.getSelectedZones(),
                     });
                 },
-                "CTRL+A": () => this.env.model.selection.loopSelection(),
+                "CTRL+A": () => this.env.model.selection.loopSelection("sheet"),
                 "CTRL+S": () => {
                     var _a, _b;
                     (_b = (_a = this.props).onSaveRequested) === null || _b === void 0 ? void 0 : _b.call(_a);
@@ -26920,6 +26961,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     class CellPlugin extends CorePlugin {
         constructor() {
             super(...arguments);
+            this.nextId = 1;
             this.cells = {};
             this.createCell = cellFactory(this.getters);
         }
@@ -27086,7 +27128,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         importCell(sheetId, cellData, normalizedStyles, normalizedFormats) {
             const style = (cellData.style && normalizedStyles[cellData.style]) || undefined;
             const format = (cellData.format && normalizedFormats[cellData.format]) || undefined;
-            const cellId = this.uuidGenerator.uuidv4();
+            const cellId = this.getNextUid();
             const properties = { format, style };
             return this.createCell(cellId, (cellData === null || cellData === void 0 ? void 0 : cellData.content) || "", properties, sheetId);
         }
@@ -27228,6 +27270,11 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             }
             return format;
         }
+        getNextUid() {
+            const id = this.nextId.toString();
+            this.history.update("nextId", this.nextId + 1);
+            return id;
+        }
         updateCell(sheetId, col, row, after) {
             var _a;
             const before = this.getters.getCell(sheetId, col, row);
@@ -27266,7 +27313,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 }
                 return;
             }
-            const cellId = (before === null || before === void 0 ? void 0 : before.id) || this.uuidGenerator.uuidv4();
+            const cellId = (before === null || before === void 0 ? void 0 : before.id) || this.getNextUid();
             const didContentChange = hasContent;
             const properties = { format, style };
             const cell = this.createCell(cellId, afterContent, properties, sheetId);
@@ -32353,13 +32400,26 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             return 0 /* CommandResult.Success */;
         }
         handle(cmd) {
+            var _a;
             switch (cmd.type) {
                 case "UNDO":
                 case "REDO":
                 case "UPDATE_CELL":
                 case "EVALUATE_CELLS":
                 case "ACTIVATE_SHEET":
+                case "REMOVE_FILTER_TABLE":
                     this.isEvaluationDirty = true;
+                    break;
+                case "START":
+                    for (const sheetId of this.getters.getSheetIds()) {
+                        this.filterValues[sheetId] = {};
+                        for (const filter of this.getters.getFilters(sheetId)) {
+                            this.filterValues[sheetId][filter.id] = [];
+                        }
+                    }
+                    break;
+                case "CREATE_SHEET":
+                    this.filterValues[cmd.sheetId] = {};
                     break;
                 case "UPDATE_FILTER":
                     this.updateFilter(cmd);
@@ -32370,7 +32430,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     for (const copiedFilter of this.getters.getFilters(cmd.sheetId)) {
                         const zone = copiedFilter.zoneWithHeaders;
                         const newFilter = this.getters.getFilter(cmd.sheetIdTo, zone.left, zone.top);
-                        filterValues[newFilter.id] = this.filterValues[cmd.sheetId][copiedFilter.id];
+                        filterValues[newFilter.id] = ((_a = this.filterValues[cmd.sheetId]) === null || _a === void 0 ? void 0 : _a[copiedFilter.id]) || [];
                     }
                     this.filterValues[cmd.sheetIdTo] = filterValues;
                     break;
@@ -35353,6 +35413,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             }
         }
         handle(cmd) {
+            var _a;
             this.cleanViewports();
             switch (cmd.type) {
                 case "START":
@@ -35394,7 +35455,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     break;
                 case "UPDATE_CELL":
                     // update cell content or format can change hidden rows because of data filters
-                    if ("content" in cmd || "format" in cmd) {
+                    if ("content" in cmd || "format" in cmd || ((_a = cmd.style) === null || _a === void 0 ? void 0 : _a.fontSize) !== undefined) {
                         this.sheetsWithDirtyViewports.add(cmd.sheetId);
                     }
                     break;
@@ -37153,7 +37214,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
           display: flex;
           align-items: center;
           margin: 2px;
-          padding: 0 3px;
+          padding: 0px 3px;
           border-radius: 2px;
           cursor: pointer;
           min-width: fit-content;
@@ -37202,6 +37263,12 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
 
         .o-dropdown {
           position: relative;
+          display: flex;
+          align-items: center;
+
+          .o-dropdown-button {
+            height: 30px;
+          }
 
           .o-text-icon {
             height: 100%;
@@ -37225,7 +37292,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             background-color: white;
 
             .o-dropdown-item {
-              padding: 7px 10px;
+              cursor: pointer;
             }
 
             .o-dropdown-item:hover {
@@ -37238,6 +37305,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
 
               .o-line-item {
                 padding: 4px;
+                width: 18px;
+                height: 18px;
+                cursor: pointer;
 
                 &:hover {
                   background-color: rgba(0, 0, 0, 0.08);
@@ -37260,6 +37330,10 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                   left: 5px;
                 }
               }
+            }
+
+            .o-dropdown-align-item {
+              padding: 7px 10px;
             }
           }
         }
@@ -37309,7 +37383,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
   `;
         }
         setup() {
-            owl.useExternalListener(window, "click", this.onClick);
+            owl.useExternalListener(window, "click", this.onExternalClick);
             owl.onWillStart(() => this.updateCellState());
             owl.onWillUpdateProps(() => this.updateCellState());
         }
@@ -37318,22 +37392,32 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 .getAll()
                 .filter((item) => !item.isVisible || item.isVisible(this.env));
         }
-        onClick(ev) {
-            if (this.openedEl && isChildEvent(this.openedEl, ev)) {
+        onExternalClick(ev) {
+            // TODO : manage click events better. We need this piece of code
+            // otherwise the event opening the menu would close it on the same frame.
+            // And we cannot stop the event propagation because it's used in an
+            // external listener of the Menu component to close the context menu when
+            // clicking on the top bar
+            if (this.openedEl === ev.target) {
                 return;
             }
             this.closeMenus();
         }
-        toogleStyle(style) {
+        onClick() {
+            this.props.onClick();
+            this.closeMenus();
+        }
+        toggleStyle(style) {
             setStyle(this.env, { [style]: !this.style[style] });
         }
-        toogleFormat(formatName) {
+        toggleFormat(formatName) {
             const formatter = FORMATS.find((f) => f.name === formatName);
             const value = (formatter && formatter.value) || "";
             setFormatter(this.env, value);
         }
         toggleAlign(align) {
             setStyle(this.env, { ["align"]: align });
+            this.onClick();
         }
         onMenuMouseOver(menu, ev) {
             if (this.isSelectingMenu) {
@@ -37422,6 +37506,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         }
         setColor(target, color) {
             setStyle(this.env, { [target]: color });
+            this.onClick();
         }
         setBorder(command) {
             this.env.model.dispatch("SET_FORMATTING", {
@@ -37429,17 +37514,16 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 target: this.env.model.getters.getSelectedZones(),
                 border: command,
             });
+            this.onClick();
         }
-        setFormat(ev) {
-            const format = ev.target.dataset.format;
-            if (format) {
-                this.toogleFormat(format);
-                return;
+        setFormat(format, custom) {
+            if (!custom) {
+                this.toggleFormat(format);
             }
-            const custom = ev.target.dataset.custom;
-            if (custom) {
-                this.openCustomFormatSidePanel(custom);
+            else {
+                this.openCustomFormatSidePanel(format);
             }
+            this.onClick();
         }
         openCustomFormatSidePanel(custom) {
             const customFormatter = CUSTOM_FORMATS.find((c) => c.name === custom);
@@ -37464,9 +37548,10 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 target: this.env.model.getters.getSelectedZones(),
             });
         }
-        setSize(ev) {
-            const fontSize = parseFloat(ev.target.dataset.size);
+        setSize(fontSizeStr) {
+            const fontSize = parseFloat(fontSizeStr);
             setStyle(this.env, { fontSize });
+            this.onClick();
         }
         doAction(action) {
             action(this.env);
@@ -39656,11 +39741,14 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         }
         /**
          * Loop the current selection while keeping the same anchor. The selection will loop through:
-         *  1) the smallest zone that contain the anchor and that have only empty cells bordering it
+         *  1) the smallest zone that contain the anchor and that have only empty cells bordering it (table)
          *  2) the whole sheet
          *  3) the anchor cell
+         *
+         * @param maxSize : maximum size of the selection. If equal to "table", won't select the whole sheet
+         * and loop between anchor cell and table
          */
-        loopSelection() {
+        loopSelection(maxSize) {
             const sheetId = this.getters.getActiveSheetId();
             const anchor = this.anchor;
             /** Try to expand the zone by one col/row in any direction to include a new non-empty cell */
@@ -39700,6 +39788,11 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     continue;
                 }
             } while (hasExpanded);
+            if (maxSize === "table") {
+                return hasExpandedOnce
+                    ? this.selectZone({ ...anchor, zone })
+                    : this.selectZone({ ...anchor, zone: positionToZone(anchor.cell) });
+            }
             return hasExpandedOnce ? this.selectZone({ ...anchor, zone }) : this.selectAll();
         }
         /**
@@ -41780,8 +41873,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-10-17T06:58:51.904Z';
-    exports.__info__.hash = 'ab6f7e4';
+    exports.__info__.date = '2022-10-27T07:15:56.847Z';
+    exports.__info__.hash = 'ca7bf2f';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
