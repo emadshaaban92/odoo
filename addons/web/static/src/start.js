@@ -40,7 +40,7 @@ export async function startWebClient(Webclient) {
         env,
         templates,
         dev: env.debug,
-        warnIfNoStaticProps: true,
+        warnIfNoStaticProps: false, // TODO: remove
         translatableAttributes: ["data-tooltip"],
         translateFn: env._t,
     });

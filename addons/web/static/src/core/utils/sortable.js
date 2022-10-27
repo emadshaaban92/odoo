@@ -70,7 +70,6 @@ export const useSortable = makeDraggableHook({
         connectGroups: false,
         currentGroup: null,
         edgeScrolling: { speed: 20, threshold: 60 },
-        ghostElement: null,
         groupSelector: null,
     },
 
@@ -139,8 +138,13 @@ export const useSortable = makeDraggableHook({
 
         const { width, height } = ctx.currentElementRect;
 
-        // Ghost element is hidden and its size is frozen
-        ctx.ghostElement.style = `visibility: hidden; display: block; width: ${width}px; height:${height}px;`;
+        // Adjusts size for the ghost element
+        helpers.addStyle(ctx.ghostElement, {
+            visibility: "hidden",
+            display: "block",
+            width: `${width}px`,
+            height: `${height}px`,
+        });
 
         // Binds handlers on eligible groups, if the elements are not confined to
         // their parents and a 'groupSelector' has been provided.
@@ -148,7 +152,6 @@ export const useSortable = makeDraggableHook({
             for (const siblingGroup of ctx.ref.el.querySelectorAll(ctx.groupSelector)) {
                 helpers.addListener(siblingGroup, "mouseenter", onGroupMouseenter);
                 helpers.addListener(siblingGroup, "mouseleave", onGroupMouseleave);
-                helpers.addStyle(siblingGroup, { "pointer-events": "auto" });
             }
         }
 
@@ -185,21 +188,18 @@ export const useSortable = makeDraggableHook({
             });
         }
     },
-    onWillStartDrag({ ctx }) {
+    onWillStartDrag({ ctx, helpers }) {
         if (ctx.groupSelector) {
             ctx.currentGroup = ctx.currentElement.closest(ctx.groupSelector);
             if (!ctx.connectGroups) {
                 ctx.currentContainer = ctx.currentGroup;
             }
         }
-        ctx.ghostElement = ctx.currentElement.cloneNode(false);
-    },
-    onCleanup({ ctx }) {
-        if (ctx.ghostElement) {
-            ctx.ghostElement.remove();
-        }
 
-        ctx.currentGroup = null;
-        ctx.ghostElement = null;
+        ctx.ghostElement = ctx.currentElement.cloneNode(false);
+        helpers.addCleanup(() => {
+            ctx.ghostElement.remove();
+            ctx.ghostElement = null;
+        });
     },
 });
