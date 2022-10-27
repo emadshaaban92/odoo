@@ -681,9 +681,9 @@ class Field(MetaField('DummyField', (object,), {})):
                 )
         # assign final values to records
         for record, value in zip(records, values):
-            record[self.name] = self._process_related(value[self.related_field.name])
+            record[self.name] = self._process_related(value[self.related_field.name], record)
 
-    def _process_related(self, value):
+    def _process_related(self, value, record):
         """No transformation by default, but allows override."""
         return value
 
@@ -2460,7 +2460,7 @@ class Image(Binary):
 
     def write(self, records, value):
         try:
-            new_value = self._image_process(value)
+            new_value = self._image_process(value, records=records)
         except UserError:
             if not any(records._ids):
                 # Some crap is assigned to a new record. This can happen in an
@@ -2476,7 +2476,7 @@ class Image(Binary):
         dirty = self.column_type and self.store and any(records._ids)
         records.env.cache.update(records, self, itertools.repeat(cache_value), dirty=dirty)
 
-    def _image_process(self, value):
+    def _image_process(self, value, records=None):
         if self.readonly and not self.max_width and not self.max_height:
             # no need to process images for computed fields, or related fields
             return value
@@ -2484,15 +2484,39 @@ class Image(Binary):
             img = base64.b64decode(value or '') or False
         except:
             raise UserError(_("Image is not encoded in base64."))
+
+        if img and records and guess_mimetype(img, '') == 'image/webp':
+            if not self.max_width and not self.max_height:
+                return value
+            # Fetch resized version.
+            Attachment = records.env['ir.attachment']
+            checksum = Attachment._compute_checksum(img)
+            origin = Attachment.search([
+                ['id', '!=', False],  # No implicit condition on res_field.
+                ['checksum', '=', checksum],
+            ])
+            if origin:
+                origin_ids = [attachment.id for attachment in origin]
+                resized_domain = [
+                    ['id', '!=', False],  # No implicit condition on res_field.
+                    ['res_model', '=', 'ir.attachment'],
+                    ['res_id', 'in', origin_ids],
+                    ['description', '=', 'resize: %s' % max(self.max_width, self.max_height)],
+                ]
+                resized = Attachment.sudo().search(resized_domain, limit=1)
+                if resized:
+                    return resized.datas or value
+                    # Fallback on non-resized image.
+
         return base64.b64encode(image_process(img,
             size=(self.max_width, self.max_height),
             verify_resolution=self.verify_resolution,
         ) or b'') or False
 
-    def _process_related(self, value):
+    def _process_related(self, value, record):
         """Override to resize the related value before saving it on self."""
         try:
-            return self._image_process(super()._process_related(value))
+            return self._image_process(super()._process_related(value, record), records=record)
         except UserError:
             # Avoid the following `write` to fail if the related image was saved
             # invalid, which can happen for pre-existing databases.
