@@ -1620,11 +1620,13 @@ class MailThread(models.AbstractModel):
         if partner and partner.id in [val[0] for val in result[self.ids[0]]]:  # already existing partner ID -> skip
             return result
         if partner and partner.email:  # complete profile: id, name <email>
-            result[self.ids[0]].append((partner.id, partner.email_formatted, lang, reason))
+            result[self.ids[0]].append((partner.id, partner.email_formatted, lang, reason, {}))
         elif partner:  # incomplete profile: id, name
-            result[self.ids[0]].append((partner.id, '%s' % (partner.name), lang, reason))
+            result[self.ids[0]].append((partner.id, '%s' % (partner.name), lang, reason, {}))
         else:  # unknown partner, we are probably managing an email address
-            result[self.ids[0]].append((False, email, lang, reason))
+            _, parsed_email = self.env['res.partner']._parse_partner_name(email)
+            partner_creation_default_values = self._related_res_partner_default_create_values(parsed_email)
+            result[self.ids[0]].append((False, email, lang, reason, partner_creation_default_values))
         return result
 
     def _message_get_suggested_recipients(self):

@@ -71,6 +71,13 @@ Model({
          */
         reason: attr(),
         /**
+         * Default values for partner creation (empty object if partner is set).
+         */
+        defaultCreateValues: attr({
+            default: {},
+            readonly: true,
+        }),
+        /**
          * Determines the `Thread` concerned by `this.`
          */
         thread: one("Thread", { inverse: "suggestedRecipientInfoList", required: true }),
