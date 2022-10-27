@@ -52,6 +52,7 @@ setup(
         'pyusb >= 1.0.0b1',
         'qrcode',
         'reportlab',  # windows binary pypi.python.org/pypi/reportlab
+        'rjsmin',
         'requests',
         'urllib3',
         'vobject',
