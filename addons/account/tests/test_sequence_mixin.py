@@ -17,6 +17,7 @@ class TestSequenceMixinCommon(AccountTestInvoicingCommon):
     @classmethod
     def setUpClass(cls, chart_template_ref=None):
         super().setUpClass(chart_template_ref=chart_template_ref)
+        cls.company_data['company'].write({'fiscalyear_last_day': "31", 'fiscalyear_last_month': "3"})
         cls.test_move = cls.create_move()
 
     @classmethod
@@ -127,6 +128,8 @@ class TestSequenceMixin(TestSequenceMixinCommon):
         """Test different format of sequences and what it becomes on another period"""
         sequences = [
             ('JRNL/2016/00001', 'JRNL/2016/00002', 'JRNL/2016/00003', 'JRNL/2017/00001'),
+            ('JRNL/2015-2016/00001', 'JRNL/2015-2016/00002', 'JRNL/2016-2017/00001', 'JRNL/2016-2017/00002'),
+            ('JRNL/15-16/00001', 'JRNL/15-16/00002', 'JRNL/16-17/00001', 'JRNL/16-17/00002'),
             ('1234567', '1234568', '1234569', '1234570'),
             ('20190910', '20190911', '20190912', '20190913'),
             ('2016-0910', '2016-0911', '2016-0912', '2017-0001'),

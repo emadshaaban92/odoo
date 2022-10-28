@@ -3,7 +3,7 @@
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError
 from odoo.tools.misc import format_date
-from odoo.tools import frozendict
+from odoo.tools import frozendict, date_utils
 
 import re
 from collections import defaultdict
@@ -25,6 +25,7 @@ class SequenceMixin(models.AbstractModel):
     _sequence_index = False
     _sequence_monthly_regex = r'^(?P<prefix1>.*?)(?P<year>((?<=\D)|(?<=^))((19|20|21)\d{2}|(\d{2}(?=\D))))(?P<prefix2>\D*?)(?P<month>(0[1-9]|1[0-2]))(?P<prefix3>\D+?)(?P<seq>\d*)(?P<suffix>\D*?)$'
     _sequence_yearly_regex = r'^(?P<prefix1>.*?)(?P<year>((?<=\D)|(?<=^))((19|20|21)?\d{2}))(?P<prefix2>\D+?)(?P<seq>\d*)(?P<suffix>\D*?)$'
+    _sequence_yearly_financial_regex = r'^(?P<prefix1>.*?)(?P<fyear_start>((?<=\D)|(?<=^))((19|20|21)?\d{2}))(?P<prefix2>([^0-9a-zA-Z\/]{1}))(?P<fyear_end>((?<=\D)|(?<=^))((19|20|21)?\d{2}))(?P<prefix3>\D+?)(?P<seq>\d*)(?P<suffix>\D*?)$'
     _sequence_fixed_regex = r'^(?P<prefix1>.*?)(?P<seq>\d{0,9})(?P<suffix>\D*?)$'
 
     sequence_prefix = fields.Char(compute='_compute_split_sequence', store=True)
@@ -64,10 +65,16 @@ class SequenceMixin(models.AbstractModel):
             date = fields.Date.to_date(record[record._sequence_date_field])
             sequence = record[record._sequence_field]
             if sequence and date and date > constraint_date:
+                fyear_start = fyear_end = False
+                if 'company_id' in self:
+                    company = record.company_id
+                    fyear_start, fyear_end = date_utils.get_fiscal_year(date, day=company.fiscalyear_last_day, month=int(company.fiscalyear_last_month))
                 format_values = record._get_sequence_format_param(sequence)[1]
                 if (
                     format_values['year'] and format_values['year'] != date.year % 10**len(str(format_values['year']))
                     or format_values['month'] and format_values['month'] != date.month
+                    or format_values['fyear_start'] and format_values['fyear_start'] != (fyear_start.year or date.year) % 10**len(str(format_values['fyear_start']))
+                    or format_values['fyear_end'] and format_values['fyear_end'] != (fyear_end.year or date.year) % 10**len(str(format_values['fyear_end']))
                 ):
                     raise ValidationError(_(
                         "The %(date_field)s (%(date)s) doesn't match the sequence number of the related %(model)s (%(sequence)s)\n"
@@ -99,6 +106,7 @@ class SequenceMixin(models.AbstractModel):
         """
         for regex, ret_val, requirements in [
             (self._sequence_monthly_regex, 'month', ['seq', 'month', 'year']),
+            (self._sequence_yearly_financial_regex, 'fyear_start', ['seq', 'fyear_start', 'fyear_end']),
             (self._sequence_yearly_regex, 'year', ['seq', 'year']),
             (self._sequence_fixed_regex, 'never', ['seq']),
         ]:
@@ -204,24 +212,30 @@ class SequenceMixin(models.AbstractModel):
         regex = self._sequence_fixed_regex
         if sequence_number_reset == 'year':
             regex = self._sequence_yearly_regex
+        elif sequence_number_reset == 'fyear_start':
+            regex = self._sequence_yearly_financial_regex
         elif sequence_number_reset == 'month':
             regex = self._sequence_monthly_regex
 
         format_values = re.match(regex, previous).groupdict()
         format_values['seq_length'] = len(format_values['seq'])
         format_values['year_length'] = len(format_values.get('year', ''))
+        format_values['fyear_start_length'] = len(format_values.get('fyear_start', ''))
+        format_values['fyear_end_length'] = len(format_values.get('fyear_end', ''))
         if not format_values.get('seq') and 'prefix1' in format_values and 'suffix' in format_values:
             # if we don't have a seq, consider we only have a prefix and not a suffix
             format_values['prefix1'] = format_values['suffix']
             format_values['suffix'] = ''
-        for field in ('seq', 'year', 'month'):
+        for field in ('seq', 'year', 'month', 'fyear_start', 'fyear_end'):
             format_values[field] = int(format_values.get(field) or 0)
 
-        placeholders = re.findall(r'(prefix\d|seq|suffix\d?|year|month)', regex)
+        placeholders = re.findall(r'(prefix\d|seq|suffix\d?|year|month|fyear_start|fyear_end)', regex)
         format = ''.join(
             "{seq:0{seq_length}d}" if s == 'seq' else
             "{month:02d}" if s == 'month' else
             "{year:0{year_length}d}" if s == 'year' else
+            "{fyear_start:0{fyear_start_length}d}" if s == 'fyear_start' else
+            "{fyear_end:0{fyear_end_length}d}" if s == 'fyear_start' else
             "{%s}" % s
             for s in placeholders
         )
@@ -247,6 +261,11 @@ class SequenceMixin(models.AbstractModel):
             format_values['seq'] = 0
             format_values['year'] = self[self._sequence_date_field].year % (10 ** format_values['year_length'])
             format_values['month'] = self[self._sequence_date_field].month
+            if 'company_id' in self:
+                company = self.company_id
+                fyear_start, fyear_end = date_utils.get_fiscal_year(self[self._sequence_date_field], day=company.fiscalyear_last_day, month=int(company.fiscalyear_last_month))
+                format_values['fyear_start'] = fyear_start.year % (10 ** format_values['fyear_start_length'])
+                format_values['fyear_end'] = fyear_end.year % (10 ** format_values['fyear_end_length'])
         format_values['seq'] = format_values['seq'] + 1
 
         self[self._sequence_field] = format.format(**format_values)
