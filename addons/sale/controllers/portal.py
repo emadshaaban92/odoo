@@ -175,7 +175,6 @@ class CustomerPortal(portal.CustomerPortal):
         :return: The payment-specific values.
         :rtype: dict
         """
-        logged_in = not request.env.user._is_public()
         providers_sudo = request.env['payment.provider'].sudo()._get_compatible_providers(
             order_sudo.company_id.id,
             order_sudo.partner_id.id,
@@ -183,10 +182,11 @@ class CustomerPortal(portal.CustomerPortal):
             currency_id=order_sudo.currency_id.id,
             sale_order_id=order_sudo.id,
         )  # In sudo mode to read the fields of providers and partner (if not logged in)
-        tokens = request.env['payment.token'].search([
-            ('provider_id', 'in', providers_sudo.ids),
-            ('partner_id', '=', order_sudo.partner_id.id)
-        ]) if logged_in else request.env['payment.token']
+
+        # The user even if not logged in should be able to pay with tokens.
+        tokens_sudo = request.env['payment.token'].sudo().search([
+            ('provider_id', 'in', providers_sudo.ids), ('partner_id', '=', order_sudo.partner_id.id)
+        ])
         # Make sure that the partner's company matches the order's company.
         company_mismatch = not payment_portal.PaymentPortal._can_partner_pay_in_company(
             order_sudo.partner_id, order_sudo.company_id
@@ -204,7 +204,7 @@ class CustomerPortal(portal.CustomerPortal):
         }
         payment_form_values = {
             'providers': providers_sudo,
-            'tokens': tokens,
+            'tokens': tokens_sudo,
             'fees_by_provider': fees_by_provider,
             'show_tokenize_input': PaymentPortal._compute_show_tokenize_input_mapping(
                 providers_sudo, sale_order_id=order_sudo.id

@@ -1442,7 +1442,6 @@ class WebsiteSale(http.Controller):
         }
 
     def _get_shop_payment_values(self, order, **kwargs):
-        logged_in = not request.env.user._is_public()
         providers_sudo = request.env['payment.provider'].sudo()._get_compatible_providers(
             order.company_id.id,
             order.partner_id.id,
@@ -1451,9 +1450,11 @@ class WebsiteSale(http.Controller):
             sale_order_id=order.id,
             website_id=request.website.id,
         )  # In sudo mode to read the fields of providers, order and partner (if not logged in)
-        tokens = request.env['payment.token'].search(
-            [('provider_id', 'in', providers_sudo.ids), ('partner_id', '=', order.partner_id.id)]
-        ) if logged_in else request.env['payment.token']
+
+        # The public user should be able to pay with tokens
+        tokens_sudo = request.env['payment.token'].sudo().search([
+            ('provider_id', 'in', providers_sudo.ids), ('partner_id', '=', order.partner_id.id)
+        ])
         fees_by_provider = {
             p_sudo: p_sudo._compute_fees(
                 order.amount_total, order.currency_id, order.partner_id.country_id
@@ -1467,10 +1468,10 @@ class WebsiteSale(http.Controller):
             'payment_action_id': request.env.ref('payment.action_payment_provider').id,
             # Payment form common (checkout and manage) values
             'providers': providers_sudo,
-            'tokens': tokens,
+            'tokens': tokens_sudo,
             'fees_by_provider': fees_by_provider,
             'show_tokenize_input': PaymentPortal._compute_show_tokenize_input_mapping(
-                providers_sudo, logged_in=logged_in, sale_order_id=order.id
+                providers_sudo, sale_order_id=order.id
             ),
             'amount': order.amount_total,
             'currency': order.currency_id,

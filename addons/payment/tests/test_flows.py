@@ -378,17 +378,3 @@ class TestFlows(PaymentHttpCommon):
                 **self._prepare_transaction_values(self._create_token().id, 'token')
             )
             self.assertEqual(patched.call_count, 1)
-
-    def test_tokenization_input_is_show_to_logged_in_users(self):
-        self.provider.allow_tokenization = True
-        show_tokenize_input = PaymentPortal._compute_show_tokenize_input_mapping(
-            self.provider, logged_in=True
-        )
-        self.assertDictEqual(show_tokenize_input, {self.provider.id: True})
-
-    def test_tokenization_input_is_hidden_for_logged_out_users(self):
-        self.provider.allow_tokenization = False
-        show_tokenize_input = PaymentPortal._compute_show_tokenize_input_mapping(
-            self.provider, logged_in=True
-        )
-        self.assertDictEqual(show_tokenize_input, {self.provider.id: False})

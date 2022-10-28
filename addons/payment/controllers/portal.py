@@ -112,9 +112,12 @@ class PaymentPortal(portal.CustomerPortal):
         )  # In sudo mode to read the fields of providers and partner (if not logged in)
         if provider_id in providers_sudo.ids:  # Only keep the desired provider if it's suitable
             providers_sudo = providers_sudo.browse(provider_id)
-        payment_tokens = request.env['payment.token'].search(
-            [('provider_id', 'in', providers_sudo.ids), ('partner_id', '=', partner_sudo.id)]
-        ) if logged_in else request.env['payment.token']
+
+        # Even in the case of the partner not logged in, let the tokens accessible to the partner
+        # to be used.
+        tokens_sudo = request.env['payment.token'].sudo().search([
+            ('provider_id', 'in', providers_sudo.ids), ('partner_id', '=', partner_sudo.id)
+        ])
 
         # Make sure that the partner's company matches the company passed as parameter.
         company_mismatch = not PaymentPortal._can_partner_pay_in_company(partner_sudo, company)
@@ -135,10 +138,10 @@ class PaymentPortal(portal.CustomerPortal):
         }
         payment_form_values = {
             'providers': providers_sudo,
-            'tokens': payment_tokens,
+            'tokens': tokens_sudo,
             'fees_by_provider': fees_by_provider,
             'show_tokenize_input': self._compute_show_tokenize_input_mapping(
-                providers_sudo, logged_in=logged_in, **kwargs
+                providers_sudo, **kwargs
             ),
             'reference_prefix': reference,
             'amount': amount,
