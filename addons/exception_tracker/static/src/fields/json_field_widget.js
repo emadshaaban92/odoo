@@ -16,7 +16,6 @@ class JSONFieldWidget extends Component {
             this.value = JSON.parse(this.props.value);
         });
         this.state = useState({ opened: [] });
-        console.log(this.value);
     }
 
     formatValue(value) {
@@ -40,12 +39,6 @@ class JSONFieldWidget extends Component {
 
     isInBlackList(path) {
         return BLACK_LISTED_PATHS.includes(path);
-    }
-
-    formatKey(key, obj) {
-        return key;
-        const maxLength = this.maxKeyLength(obj);
-        return key.padEnd(maxLength, " ");
     }
 
     formatEmptyValue(value) {
@@ -107,6 +100,22 @@ class JSONFieldWidget extends Component {
         return this.state.opened.includes(path);
     }
 
+    getRecursiveProps(jsonString) {
+
+        const normalize = (dataString) => {
+            let newString = dataString;
+            newString = newString.replaceAll(`'`, `"`);
+            newString = newString.replaceAll(`"`, `\\\"`);
+            newString = newString.replaceAll(`{\\\"`, `{"`);
+            newString = newString.replaceAll(`\\\"}`, `"}`);
+            newString = newString.replaceAll(`\\\"  : \\\"`, `" : "`);
+            return newString;
+          };
+        const cleanedJsonString = normalize(jsonString);
+        debugger;
+        return { ...this.props, value: cleanedJsonString };
+    }
+
     isTogglable(value) {
         if (value instanceof Array) {
             return true;
@@ -118,5 +127,6 @@ class JSONFieldWidget extends Component {
     }
 }
 JSONFieldWidget.template = "exception_tracker.JSONFieldWidget";
+JSONFieldWidget.components = { JSONFieldWidget };
 
 registry.category("fields").add("json", JSONFieldWidget);
