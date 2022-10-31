@@ -144,7 +144,7 @@ export class FileSelector extends Component {
             needle: '',
         });
 
-        this.NUMBER_OF_ATTACHMENTS_TO_DISPLAY = 10;
+        this.NUMBER_OF_ATTACHMENTS_TO_DISPLAY = 30;
 
         onWillStart(async () => {
             this.state.attachments = await this.fetchAttachments(this.NUMBER_OF_ATTACHMENTS_TO_DISPLAY, 0);
