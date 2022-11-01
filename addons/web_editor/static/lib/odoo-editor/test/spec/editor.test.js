@@ -1078,6 +1078,16 @@ X[]
                     stepFunction: deleteForward,
                     contentAfter: '<h1>ab []gh</h1>',
                 });
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1>[abc</h1><p>d]ef</p>',
+                    stepFunction: deleteForward,
+                    contentAfter: '<p>ef</p>',
+                });
+                await testEditor(BasicEditor, {
+                    contentBefore: '<h1>[abc</h1><p>def]</p><p>ghi</p>',
+                    stepFunction: deleteForward,
+                    contentAfter: '<p><br/>[]</p><p>ghi</p>',
+                });
                 // // Backward selection
                 await testEditor(BasicEditor, {
                     contentBefore: '<h1>ab ]cd</h1><p>ef[gh</p>',

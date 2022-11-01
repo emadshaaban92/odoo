@@ -52,7 +52,8 @@ import {
     rightLeafOnlyNotBlockPath,
     isBlock,
     childNodeIndex,
-    getSelectedNodes
+    getSelectedNodes,
+    setTagName
 } from './utils/utils.js';
 import { editorCommands } from './commands/commands.js';
 import { Powerbox } from './powerbox/Powerbox.js';
@@ -1390,6 +1391,9 @@ export class OdooEditor extends EventTarget {
         if (!range) return;
         let start = range.startContainer;
         let end = range.endContainer;
+        const endContainerParent = end.parentNode;
+        const isSameEndTextContent = end.textContent === end.wholeText;
+        const isSameStartTextContent = (start.textContent === start.wholeText) || !start.textContent;
         // Let the DOM split and delete the range.
         const doJoin =
             closestBlock(start) !== closestBlock(range.commonAncestorContainer) ||
@@ -1456,7 +1460,11 @@ export class OdooEditor extends EventTarget {
         }
         fillEmpty(closestBlock(range.endContainer));
         // Ensure trailing space remains visible.
-        const joinWith = range.endContainer;
+        const joinWith = isSameStartTextContent &&
+                        !endIsStart &&
+                        !closestElement(start, 'li') ?
+                        setTagName(range.endContainer, endContainerParent.tagName) :
+                        range.endContainer;
         const oldText = joinWith.textContent;
         const rightLeaf = rightLeafOnlyNotBlockPath(range.endContainer).next().value;
         const hasSpaceAfter = !rightLeaf || rightLeaf.textContent.startsWith(' ');
@@ -1467,6 +1475,7 @@ export class OdooEditor extends EventTarget {
         }
         // Rejoin blocks that extractContents may have split in two.
         while (
+            (!isSameEndTextContent || !isSameStartTextContent) &&
             doJoin &&
             next &&
             !(next.previousSibling && next.previousSibling === joinWith) &&
