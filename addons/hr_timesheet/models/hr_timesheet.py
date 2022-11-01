@@ -64,6 +64,8 @@ class AccountAnalyticLine(models.Model):
     manager_id = fields.Many2one('hr.employee', "Manager", related='employee_id.parent_id', store=True)
     encoding_uom_id = fields.Many2one('uom.uom', compute='_compute_encoding_uom_id')
     partner_id = fields.Many2one(compute='_compute_partner_id', store=True, readonly=False)
+    planned_hours = fields.Float(related="task_id.planned_hours")
+    remaining_hours = fields.Float(related="task_id.remaining_hours")
 
     def name_get(self):
         result = super().name_get()
@@ -225,6 +227,7 @@ class AccountAnalyticLine(models.Model):
         """ Set the correct label for `unit_amount`, depending on company UoM """
         arch, view = super()._get_view(view_id, view_type, **options)
         arch = self._apply_timesheet_label(arch, view_type=view_type)
+        arch = self._apply_time_label(arch, related_model=self._name)
         return arch, view
 
     @api.model
