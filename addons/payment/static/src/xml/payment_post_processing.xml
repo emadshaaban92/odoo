@@ -6,7 +6,7 @@
         <div>
             <!-- Error transactions -->
             <div t-if="tx_error.length > 0">
-                <h1>Payments failed</h1>
+                <h1>Requests failed</h1>
                 <ul class="list-group">
                     <t t-foreach="tx_error" t-as="tx">
                         <a t-att-href="tx['landing_route']" class="list-group-item">
@@ -23,7 +23,7 @@
                 </ul>
             </div>
             <div t-if="tx_done.length > 0 || tx_authorized.length > 0 || tx_pending.length > 0">
-                <h1>Payments received</h1>
+                <h1>Processing requests</h1>
                 <div class="list-group">
                     <!-- Done transactions -->
                     <t t-foreach="tx_done" t-as="tx">
@@ -33,7 +33,10 @@
                                 <span class="badge float-end"><t t-esc="tx['amount']"/> <t t-esc="tx['currency_code']"/></span>
                             </h4>
                             <small class="list-group-item-text">
-                                <t t-if="!tx['is_post_processed']">
+                                <t t-if="tx['operation'] == 'validation'">
+                                    Saving your payment method, please wait ... <i class="fa fa-cog fa-spin"/>
+                                </t>
+                                <t t-elif="!tx['is_post_processed']">
                                     Your order is being processed, please wait ... <i class="fa fa-cog fa-spin"/>
                                 </t>
                                 <t t-else="">
@@ -88,7 +91,7 @@
             </div>
             <!-- Draft transactions -->
             <div t-if="tx_draft.length > 0">
-                <h1>Waiting for payment</h1>
+                <h1>Waiting for requests to process</h1>
                 <ul class="list-group">
                     <t t-foreach="tx_draft" t-as="tx">
                         <a t-att-href="tx['landing_route']" class="list-group-item">
@@ -112,7 +115,7 @@
             </div>
             <!-- Cancel transactions -->
             <div t-if="tx_cancel.length > 0">
-                <h1>Cancelled payments</h1>
+                <h1>Cancelled requests</h1>
                 <ul class="list-group">
                     <t t-foreach="tx_cancel" t-as="tx">
                         <a t-att-href="tx['landing_route']" class="list-group-item">
@@ -121,7 +124,7 @@
                                 <span class="badge float-end"><t t-esc="tx['amount']"/> <t t-esc="tx['currency_code']"/></span>
                             </h4>
                             <small class="list-group-item-text">
-                                This transaction has been cancelled.<br/>
+                                This request has been cancelled.<br/>
                                 No payment has been processed.
                             </small>
                         </a>
