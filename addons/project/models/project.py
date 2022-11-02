@@ -3,6 +3,7 @@
 
 import ast
 import json
+import markupsafe
 from pytz import UTC
 from collections import defaultdict
 from datetime import timedelta, datetime, time
@@ -355,7 +356,7 @@ class Project(models.Model):
             "When a project is shared in edit, the portal user is redirected to the kanban and list views of the tasks. They can modify a selected number of fields on the tasks.\n\n"
             "In any case, an internal user with no project access rights can still access a task, "
             "provided that they are given the corresponding URL (and that they are part of the followers if the project is private).")
-    privacy_visibility_warning = fields.Char('Privacy Visibility Warning', compute='_compute_privacy_visibility_warning')
+    privacy_visibility_warning = fields.Html('Privacy Visibility Warning', compute='_compute_privacy_visibility_warning')
     access_instruction_message = fields.Char('Access Instruction Message', compute='_compute_access_instruction_message')
     doc_count = fields.Integer(compute='_compute_attached_docs_count', string="Number of documents attached")
     date_start = fields.Date(string='Start Date')
@@ -547,15 +548,42 @@ class Project(models.Model):
 
     @api.depends('privacy_visibility')
     def _compute_privacy_visibility_warning(self):
-        for project in self:
-            if not project.ids:
-                project.privacy_visibility_warning = ''
-            elif project.privacy_visibility == 'portal' and project._origin.privacy_visibility != 'portal':
-                project.privacy_visibility_warning = _('Customers will be added to the followers of their project and tasks.')
-            elif project.privacy_visibility != 'portal' and project._origin.privacy_visibility == 'portal':
-                project.privacy_visibility_warning = _('Portal users will be removed from the followers of the project and its tasks.')
+        for team in self:
+            if not team.ids:
+                team.privacy_visibility_warning = False
+            elif team.privacy_visibility == 'portal' and team._origin.privacy_visibility != 'portal':
+                team.privacy_visibility_warning = markupsafe.Markup(
+                    """
+                        <span colspan="2" class="text-muted">
+                            <i class="fa fa-warning"/><!i>
+                            <div class="align-top d-inline"/>
+                                <span>%s</span>
+                            </div>
+                        </span>
+                    """) % (
+                        _('Customers will be added to the followers of their tickets.')
+                        )
+            elif team.privacy_visibility != 'portal' and team._origin.privacy_visibility == 'portal':
+                team.privacy_visibility_warning = markupsafe.Markup(
+                    """
+                        <span colspan="2" class="text-muted">
+                            <i class="fa fa-warning"/><!i>
+                            <div class="align-top d-inline"/>
+                                <span>%s</span>
+                            </div>
+                        </span>
+                        <span colspan="2" class="text-muted">
+                            <i class="fa fa-warning"/><!i>
+                            <div class="align-top d-inline"/>
+                                <span>%s</span>
+                            </div>
+                        </span>
+                    """) % (
+                        _('Portal users will be removed from the followers of the team and its tickets.'),
+                        _('Portal users will be unassigned from their tasks.')
+                        )
             else:
-                project.privacy_visibility_warning = ''
+                team.privacy_visibility_warning = False
 
     @api.depends('privacy_visibility')
     def _compute_access_instruction_message(self):
