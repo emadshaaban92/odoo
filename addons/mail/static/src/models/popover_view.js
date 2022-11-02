@@ -13,6 +13,12 @@ registerModel({
         },
         _willDelete() {
             document.removeEventListener('click', this._onClickCaptureGlobal, true);
+            if (this.messagingEmojiPicker) {
+                const anchor = document.querySelector('.web-editor-emoji-picker');
+                if (anchor) {
+                    anchor.remove();
+                }
+            }
         },
     },
     recordMethods: {

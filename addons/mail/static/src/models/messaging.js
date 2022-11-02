@@ -348,6 +348,7 @@ registerPatch({
         }),
         emojiPicker: one('PopoverView', {
             inverse: 'messagingEmojiPicker',
+            isCausal: true,
         }),
         emojiRegistry: one('EmojiRegistry', {
             default: {},
