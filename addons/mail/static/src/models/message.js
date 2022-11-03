@@ -110,6 +110,9 @@ registerModel({
             if ('bypassed_blacklist' in data) {
                 data2.bypassed_blacklist = data.bypassed_blacklist;
             }
+            if ('mass_mode' in data) {
+                data2.mass_mode = data.mass_mode;
+            }
 
             return data2;
         },
@@ -683,6 +686,9 @@ registerModel({
         subtype_description: attr(),
         subtype_id: attr(),
         bypassed_blacklist: attr({
+            default: false,
+        }),
+        mass_mode: attr({
             default: false,
         }),
         /**

@@ -404,6 +404,7 @@ class MailComposer(models.TransientModel):
                 'mail_activity_type_id': self.mail_activity_type_id.id,
                 'message_type': 'email' if mass_mail_mode else self.message_type,
                 'bypassed_blacklist': self.bypass_blacklist,
+                'mass_mode': mass_mail_mode,
             }
 
             # mass mailing: rendering override wizard static values

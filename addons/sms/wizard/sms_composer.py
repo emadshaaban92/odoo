@@ -341,6 +341,7 @@ class SendSMS(models.TransientModel):
             'bodies': self._prepare_log_body_values(sms_records_values),
             'message_type': 'sms',
             'bypassed_blacklist': self.mass_bypass_blacklist,
+            'mass_mode': self.composition_mode == 'mass',
         }
 
     # ------------------------------------------------------------

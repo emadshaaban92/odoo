@@ -43,6 +43,7 @@ class TestImLivechatMessage(TransactionCase):
             % (record_rating.rating_image_url, record_rating.rating, record_rating.feedback),
             rating_id=record_rating.id,
         )
+        self.maxDiff = None
         self.assertEqual(message.message_format(), [{
             'attachment_ids': [],
             'author': {
@@ -60,6 +61,7 @@ class TestImLivechatMessage(TransactionCase):
             'linkPreviews': [],
             'message_type': 'notification',
             'messageReactionGroups': [],
+            'mass_mode': False,
             'model': 'mail.channel',
             'module_icon': '/mail/static/description/icon.png',
             'needaction_partner_ids': [],

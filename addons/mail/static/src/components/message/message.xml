@@ -95,6 +95,9 @@
                                         <span t-if="messageView.isShowingAuthorName">-</span> <t t-esc="messageView.dateFromNow"/>
                                     </small>
                                 </t>
+                                <small t-if="messageView.message.mass_mode" class="mt-3 text-muted opacity-50">
+                                    - sent in mass
+                                </small>
                                 <small t-if="messageView.message.bypassed_blacklist" class="mt-3 mx-1 text-muted opacity-50">
                                     (Blacklist Included)
                                 </small>

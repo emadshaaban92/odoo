@@ -2178,7 +2178,7 @@ class MailThread(models.AbstractModel):
         return self.sudo()._message_create(msg_values)
 
     def _message_log_batch(self, bodies, author_id=None, email_from=None, subject=False, message_type='notification',
-                           bypassed_blacklist=False):
+                           bypassed_blacklist=False, mass_mode=False):
         """ Shortcut allowing to post notes on a batch of documents. It achieve the
         same purpose as _message_log, done in batch to speedup quick note log.
 
@@ -2199,6 +2199,7 @@ class MailThread(models.AbstractModel):
             'message_id': tools.generate_tracking_message_id('message-notify'),  # why? this is all but a notify
             'email_add_signature': False,
             'bypassed_blacklist': bypassed_blacklist,
+            'mass_mode': mass_mode,
         }
         values_list = [dict(base_message_values,
                             res_id=record.id,
