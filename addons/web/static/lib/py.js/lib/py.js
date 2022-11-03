@@ -256,15 +256,20 @@ var py = {};
 
     py.tokenize = (function () {
         function group() { return '(' + Array.prototype.join.call(arguments, '|') + ')'; }
+        function maybeGroup() {return group(...arguments) + '?'; }
 
         var Whitespace = '[ \\f\\t]*';
 
         var Name = '[a-zA-Z_]\\w*';
 
-        var DecNumber = '\\d+(L|l)?';
+        var DecNumber = '\\d+' + maybeGroup('L','l');
         var IntNumber = DecNumber;
-        var PointFloat = group('\\d+\\.\\d*', '\\.\\d+');
-        var FloatNumber = PointFloat;
+
+        var FloatWithDecimalPart = "\\d+" + maybeGroup("\\.\\d*");
+        var FloatWithLeadingDot = '\\.\\d+';
+        var Exponent = '[eE][+-]?\\d+';
+        var FloatNumber = group(FloatWithLeadingDot, FloatWithDecimalPart) + maybeGroup(Exponent);
+
         var Number = group(FloatNumber, IntNumber);
 
         var Operator = group("\\*\\*=?", ">>=?", "<<=?", "<>", "!=",

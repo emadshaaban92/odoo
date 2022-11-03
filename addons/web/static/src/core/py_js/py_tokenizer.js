@@ -205,13 +205,20 @@ const symbols = new Set([
 function group(...args) {
     return "(" + args.join("|") + ")";
 }
+function maybeGroup(...args) {
+    return group(args) + "?";
+}
 
 const Name = "[a-zA-Z_]\\w*";
 const Whitespace = "[ \\f\\t]*";
-const DecNumber = "\\d+(L|l)?";
+const DecNumber = "\\d+" + maybeGroup('L','l');
 const IntNumber = DecNumber;
-const PointFloat = group("\\d+\\.\\d*", "\\.\\d+");
-const FloatNumber = PointFloat;
+
+const FloatWithDecimalPart = "\\d+" + maybeGroup("\\.\\d*");
+const FloatWithLeadingDot = "\\.\\d+";
+const Exponent = "[eE][+-]?\\d+";
+const FloatNumber = group(FloatWithLeadingDot, FloatWithDecimalPart) + maybeGroup(Exponent);
+
 const Number = group(FloatNumber, IntNumber);
 const Operator = group("\\*\\*=?", ">>=?", "<<=?", "<>", "!=", "//=?", "[+\\-*/%&|^=<>]=?", "~");
 const Bracket = "[\\[\\]\\(\\)\\{\\}]";
