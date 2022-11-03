@@ -13,7 +13,7 @@ from odoo import api, fields, models, tools, SUPERUSER_ID
 from odoo.addons.iap.tools import iap_tools
 from odoo.addons.mail.tools import mail_validation
 from odoo.addons.phone_validation.tools import phone_validation
-from odoo.exceptions import UserError, AccessError
+from odoo.exceptions import UserError, AccessError, ValidationError
 from odoo.osv import expression
 from odoo.tools.translate import _
 from odoo.tools import date_utils, email_re, email_split, is_html_empty, groupby
@@ -504,7 +504,10 @@ class Lead(models.Model):
     @api.depends('active', 'probability')
     def _compute_is_lost(self):
         for lead in self:
-            lead.is_lost = not lead.active and lead.probability == 0
+            # TODO DBE: WTF? To investigate !
+            #  Need to read probability first to avoid incorrect data init
+            #  (in test at least)
+            lead.is_lost = lead.probability == 0 and not lead.active
 
     @api.depends('expected_revenue', 'probability')
     def _compute_prorated_revenue(self):
@@ -728,7 +731,7 @@ class Lead(models.Model):
         leads = super(Lead, self).create(vals_list)
 
         for lead, values in zip(leads, vals_list):
-            if any(field in ['active', 'stage_id'] for field in values):
+            if any(field in ['active', 'stage_id', 'probability'] for field in values):
                 lead._handle_won_lost(values)
 
         return leads
@@ -849,6 +852,21 @@ class Lead(models.Model):
         )
         return self.browse(my_lead_ids_keep) + other_lead_res
 
+    def _get_new_status_by_lead(self, vals):
+        won_stage_ids = self.env['crm.stage'].search([('is_won', '=', True)]).ids
+        new_status_by_lead = dict.fromkeys(self.ids)
+        for lead in self:
+            is_new_stage_won = vals['stage_id'] in won_stage_ids if 'stage_id' in vals else lead.stage_id.id in won_stage_ids
+            new_active = vals['active'] if 'active' in vals else lead.active
+            new_proba = vals["probability"] if "probability" in vals else lead.probability
+            new_status_by_lead[lead.id] = {
+                'is_won': is_new_stage_won,
+                # Due to contrains, new_proba == 0 and is_new_stage_won should never happen.
+                'is_lost': not new_active and new_proba == 0 and not is_new_stage_won
+            }
+
+        return new_status_by_lead
+
     def _handle_won_lost(self, vals):
         """ This method handle the state changes :
         - To lost : We need to increment corresponding lost count in scoring frequency table
@@ -857,53 +875,47 @@ class Lead(models.Model):
         in scoring frequency table.
         - From won to lost : We need to decrement corresponding won count + increment corresponding lost count
         in scoring frequency table.
-        
+
         A lead is WON when in won stage (and probability = 100% but that is implied)
         A lead is LOST when active = False AND probability = 0
         In every other case, the lead is not won nor lost.
         """
         Lead = self.env['crm.lead']
-        leads_reach_won = Lead
-        leads_leave_won = Lead
-        leads_reach_lost = Lead
-        leads_leave_lost = Lead
-        won_stage_ids = self.env['crm.stage'].search([('is_won', '=', True)]).ids
-        for lead in self:
-            if 'stage_id' in vals:
-                if vals['stage_id'] in won_stage_ids: # set to won stage
-                    if lead.probability == 0 and not lead.active:
-                        leads_leave_lost += lead
-                    leads_reach_won += lead
-                elif lead.stage_id.id in won_stage_ids: # remove from won stage
-                    leads_leave_won += lead
-            if 'active' in vals:
-                if not vals['active'] and lead.active and (lead.probability == 0 or vals.get('probability', 1) == 0):  # archive lead
-                    if lead.stage_id.id in won_stage_ids:  # a lead archived in won stage is still won.
-                        continue
-                    leads_reach_lost += lead
-            # As "mark as lost" is writing active = False first and then probability afterwards, handle reach lost.
-            if vals.get('probability', 1) == 0 and not lead.active and not lead.stage_id.id in won_stage_ids:
-                leads_reach_lost += lead
+        leads_reach_won_ids = []
+        leads_leave_won_ids = []
+        leads_reach_lost_ids = []
+        leads_leave_lost_ids = []
 
-            # Leaving lost is a bit tricky as writing active = True and probability = x
-            # will not be done at same time in most cases. As lost need both conditions (active=False AND P=0), changing
-            # one of the two should trigger 'leave lost'. But this should not be triggered a second time if we modify
-            # the other condition. So the lead should leave lost only if both conditions are valid before writing and
-            # not after (if lead is lost before writing and not after).
-            # But this is only valid outside of the won_stage as the lead has already been removed from lost when
-            # arriving in won stage.
+        old_status_by_leads = {
+            lead.id: {
+                'is_lost': lead.is_lost,
+                'is_won': lead.is_won,
+            } for lead in self
+        }
+        new_status_by_leads = self._get_new_status_by_lead(vals)
 
-            # restore and set p=x OR set p=x and is archived OR restore and p was 0
-            if (lead.stage_id.id not in won_stage_ids or lead not in leads_leave_lost) and \
-                    vals.get('probability', 0) != 0 and ('active' in vals and vals['active']) or \
-                    vals.get('probability', 0) != 0 and not lead.active or \
-                    ('active' in vals and vals['active']) and lead.probability == 0:
-                leads_leave_lost += lead
+        for lead_id, new_status in new_status_by_leads.items():
+            old_status = old_status_by_leads.get(lead_id, {'is_lost': False,
+                                                           'is_won': False})
+            if new_status['is_lost'] and new_status['is_won']:
+                raise ValidationError(_("The lead %s cannot be won and lost at the same time.", Lead.browse(lead_id)))
 
-        leads_reach_won._pls_increment_frequencies(to_state='won')
-        leads_leave_won._pls_increment_frequencies(from_state='won')
-        leads_reach_lost._pls_increment_frequencies(to_state='lost')
-        leads_leave_lost._pls_increment_frequencies(from_state='lost')
+            if new_status['is_lost'] and not old_status['is_lost']:
+                leads_reach_lost_ids.append(lead_id)
+            elif not new_status['is_lost'] and old_status['is_lost']:
+                leads_leave_lost_ids.append(lead_id)
+
+            if new_status['is_won'] and not old_status['is_won']:
+                leads_reach_won_ids.append(lead_id)
+            elif not new_status['is_won'] and old_status['is_won']:
+                leads_leave_won_ids.append(lead_id)
+
+        Lead.browse(leads_reach_won_ids)._pls_increment_frequencies(to_state='won')
+        Lead.browse(leads_leave_won_ids)._pls_increment_frequencies(from_state='won')
+        Lead.browse(leads_reach_lost_ids)._pls_increment_frequencies(to_state='lost')
+        Lead.browse(leads_leave_lost_ids)._pls_increment_frequencies(from_state='lost')
+
+        return leads_reach_won_ids, leads_leave_won_ids, leads_reach_lost_ids, leads_leave_lost_ids
 
     @api.returns('self', lambda value: value.id)
     def copy(self, default=None):
@@ -2576,7 +2588,7 @@ class Lead(models.Model):
 
     # Common PLS Tools
     # ----------------
-    def _pls_get_lead_pls_values(self, domain=[]):
+    def _pls_get_lead_pls_values(self, domain=None):
         """
         This methods builds a dict where, for each lead in self or matching the given domain,
         we will get a list of field/value couple.
