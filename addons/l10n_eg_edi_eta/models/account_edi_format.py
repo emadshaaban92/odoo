@@ -238,6 +238,8 @@ class AccountEdiFormat(models.Model):
             'extraDiscountAmount': 0.0,
             'totalItemsDiscountAmount': 0.0,
         })
+        eta_invoice['purchaseOrderReference'] = invoice.ref or ''
+        eta_invoice['salesOrderReference'] = invoice.invoice_origin or ''
         return eta_invoice
 
     @api.model
