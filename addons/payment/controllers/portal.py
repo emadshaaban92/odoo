@@ -112,7 +112,7 @@ class PaymentPortal(portal.CustomerPortal):
         )  # In sudo mode to read the fields of providers and partner (if not logged in)
         if provider_id in providers_sudo.ids:  # Only keep the desired provider if it's suitable
             providers_sudo = providers_sudo.browse(provider_id)
-        payment_tokens = request.env['payment.token'].search(
+        tokens = request.env['payment.token'].search(
             [('provider_id', 'in', providers_sudo.ids), ('partner_id', '=', partner_sudo.id)]
         ) if logged_in else request.env['payment.token']
 
@@ -135,7 +135,7 @@ class PaymentPortal(portal.CustomerPortal):
         }
         payment_form_values = {
             'providers': providers_sudo,
-            'tokens': payment_tokens,
+            'tokens': tokens,
             'fees_by_provider': fees_by_provider,
             'show_tokenize_input': self._compute_show_tokenize_input_mapping(
                 providers_sudo, logged_in=logged_in, **kwargs
@@ -194,8 +194,9 @@ class PaymentPortal(portal.CustomerPortal):
         )
 
         # Get all partner's tokens for which providers are not disabled.
+        # In sudo to be able to read the `provider_id.state`.
         tokens_sudo = request.env['payment.token'].sudo().search([
-            ('partner_id', 'in', [partner_sudo.id, partner_sudo.commercial_partner_id.id]),
+            ('partner_id', '=', partner_sudo.id),
             ('provider_id.state', 'in', ['enabled', 'test']),
         ])
 
@@ -392,10 +393,12 @@ class PaymentPortal(portal.CustomerPortal):
         :return: None
         """
         partner_sudo = request.env.user.partner_id
+        # In sudo mode here as users should be able to archive tokens even if they are
+        # in other company.
         token_sudo = request.env['payment.token'].sudo().search([
             ('id', '=', token_id),
             # Check that the user owns the token before letting them archive anything
-            ('partner_id', 'in', [partner_sudo.id, partner_sudo.commercial_partner_id.id])
+            ('partner_id', '=', partner_sudo.id)
         ])
         if token_sudo:
             token_sudo.active = False

@@ -2,8 +2,9 @@
 
 from datetime import date
 
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, AccessError
 from odoo.tests import tagged
+from odoo.tools import mute_logger
 
 from odoo.addons.payment.tests.common import PaymentCommon
 
@@ -39,3 +40,33 @@ class TestPaymentToken(PaymentCommon):
         """ Test that the display name is not padded when `should_pad` is `False`. """
         token = self._create_token()
         self.assertEqual(token._build_display_name(should_pad=False), '1234')
+
+    def test_public_user_has_access_to_own_tokens(self):
+        token = self._create_token(partner_id=self.public_user.partner_id.id)
+        token.read()
+
+    @mute_logger('odoo.addons.base.models.ir_rule')
+    def test_public_user_has_no_access_to_other_tokens(self):
+        token = self._create_token(partner_id=self.admin_partner.id)
+        with self.assertRaises(AccessError):
+            token.with_user(self.public_user).read()
+
+    def test_portal_user_has_access_to_own_tokens(self):
+        token = self._create_token(partner_id=self.portal_user.partner_id.id)
+        token.read()
+
+    @mute_logger('odoo.addons.base.models.ir_rule')
+    def test_portal_user_has_no_access_to_other_tokens(self):
+        token = self._create_token(partner_id=self.admin_partner.id)
+        with self.assertRaises(AccessError):
+            token.with_user(self.portal_user).read()
+
+    def test_internal_user_has_access_to_own_tokens(self):
+        token = self._create_token(partner_id=self.internal_partner.id)
+        token.read()
+
+    @mute_logger('odoo.addons.base.models.ir_rule')
+    def test_internal_user_has_no_access_to_other_tokens(self):
+        token = self._create_token(partner_id=self.admin_partner.id)
+        with self.assertRaises(AccessError):
+            token.with_user(self.internal_user).read()
