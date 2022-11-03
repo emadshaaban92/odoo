@@ -29,7 +29,7 @@ function getMaxWidth(chartArea) {
  * @param {string} label
  * @returns {string} shortened version of the input label
  */
-function shortenLabel(label) {
+export function shortenLabel(label) {
     // string returned could be wrong if a groupby value contain a " / "!
     const groups = label.toString().split(SEP);
     let shortLabel = groups.slice(0, 3).join(SEP);
