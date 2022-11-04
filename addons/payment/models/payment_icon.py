@@ -8,12 +8,14 @@ class PaymentIcon(models.Model):
     _description = 'Payment Icon'
     _order = 'sequence, name'
 
-    name = fields.Char(string="Name")
+    name = fields.Char(string="Name", required=True)
     provider_ids = fields.Many2many(
         string="Providers", comodel_name='payment.provider',
         help="The list of providers supporting this payment icon")
     image = fields.Image(
-        string="Image", max_width=64, max_height=64,
+        string="Image",
+        max_width=64,
+        max_height=64,
         help="This field holds the image used for this payment icon, limited to 64x64 px")
     image_payment_form = fields.Image(
         string="Image displayed on the payment form", related='image', store=True, max_width=45,
