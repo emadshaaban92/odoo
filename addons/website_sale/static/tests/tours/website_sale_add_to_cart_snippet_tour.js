@@ -44,11 +44,12 @@ wTourUtils.registerWebsitePreviewTour('add_to_cart_snippet_tour', {
         ...wTourUtils.selectElementInWeSelectWidget('action_picker_opt', 'Buy Now'),
         ...wTourUtils.clickOnSave(),
         wTourUtils.clickOnElement('add to cart button', 'iframe .s_add_to_cart_btn'),
-        wTourUtils.assertPathName('/shop/payment', 'button[name=o_payment_submit_button]'),
+        // Check that we stay in the backend and that we go to the payment page
+        wTourUtils.assertPathName('/@/shop/payment', 'iframe button[name=o_payment_submit_button]'),
 
-        wsTourUtils.goToCart({quantity: 4, backend: false}),
-        wsTourUtils.assertCartContains({productName: 'Acoustic Bloc Screens'}),
-        wsTourUtils.assertCartContains({productName: 'Conference Chair (Steel)'}),
-        wsTourUtils.assertCartContains({productName: 'Conference Chair (Aluminium)'}),
+        wsTourUtils.goToCart({quantity: 4, backend: true}),
+        wsTourUtils.assertCartContains({productName: 'Acoustic Bloc Screens', backend: true}),
+        wsTourUtils.assertCartContains({productName: 'Conference Chair (Steel)', backend: true}),
+        wsTourUtils.assertCartContains({productName: 'Conference Chair (Aluminium)', backend: true}),
     ],
 );
