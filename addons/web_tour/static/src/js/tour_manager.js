@@ -91,6 +91,7 @@ return core.Class.extend(mixins.EventDispatcherMixin, ServicesMixin, {
             sequence: options.sequence || 1000,
             test: options.test,
             wait_for: options.wait_for || Promise.resolve(),
+            extra: options.extra || {},
         };
         if (options.skip_enabled) {
             tour.skip_link = Markup`<p><span class="o_skip_tour">${_t('Skip tour')}</span></p>`;
@@ -100,6 +101,7 @@ return core.Class.extend(mixins.EventDispatcherMixin, ServicesMixin, {
             };
         }
         this.tours[tour.name] = tour;
+        return Promise.resolve();
     },
     /**
      * Returns a promise which is resolved once the tour can be started. This

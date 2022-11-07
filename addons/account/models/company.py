@@ -136,6 +136,8 @@ class ResCompany(models.Model):
         readonly=False,
         help="The country to use the tax reports from for this company")
 
+    account_fiscal_country_code = fields.Char(related='account_fiscal_country_id.code', string='Account Fiscal Country Code')
+
     account_enabled_tax_country_ids = fields.Many2many(
         string="l10n-used countries",
         comodel_name='res.country',

@@ -443,11 +443,11 @@ class Http(models.AbstractModel):
         session_info.update({
             'is_website_user': request.env.user.id == request.website.user_id.id,
             'geoip_country_code': request.session.get('geoip', {}).get('country_code'),
+            'website_company_id': request.website._get_cached('company_id'),
         })
         if request.env.user.has_group('website.group_website_publisher'):
             session_info.update({
                 'website_id': request.website.id,
-                'website_company_id': request.website._get_cached('company_id'),
             })
         return session_info
 
