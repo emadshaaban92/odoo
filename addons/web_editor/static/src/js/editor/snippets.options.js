@@ -4911,6 +4911,12 @@ registry.layout_column = SnippetOptionWidget.extend({
             .toggleClass('d-none', !this.$target.is('.s_allow_columns'));
         return this._super(...arguments);
     },
+    /**
+     * @override
+     */
+    cleanForSave() {
+        this._removePaddingPreview();
+    },
 
     //--------------------------------------------------------------------------
     // Options
@@ -5055,6 +5061,26 @@ registry.layout_column = SnippetOptionWidget.extend({
         gridUtils._resizeGrid(rowEl);
         this.trigger_up('activate_snippet', {$snippet: $(newColumnEl)});
     },
+    /**
+     * @override
+     */
+    async selectStyle(previewMode, widgetValue, params) {
+        await this._super(...arguments);
+        if (params.cssProperty.startsWith('--grid-item-padding')) {
+            // Highlight the padding when changing it, by adding temporarily a
+            // pseudo-element with a colored border inside the grid items.
+            if (this.previewTimeout) {
+                // Reset the timeout.
+                clearTimeout(this.previewTimeout);
+                this.previewTimeout = setTimeout(this._removePaddingPreview.bind(this), 1000);
+            } else {
+                const rowEl = this.$target[0];
+                [...rowEl.children].forEach(columnEl => columnEl.classList.add('o_we_padding_highlight'));
+                // Set the timeout after which the higlights are removed.
+                this.previewTimeout = setTimeout(this._removePaddingPreview.bind(this), 1000);
+            }
+        }
+    },
 
     //--------------------------------------------------------------------------
     // Private
@@ -5152,6 +5178,17 @@ registry.layout_column = SnippetOptionWidget.extend({
 
         // Adding back an align-items-* class.
         rowEl.classList.add('align-items-start');
+    },
+    /**
+     * Removes the padding highlights that were added when changing the grid
+     * items padding.
+     *
+     * @private
+     */
+    _removePaddingPreview() {
+        const highlightedColumnEls = this.$target[0].querySelectorAll('.o_we_padding_highlight');
+        highlightedColumnEls.forEach(columnEl => columnEl.classList.remove('o_we_padding_highlight'));
+        this.previewTimeout = clearTimeout(this.previewTimeout);
     },
 });
 

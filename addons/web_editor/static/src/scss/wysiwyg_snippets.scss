@@ -2555,3 +2555,15 @@ we-button-group.o_grid {
     padding: 0;
     border: $o-we-handle-border-width solid $o-we-accent;
 }
+
+// Highlight of the grid items padding.
+.o_we_padding_highlight {
+    position: relative;
+
+    &::after {
+        content: "";
+        @include o-position-absolute(0, 0, 0, 0);
+        border: solid rgba($o-we-handles-accent-color, 0.2);
+        border-width: var(--grid-item-padding-y) var(--grid-item-padding-x);
+    }
+}
