@@ -7,7 +7,6 @@ from odoo.addons.stock_account.tests.test_stockvaluation import _create_accounti
 from odoo.tests import Form, tagged
 from odoo.tests.common import TransactionCase
 
-
 class TestStockValuationCommon(TransactionCase):
     @classmethod
     def setUpClass(cls):
@@ -987,8 +986,25 @@ class TestAngloSaxonAccounting(TestStockValuationCommon):
     @classmethod
     def setUpClass(cls):
         super(TestAngloSaxonAccounting, cls).setUpClass()
-        cls.env.company.anglo_saxon_accounting = True
+        cls.company = cls.env['res.company'].create({
+            'name': 'Company TestAngloSaxonAccounting',
+            'country_id': cls.env.ref('base.us').id,
+            'anglo_saxon_accounting': True,
+        })
+
+        cls.env.user.company_ids += cls.company
+        cls.env.user.company_id = cls.company
+
+        cls.warehouse = cls.env['stock.warehouse'].search([('company_id', '=', cls.company.id)], limit=1)
+        cls.stock_location = cls.warehouse.lot_stock_id
+        cls.picking_type_in = cls.warehouse.in_type_id
+
         cls.stock_input_account, cls.stock_output_account, cls.stock_valuation_account, cls.expense_account, cls.stock_journal = _create_accounting_data(cls.env)
+        cls.sale_journal = cls.env['account.journal'].create({'name': 'Stock journal', 'company_id': cls.company.id, 'type': 'sale', 'code': 'STK00'})
+        cls.purchase_journal = cls.env['account.journal'].create({'name': 'Purchase journal', 'company_id': cls.company.id, 'type': 'purchase', 'code': 'PTK00',
+            'default_account_id': cls.expense_account.id
+        })
+
         cls.product1.write({
             'property_account_expense_id': cls.expense_account.id,
         })
@@ -999,10 +1015,6 @@ class TestAngloSaxonAccounting(TestStockValuationCommon):
             'property_stock_valuation_account_id': cls.stock_valuation_account.id,
             'property_stock_journal': cls.stock_journal.id,
         })
-        cls.default_journal_purchase =  cls.env['account.journal'].search([
-            ('company_id', '=', cls.env.company.id),
-            ('type', '=', 'purchase')
-        ], limit=1)
 
     def test_avco_and_credit_note(self):
         """
@@ -1013,12 +1025,15 @@ class TestAngloSaxonAccounting(TestStockValuationCommon):
         self._make_in_move(self.product1, 2, unit_cost=10)
 
         invoice_form = Form(self.env['account.move'].with_context(default_move_type='out_invoice'))
-        invoice_form.partner_id = self.env['res.partner'].create({'name': 'Super Client'})
+        invoice_form.partner_id = self.env['res.partner'].create({
+            'name': 'Partner 1',
+            'property_account_receivable_id': self.stock_input_account,
+        })
         with invoice_form.invoice_line_ids.new() as invoice_line_form:
             invoice_line_form.product_id = self.product1
             invoice_line_form.quantity = 2
             invoice_line_form.price_unit = 25
-            invoice_line_form.account_id = self.default_journal_purchase.default_account_id
+            invoice_line_form.account_id = self.purchase_journal.default_account_id
         invoice = invoice_form.save()
         invoice.action_post()
 
