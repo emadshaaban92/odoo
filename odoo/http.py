@@ -1003,7 +1003,7 @@ class Session(collections.abc.MutableMapping):
 
 # Thread local global request object
 _request_stack = werkzeug.local.LocalStack()
-request = _request_stack()
+request: 'Request' = _request_stack()
 
 @contextlib.contextmanager
 def borrow_request():
@@ -1138,7 +1138,7 @@ class Request:
         #self.params = {}  # set by the Dispatcher
 
         self.registry = None
-        self.env = None
+        self.env: 'odoo.api.Environment' = None
 
     def _post_init(self):
         self.session, self.db = self._get_session_and_dbname()
