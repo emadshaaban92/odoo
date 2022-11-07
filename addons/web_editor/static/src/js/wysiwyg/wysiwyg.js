@@ -24,6 +24,7 @@ const wysiwygUtils = require('@web_editor/js/common/wysiwyg_utils');
 const weUtils = require('web_editor.utils');
 const { PeerToPeer } = require('@web_editor/js/wysiwyg/PeerToPeer');
 const { Mutex } = require('web.concurrency');
+const { MoveNodePlugin } = require('@web_editor/js/wysiwyg/MoveNodePlugin');
 
 var _t = core._t;
 const QWeb = core.qweb;
@@ -208,7 +209,7 @@ const Wysiwyg = Widget.extend({
             },
             commands: powerboxOptions.commands,
             categories: powerboxOptions.categories,
-            plugins: options.editorPlugins,
+            plugins: [...(options.editorPlugins || []), [MoveNodePlugin, { wysiwyg: this }]],
             direction: options.direction || localization.direction || 'ltr',
             collaborationClientAvatarUrl: `${browser.location.origin}/web/image?model=res.users&field=avatar_128&id=${this.getSession().uid}`,
             renderingClasses: ['o_dirty', 'o_transform_removal', 'oe_edited_link'],

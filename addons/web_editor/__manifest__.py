@@ -52,6 +52,7 @@ Odoo Web Editor widget.
 
             # utils
             'web_editor/static/src/js/wysiwyg/linkDialogCommand.js',
+            'web_editor/static/src/js/wysiwyg/MoveNodePlugin.js',
             'web_editor/static/src/js/wysiwyg/PeerToPeer.js',
 
             # odoo utils
