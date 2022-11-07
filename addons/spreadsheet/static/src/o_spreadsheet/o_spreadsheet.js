@@ -152,6 +152,122 @@
     chartComponentRegistry.add("pie", ChartJsComponent);
     chartComponentRegistry.add("gauge", ChartJsComponent);
 
+    /**
+     * This file is largely inspired by owl 1.
+     * `css` tag has been removed from owl 2 without workaround to manage css.
+     * So, the solution was to import the behavior of owl 1 directly in our
+     * codebase, with one difference: the css is added to the sheet as soon as the
+     * css tag is executed. In owl 1, the css was added as soon as a Component was
+     * created for the first time.
+     */
+    const STYLESHEETS = {};
+    let nextId = 0;
+    /**
+     * CSS tag helper for defining inline stylesheets.  With this, one can simply define
+     * an inline stylesheet with just the following code:
+     * ```js
+     *     css`.component-a { color: red; }`;
+     * ```
+     */
+    function css(strings, ...args) {
+        const name = `__sheet__${nextId++}`;
+        const value = String.raw(strings, ...args);
+        registerSheet(name, value);
+        activateSheet(name);
+        return name;
+    }
+    function processSheet(str) {
+        const tokens = str.split(/(\{|\}|;)/).map((s) => s.trim());
+        const selectorStack = [];
+        const parts = [];
+        let rules = [];
+        function generateSelector(stackIndex, parentSelector) {
+            const parts = [];
+            for (const selector of selectorStack[stackIndex]) {
+                let part = (parentSelector && parentSelector + " " + selector) || selector;
+                if (part.includes("&")) {
+                    part = selector.replace(/&/g, parentSelector || "");
+                }
+                if (stackIndex < selectorStack.length - 1) {
+                    part = generateSelector(stackIndex + 1, part);
+                }
+                parts.push(part);
+            }
+            return parts.join(", ");
+        }
+        function generateRules() {
+            if (rules.length) {
+                parts.push(generateSelector(0) + " {");
+                parts.push(...rules);
+                parts.push("}");
+                rules = [];
+            }
+        }
+        while (tokens.length) {
+            let token = tokens.shift();
+            if (token === "}") {
+                generateRules();
+                selectorStack.pop();
+            }
+            else {
+                if (tokens[0] === "{") {
+                    generateRules();
+                    selectorStack.push(token.split(/\s*,\s*/));
+                    tokens.shift();
+                }
+                if (tokens[0] === ";") {
+                    rules.push("  " + token + ";");
+                }
+            }
+        }
+        return parts.join("\n");
+    }
+    function registerSheet(id, css) {
+        const sheet = document.createElement("style");
+        sheet.textContent = processSheet(css);
+        STYLESHEETS[id] = sheet;
+    }
+    function activateSheet(id) {
+        const sheet = STYLESHEETS[id];
+        sheet.setAttribute("component", id);
+        document.head.appendChild(sheet);
+    }
+    function getTextDecoration({ strikethrough, underline, }) {
+        if (!strikethrough && !underline) {
+            return "none";
+        }
+        return `${strikethrough ? "line-through" : ""} ${underline ? "underline" : ""}`;
+    }
+    /**
+     * Convert the cell text style to CSS properties.
+     */
+    function cellTextStyleToCss(style) {
+        const attributes = {};
+        if (!style)
+            return attributes;
+        if (style.bold) {
+            attributes["font-weight"] = "bold";
+        }
+        if (style.italic) {
+            attributes["font-style"] = "italic";
+        }
+        if (style.strikethrough || style.underline) {
+            let decoration = style.strikethrough ? "line-through" : "";
+            decoration = style.underline ? decoration + " underline" : decoration;
+            attributes["text-decoration"] = decoration;
+        }
+        if (style.textColor) {
+            attributes["color"] = style.textColor;
+        }
+        return attributes;
+    }
+    function cssPropertiesToCss(attributes) {
+        const str = Object.entries(attributes)
+            .map(([attName, attValue]) => `${attName}: ${attValue};`)
+            .join("\n");
+        return "\n" + str + "\n";
+    }
+
     /*
      * usage: every string should be translated either with _lt if they are registered with a registry at
      *  the load of the app or with Spreadsheet._t in the templates. Spreadsheet._t is exposed in the
@@ -247,7 +363,7 @@
 
     const CANVAS_SHIFT = 0.5;
     // Colors
-    const BACKGROUND_GRAY_COLOR = "#f5f5f5";
+    const BACKGROUND_GRAY_COLOR = "f5f5f5";
     const BACKGROUND_HEADER_COLOR = "#F8F9FA";
     const BACKGROUND_HEADER_SELECTED_COLOR = "#E8EAED";
     const BACKGROUND_HEADER_ACTIVE_COLOR = "#595959";
@@ -263,6 +379,7 @@
     const FILTERS_COLOR = "#188038";
     const BACKGROUND_HEADER_FILTER_COLOR = "#E6F4EA";
     const BACKGROUND_HEADER_SELECTED_FILTER_COLOR = "#CEEAD6";
+    const CORNER_BACKGROUND_COLOR = "#1a73e8";
     // Color picker
     const COLOR_PICKER_DEFAULTS = [
         "#000000",
@@ -424,6 +541,11 @@
     })(ComponentsImportance || (ComponentsImportance = {}));
     const DEFAULT_SHEETVIEW_SIZE = 1000;
     const MAXIMAL_FREEZABLE_RATIO = 0.85;
+    css /* SCSS */ `
+  .o-spreadsheet {
+    --BACKGROUND_GRAY_COLOR: ${BACKGROUND_GRAY_COLOR};
+  }
+`;
 
     const fontSizes = [
         { pt: 7.5, px: 10 },
@@ -2770,7 +2892,7 @@
      * This function will compare the modifications of selection to determine
      * a cell that is part of the new zone and not the previous one.
      */
-    function findCellInNewZone(oldZone, currentZone) {
+    function findCellInNewZone(oldZone, currentZone, viewport) {
         let col, row;
         const { left: oldLeft, right: oldRight, top: oldTop, bottom: oldBottom } = oldZone;
         const { left, right, top, bottom } = currentZone;
@@ -2781,7 +2903,8 @@
             col = right;
         }
         else {
-            col = left;
+            // left and right don't change
+            col = viewport.left > left || left > viewport.right ? viewport.left : left;
         }
         if (top != oldTop) {
             row = top;
@@ -2790,7 +2913,8 @@
             row = bottom;
         }
         else {
-            row = top;
+            // top and bottom don't change
+            row = viewport.top > top || top > viewport.bottom ? viewport.top : top;
         }
         return { col, row };
     }
@@ -3259,122 +3383,6 @@
         sequence: 40,
     });
 
-    /**
-     * This file is largely inspired by owl 1.
-     * `css` tag has been removed from owl 2 without workaround to manage css.
-     * So, the solution was to import the behavior of owl 1 directly in our
-     * codebase, with one difference: the css is added to the sheet as soon as the
-     * css tag is executed. In owl 1, the css was added as soon as a Component was
-     * created for the first time.
-     */
-    const STYLESHEETS = {};
-    let nextId = 0;
-    /**
-     * CSS tag helper for defining inline stylesheets.  With this, one can simply define
-     * an inline stylesheet with just the following code:
-     * ```js
-     *     css`.component-a { color: red; }`;
-     * ```
-     */
-    function css(strings, ...args) {
-        const name = `__sheet__${nextId++}`;
-        const value = String.raw(strings, ...args);
-        registerSheet(name, value);
-        activateSheet(name);
-        return name;
-    }
-    function processSheet(str) {
-        const tokens = str.split(/(\{|\}|;)/).map((s) => s.trim());
-        const selectorStack = [];
-        const parts = [];
-        let rules = [];
-        function generateSelector(stackIndex, parentSelector) {
-            const parts = [];
-            for (const selector of selectorStack[stackIndex]) {
-                let part = (parentSelector && parentSelector + " " + selector) || selector;
-                if (part.includes("&")) {
-                    part = selector.replace(/&/g, parentSelector || "");
-                }
-                if (stackIndex < selectorStack.length - 1) {
-                    part = generateSelector(stackIndex + 1, part);
-                }
-                parts.push(part);
-            }
-            return parts.join(", ");
-        }
-        function generateRules() {
-            if (rules.length) {
-                parts.push(generateSelector(0) + " {");
-                parts.push(...rules);
-                parts.push("}");
-                rules = [];
-            }
-        }
-        while (tokens.length) {
-            let token = tokens.shift();
-            if (token === "}") {
-                generateRules();
-                selectorStack.pop();
-            }
-            else {
-                if (tokens[0] === "{") {
-                    generateRules();
-                    selectorStack.push(token.split(/\s*,\s*/));
-                    tokens.shift();
-                }
-                if (tokens[0] === ";") {
-                    rules.push("  " + token + ";");
-                }
-            }
-        }
-        return parts.join("\n");
-    }
-    function registerSheet(id, css) {
-        const sheet = document.createElement("style");
-        sheet.textContent = processSheet(css);
-        STYLESHEETS[id] = sheet;
-    }
-    function activateSheet(id) {
-        const sheet = STYLESHEETS[id];
-        sheet.setAttribute("component", id);
-        document.head.appendChild(sheet);
-    }
-    function getTextDecoration({ strikethrough, underline, }) {
-        if (!strikethrough && !underline) {
-            return "none";
-        }
-        return `${strikethrough ? "line-through" : ""} ${underline ? "underline" : ""}`;
-    }
-    /**
-     * Convert the cell text style to CSS properties.
-     */
-    function cellTextStyleToCss(style) {
-        const attributes = {};
-        if (!style)
-            return attributes;
-        if (style.bold) {
-            attributes["font-weight"] = "bold";
-        }
-        if (style.italic) {
-            attributes["font-style"] = "italic";
-        }
-        if (style.strikethrough || style.underline) {
-            let decoration = style.strikethrough ? "line-through" : "";
-            decoration = style.underline ? decoration + " underline" : decoration;
-            attributes["text-decoration"] = decoration;
-        }
-        if (style.textColor) {
-            attributes["color"] = style.textColor;
-        }
-        return attributes;
-    }
-    function cssPropertiesToCss(attributes) {
-        const str = Object.entries(attributes)
-            .map(([attName, attValue]) => `${attName}: ${attValue};`)
-            .join("\n");
-        return "\n" + str + "\n";
-    }
-
     const ERROR_TOOLTIP_HEIGHT = 40;
     const ERROR_TOOLTIP_WIDTH = 180;
     css /* scss */ `
@@ -3747,7 +3755,7 @@
         return !!ev.target && parent.contains(ev.target);
     }
     function gridOverlayPosition() {
-        const spreadsheetElement = document.querySelector(".o-grid-overlay");
+        const spreadsheetElement = document.querySelector(".o-spreadsheet-grid-overlay");
         if (spreadsheetElement) {
             const { top, left } = spreadsheetElement === null || spreadsheetElement === void 0 ? void 0 : spreadsheetElement.getBoundingClientRect();
             return { top, left };
@@ -3903,7 +3911,7 @@
         margin-top: auto;
         margin-bottom: auto;
       }
-      .o-icon {
+      .o-spreadheet-icon {
         width: 10px;
       }
 
@@ -4124,11 +4132,11 @@
   .o-link-icon {
     float: right;
     padding-left: 4%;
-    .o-icon {
+    .o-spreadsheet-icon {
       height: 16px;
     }
   }
-  .o-link-icon .o-icon {
+  .o-link-icon .o-spreadsheet-icon {
     padding-top: 3px;
     height: 13px;
   }
@@ -10330,9 +10338,6 @@
                         sheetId: this.env.model.getters.getActiveSheetId(),
                         id: this.props.figure.id,
                     });
-                    if (this.props.sidePanelIsOpen) {
-                        this.env.toggleSidePanel("ChartPanel");
-                    }
                     this.props.onFigureDeleted();
                 },
             });
@@ -10374,7 +10379,6 @@
     ChartFigure.components = { Menu };
     ChartFigure.props = {
         figure: Object,
-        sidePanelIsOpen: Boolean,
         onFigureDeleted: Function,
     };
 
@@ -10506,32 +10510,14 @@
     // -----------------------------------------------------------------------------
     // Autofill
     // -----------------------------------------------------------------------------
+    const AUTOFILL_EDGE_LENGTH_WITHOUT_BORDER = AUTOFILL_EDGE_LENGTH - 2;
     css /* scss */ `
-  .o-autofill {
-    height: 6px;
-    width: 6px;
-    border: 1px solid white;
-    position: absolute;
-    background-color: #1a73e8;
-
-    .o-autofill-handler {
-      position: absolute;
-      height: ${AUTOFILL_EDGE_LENGTH}px;
-      width: ${AUTOFILL_EDGE_LENGTH}px;
-
-      &:hover {
-        cursor: crosshair;
-      }
-    }
-
-    .o-autofill-nextvalue {
-      position: absolute;
-      background-color: #ffffff;
-      border: 1px solid black;
-      padding: 5px;
-      font-size: 12px;
-      pointer-events: none;
-      white-space: nowrap;
+  .o-spreadsheet-autofill-handler {
+    height: ${AUTOFILL_EDGE_LENGTH_WITHOUT_BORDER}px;
+    width: ${AUTOFILL_EDGE_LENGTH_WITHOUT_BORDER}px;
+    background-color: ${CORNER_BACKGROUND_COLOR};
+    &:hover {
+      cursor: crosshair;
     }
   }
 `;
@@ -20468,7 +20454,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     const SCROLLBAR_HIGHT = 15;
     const COMPOSER_BORDER_WIDTH = 3 * 0.4 * window.devicePixelRatio || 1;
     css /* scss */ `
-  div.o-grid-composer {
+  div.o-spreadsheet-grid-composer {
     z-index: ${ComponentsImportance.Composer};
     box-sizing: border-box;
     position: absolute;
@@ -20712,7 +20698,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
       position: absolute;
       width: ${ANCHOR_SIZE}px;
       height: ${ANCHOR_SIZE}px;
-      background-color: #1a73e8;
+      background-color: ${CORNER_BACKGROUND_COLOR};
       outline: ${BORDER_WIDTH}px solid white;
 
       &.o-top {
@@ -20928,9 +20914,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             if (!selectResult.isSuccessful) {
                 return;
             }
-            if (this.props.sidePanelIsOpen) {
-                this.env.openSidePanel("ChartPanel");
-            }
             const position = gridOverlayPosition();
             const { x: offsetCorrectionX, y: offsetCorrectionY } = this.env.model.getters.getMainViewportCoordinates();
             const { offsetX, offsetY } = this.env.model.getters.getActiveSheetScrollInfo();
@@ -21008,7 +20991,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     FigureComponent.template = "o-spreadsheet-FigureComponent";
     FigureComponent.components = {};
     FigureComponent.props = {
-        sidePanelIsOpen: Boolean,
         onFigureDeleted: Function,
         figure: Object,
     };
@@ -21033,7 +21015,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     FiguresContainer.template = "o-spreadsheet-FiguresContainer";
     FiguresContainer.components = { FigureComponent };
     FiguresContainer.props = {
-        sidePanelIsOpen: Boolean,
         onFigureDeleted: Function,
     };
     figureRegistry.add("chart", { Component: ChartFigure, SidePanelComponent: "ChartPanel" });
@@ -21163,6 +21144,12 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             gridRef.el.removeEventListener("touchmove", onTouchMove);
         });
     }
+    css /* scss */ `
+  .o-spreadsheet-grid-overlay {
+    position: absolute;
+    outline: none;
+  }
+`;
     class GridOverlay extends owl.Component {
         setup() {
             this.gridOverlay = owl.useRef("gridOverlay");
@@ -21214,7 +21201,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         onCellRightClicked: () => { },
         onGridResized: () => { },
         onFigureDeleted: () => { },
-        sidePanelIsOpen: false,
     };
     GridOverlay.props = {
         onCellHovered: { type: Function, optional: true },
@@ -21225,7 +21211,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         onFigureDeleted: { type: Function, optional: true },
         onGridMoved: Function,
         gridOverlayDimensions: String,
-        sidePanelIsOpen: { type: Boolean, optional: true },
     };
 
     class GridPopover extends owl.Component {
@@ -22106,7 +22091,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     position: absolute;
     overflow: auto;
     z-index: ${ComponentsImportance.ScrollBar};
-    background-color: ${BACKGROUND_GRAY_COLOR};
 
     &.corner {
       right: 0px;
@@ -22668,7 +22652,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         FilterIconsOverlay,
     };
     Grid.props = {
-        sidePanelIsOpen: Boolean,
         exposeFocus: Function,
         focusComposer: String,
         onComposerContentFocused: Function,
@@ -33950,6 +33933,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     break;
             }
             this.setSelectionMixin(event.anchor, zones);
+            /** Any change to the selection has to be  reflected in the selection processor. */
+            this.selection.resetDefaultAnchor(this, deepCopy(this.gridSelection.anchor));
             const { col, row } = this.gridSelection.anchor.cell;
             this.moveClient({
                 sheetId: this.getters.getActiveSheetId(),
@@ -33982,11 +33967,11 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                         sheetIdTo: firstSheetId,
                         sheetIdFrom: firstSheetId,
                     });
+                    const { col, row } = this.getters.getNextVisibleCellPosition(firstSheetId, 0, 0);
+                    this.selectCell(col, row);
                     this.selection.registerAsDefault(this, this.gridSelection.anchor, {
                         handleEvent: this.handleEvent.bind(this),
                     });
-                    const { col, row } = this.getters.getNextVisibleCellPosition(firstSheetId, 0, 0);
-                    this.selectCell(col, row);
                     this.moveClient({ sheetId: firstSheetId, col: 0, row: 0 });
                     break;
                 case "ACTIVATE_SHEET": {
@@ -33999,7 +33984,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     };
                     if (cmd.sheetIdTo in this.sheetsData) {
                         Object.assign(this, this.sheetsData[cmd.sheetIdTo]);
-                        this.selection.resetDefaultAnchor(this, this.gridSelection.anchor);
+                        this.selection.resetDefaultAnchor(this, deepCopy(this.gridSelection.anchor));
                     }
                     else {
                         const { col, row } = this.getters.getNextVisibleCellPosition(cmd.sheetIdTo, 0, 0);
@@ -34085,8 +34070,11 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     const sheetId = this.getters.getActiveSheetId();
                     this.gridSelection.zones = this.gridSelection.zones.map((z) => this.getters.expandZone(sheetId, z));
                     this.gridSelection.anchor.zone = this.getters.expandZone(sheetId, this.gridSelection.anchor.zone);
-                    this.ensureSelectionValidity();
+                    this.setSelectionMixin(this.gridSelection.anchor, this.gridSelection.zones);
+                    break;
             }
+            /** Any change to the selection has to be  reflected in the selection processor. */
+            this.selection.resetDefaultAnchor(this, deepCopy(this.gridSelection.anchor));
         }
         // ---------------------------------------------------------------------------
         // Getters
@@ -34234,11 +34222,13 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         // ---------------------------------------------------------------------------
         // Other
         // ---------------------------------------------------------------------------
+        /**
+         * Ensure selections are not outside sheet boundaries.
+         * They are clipped to fit inside the sheet if needed.
+         */
         setSelectionMixin(anchor, zones) {
             const { anchor: clippedAnchor, zones: clippedZones } = this.clipSelection(this.getters.getActiveSheetId(), { anchor, zones });
-            this.gridSelection.anchor.cell.col = clippedAnchor.cell.col;
-            this.gridSelection.anchor.cell.row = clippedAnchor.cell.row;
-            this.gridSelection.anchor.zone = clippedAnchor.zone;
+            this.gridSelection.anchor = clippedAnchor;
             this.gridSelection.zones = uniqueZones(clippedZones);
         }
         /**
@@ -34280,7 +34270,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 zone: selectedZone,
             };
             this.setSelectionMixin(anchor, [selectedZone]);
-            this.ensureSelectionValidity();
         }
         onRowsRemoved(cmd) {
             const { cell, zone } = this.gridSelection.anchor;
@@ -34295,7 +34284,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 zone: selectedZone,
             };
             this.setSelectionMixin(anchor, [selectedZone]);
-            this.ensureSelectionValidity();
         }
         onAddElements(cmd) {
             const selection = this.gridSelection.anchor.zone;
@@ -34376,17 +34364,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         //-------------------------------------------
         // Helpers for extensions
         // ------------------------------------------
-        /**
-         * Ensure selections are not outside sheet boundaries.
-         * They are clipped to fit inside the sheet if needed.
-         */
-        ensureSelectionValidity() {
-            let { anchor, zones } = this.clipSelection(this.getters.getActiveSheetId(), this.gridSelection);
-            this.gridSelection.zones = uniqueZones(zones);
-            this.gridSelection.anchor.cell.col = anchor.cell.col;
-            this.gridSelection.anchor.cell.row = anchor.cell.row;
-            this.gridSelection.anchor.zone = anchor.zone;
-        }
         /**
          * Clip the selection if it spans outside the sheet
          */
@@ -35701,7 +35678,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 case "ZonesSelected":
                     // altering a zone should not move the viewport
                     const sheetId = this.getters.getActiveSheetId();
-                    let { col, row } = findCellInNewZone(event.previousAnchor.zone, event.anchor.zone);
+                    let { col, row } = findCellInNewZone(event.previousAnchor.zone, event.anchor.zone, this.getters.getActiveMainViewport());
                     col = Math.min(col, this.getters.getNumberCols(sheetId) - 1);
                     row = Math.min(row, this.getters.getNumberRows(sheetId) - 1);
                     this.refreshViewport(this.getters.getActiveSheetId(), { col, row });
@@ -36794,7 +36771,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     // -----------------------------------------------------------------------------
     css /* scss */ `
   .o-spreadsheet-bottom-bar {
-    background-color: ${BACKGROUND_GRAY_COLOR};
     padding-left: ${HEADER_WIDTH}px;
     display: flex;
     align-items: center;
@@ -37137,42 +37113,10 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     SpreadsheetDashboard.props = {};
 
     css /* scss */ `
-  .o-sidePanel {
-    display: flex;
-    flex-direction: column;
+  .o-spreadsheet-side-panel-container {
     overflow-x: hidden;
-    background-color: white;
-    border: 1px solid darkgray;
-    user-select: none;
-    .o-sidePanelHeader {
-      padding: 6px;
-      height: 30px;
-      background-color: ${BACKGROUND_HEADER_COLOR};
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid darkgray;
-      border-top: 1px solid darkgray;
-      font-weight: bold;
-      .o-sidePanelTitle {
-        font-weight: bold;
-        padding: 5px 10px;
-        color: dimgrey;
-      }
-      .o-sidePanelClose {
-        font-size: 1.5rem;
-        padding: 5px 10px;
-        cursor: pointer;
-        &:hover {
-          background-color: WhiteSmoke;
-        }
-      }
-    }
-    .o-sidePanelBody {
-      overflow: auto;
-      width: 100%;
-      height: 100%;
 
+    .o-spreadsheet-side-panel-body {
       .o-section {
         padding: 16px;
 
@@ -37377,16 +37321,12 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
   }
 `;
     class SidePanel extends owl.Component {
-        setup() {
-            this.state = owl.useState({
-                panel: sidePanelRegistry.get(this.props.component),
-            });
-            owl.onWillUpdateProps((nextProps) => (this.state.panel = sidePanelRegistry.get(nextProps.component)));
+        get panel() {
+            return sidePanelRegistry.get(this.props.component);
         }
-        getTitle() {
-            return typeof this.state.panel.title === "function"
-                ? this.state.panel.title(this.env)
-                : this.state.panel.title;
+        get title() {
+            const title = this.panel.title;
+            return typeof title === "function" ? title(this.env) : title;
         }
     }
     SidePanel.template = "o-spreadsheet-SidePanel";
@@ -37902,8 +37842,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     css /* scss */ `
   .o-spreadsheet {
     position: relative;
-    display: grid;
-    grid-template-columns: auto 350px;
+    background-color: var(--BACKGROUND_GRAY_COLOR);
     * {
       font-family: "Roboto", "RobotoDraft", Helvetica, Arial, sans-serif;
     }
@@ -37918,13 +37857,56 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
       margin-top: ${MENU_SEPARATOR_PADDING}px;
       margin-bottom: ${MENU_SEPARATOR_PADDING}px;
     }
+
+    &.o-spreadsheet-dashboard {
+      display: block;
+    }
+
+    &.o-spreadsheet-normal {
+      display: grid;
+      grid-template-columns: auto 350px;
+      grid-template-rows: ${TOPBAR_HEIGHT}px auto ${BOTTOMBAR_HEIGHT + 1}px;
+      grid-template-areas:
+        "top-bar top-bar"
+        "grid grid"
+        "bottom-bar bottom-bar";
+
+      &.o-spreadsheet-with-side-panel {
+        grid-template-areas:
+          "top-bar top-bar"
+          "grid side-panel"
+          "bottom-bar bottom-bar";
+      }
+
+      .o-spreadsheet-topbar {
+        grid-area: top-bar;
+      }
+
+      .o-spreadsheet-grid-container {
+        grid-area: grid;
+        position: relative;
+        overflow: hidden;
+        &:focus {
+          outline: none;
+        }
+
+        > canvas {
+          border-top: 1px solid #e2e3e3;
+          border-bottom: 1px solid #e2e3e3;
+        }
+      }
+
+      .o-spreadsheet-side-panel-container {
+        grid-area: side-panel;
+      }
+
+      .o-spreadsheet-bottom-bar {
+        grid-area: bottom-bar;
+      }
+    }
   }
 
-  .o-two-columns {
-    grid-column: 1 / 3;
-  }
-
-  .o-icon {
+  .o-spreadsheet-icon {
     width: ${ICON_EDGE_LENGTH}px;
     height: ${ICON_EDGE_LENGTH}px;
     opacity: 0.6;
@@ -37937,39 +37919,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     vertical-align: sub;
   }
 `;
-    // -----------------------------------------------------------------------------
-    // GRID STYLE
-    // -----------------------------------------------------------------------------
-    css /* scss */ `
-  .o-grid {
-    position: relative;
-    overflow: hidden;
-    background-color: ${BACKGROUND_GRAY_COLOR};
-    &:focus {
-      outline: none;
-    }
-
-    > canvas {
-      border-top: 1px solid #e2e3e3;
-      border-bottom: 1px solid #e2e3e3;
-    }
-    .o-scrollbar {
-      &.corner {
-        right: 0px;
-        bottom: 0px;
-        height: ${SCROLLBAR_WIDTH$1}px;
-        width: ${SCROLLBAR_WIDTH$1}px;
-        border-top: 1px solid #e2e3e3;
-        border-left: 1px solid #e2e3e3;
-      }
-    }
-
-    .o-grid-overlay {
-      position: absolute;
-      outline: none;
-    }
-  }
-`;
     const t = (s) => s;
     class Spreadsheet extends owl.Component {
         constructor() {
@@ -37979,11 +37928,11 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         get model() {
             return this.props.model;
         }
-        getStyle() {
+        get rootClass() {
             if (this.env.isDashboard()) {
-                return `grid-template-rows: auto;`;
+                return "o-spreadsheet-dashboard";
             }
-            return `grid-template-rows: ${TOPBAR_HEIGHT}px auto ${BOTTOMBAR_HEIGHT + 1}px`;
+            return "o-spreadsheet-normal" + (this.sidePanel.isOpen ? " o-spreadsheet-with-side-panel" : "");
         }
         setup() {
             this.sidePanel = owl.useState({ isOpen: false, panelProps: {} });
@@ -39919,7 +39868,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         addCellToSelection(col, row) {
             const sheetId = this.getters.getActiveSheetId();
             ({ col, row } = this.getters.getMainCellPosition(sheetId, col, row));
-            const zone = positionToZone({ col, row });
+            const zone = this.getters.expandZone(sheetId, positionToZone({ col, row }));
             return this.processEvent({
                 type: "ZonesSelected",
                 anchor: { zone, cell: { col, row } },
@@ -41838,6 +41787,11 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             this.corePlugins = [];
             this.uiPlugins = [];
             /**
+             * In a collaborative context, some commands can be replayed, we have to ensure
+             * that these commands are not replayed on the UI plugins.
+             */
+            this.isReplayingCommand = false;
+            /**
              * A plugin can draw some contents on the canvas. But even better: it can do
              * so multiple times.  The order of the render calls will determine a list of
              * "layers" (i.e., earlier calls will be obviously drawn below later calls).
@@ -41912,7 +41866,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 const command = { type, ...payload };
                 const previousStatus = this.status;
                 this.status = 2 /* Status.RunningCore */;
-                this.dispatchToHandlers(this.handlers, command);
+                const handlers = this.isReplayingCommand ? [this.range, ...this.corePlugins] : this.handlers;
+                this.dispatchToHandlers(handlers, command);
                 this.status = previousStatus;
                 return DispatchResult.Success;
             };
@@ -42026,7 +41981,11 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             this.finalize();
         }
         setupSession(revisionId) {
-            const session = new Session(buildRevisionLog(revisionId, this.state.recordChanges.bind(this.state), (command) => this.dispatchToHandlers([this.range, ...this.corePlugins], command)), this.config.transportService, revisionId);
+            const session = new Session(buildRevisionLog(revisionId, this.state.recordChanges.bind(this.state), (command) => {
+                this.isReplayingCommand = true;
+                this.dispatchToHandlers([this.range, ...this.corePlugins], command);
+                this.isReplayingCommand = false;
+            }), this.config.transportService, revisionId);
             return session;
         }
         setupSessionEvents() {
@@ -42283,8 +42242,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-11-03T06:57:12.461Z';
-    exports.__info__.hash = '7112f4d';
+    exports.__info__.date = '2022-11-07T09:31:24.798Z';
+    exports.__info__.hash = 'c7fa442';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
