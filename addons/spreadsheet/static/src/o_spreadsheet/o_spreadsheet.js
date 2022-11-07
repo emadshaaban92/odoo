@@ -41982,7 +41982,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         }
         setupSession(revisionId) {
             const session = new Session(buildRevisionLog(revisionId, this.state.recordChanges.bind(this.state), (command) => {
-                this.isReplayingCommand = true;
+                this.isReplayingCommand = false;
                 this.dispatchToHandlers([this.range, ...this.corePlugins], command);
                 this.isReplayingCommand = false;
             }), this.config.transportService, revisionId);
