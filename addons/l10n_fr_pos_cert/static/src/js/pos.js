@@ -16,10 +16,6 @@ models.PosModel = models.PosModel.extend({
     is_french_country: function(){
       var french_countries = ['FR', 'MF', 'MQ', 'NC', 'PF', 'RE', 'GF', 'GP', 'TF'];
       if (!this.company.country) {
-        Gui.showPopup("ErrorPopup", {
-            'title': _t("Missing Country"),
-            'body':  _.str.sprintf(_t('The company %s doesn\'t have a country set.'), this.company.name),
-        });
         return false;
       }
       return _.contains(french_countries, this.company.country.code);
