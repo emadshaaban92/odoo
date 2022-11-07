@@ -28,11 +28,14 @@ class AccountFiscalPosition(models.Model):
             # partner manually set fiscal position always win
             if delivery.property_account_position_id or partner.property_account_position_id:
                 return delivery.property_account_position_id or partner.property_account_position_id
+            if not delivery.country_id:
+                return self.env['account.fiscal.position']
             domain = [
                 ('auto_apply', '=', True),
                 ('l10n_ar_afip_responsibility_type_ids', '=', self.env['res.partner'].browse(
                     partner_id).l10n_ar_afip_responsibility_type_id.id),
                 ('company_id', '=', company.id),
+                '|', ('country_id', '=', delivery.country_id.id), ('country_id', '=', False),
             ]
             return self.sudo().search(domain, limit=1)
         return super().get_fiscal_position(partner_id, delivery_id=delivery_id)

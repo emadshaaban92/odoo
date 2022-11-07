@@ -5,8 +5,9 @@ odoo.define('website_sale_tour.tour', function (require) {
     var rpc = require("web.rpc");
     const tourUtils = require('website_sale.tour_utils');
 
-    tour.register('website_sale_tour', {
+    return tour.register('website_sale_tour', {
         test: true,
+        extra: {l10n: true},
         url: '/shop?search=Storage Box Test',
     }, [
     // Testing b2c with Tax-Excluded Prices

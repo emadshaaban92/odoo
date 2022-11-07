@@ -98,7 +98,12 @@ class TestUi(HttpCaseWithUserDemo, TestWebsiteSaleCommon):
             'group_show_line_subtotals_tax_included': False,
         }).execute()
 
-        self.start_tour("/", 'website_sale_tour')
+        # Must add cookies sign non-logged user can not make an rpc to retrive company.account_fiscal_country_id
+        cookies = {
+            'company_name': self.env.company.name,
+            'account_fiscal_country_code': self.env.company.account_fiscal_country_id.code,
+        }
+        self.start_tour("/", 'website_sale_tour', cookies=cookies, timeout=120)
 
     def test_05_google_analytics_tracking(self):
         self.env['website'].browse(1).write({'google_analytics_key': 'G-XXXXXXXXXXX'})

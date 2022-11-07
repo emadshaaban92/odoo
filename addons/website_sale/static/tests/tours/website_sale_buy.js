@@ -4,9 +4,11 @@ odoo.define('website_sale.tour', function (require) {
 var tour = require("web_tour.tour");
 const tourUtils = require('website_sale.tour_utils');
 
-tour.register('shop_buy_product', {
+return tour.register('shop_buy_product', {
     test: true,
+    extra: {l10n: true},
     url: '/shop',
+    wait_for: new Promise(resolve => setTimeout(resolve, 1000)),
 },
     [
         {
