@@ -170,7 +170,7 @@ export const editorCommands = {
 
         // In case the html inserted starts with a list and will be inserted within
         // a list, unwrap the list elements from the list.
-        if (closestElement(selection.anchorNode, 'UL, OL') &&
+        if (closestElement(selection.anchorNode, { selector: 'UL, OL' }) &&
             (container.firstChild.nodeName === 'UL' || container.firstChild.nodeName === 'OL')) {
             container.replaceChildren(...container.firstChild.childNodes);
         }
@@ -404,7 +404,7 @@ export const editorCommands = {
         if (sel.isCollapsed) {
             insertText(sel, content || 'link');
         }
-        const currentLink = closestElement(sel.focusNode, 'a');
+        const currentLink = closestElement(sel.focusNode, { selector: 'a' });
         link = link || prompt('URL or Email', (currentLink && currentLink.href) || 'http://');
         const res = editor.document.execCommand('createLink', false, link);
         if (res) {
@@ -422,13 +422,13 @@ export const editorCommands = {
         // we need to remove the contentEditable isolation of links
         // before we apply the unlink, otherwise the command is not performed
         // because the content editable root is the link
-        const closestEl = closestElement(sel.focusNode, 'a');
+        const closestEl = closestElement(sel.focusNode, { selector: 'a' });
         if (closestEl && closestEl.getAttribute('contenteditable') === 'true') {
             editor._activateContenteditable();
         }
         if (sel.isCollapsed) {
             const cr = preserveCursor(editor.document);
-            const node = closestElement(sel.focusNode, 'a');
+            const node = closestElement(sel.focusNode, { selector: 'a' });
             setSelection(node, 0, node, node.childNodes.length, false);
             editor.document.execCommand('unlink');
             cr();
@@ -521,9 +521,9 @@ export const editorCommands = {
         if (!range) return;
         const restoreCursor = preserveCursor(editor.document);
         // Get the <font> nodes to color
-        const selectedNodes = getSelectedNodes(editor.editable).filter(node => !closestElement(node, 'table.o_selected_table'));
+        const selectedNodes = getSelectedNodes(editor.editable).filter(node => !closestElement(node, { selector: 'table.o_selected_table' }));
         const fonts = selectedNodes.flatMap(node => {
-            let font = closestElement(node, 'font');
+            let font = closestElement(node, { selector: 'font' });
             const children = font && descendants(font);
             if (font && font.nodeName === 'FONT') {
                 // Partially selected <font>: split it.
@@ -608,7 +608,7 @@ export const editorCommands = {
             if (!referenceCell) return;
         }
         const columnIndex = getColumnIndex(referenceCell);
-        const table = closestElement(referenceCell, 'table');
+        const table = closestElement(referenceCell, { selector: 'table' });
         const tableWidth = table.style.width ? pxToFloat(table.style.width) : table.clientWidth;
         const referenceColumn = table.querySelectorAll(`tr td:nth-of-type(${columnIndex + 1})`);
         const referenceCellWidth = referenceCell.style.width ? pxToFloat(referenceCell.style.width) : referenceCell.clientWidth;
@@ -674,8 +674,8 @@ export const editorCommands = {
             cell = getInSelection(editor.document, 'td');
             if (!cell) return;
         }
-        const table = closestElement(cell, 'table');
-        const cells = [...closestElement(cell, 'tr').querySelectorAll('th, td')];
+        const table = closestElement(cell, { selector: 'table' });
+        const cells = [...closestElement(cell, { selector: 'tr' }).querySelectorAll('th, td')];
         const index = cells.findIndex(td => td === cell);
         const siblingCell = cells[index - 1] || cells[index + 1];
         table.querySelectorAll(`tr td:nth-of-type(${index + 1})`).forEach(td => td.remove());
@@ -687,7 +687,7 @@ export const editorCommands = {
             row = getInSelection(editor.document, 'tr');
             if (!row) return;
         }
-        const table = closestElement(row, 'table');
+        const table = closestElement(row, { selector: 'table' });
         const rows = [...table.querySelectorAll('tr')];
         const rowIndex = rows.findIndex(tr => tr === row);
         const siblingRow = rows[rowIndex - 1] || rows[rowIndex + 1];
@@ -707,11 +707,11 @@ export const editorCommands = {
     columnize: (editor, numberOfColumns, addParagraphAfter=true) => {
         const sel = editor.document.getSelection();
         const anchor = sel.anchorNode;
-        const hasColumns = !!closestElement(anchor, '.o_text_columns');
+        const hasColumns = !!closestElement(anchor, { selector: '.o_text_columns' });
         if (!numberOfColumns && hasColumns) {
             // Remove columns.
             const restore = preserveCursor(editor.document);
-            const container = closestElement(anchor, '.o_text_columns');
+            const container = closestElement(anchor, { selector: '.o_text_columns' });
             const rows = unwrapContents(container);
             for (const row of rows) {
                 const columns = unwrapContents(row);
@@ -730,7 +730,7 @@ export const editorCommands = {
             // Create columns.
             const restore = preserveCursor(editor.document);
             const container = document.createElement('div');
-            if (!closestElement(anchor, '.container')) {
+            if (!closestElement(anchor, { selector: '.container' })) {
                 container.classList.add('container');
             }
             container.classList.add('o_text_columns');
@@ -766,7 +766,7 @@ export const editorCommands = {
                 container.after(p);
             }
         } else if (numberOfColumns && hasColumns) {
-            const row = closestElement(anchor, '.row');
+            const row = closestElement(anchor, { selector: '.row' });
             const columns = [...row.children];
             const columnSize = Math.floor(12 / numberOfColumns);
             const diff = numberOfColumns - columns.length;
@@ -817,7 +817,7 @@ export const editorCommands = {
         const range = selection.getRangeAt(0);
         const element = closestElement(
             range.startContainer,
-            'P, PRE, H1, H2, H3, H4, H5, H6, BLOCKQUOTE',
+            { selector: 'P, PRE, H1, H2, H3, H4, H5, H6, BLOCKQUOTE' },
         );
 
         if (element && ancestors(element).includes(editor.editable)) {

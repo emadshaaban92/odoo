@@ -278,23 +278,35 @@ export function getFurthestUneditableParent(node, parentLimit) {
     }
     return nonEditableElement;
 }
+export function nodeElement(node) {
+    return node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+}
 /**
- * Returns the closest HTMLElement of the provided Node
- * if a 'selector' is provided, Returns the closest HTMLElement that match the selector
+ * Returns the closest HTMLElement of the provided Node. If a 'selector' is
+ * provided, returns the closest HTMLElement that match the selector. If a
+ * predicate is provided, the first closest that match the predicate will be
+ * returned. Any returned element will be contained within the editable.
  *
  * @param {Node} node
- * @param {string} [selector=undefined]
- * @returns {HTMLElement}
+ * @param {string} [selector='*']
+ * @param {string} [predicate=() => true]
+ * @returns {HTMLElement|null}
  */
-export function closestElement(node, selector) {
-    let element = node;
-    while (element && element.nodeType !== Node.ELEMENT_NODE) {
-        element = element.parentNode;
+export function closestElement(node, { selector = "*", predicate = () => true } = {}) {
+    const element = nodeElement(node);
+    let elementFound = element && element.closest(selector);
+    while (elementFound) {
+        if (predicate(elementFound)) {
+            break
+        } else {
+            elementFound = elementFound.parentElement && elementFound.parentElement.closest(selector);
+        }
     }
-    if (element && selector) {
-        element = element.closest(selector);
+    if (elementFound && elementFound.closest('.odoo-editor-editable')) {
+        return elementFound;
+    } else {
+        return null;
     }
-    return element && element.querySelector('.odoo-editor-editable') ? null : element;
 }
 
 /**
@@ -666,7 +678,7 @@ export function getTraversedNodes(editable, range = getDeepRange(editable)) {
     while (node && node !== range.endContainer) {
         node = iterator.nextNode();
         if (node) {
-            const selectedTable = closestElement(node, '.o_selected_table');
+            const selectedTable = closestElement(node, { selector: '.o_selected_table' });
             if (selectedTable) {
                 for (const selectedTd of selectedTable.querySelectorAll('.o_selected_td')) {
                     traversedNodes.add(selectedTd, ...descendants(selectedTd));
@@ -694,7 +706,7 @@ export function getSelectedNodes(editable) {
     const range = sel.getRangeAt(0);
     return getTraversedNodes(editable).flatMap(
         node => {
-            const td = closestElement(node, '.o_selected_td');
+            const td = closestElement(node, { selector: '.o_selected_td' });
             if (td) {
                 return descendants(td);
             } else if (range.isPointInRange(node, 0) && range.isPointInRange(node, nodeSize(node))) {
@@ -1363,7 +1375,7 @@ export function getInSelection(document, selector) {
     const selection = document.getSelection();
     const range = selection && !!selection.rangeCount && selection.getRangeAt(0);
     if (range) {
-        const selectorInStartAncestors = closestElement(range.startContainer, selector);
+        const selectorInStartAncestors = closestElement(range.startContainer, { selector });
         if (selectorInStartAncestors) {
             return selectorInStartAncestors;
         } else {
@@ -1383,7 +1395,7 @@ export function getInSelection(document, selector) {
  * @returns {number}
  */
 export function getRowIndex(trOrTd) {
-    const tr = closestElement(trOrTd, 'tr');
+    const tr = closestElement(trOrTd, { selector: 'tr' });
     const trParent = tr && tr.parentElement;
     if (!trParent) {
         return -1;
@@ -1491,7 +1503,7 @@ export function getOuid(node, optimize = false) {
  * @returns {boolean}
  */
 export function isHtmlContentSupported(node) {
-    return !closestElement(node, '[data-oe-model]:not([data-oe-field="arch"]),[data-oe-translation-id]', true);
+    return !closestElement(node, { selector: '[data-oe-model]:not([data-oe-field="arch"]),[data-oe-translation-id]' });
 }
 /**
  * Returns whether the given node is a element that could be considered to be

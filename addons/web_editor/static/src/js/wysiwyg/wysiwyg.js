@@ -172,8 +172,8 @@ const Wysiwyg = Widget.extend({
             getPowerboxElement: () => {
                 const selection = (this.options.document || document).getSelection();
                 if (selection.isCollapsed && selection.rangeCount) {
-                    const baseNode = closestElement(selection.anchorNode, 'P, DIV');
-                    const fieldContainer = closestElement(selection.anchorNode, '[data-oe-field]');
+                    const baseNode = closestElement(selection.anchorNode, { selector: 'P, DIV' });
+                    const fieldContainer = closestElement(selection.anchorNode, { selector: '[data-oe-field]' });
                     if (!baseNode ||
                         (
                             fieldContainer &&
@@ -299,7 +299,7 @@ const Wysiwyg = Widget.extend({
 
                 const selection = self.odooEditor.document.getSelection();
                 const anchorNode = selection.anchorNode;
-                if (anchorNode && closestElement(anchorNode, '[data-oe-protected="true"]')) {
+                if (anchorNode && closestElement(anchorNode, { selector: '[data-oe-protected="true"]' })) {
                     return;
                 }
 
@@ -1351,7 +1351,7 @@ const Wysiwyg = Widget.extend({
         // selection when the modal is closed.
         const restoreSelection = preserveCursor(this.odooEditor.document);
 
-        const $editable = $(OdooEditorLib.closestElement(range.startContainer, '.o_editable') || this.odooEditor.editable);
+        const $editable = $(OdooEditorLib.closestElement(range.startContainer, { selector: '.o_editable' }) || this.odooEditor.editable);
         const model = $editable.data('oe-model');
         const field = $editable.data('oe-field');
         const type = $editable.data('oe-type');
@@ -1821,7 +1821,7 @@ const Wysiwyg = Widget.extend({
     _updateEditorUI: function (e) {
         let selection = this.odooEditor.document.getSelection();
         const anchorNode = selection.anchorNode;
-        if (anchorNode && closestElement(anchorNode, '[data-oe-protected="true"]')) {
+        if (anchorNode && closestElement(anchorNode, { selector: '[data-oe-protected="true"]' })) {
             return;
         }
 
@@ -2116,7 +2116,7 @@ const Wysiwyg = Widget.extend({
                         return true;
                     }
                     const anchor = this.odooEditor.document.getSelection().anchorNode;
-                    const row = closestElement(anchor, '.o_text_columns .row');
+                    const row = closestElement(anchor, { selector: '.o_text_columns .row' });
                     return row && row.childElementCount === 2;
                 },
             },
@@ -2132,7 +2132,7 @@ const Wysiwyg = Widget.extend({
                         return true;
                     }
                     const anchor = this.odooEditor.document.getSelection().anchorNode;
-                    const row = closestElement(anchor, '.o_text_columns .row');
+                    const row = closestElement(anchor, { selector: '.o_text_columns .row' });
                     return row && row.childElementCount === 3;
                 },
             },
@@ -2148,7 +2148,7 @@ const Wysiwyg = Widget.extend({
                         return true;
                     }
                     const anchor = this.odooEditor.document.getSelection().anchorNode;
-                    const row = closestElement(anchor, '.o_text_columns .row');
+                    const row = closestElement(anchor, { selector: '.o_text_columns .row' });
                     return row && row.childElementCount === 4;
                 },
             },
@@ -2164,7 +2164,7 @@ const Wysiwyg = Widget.extend({
                         return true;
                     }
                     const anchor = this.odooEditor.document.getSelection().anchorNode;
-                    const row = closestElement(anchor, '.o_text_columns .row');
+                    const row = closestElement(anchor, { selector: '.o_text_columns .row' });
                     return !row;
                 },
             },

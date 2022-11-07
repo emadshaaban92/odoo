@@ -109,7 +109,7 @@ class Sanitize {
 
     _parse(node) {
         while (node) {
-            const closestProtected = closestElement(node, '[data-oe-protected="true"]');
+            const closestProtected = closestElement(node, { selector: '[data-oe-protected="true"]' });
             if (closestProtected && node !== closestProtected) {
                 return;
             }
@@ -201,7 +201,7 @@ class Sanitize {
                 if (isEditorTab(tabPreviousSibling)) {
                     node.style.width = '40px';
                 } else {
-                    const editable = closestElement(node, '.odoo-editor-editable');
+                    const editable = closestElement(node, { selector: '.odoo-editor-editable' });
                     if (editable && editable.firstElementChild) {
                         const nodeRect = node.getBoundingClientRect();
                         const referenceRect = editable.firstElementChild.getBoundingClientRect();
