@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models
 
 
 class CalendarAlarm(models.Model):
@@ -15,6 +15,8 @@ class CalendarAlarm(models.Model):
         domain=[('model', 'in', ['calendar.event'])],
         compute='_compute_sms_template_id', readonly=False, store=True,
         help="Template used to render SMS reminder content.")
+    do_not_remind_responsible = fields.Boolean(
+        "Do not remind the responsible", default=True)
 
     @api.depends('alarm_type', 'mail_template_id')
     def _compute_sms_template_id(self):
@@ -23,3 +25,11 @@ class CalendarAlarm(models.Model):
                 alarm.sms_template_id = self.env['ir.model.data']._xmlid_to_res_id('calendar_sms.sms_template_data_calendar_reminder')
             elif alarm.alarm_type != 'sms' or not alarm.sms_template_id:
                 alarm.sms_template_id = False
+
+    @api.onchange('duration', 'interval', 'alarm_type', 'do_not_remind_responsible')
+    def _onchange_duration_interval(self):
+        super()._onchange_duration_interval()
+        if self.alarm_type != 'sms':
+            self.do_not_remind_responsible = True
+        elif not self.do_not_remind_responsible:
+            self.name += " - " + _("Remind Responsible")
