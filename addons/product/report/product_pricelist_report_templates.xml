@@ -44,9 +44,7 @@
                                             <t t-esc="product['name']"/>
                                         </t>
                                     </td>
-                                    <td groups="uom.group_uom">
-                                        <t t-esc="product['uom']"/>
-                                    </td>
+                                    <td groups="uom.group_uom" t-esc="product['uom']"/>
                                     <t t-foreach="quantities" t-as="qty">
                                         <td class="text-end">
                                             <t t-esc="product['price'][qty]" t-options='{"widget": "monetary", "display_currency": pricelist.currency_id}'/>
@@ -61,9 +59,7 @@
                                             </a>
                                             <span t-else="" class="ms-4" t-esc="variant['name']"/>
                                         </td>
-                                        <td groups="uom.group_uom">
-                                            <t t-esc="product['uom']"/>
-                                        </td>
+                                        <td groups="uom.group_uom" t-esc="product['uom']"/>
                                         <t t-foreach="quantities" t-as="qty">
                                             <td class="text-end">
                                                 <t t-esc="variant['price'][qty]" t-options='{"widget": "monetary", "display_currency": pricelist.currency_id}'/>
