@@ -476,6 +476,27 @@ export class Messaging {
         await this.orm.call("mail.message", "toggle_message_starred", [[messageId]]);
     }
 
+    async deleteMessage(message) {
+        if (message.isStarred) {
+            this.discuss.starred.counter--;
+            removeFromArray(this.discuss.starred.messages, message.id);
+        }
+        removeFromArray(this.threads[message.resId].messages, message.id);
+        try {
+            return await this.rpc("/mail/message/update_content", {
+                attachment_ids: [],
+                body: "",
+                message_id: message.id,
+            });
+        } catch (error) {
+            const thread = this.threads[message.resId];
+            thread.messages = [...thread.messages, message.id].sort();
+            this.discuss.starred.messages.push(message.id);
+            this.discuss.starred.counter++;
+            throw error;
+        }
+    }
+
     async unstarAll() {
         // apply the change immediately for faster feedback
         this.discuss.starred.counter = 0;
