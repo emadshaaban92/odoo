@@ -54,7 +54,7 @@ class AccountEdiFormat(models.Model):
 
         return '%(country_code)s%(codice)s_%(progressive_number)s.xml' % {
             'country_code': invoice.company_id.country_id.code,
-            'codice': self.env['res.partner']._l10n_it_normalize_codice_fiscale(invoice.company_id.l10n_it_codice_fiscale),
+            'codice': invoice.company_id.partner_id._l10n_it_edi_normalized_codice_fiscale(),
             'progressive_number': progressive_number.zfill(5),
         }
 
@@ -168,11 +168,6 @@ class AccountEdiFormat(models.Model):
     def _l10n_it_edi_check_simplified_invoice_configuration(self, invoice):
         return [] if self._l10n_it_edi_is_simplified(invoice) else self._l10n_it_edi_check_buyer_invoice_configuration(invoice)
 
-    def _l10n_it_edi_partner_in_eu(self, partner):
-        europe = self.env.ref('base.europe', raise_if_not_found=False)
-        country = partner.country_id
-        return not europe or not country or country in europe.country_ids
-
     def _l10n_it_edi_services_or_goods(self, invoice):
         """
             Services and goods have different tax grids when VAT is Reverse Charged, and they can't
@@ -248,7 +243,7 @@ class AccountEdiFormat(models.Model):
         services_or_goods = self._l10n_it_edi_services_or_goods(invoice)
         return {
             'move_types': invoice.move_type,
-            'partner_in_eu': self._l10n_it_edi_partner_in_eu(invoice.commercial_partner_id),
+            'partner_in_eu': invoice.commercial_partner_id._l10n_it_edi_in_eu(),
             'partner_country_code': invoice.commercial_partner_id.country_id.code,
             'simplified': self._l10n_it_edi_is_simplified(invoice),
             'self_invoice': self._l10n_it_edi_is_self_invoice(invoice),

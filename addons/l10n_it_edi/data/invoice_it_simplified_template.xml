@@ -22,52 +22,51 @@
             <FatturaElettronicaHeader>
                     <DatiTrasmissione>
                         <IdTrasmittente>
-                            <IdPaese t-out="get_vat_country(record.company_id.vat)"/>
-                            <IdCodice t-out="normalize_codice_fiscale(record.company_id.l10n_it_codice_fiscale) or get_vat_number(record.company_id.vat)"/>
+                            <IdPaese t-out="sender_partner._l10n_it_edi_normalized_country()"/>
+                            <IdCodice t-out="sender_partner._l10n_it_edi_normalized_codice_fiscale() or sender_partner._l10n_it_edi_normalized_vat()"/>
                         </IdTrasmittente>
                         <ProgressivoInvio t-out="format_alphanumeric(record.name.replace('/','')[-10:])"/>
                         <FormatoTrasmissione t-out="formato_trasmissione"/>
-                        <CodiceDestinatario t-if="record.commercial_partner_id.l10n_it_pa_index" t-out="record.commercial_partner_id.l10n_it_pa_index.upper()"/>
-                        <CodiceDestinatario t-if="not record.commercial_partner_id.l10n_it_pa_index" t-out="'0000000'"/>
-                        <PECDestinatario t-if="record.commercial_partner_id.l10n_it_pec_email" t-out="record.commercial_partner_id.l10n_it_pec_email"/>
+                        <CodiceDestinatario t-if="buyer_partner._l10n_it_edi_normalized_pa_index()" t-out="buyer_partner._l10n_it_edi_normalized_pa_index()"/>
+                        <PECDestinatario t-if="buyer_partner.l10n_it_pec_email" t-out="buyer_partner.l10n_it_pec_email"/>
                     </DatiTrasmissione>
                     <CedentePrestatore>
                         <IdFiscaleIVA>
-                            <IdPaese t-out="get_vat_country(record.company_id.vat)"/>
-                            <IdCodice t-out="get_vat_number(record.company_id.vat)"/>
+                            <IdPaese t-out="seller_partner._l10n_it_edi_normalized_country()"/>
+                            <IdCodice t-out="seller_partner._l10n_it_edi_normalized_vat()"/>
                         </IdFiscaleIVA>
-                        <CodiceFiscale t-if="record.company_id.l10n_it_codice_fiscale" t-out="normalize_codice_fiscale(record.company_id.l10n_it_codice_fiscale)"/>
-                        <Denominazione t-out="format_alphanumeric(record.company_id.partner_id.display_name[:80])"/>
+                        <CodiceFiscale t-if="seller_partner.l10n_it_codice_fiscale" t-out="seller_partner._l10n_it_edi_normalized_codice_fiscale()"/>
+                        <Denominazione t-out="format_alphanumeric(seller_partner.display_name[:80])"/>
                         <t t-call="l10n_it_edi.account_invoice_it_FatturaPA_sede">
-                            <t t-set="partner" t-value="record.company_id.partner_id"/>
+                            <t t-set="partner" t-value="seller_partner"/>
                         </t>
-                        <RappresentanteFiscale t-if="record.company_id.l10n_it_has_tax_representative">
+                        <RappresentanteFiscale t-if="seller.l10n_it_has_tax_representative">
                             <IdFiscaleIVA>
-                                <IdPaese t-out="get_vat_country(record.company_id.l10n_it_tax_representative_partner_id.vat)"/>
-                                <IdCodice t-out="get_vat_number(record.company_id.l10n_it_tax_representative_partner_id.vat)"/>
+                                <IdPaese t-out="representative._l10n_it_edi_normalized_country()"/>
+                                <IdCodice t-out="representative._l10n_it_edi_normalized_vat()"/>
                             </IdFiscaleIVA>
                             <Anagrafica>
-                                <Denominazione t-if="record.commercial_partner_id.is_company" t-out="format_alphanumeric(record.commercial_partner_id.display_name[:80])"/>
-                                <Nome t-if="not record.commercial_partner_id.is_company" t-out="format_alphanumeric(' '.join(record.commercial_partner_id.name.split()[:1])[:60])"/>
-                                <Cognome t-if="not record.commercial_partner_id.is_company" t-out="format_alphanumeric(' '.join(record.commercial_partner_id.name.split()[1:])[:60])"/>
+                                <Denominazione t-if="representative.is_company" t-out="format_alphanumeric(representative.display_name[:80])"/>
+                                <Nome t-if="not representative.is_company" t-out="format_alphanumeric(' '.join(representative.name.split()[:1])[:60])"/>
+                                <Cognome t-if="not representative.is_company" t-out="format_alphanumeric(' '.join(representative.name.split()[1:])[:60])"/>
                             </Anagrafica>
                         </RappresentanteFiscale>
-                        <IscrizioneREA t-if="record.company_id.l10n_it_has_eco_index">
-                            <Ufficio t-out="record.company_id.l10n_it_eco_index_office.code"/>
-                            <NumeroREA t-out="format_alphanumeric(record.company_id.l10n_it_eco_index_number)"/>
-                            <CapitaleSociale t-if="record.company_id.l10n_it_eco_index_share_capital != 0" t-out="format_numbers_two(record.company_id.l10n_it_eco_index_share_capital)"/>
-                            <SocioUnico t-if="record.company_id.l10n_it_eco_index_sole_shareholder != 'NO'" t-out="record.company_id.l10n_it_eco_index_sole_shareholder"/>
-                            <StatoLiquidazione t-out="record.company_id.l10n_it_eco_index_liquidation_state"/>
+                        <IscrizioneREA t-if="seller.l10n_it_has_eco_index">
+                            <Ufficio t-out="seller.l10n_it_eco_index_office.code"/>
+                            <NumeroREA t-out="format_alphanumeric(seller.l10n_it_eco_index_number)"/>
+                            <CapitaleSociale t-if="seller.l10n_it_eco_index_share_capital != 0" t-out="format_numbers_two(seller.l10n_it_eco_index_share_capital)"/>
+                            <SocioUnico t-if="seller.l10n_it_eco_index_sole_shareholder != 'NO'" t-out="seller.l10n_it_eco_index_sole_shareholder"/>
+                            <StatoLiquidazione t-out="seller.l10n_it_eco_index_liquidation_state"/>
                         </IscrizioneREA>
-                        <RegimeFiscale t-out="record.company_id.l10n_it_tax_system"/>
+                        <RegimeFiscale t-out="seller.l10n_it_tax_system"/>
                     </CedentePrestatore>
                     <CessionarioCommittente>
                         <IdentificativiFiscali>
-                            <IdFiscaleIVA t-if="record.commercial_partner_id.vat and in_eu(record.commercial_partner_id)">
-                                <IdPaese t-out="get_vat_country(record.commercial_partner_id.vat)"/>
-                                <IdCodice t-out="get_vat_number(record.commercial_partner_id.vat)"/>
+                            <IdFiscaleIVA t-if="buyer_partner.vat and buyer_partner._l10n_it_edi_in_eu()">
+                                <IdPaese t-out="buyer_partner._l10n_it_edi_normalized_country()"/>
+                                <IdCodice t-out="buyer_partner._l10n_it_edi_normalized_vat()"/>
                             </IdFiscaleIVA>
-                            <CodiceFiscale t-if="record.commercial_partner_id.l10n_it_codice_fiscale" t-out="normalize_codice_fiscale(record.commercial_partner_id.l10n_it_codice_fiscale)"/>
+                            <CodiceFiscale t-if="buyer_partner.l10n_it_codice_fiscale" t-out="buyer_partner._l10n_it_edi_normalized_codice_fiscale()"/>
                         </IdentificativiFiscali>
                     </CessionarioCommittente>
                 </FatturaElettronicaHeader>

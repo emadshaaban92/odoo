@@ -171,23 +171,12 @@ class AccountMove(models.Model):
                 return number
             return False
 
-        def get_vat_number(vat):
-            if vat[:2].isdecimal():
-                return vat.replace(' ', '')
-            return vat[2:].replace(' ', '')
-
-        def get_vat_country(vat):
-            if vat[:2].isdecimal():
-                return 'IT'
-            return vat[:2].upper()
-
         def format_alphanumeric(text_to_convert):
             return text_to_convert.encode('latin-1', 'replace').decode('latin-1') if text_to_convert else False
 
         formato_trasmissione = "FPA12" if self._is_commercial_partner_pa() else "FPR12"
 
         # Flags
-        in_eu = self.env['account.edi.format']._l10n_it_edi_partner_in_eu
         is_self_invoice = self.env['account.edi.format']._l10n_it_edi_is_self_invoice(self)
         document_type = self.env['account.edi.format']._l10n_it_get_document_type(self)
         if self.env['account.edi.format']._l10n_it_is_simplified_document_type(document_type):
@@ -213,11 +202,6 @@ class AccountMove(models.Model):
         partner = self.commercial_partner_id
         buyer = partner if not is_self_invoice else company
         seller = company if not is_self_invoice else partner
-        codice_destinatario = (
-            (is_self_invoice and company.partner_id.l10n_it_pa_index)
-            or partner.l10n_it_pa_index
-            or (partner.country_id.code == 'IT' and '0000000')
-            or 'XXXXXXX')
 
         # Self-invoices are technically -100%/+100% repartitioned
         # but functionally need to be exported as 100%
@@ -252,7 +236,6 @@ class AccountMove(models.Model):
             'currency': self.currency_id or self.company_currency_id if not convert_to_euros else self.env.ref('base.EUR'),
             'document_total': document_total,
             'representative': company.l10n_it_tax_representative_partner_id,
-            'codice_destinatario': codice_destinatario,
             'regime_fiscale': company.l10n_it_tax_system if not is_self_invoice else 'RF18',
             'is_self_invoice': is_self_invoice,
             'partner_bank': self.partner_bank_id,
@@ -269,10 +252,6 @@ class AccountMove(models.Model):
             'pdf_name': pdf_name,
             'tax_details': tax_details,
             'abs': abs,
-            'normalize_codice_fiscale': partner._l10n_it_normalize_codice_fiscale,
-            'get_vat_number': get_vat_number,
-            'get_vat_country': get_vat_country,
-            'in_eu': in_eu,
             'rc_refund': reverse_charge_refund,
             'invoice_lines': invoice_lines,
             'tax_lines': tax_lines,
