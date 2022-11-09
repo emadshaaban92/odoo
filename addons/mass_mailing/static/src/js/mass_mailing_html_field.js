@@ -99,7 +99,7 @@ export class MassMailingHtmlField extends HtmlField {
         const $editable = this.wysiwyg.getEditable();
         const initialHtml = $editable.html();
         await this.wysiwyg.cleanForSave();
-        await this.wysiwyg.saveModifiedImages(this.$content);
+        await this.wysiwyg.saveModifiedImages();
 
         await super.commitChanges();
 
@@ -209,8 +209,7 @@ export class MassMailingHtmlField extends HtmlField {
         $snippetsSideBar.find(`.o_we_website_top_actions > *:not(${selectorToKeep})`).attr('style', 'display: none!important');
 
         if (device.isMobile) {
-            $snippetsSideBar.hide();
-            this.$content.attr('style', 'padding-left: 0px !important');
+            this.wysiwyg.snippetsMenu.destroy();
         }
 
         if (!odoo.debug) {
