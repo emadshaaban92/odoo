@@ -11839,12 +11839,8 @@ QUnit.module('Views', {
             </form>`,
         });
 
-        await testUtils.nextTick();
-
         await testUtils.dom.click(form.$('tbody tr:eq(0) td:eq(1)'));
-        const $input = form.$('input[name=display_name]');
-        await testUtils.fields.editInput($input, 'another value');
-        await testUtils.dom.triggerEvents($input, ['keyup', 'blur', 'focusout']);
+        await testUtils.fields.editInput(form.$('input[name=display_name]'), 'another value');
 
         // Double-click on a field of the second row
         testUtils.dom.click(form.$('tbody tr:eq(1) td:eq(1)'));
@@ -11852,9 +11848,11 @@ QUnit.module('Views', {
         await testUtils.nextTick();
         await testUtils.nextTick();
 
-        assert.strictEqual($input.val(), 'another value');
+        assert.strictEqual(
+            form.el.querySelector('tr:nth-child(1) > td.o_data_cell.o_field_cell.o_list_char').textContent,
+            'another value');
 
-        const rows = $('.o_data_row .o_list_char');
+        const rows = form.$('.o_data_row .o_list_char');
         assert.containsNone(rows[0], 'input'); // this means that the first row is saved
         assert.containsOnce(rows[1], 'input'); // this means that the second row is in edit mode
 

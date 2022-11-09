@@ -99,8 +99,7 @@ ListRenderer.include({
         this.isResizing = false;
         this.eventListeners = [];
 
-        /** @type {Map<String, Mutex>} */
-        this.rowModeMutexesByRecordId = new Map();
+        this.rowModeChangeMutex = new concurrency.Mutex();
     },
     /**
      * @override
@@ -409,13 +408,7 @@ ListRenderer.include({
      */
     setRowMode: function (recordID, mode) {
         // Use a mutex because we don't want to rerender a row before the previous render is finished
-        let mutex = this.rowModeMutexesByRecordId.get(recordID);
-        if (!mutex) {
-            mutex = new concurrency.Mutex();
-            this.rowModeMutexesByRecordId.set(recordID, mutex);
-        }
-
-        return mutex.exec(this._setRowMode.bind(this, recordID, mode));
+        return this.rowModeChangeMutex.exec(this._setRowMode.bind(this, recordID, mode));
     },
 
     _setRowMode: async function (recordID, mode) {
