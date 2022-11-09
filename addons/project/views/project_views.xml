@@ -1380,7 +1380,8 @@
                 <form class="o_form_project_tasks">
                     <group>
                         <field name="name" string = "Task Title" placeholder="e.g. Send Invitations"/>
-                        <field name="project_id" widget="project_private_task" invisible="context.get('default_project_id', False)" placeholder="Private" class="o_project_task_project_field"/>
+                        <field name="project_id" widget="project_private_task" invisible="context.get('default_project_id', False)" placeholder="New Project" class="o_project_task_project_field" 
+                        domain="[('type_ids', 'in', context['default_stage_id'])] if context.get('default_stage_id') else []"/>
                         <field name="user_ids" options="{'no_open': True, 'no_quick_create': True}" domain="[('share', '=', False), ('active', '=', True)]"
                             widget="many2many_avatar_user"/>
                         <field name="company_id" invisible="1"/>
