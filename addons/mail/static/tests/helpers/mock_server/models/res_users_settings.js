@@ -40,7 +40,7 @@ patch(MockServer.prototype, 'mail/models/res_users_settings', {
      */
     _mockResUsersSettings_ResUsersSettingsFormat(id, fieldsToFormat) {
         const [settings] = this.getRecords('res.users.settings', [['id', '=', id]]);
-        const ormAutomaticFields = new Set(['create_date', 'create_uid', 'display_name', 'name', 'write_date', 'write_uid', '__last_update']);
+        const ormAutomaticFields = new Set(['create_date', 'create_uid', 'display_name', 'name', 'write_date', 'write_uid']);
         const filterPredicate = fieldsToFormat ? ([fieldName]) => fieldsToFormat.includes(fieldName) : ([fieldName]) => !ormAutomaticFields.has(fieldName);
         const res = Object.fromEntries(Object.entries(settings).filter(filterPredicate));
         if (Object.prototype.hasOwnProperty.call(res, 'user_id')) {

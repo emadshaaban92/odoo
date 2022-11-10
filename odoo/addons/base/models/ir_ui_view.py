@@ -2664,7 +2664,7 @@ class Model(models.AbstractModel):
         """
         if view_type in ('kanban', 'tree', 'form'):
             for model_fields in models.values():
-                model_fields.update({'id', self.CONCURRENCY_CHECK_FIELD})
+                model_fields.update({'id', 'write_date'})
         elif view_type == 'search':
             models[self._name] = list(self._fields.keys())
         elif view_type == 'graph':

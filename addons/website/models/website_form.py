@@ -60,7 +60,7 @@ class website_form_model(models.Model):
         # Remove readonly and magic fields
         # Remove string domains which are supposed to be evaluated
         # (e.g. "[('product_id', '=', product_id)]")
-        MAGIC_FIELDS = models.MAGIC_COLUMNS + [model.CONCURRENCY_CHECK_FIELD]
+        MAGIC_FIELDS = models.MAGIC_COLUMNS
         for field in list(fields_get):
             if 'domain' in fields_get[field] and isinstance(fields_get[field]['domain'], str):
                 del fields_get[field]['domain']
