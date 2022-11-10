@@ -13,8 +13,8 @@ odoo.define('payment.manage_form', require => {
         selector: 'form[name="o_payment_manage"]',
         events: Object.assign({}, publicWidget.Widget.prototype.events, {
             'click div[name="o_payment_option_card"]': '_onClickPaymentOption',
-            'click a[name="o_payment_icon_more"]': '_onClickMorePaymentIcons',
-            'click a[name="o_payment_icon_less"]': '_onClickLessPaymentIcons',
+            'click a[name="o_payment_method_more"]': '_onClickMorePaymentMethods',
+            'click a[name="o_payment_method_less"]': '_onClickLessPaymentMethods',
             'click button[name="o_payment_submit_button"]': '_onClickSaveToken',
             'click button[name="o_payment_delete_token"]': '_onClickDeleteToken',
             'submit': '_onSubmit',
@@ -30,8 +30,8 @@ odoo.define('payment.manage_form', require => {
             this._super(...arguments);
             // Prevent double-clicks and browser glitches on all inputs
             this._onClickDeleteToken = preventDoubleClick(this._onClickDeleteToken);
-            this._onClickLessPaymentIcons = preventDoubleClick(this._onClickLessPaymentIcons);
-            this._onClickMorePaymentIcons = preventDoubleClick(this._onClickMorePaymentIcons);
+            this._onClickLessPaymentMethods = preventDoubleClick(this._onClickLessPaymentMethods);
+            this._onClickMorePaymentMethods = preventDoubleClick(this._onClickMorePaymentMethods);
             this._onClickPaymentOption = preventDoubleClick(this._onClickPaymentOption);
             this._onClickSaveToken = preventDoubleClick(this._onClickSaveToken);
             this._onSubmit = preventDoubleClick(this._onSubmit);

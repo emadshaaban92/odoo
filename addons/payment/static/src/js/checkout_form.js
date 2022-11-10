@@ -9,8 +9,8 @@ odoo.define('payment.checkout_form', require => {
         selector: 'form[name="o_payment_checkout"]',
         events: Object.assign({}, publicWidget.Widget.prototype.events, {
                 'click div[name="o_payment_option_card"]': '_onClickPaymentOption',
-                'click a[name="o_payment_icon_more"]': '_onClickMorePaymentIcons',
-                'click a[name="o_payment_icon_less"]': '_onClickLessPaymentIcons',
+                'click a[name="o_payment_method_more"]': '_onClickMorePaymentMethods',
+                'click a[name="o_payment_method_less"]': '_onClickLessPaymentMethods',
                 'click button[name="o_payment_submit_button"]': '_onClickPay',
                 'submit': '_onSubmit',
             }),
@@ -24,8 +24,8 @@ odoo.define('payment.checkout_form', require => {
             };
             this._super(...arguments);
             // Prevent double-clicks and browser glitches on all inputs
-            this._onClickLessPaymentIcons = preventDoubleClick(this._onClickLessPaymentIcons);
-            this._onClickMorePaymentIcons = preventDoubleClick(this._onClickMorePaymentIcons);
+            this._onClickLessPaymentMethods = preventDoubleClick(this._onClickLessPaymentMethods);
+            this._onClickMorePaymentMethods = preventDoubleClick(this._onClickMorePaymentMethods);
             this._onClickPay = preventDoubleClick(this._onClickPay);
             this._onClickPaymentOption = preventDoubleClick(this._onClickPaymentOption);
             this._onSubmit = preventDoubleClick(this._onSubmit);
