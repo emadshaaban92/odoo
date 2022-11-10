@@ -191,6 +191,8 @@ class TestCRMPLS(TransactionCase):
         # rebuild frequencies table and recompute automated_probability for all leads.
         Lead._cron_update_automated_probabilities()
 
+        # self.env['crm.lead.scoring.frequency'].print_frequencies()
+
         # As the cron is computing and writing in SQL queries, we need to invalidate the cache
         self.env.invalidate_all()
 

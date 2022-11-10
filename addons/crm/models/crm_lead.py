@@ -216,10 +216,9 @@ class Lead(models.Model):
         compute='_compute_partner_address_values', readonly=False, store=True)
     # Probability (Opportunity only)
     probability = fields.Float(
-        'Probability', group_operator="avg", copy=False,
-        compute='_compute_probabilities', readonly=False, store=True)
-    automated_probability = fields.Float('Automated Probability', compute='_compute_probabilities', readonly=True, store=True)
-    is_automated_probability = fields.Boolean('Is automated probability?', compute="_compute_is_automated_probability")
+        'Probability', group_operator="avg", copy=False, readonly=False, store=True)
+    automated_probability = fields.Float('Automated Probability', readonly=True, store=True)
+    is_automated_probability = fields.Boolean('Is automated probability?', compute='_compute_is_automated_probability')
     # Won/Lost
     lost_reason_id = fields.Many2one(
         'crm.lost.reason', string='Lost Reason',
@@ -725,8 +724,6 @@ class Lead(models.Model):
         return leads
 
     def write(self, vals):
-        # print("Self: %s" % self)
-        # print(" Vals %s" % vals)
         if vals.get('website'):
             vals['website'] = self.env['res.partner']._clean_website(vals['website'])
 
@@ -749,35 +746,15 @@ class Lead(models.Model):
         if any(field in ['active', 'stage_id'] for field in vals):
             self._handle_won_lost(vals)
 
-        from_lead_values = {}
-        pls_fields = set([field for field in vals]) & set(['stage_id', 'team_id'] + self._pls_get_safe_fields())
-        # print(pls_fields)
-        for lead in self:
-            from_lead_values.update({
-                lead.id: {
-                    field: lead[field] for field in pls_fields
-                }
-            })
-
         leads_already_won = self.filtered(lambda r: r.stage_id.is_won)
         remaining = self - leads_already_won
-        result = True
 
-        # print(" -> Vals %s" % vals)
-        if remaining:
-            result = super(Lead, remaining).write(vals)
-        if leads_already_won:
-            vals.pop('date_closed', False)
-            # print("   -> date_closed Removed")
-            # print("   -> new vals %s" % vals)
-            result = super(Lead, leads_already_won).write(vals)
+        result = super(Lead, remaining).write(vals)
+        vals.pop('date_closed', False)
+        result &= super(Lead, leads_already_won).write(vals)
 
-        # Recompute the probabilities for a lead if one of its pls fields / stage / team has changed
-        leads_to_recompute = self.filtered(lambda lead: any([lead[field] != from_lead_values[lead.id][field] for field in pls_fields]))
-        if leads_to_recompute:
-            # print("Recompute: %s" % leads_to_recompute)
-            # self.flush_recordset(['probability', 'automated_probability'])
-            leads_to_recompute._compute_probabilities()
+        if set(vals) & set(['active', 'stage_id', 'team_id'] + self._pls_get_safe_fields()):
+            self._compute_probabilities()
 
         return result
 
