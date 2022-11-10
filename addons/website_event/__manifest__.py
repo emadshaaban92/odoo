@@ -22,6 +22,7 @@
         'views/snippets/s_events.xml',
         'views/snippets/snippets.xml',
         'views/event_templates_list.xml',
+        'views/event_svg.xml',
         'views/event_templates_page.xml',
         'views/event_templates_page_registration.xml',
         'views/event_templates_page_misc.xml',
