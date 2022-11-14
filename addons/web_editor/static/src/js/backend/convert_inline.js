@@ -47,8 +47,14 @@ function addTables($editable) {
         const table = _createTable(snippet.attributes);
 
         const row = document.createElement('tr');
-        const col = document.createElement('td');
+        let col = document.createElement('td');
         row.appendChild(col);
+        if (snippet.classList.contains('o_basic_theme')) {
+            const div = document.createElement('div');
+            div.style.padding = snippet.style.padding;
+            col.appendChild(div);
+            col = div;
+        }
         table.appendChild(row);
 
         for (const child of [...snippet.childNodes]) {
