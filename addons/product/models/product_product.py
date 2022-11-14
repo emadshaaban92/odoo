@@ -87,6 +87,7 @@ class ProductProduct(models.Model):
     image_256 = fields.Image("Image 256", compute='_compute_image_256')
     image_128 = fields.Image("Image 128", compute='_compute_image_128')
     can_image_1024_be_zoomed = fields.Boolean("Can Image 1024 be zoomed", compute='_compute_can_image_1024_be_zoomed')
+    write_date = fields.Datetime(compute='_compute_concurrency_field', store=True)
 
     @api.depends('image_variant_1920', 'image_variant_1024')
     def _compute_can_image_variant_1024_be_zoomed(self):
@@ -113,13 +114,17 @@ class ProductProduct(models.Model):
             else:
                 record[variant_field] = record[template_field]
 
-    @api.depends("create_date", "write_date", "product_tmpl_id.create_date", "product_tmpl_id.write_date")
+    @api.depends("product_tmpl_id.create_date", "product_tmpl_id.write_date")
     def _compute_concurrency_field(self):
-        # Intentionally not calling super() to involve all fields explicitly
+        """
+        Here we compute a new write_date, however the framework will prevent us from writing a specific value in
+        any "magic field" (including write_date) and will set the value of those fields on its own.
+        This is an acceptable behavior, because here we change the write_date if the template has changed
+        """
         for record in self:
-            record[self.CONCURRENCY_CHECK_FIELD] = max(filter(None, (
-                record.product_tmpl_id.write_date or record.product_tmpl_id.create_date,
-                record.write_date or record.create_date or fields.Datetime.now(),
+            record.write_date = max(filter(None, (
+                record.product_tmpl_id.write_date,
+                record.write_date or fields.Datetime.now(),
             )))
 
     def _compute_image_1920(self):
