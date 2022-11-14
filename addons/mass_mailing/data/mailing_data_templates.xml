@@ -91,22 +91,25 @@
     <template id="ab_testing_description" name="Mass Mailing: A/B Test Description">
         <div name="ab_testing_description" class="mb-2">
             <t t-if="mailing.ab_testing_completed">
-                <p t-if="mailing.ab_testing_pc == 100">
+                <p t-if="mailing.ab_testing_is_winner_mailing">
                     This <t t-out="mailing.mailing_type_description"/> is the winner of the A/B testing campaign and has been sent to all remaining recipients.
                 </p>
                 <p t-else="">The winner has already been sent. Use <b>Compare Version</b> to get an overview of this A/B testing campaign.</p>
             </t>
             <t t-elif="mailing.ab_testing_mailings_count >= 2">
                 <p>
-                    A sample of <b><t t-out="mailing.ab_testing_pc"/>% of recipients</b> will receive this <b><t t-out="mailing.mailing_type_description"/></b>, and <t t-out="other_ab_testing_pc"/>% receive one of the
-                    <b><t t-out="mailing.ab_testing_mailings_count - 1"/> other versions</b> from the same campaign.
+                    A sample of <b><t t-out="mailing.ab_testing_pc"/>% of recipients</b> will receive this <b><t t-out="mailing.mailing_type_description"/></b>.
+                </p>
+                <p t-if="total_ab_testing_pc > 100 and not mailing.ab_testing_completed and mailing.active">
+                    The sum of all percentages for this A/B campaign totals <b class="text-danger"><t t-out="total_ab_testing_pc"/>%</b> of all potential recipients.<br/>
+                    <b class="text-danger">Some of the mailings will not be sent</b>, as only 1 email will be sent for each contact in this campaign.
                 </p>
                 <p>
 		    <t t-if="mailing.ab_testing_winner_selection == 'manual'">Don't forget to send your preferred version</t>
 		    <t t-elif="not mailing.ab_testing_schedule_datetime">Since the date and time for this test has not been scheduled, don't forget to manually send your preferred version.</t>
                     <t t-else="">
                         Then on <b><t t-out="mailing.ab_testing_schedule_datetime.strftime('%b %d, %Y')"/></b> the <t t-out="mailing.mailing_type_description"/> having the <b><t t-out="ab_testing_winner_selection_description"/></b> will be sent
-                    </t> to the remaining <t t-out="remaining_ab_testing_pc"/>% of recipients.
+                    </t> to the remaining recipients.
                 </p>
             </t>
             <t t-else="">
