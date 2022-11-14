@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
+from collections import defaultdict
 import time
 
 from odoo import api, fields, models, _
@@ -146,10 +147,9 @@ class SaleAdvancePaymentInv(models.TransientModel):
     #=== ACTION METHODS ===#
 
     def create_invoices(self):
-        self._create_invoices(self.sale_order_ids)
-
+        invoices = self._create_invoices(self.sale_order_ids)
         if self.env.context.get('open_invoices'):
-            return self.sale_order_ids.action_view_invoice()
+            return self.sale_order_ids.action_view_invoice(invoices=invoices)
 
         return {'type': 'ir.actions.act_window_close'}
 
@@ -178,12 +178,12 @@ class SaleAdvancePaymentInv(models.TransientModel):
                     self._prepare_down_payment_section_values(order)
                 )
 
-            down_payment_so_line = self.env['sale.order.line'].create(
-                self._prepare_so_line_values(order)
+            down_payment_lines = self.env['sale.order.line'].create(
+                self._prepare_down_payment_lines_values(order)
             )
 
             invoice = self.env['account.move'].sudo().create(
-                self._prepare_invoice_values(order, down_payment_so_line)
+                self._prepare_invoice_values(order, down_payment_lines)
             ).with_user(self.env.uid)  # Unsudo the invoice after creation
 
             invoice.message_post_with_view(
@@ -219,31 +219,79 @@ class SaleAdvancePaymentInv(models.TransientModel):
         del context
         return so_values
 
-    def _prepare_so_line_values(self, order):
+    def _prepare_down_payment_lines_values(self, order):
+        """ Create one down payment line per tax or unique taxes combination.
+            Apply the tax(es) to their respective lines.
+
+            :param order: Order for which the down payment lines are created.
+            :return:      An array of dicts with the down payment lines values.
+        """
         self.ensure_one()
-        analytic_distribution = {}
-        amount_total = sum(order.order_line.mapped("price_total"))
-        if not float_is_zero(amount_total, precision_rounding=self.currency_id.rounding):
-            for line in order.order_line:
-                distrib_dict = line.analytic_distribution or {}
-                for account, distribution in distrib_dict.items():
-                    analytic_distribution[account] = distribution * line.price_total + analytic_distribution.get(account, 0)
-            for account, distribution_amount in analytic_distribution.items():
-                analytic_distribution[account] = distribution_amount/amount_total
+        down_payment_amount = self._get_down_payment_amount(order)
+        if self.advance_payment_method == 'percentage':
+            down_payment_ratio = self.amount / 100
+        else:
+            down_payment_ratio = down_payment_amount / order.amount_total
+
+        group_by_taxes = defaultdict(lambda: {
+            'lines': self.env['sale.order.line'],
+            'sum_price_subtotal': 0.0,
+        })
+
+        order_lines = order.order_line.filtered(lambda l: not l.display_type)
+
+        if any(tax.amount_type == 'fixed' for tax in order_lines.tax_id.flatten_taxes_hierarchy()):
+            # no breakdown per taxes if any tax with amount type "fixed"
+            group_by_taxes[None]['lines'] = order_lines
+            group_by_taxes[None]['sum_price_subtotal'] = down_payment_amount
+        else:
+            # get total base amount by tax(es) group
+            tax_base_line_dicts = [line._convert_to_tax_base_line_dict() for line in order_lines]
+            computed_taxes = self.env['account.tax']._compute_taxes(
+                tax_base_line_dicts,
+                handle_price_include=False
+            )
+            for base_line in computed_taxes['base_lines_to_update']:
+                tax_ids = tuple(sorted(base_line[0]['taxes'].ids))
+                group_by_taxes[tax_ids]['lines'] += base_line[0]['record']
+                group_by_taxes[tax_ids]['sum_price_subtotal'] += base_line[1]['price_subtotal'] * down_payment_ratio
+
+        line_values = []
+
+        base_line_values = self._prepare_base_downpayment_line_values(order)
+        for tax_ids, values in group_by_taxes.items():
+            analytic_distribution = {}
+            amount_total = sum(values['lines'].mapped("price_total"))
+            if not float_is_zero(amount_total, precision_rounding=self.currency_id.rounding):
+                for line in values['lines']:
+                    distrib_dict = line.analytic_distribution or {}
+                    for account, distribution in distrib_dict.items():
+                        analytic_distribution[account] = distribution * line.price_total + analytic_distribution.get(account, 0)
+                for account, distribution_amount in analytic_distribution.items():
+                    analytic_distribution[account] = distribution_amount / amount_total
+
+            line_values.append({
+                **base_line_values,
+                'tax_id': [Command.set(tax_ids)] if tax_ids else [],
+                'price_unit': values['sum_price_subtotal'],
+                'analytic_distribution': analytic_distribution,
+            })
+        return line_values
+
+    def _prepare_base_downpayment_line_values(self, order):
+        self.ensure_one()
         context = {'lang': order.partner_id.lang}
-        so_values = {
+        values = {
             'name': _('Down Payment: %s (Draft)', time.strftime('%m %Y')),
-            'price_unit': self._get_down_payment_amount(order),
             'product_uom_qty': 0.0,
             'order_id': order.id,
             'discount': 0.0,
             'product_id': self.product_id.id,
-            'analytic_distribution': analytic_distribution,
             'is_downpayment': True,
             'sequence': order.order_line and order.order_line[-1].sequence + 1 or 10,
         }
         del context
-        return so_values
+        return values
 
     def _get_down_payment_amount(self, order):
         self.ensure_one()
@@ -253,17 +301,17 @@ class SaleAdvancePaymentInv(models.TransientModel):
             amount = self.fixed_amount
         return amount
 
-    def _prepare_invoice_values(self, order, so_line):
+    def _prepare_invoice_values(self, order, so_lines):
         self.ensure_one()
         return {
             **order._prepare_invoice(),
             'invoice_line_ids': [
                 Command.create(
-                    so_line._prepare_invoice_line(
+                    line._prepare_invoice_line(
                         name=self._get_down_payment_description(order),
                         quantity=1.0,
                     )
-                )
+                ) for line in so_lines
             ],
         }
 
