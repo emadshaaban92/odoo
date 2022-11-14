@@ -62,9 +62,8 @@ export class ImageSelector extends FileSelector {
     }
 
     get canLoadMore() {
-        if (this.state.searchService === 'all') {
-            return super.canLoadMore || (this.state.libraryResults && this.state.libraryMedia.length < this.state.libraryResults);
-        } else if (this.state.searchService === 'media-library') {
+        // The user can load more library media only when the filter is set.
+        if (this.state.searchService === 'media-library') {
             return this.state.libraryResults && this.state.libraryMedia.length < this.state.libraryResults;
         }
         return super.canLoadMore;
@@ -176,7 +175,10 @@ export class ImageSelector extends FileSelector {
 
     async loadMore(...args) {
         await super.loadMore(...args);
-        if (!this.props.useMediaLibrary) {
+        if (!this.props.useMediaLibrary
+            // The user can load more library media only when the filter is set.
+            || this.state.searchService !== 'media-library'
+        ) {
             return;
         }
         const { media } = await this.fetchLibraryMedia(this.state.libraryMedia.length);
