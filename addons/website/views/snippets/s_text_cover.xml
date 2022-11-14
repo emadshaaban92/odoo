@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+<template id="s_text_cover" name="Text cover">
+    <section class="s_text_cover">
+        <div class="container-fluid">
+            <div class="row flex-md-nowrap">
+                <div class="col-lg-4">
+                    <div class="px-5 pt224 pb224">
+                        <h1><span style="font-size: 62px;">Sell Online. <br/>Easily.</span></h1>
+                        <p class="lead">Write one or two paragraphs describing your product, services or a specific feature. To be successful your content needs to be useful to your readers.</p>
+                        <a t-att-href="cta_btn_href" class="btn btn-primary mb-2"><t t-esc="cta_btn_text">Contact us</t></a>
+                    </div>
+                </div>
+                <div class="o_not_editable s_col_no_bgcolor parallax col-lg-8 d-none d-md-block flex-shrink-1" style="background-image: url('/web/image/website.s_text_image_default_image'); background-size: cover;"/>
+            </div>
+        </div>
+    </section>
+</template>
+
+<record id="website.s_text_cover_000_scss" model="ir.asset">
+    <field name="name">Text cover 000 SCSS</field>
+    <field name="bundle">web.assets_frontend</field>
+    <field name="path">website/static/src/snippets/s_text_cover/000.scss</field>
+</record>
+
+</odoo>

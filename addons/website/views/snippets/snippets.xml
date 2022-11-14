@@ -26,6 +26,9 @@
                     <t t-snippet="website.s_cover" t-thumbnail="/website/static/src/img/snippets_thumbs/s_cover.svg">
                         <keywords>hero, jumbotron</keywords>
                     </t>
+                    <t t-snippet="website.s_text_cover" t-thumbnail="/website/static/src/img/snippets_thumbs/s_text_cover.svg">
+                        <keywords>hero, jumbotron</keywords>
+                    </t>
                     <t t-snippet="website.s_text_image" t-thumbnail="/website/static/src/img/snippets_thumbs/s_text_image.svg">
                         <keywords>content</keywords>
                     </t>
