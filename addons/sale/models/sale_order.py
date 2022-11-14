@@ -279,6 +279,7 @@ class SaleOrder(models.Model):
     tax_totals = fields.Binary(compute='_compute_tax_totals', exportable=False)
     terms_type = fields.Selection(related='company_id.terms_type')
     type_name = fields.Char(string="Type Name", compute='_compute_type_name')
+    any_draft_invoice = fields.Boolean(compute="_compute_any_draft_invoice")
 
     # Remaining ux fields (not computed, not stored)
 
@@ -583,6 +584,11 @@ class SaleOrder(models.Model):
                 record.type_name = _("Quotation")
             else:
                 record.type_name = _("Sales Order")
+
+    @api.depends('invoice_ids')
+    def _compute_any_draft_invoice(self):
+        for order in self:
+            order.any_draft_invoice = any(i.state == 'draft' for i in order.invoice_ids)
 
     # portal.mixin override
     def _compute_access_url(self):

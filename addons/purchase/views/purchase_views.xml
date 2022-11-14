@@ -155,10 +155,28 @@
                     <div class="oe_button_box" name="button_box">
                         <button type="object"  name="action_view_invoice"
                             class="oe_stat_button"
-                            icon="fa-pencil-square-o" attrs="{'invisible':['|', ('invoice_count', '=', 0), ('state', 'in', ('draft','sent','to approve'))]}">
+                            icon="fa-pencil-square-o" attrs="{'invisible':[
+                                '|', '|',
+                                ('invoice_count', '=', 0),
+                                ('state', 'in', ('draft','sent','to approve')),
+                                ('any_draft_invoice', '=', True)
+                            ]}">
                             <field name="invoice_count" widget="statinfo" string="Vendor Bills"/>
-                            <field name='invoice_ids' invisible="1"/>
                         </button>
+                        <button type="object"  name="action_view_invoice"
+                            class="oe_stat_button text-danger"
+                            icon="fa-pencil-square-o" attrs="{'invisible':[
+                                '|', '|',
+                                ('invoice_count', '=', 0),
+                                ('state', 'in', ('draft','sent','to approve')),
+                                ('any_draft_invoice', '=', False)
+                            ]}">
+                            <div class="o_field_widget o_stat_info">
+                                <field name="invoice_count" nolabel="1"/>
+                                <span class="o_stat_text">Vendor Bills</span>
+                            </div>
+                        </button>
+                        <field name='any_draft_invoice' invisible="1"/>
                     </div>
                     <div class="oe_title">
                         <span class="o_form_label" attrs="{'invisible': [('state','not in',('draft','sent'))]}">Request for Quotation </span>

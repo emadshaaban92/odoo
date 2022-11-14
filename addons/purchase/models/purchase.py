@@ -53,6 +53,11 @@ class PurchaseOrder(models.Model):
             else:
                 order.invoice_status = 'no'
 
+    @api.depends('invoice_ids')
+    def _compute_any_draft_invoice(self):
+        for order in self:
+            order.any_draft_invoice = any(i.state == 'draft' for i in order.invoice_ids)
+
     @api.depends('order_line.invoice_lines.move_id')
     def _compute_invoice(self):
         for order in self:
@@ -104,6 +109,7 @@ class PurchaseOrder(models.Model):
         ('to invoice', 'Waiting Bills'),
         ('invoiced', 'Fully Billed'),
     ], string='Billing Status', compute='_get_invoiced', store=True, readonly=True, copy=False, default='no')
+    any_draft_invoice = fields.Boolean(compute="_compute_any_draft_invoice")
     date_planned = fields.Datetime(
         string='Expected Arrival', index=True, copy=False, compute='_compute_date_planned', store=True, readonly=False,
         help="Delivery date promised by vendor. This date is used to determine expected arrival of products.")
