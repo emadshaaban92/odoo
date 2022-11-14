@@ -74,6 +74,11 @@ class SaleOrder(models.Model):
                 upsellable_lines.write({'has_displayed_warning_upsell': True})
 
     def _compute_show_hours_recorded_button(self):
+        if not self.env.user.has_group('hr_timesheet.group_hr_timesheet_user'):
+            for order in self:
+                order.show_hours_recorded_button = False
+            return
+
         orders_to_check = self.filtered(lambda l: l.state not in ['draft', 'sent'])
         list_order = self.env['sale.order.line']._read_group([('order_id', 'in', orders_to_check.ids)], ['product_id:array_agg(product_id)'], ['order_id'], lazy=False)
         dict_order = {}
@@ -86,7 +91,13 @@ class SaleOrder(models.Model):
         products_service_prepaid_or_timesheet = self.env['product.product'].search(domain)
         product_ids = set(products_service_prepaid_or_timesheet.ids)
         for order in self:
-            order.show_hours_recorded_button = order in orders_to_check and not product_ids.isdisjoint(dict_order[order.id])
+            order.show_hours_recorded_button = order._has_data()
+            if order.show_hours_recorded_button:
+                order.show_hours_recorded_button = order in orders_to_check and not product_ids.isdisjoint(dict_order[order.id])
+
+    def _has_data(self):
+        self.ensure_one()
+        return self.project_count
 
     def _get_prepaid_service_lines_to_upsell(self):
         """ Retrieve all sols which need to display an upsell activity warning in the SO
@@ -114,8 +125,11 @@ class SaleOrder(models.Model):
             return {'type': 'ir.actions.act_window_close'}
 
         action = self.env["ir.actions.actions"]._for_xml_id("sale_timesheet.timesheet_action_from_sales_order")
+        default_sale_line = next(filter(lambda sol: sol.is_service and sol.product_id.service_policy in ['ordered_prepaid', 'delivered_timesheet'], self.order_line))
         action['context'] = {
-            'search_default_billable_timesheet': True
+            'search_default_billable_timesheet': True,
+            'default_is_so_line_edited': True,
+            'default_so_line': default_sale_line.id,
         }  # erase default filters
 
         tasks = self.order_line.task_id._filter_access_rules_python('write')
@@ -128,7 +142,7 @@ class SaleOrder(models.Model):
             elif self.project_ids:
                 action['context']['default_project_id'] = self.project_ids[0].id
 
-            action['domain'] = [('so_line', 'in', self.order_line.ids)]
+        action['domain'] = [('so_line', 'in', self.order_line.ids)]
 
         action['help'] = [_("""
                         <p class="o_view_nocontent_smiling_face">

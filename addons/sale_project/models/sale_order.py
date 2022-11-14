@@ -21,8 +21,8 @@ class SaleOrder(models.Model):
     project_count = fields.Integer(string='Number of Projects', compute='_compute_project_ids', groups='project.group_project_user')
     milestone_count = fields.Integer(compute='_compute_milestone_count')
     is_product_milestone = fields.Boolean(compute='_compute_is_product_milestone')
-    show_project_button = fields.Boolean(compute='_compute_show_project_and_task_button')
-    show_task_button = fields.Boolean(compute='_compute_show_project_and_task_button')
+    show_create_project_button = fields.Boolean(compute='_compute_show_project_and_task_button')
+    show_project_and_task_button = fields.Boolean(compute='_compute_show_project_and_task_button')
 
     def _compute_milestone_count(self):
         read_group = self.env['project.milestone']._read_group(
@@ -39,9 +39,12 @@ class SaleOrder(models.Model):
             order.is_product_milestone = order.order_line.product_id.filtered(lambda p: p.service_policy == 'delivered_milestones')
 
     def _compute_show_project_and_task_button(self):
+        user_is_manager = self.env.user.has_group('project.group_project_manager')
+        user_has_access_right = user_is_manager or self.env.user.has_group('project.group_project_user')
         for order in self:
-            order.show_project_button = any(sol.is_service and sol.product_id.service_policy != 'delivered_manual' for sol in order.order_line) and not order.state in ['draft', 'sent']
-            order.show_task_button = order.show_project_button and order.project_count > 0
+            show_project = any(sol.is_service and sol.product_id.service_policy != 'delivered_manual' for sol in order.order_line) and not order.state in ['draft', 'sent']
+            order.show_project_and_task_button = show_project and user_has_access_right and order.project_count > 0
+            order.show_create_project_button = show_project and user_is_manager and order.project_count == 0
 
     @api.depends('order_line.product_id.project_id')
     def _compute_tasks_ids(self):
@@ -126,6 +129,23 @@ class SaleOrder(models.Model):
         })
         return action
 
+    def action_create_project(self):
+        self.ensure_one()
+        if not self.order_line:
+            return {'type': 'ir.actions.act_window_close'}
+
+        sorted_line = self.order_line.sorted(key=lambda sol: sol.sequence)
+        default_sale_line = next(sol for sol in sorted_line if sol.is_service and sol.product_id.service_policy != 'delivered_manual')
+        action = self.env["ir.actions.actions"]._for_xml_id("project.open_create_project")
+        action['context'] = {
+            'default_sale_order_id': self.id,
+            'default_sale_line_id': default_sale_line.id,
+            'default_partner_id': self.partner_id.id,
+            'default_user_ids': [self.env.uid],
+            'default_allow_billable': 1,
+        }
+        return action
+
     def action_view_project_ids(self):
         self.ensure_one()
         if not self.order_line:
@@ -152,8 +172,9 @@ class SaleOrder(models.Model):
             """),
             'context': {
                 **self.env.context,
-                'default_partner_id' : self.partner_id.id,
-                'default_sale_line_id' : default_sale_line.id,
+                'default_partner_id': self.partner_id.id,
+                'default_sale_line_id': default_sale_line.id,
+                'default_allow_billable': 1,
             }
         }
         if len(self.project_ids) == 1:
