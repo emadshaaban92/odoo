@@ -947,7 +947,7 @@ class TestDiscussFullPerformance(TransactionCase):
                 {
                     'id': 1,
                     'source': 'hello',
-                    'substitution': 'Hello. How may I help you?',
+                    'substitution': 'Hello.How may I help you?',
                 },
                 {
                     'id': 2,
