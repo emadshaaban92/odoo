@@ -933,6 +933,9 @@ class StockQuant(models.Model):
             if warehouse:
                 self = self.with_context(default_location_id=warehouse.lot_stock_id.id, hide_location=not self.env.context.get('always_show_loc', False))
 
+        if self.env.user.property_warehouse_id:
+            self = self.with_context(default_location_id=self.env.user.property_warehouse_id.lot_stock_id.id)
+
         # If user have rights to write on quant, we set quants in inventory mode.
         if self.user_has_groups('stock.group_stock_user'):
             self = self.with_context(inventory_mode=True)

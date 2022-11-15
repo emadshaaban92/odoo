@@ -46,6 +46,8 @@
             <search string="Operation Type">
                 <field name="name"/>
                 <field name="warehouse_id"/>
+                <filter string="My Operations" name="my_operations" domain="[('warehouse_id.user_ids', 'in', uid)]"/>
+                <separator/>
                 <filter string="Archived" name="inactive" domain="[('active','=',False)]"/>
                 <group expand="0" string="Group By">
                     <filter string="Type of Operation" name="groupby_code" domain="[]" context="{'group_by': 'code'}"/>

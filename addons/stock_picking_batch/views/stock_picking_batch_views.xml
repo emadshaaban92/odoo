@@ -227,6 +227,7 @@
                 <field name="user_id"/>
                 <filter name="to_do_transfers" string="To Do" domain="[('user_id', 'in', [uid, False])]"/>
                 <filter name="my_transfers" string="My Transfers" domain="[('user_id', '=', uid)]"/>
+                <filter name="my_operations" string="My Operations" domain="[('picking_type_id.warehouse_id.user_ids', 'in', uid)]"/>
                 <separator/>
                 <filter name="draft" string="Draft" domain="[('state', '=', 'draft')]"/>
                 <filter name="in_progress" string="In Progress" domain="[('state', '=', 'in_progress')]" help="Batch Transfers not finished"/>
