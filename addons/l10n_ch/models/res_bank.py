@@ -304,13 +304,13 @@ class ResPartnerBank(models.Model):
                # see https://github.com/arthurdejong/python-stdnum/blob/master/stdnum/iso11649.py
 
     def _eligible_for_qr_code(self, qr_method, debtor_partner, currency):
+        if qr_method == 'sct_qr' and debtor_partner.country_id.code == 'CH':
+            return False
         if qr_method == 'ch_qr':
-
             return self.acc_type == 'iban' and \
                    self.partner_id.country_id.code == 'CH' and \
                    (not debtor_partner or debtor_partner.country_id.code == 'CH') \
                    and currency.name in ('EUR', 'CHF')
-
         return super()._eligible_for_qr_code(qr_method, debtor_partner, currency)
 
     def _check_for_qr_code_errors(self, qr_method, amount, currency, debtor_partner, free_communication, structured_communication):

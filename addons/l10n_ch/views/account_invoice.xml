@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<odoo>
+    <template id="l10n_ch_report_invoice_document" inherit_id="account.report_invoice_document">
+        <xpath expr="//div[@id='qrcode']" position="replace">
+            <div t-if="o.qr_code_method == 'ch_qr'">
+                <div id="qrcode" invisible="1"/>
+            </div>
+            <div t-else="">
+                <div id="qrcode" t-if="o.display_qr_code and o.amount_residual > 0">
+                    <p t-if="qr_code_urls.get(o.id)">
+                        <strong class="text-center">Scan me with your banking app.</strong><br/><br/>
+                        <img class="border border-dark rounded" t-att-src="qr_code_urls[o.id]"/>
+                    </p>
+                </div>
+            </div>
+        </xpath>
+    </template>
+</odoo>
