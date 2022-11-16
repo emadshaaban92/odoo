@@ -28,7 +28,7 @@ from markupsafe import Markup
 from odoo import _, api, exceptions, fields, models, tools, registry, SUPERUSER_ID, Command
 from odoo.exceptions import MissingError, AccessError
 from odoo.osv import expression
-from odoo.tools import is_html_empty
+from odoo.tools import is_html_empty, html2plaintext
 from odoo.tools.misc import clean_context, split_every
 
 _logger = logging.getLogger(__name__)
@@ -715,7 +715,7 @@ class MailThread(models.AbstractModel):
         """
         bounced_record, bounced_record_done = False, False
         bounced_email, bounced_partner = message_dict['bounced_email'], message_dict['bounced_partner']
-        bounced_msg_id, bounced_message = message_dict['bounced_msg_id'], message_dict['bounced_message']
+        bounced_msg_ids, bounced_message = message_dict['bounced_msg_ids'], message_dict['bounced_message']
 
         if bounced_email:
             bounced_model, bounced_res_id = bounced_message.model, bounced_message.res_id
@@ -737,14 +737,18 @@ class MailThread(models.AbstractModel):
                 self.env['mail.notification'].sudo().search([
                     ('mail_message_id', '=', bounced_message.id),
                     ('res_partner_id', 'in', bounced_partner.ids)]
-                ).write({'notification_status': 'bounce'})
+                ).write({
+                    'notification_status': 'bounce',
+                    'failure_type': 'mail_bounce',
+                    'failure_reason': html2plaintext(message_dict.get('body') or ''),
+                })
 
         if bounced_record:
             _logger.info('Routing mail from %s to %s with Message-Id %s: not routing bounce email from %s replying to %s (model %s ID %s)',
-                         message_dict['email_from'], message_dict['to'], message_dict['message_id'], bounced_email, bounced_msg_id, bounced_model, bounced_res_id)
+                         message_dict['email_from'], message_dict['to'], message_dict['message_id'], bounced_email, bounced_msg_ids, bounced_model, bounced_res_id)
         elif bounced_email:
             _logger.info('Routing mail from %s to %s with Message-Id %s: not routing bounce email from %s replying to %s (no document found)',
-                         message_dict['email_from'], message_dict['to'], message_dict['message_id'], bounced_email, bounced_msg_id)
+                         message_dict['email_from'], message_dict['to'], message_dict['message_id'], bounced_email, bounced_msg_ids)
         else:
             _logger.info('Routing mail from %s to %s with Message-Id %s: not routing bounce email.',
                          message_dict['email_from'], message_dict['to'], message_dict['message_id'])
@@ -1028,10 +1032,11 @@ class MailThread(models.AbstractModel):
         #        As all MTA does not respect this RFC (googlemail is one of them),
         #       we also need to verify if the message come from "mailer-daemon"
         #    If not a bounce: reset bounce information
-        if bounce_alias and any(email == bounce_alias for email in email_to_localparts):
-            self._routing_handle_bounce(message, message_dict)
-            return []
-        if message.get_content_type() == 'multipart/report' or email_from_localpart == 'mailer-daemon':
+        # additional list of FROM that send bounce email
+        if ((bounce_alias and any(email == bounce_alias for email in email_to_localparts))
+           or message.get_content_type() == 'multipart/report'
+           or 'report-type=delivery-status' in message.get_content_type()
+           or email_from_localpart == 'mailer-daemon'):
             self._routing_handle_bounce(message, message_dict)
             return []
         self._routing_reset_bounce(message, message_dict)
@@ -1166,7 +1171,7 @@ class MailThread(models.AbstractModel):
 
             post_params = dict(subtype_id=subtype_id, partner_ids=partner_ids, **message_dict)
             # remove computational values not stored on mail.message and avoid warnings when creating it
-            for x in ('from', 'to', 'cc', 'recipients', 'references', 'in_reply_to', 'bounced_email', 'bounced_message', 'bounced_msg_id', 'bounced_partner'):
+            for x in ('from', 'to', 'cc', 'recipients', 'references', 'in_reply_to', 'bounced_email', 'bounced_message', 'bounced_msg_ids', 'bounced_partner'):
                 post_params.pop(x, None)
             new_msg = False
             if thread._name == 'mail.thread':  # message with parent_id not linked to record
@@ -1357,7 +1362,7 @@ class MailThread(models.AbstractModel):
     def _message_parse_extract_payload(self, message, save_original=False):
         """Extract body as HTML and attachments from the mail message"""
         attachments = []
-        body = u''
+        body = ''
         if save_original:
             attachments.append(self._Attachment('original_email.eml', message.as_string(), {}))
 
@@ -1373,11 +1378,11 @@ class MailThread(models.AbstractModel):
             body = tools.ustr(body, encoding, errors='replace')
             if message.get_content_type() == 'text/plain':
                 # text/plain -> <pre/>
-                body = tools.append_content_to_html(u'', body, preserve=True)
+                body = tools.append_content_to_html('', body, preserve=True)
         else:
             alternative = False
             mixed = False
-            html = u''
+            html = ''
             for part in message.walk():
                 if part.get_content_type() == 'multipart/alternative':
                     alternative = True
@@ -1418,6 +1423,12 @@ class MailThread(models.AbstractModel):
                 else:
                     attachments.append(self._Attachment(filename or 'attachment', part.get_content(), {}))
 
+                if message.get_content_type() == 'multipart/report' and body:
+                    # bounce email, keep only the first body and ignore
+                    # the parent email that might be added at the end
+                    # (e.g. for outlook / yahoo bounce email)
+                    break
+
         return self._message_parse_extract_payload_postprocess(message, {'body': body, 'attachments': attachments})
 
     def _message_parse_extract_bounce(self, email_message, message_dict):
@@ -1432,15 +1443,23 @@ class MailThread(models.AbstractModel):
           * bounced_email: email that bounced (normalized);
           * bounce_partner: res.partner recordset whose email_normalized =
             bounced_email;
-          * bounced_msg_id: list of message_ID references (<...@myserver>) linked
+          * bounced_msg_ids: list of message_ID references (<...@myserver>) linked
             to the email that bounced;
-          * bounced_message: if found, mail.message recordset matching bounced_msg_id;
+          * bounced_message: if found, mail.message recordset matching bounced_msg_ids;
         """
         if not isinstance(email_message, EmailMessage):
             raise TypeError('message must be an email.message.EmailMessage at this point')
 
         email_part = next((part for part in email_message.walk() if part.get_content_type() in {'message/rfc822', 'text/rfc822-headers'}), None)
         dsn_part = next((part for part in email_message.walk() if part.get_content_type() == 'message/delivery-status'), None)
+
+        if not email_part:
+            # In the case of a bounce message (e.g. bounce message of GMX), the "rfc822"
+            # email part might not be always present. In that case we fallback to "multipart/report".
+            email_part = next(
+                (part for part in email_message.walk() if part.get_content_type() == 'multipart/report'),
+                None,
+            )
 
         bounced_email = False
         bounced_partner = self.env['res.partner'].sudo()
@@ -1453,7 +1472,7 @@ class MailThread(models.AbstractModel):
             if bounced_email:
                 bounced_partner = self.env['res.partner'].sudo().search([('email_normalized', '=', bounced_email)])
 
-        bounced_msg_id = False
+        bounced_msg_ids = False
         bounced_message = self.env['mail.message'].sudo()
         if email_part:
             if email_part.get_content_type() == 'text/rfc822-headers':
@@ -1461,14 +1480,18 @@ class MailThread(models.AbstractModel):
                 email_payload = message_from_string(email_part.get_payload(), policy=email.policy.SMTP)
             else:
                 email_payload = email_part.get_payload()[0]
-            bounced_msg_id = tools.mail_header_msgid_re.findall(tools.decode_message_header(email_payload, 'Message-Id'))
-            if bounced_msg_id:
-                bounced_message = self.env['mail.message'].sudo().search([('message_id', 'in', bounced_msg_id)])
+            bounced_message, bounced_msg_ids = self._get_bounced_message(email_payload, message_dict)
+
+        if bounced_message and not bounced_partner and bounced_message.mail_ids.recipient_ids:
+            # if the original recipient was not found,
+            # try to find the recipient based on the parent <mail.message>
+            bounced_partner = bounced_message.mail_ids.recipient_ids[0]
+            bounced_email = bounced_partner.email
 
         return {
             'bounced_email': bounced_email,
             'bounced_partner': bounced_partner,
-            'bounced_msg_id': bounced_msg_id,
+            'bounced_msg_ids': bounced_msg_ids,
             'bounced_message': bounced_message,
         }
 
@@ -1566,25 +1589,76 @@ class MailThread(models.AbstractModel):
                 stored_date = datetime.datetime.now()
             msg_dict['date'] = stored_date.strftime(tools.DEFAULT_SERVER_DATETIME_FORMAT)
 
-        parent_ids = False
-        if msg_dict['in_reply_to']:
-            parent_ids = self.env['mail.message'].search(
-                [('message_id', '=', msg_dict['in_reply_to'])],
-                order='create_date DESC, id DESC',
-                limit=1)
-        if msg_dict['references'] and not parent_ids:
-            references_msg_id_list = tools.mail_header_msgid_re.findall(msg_dict['references'])
-            parent_ids = self.env['mail.message'].search(
-                [('message_id', 'in', [x.strip() for x in references_msg_id_list])],
-                order='create_date DESC, id DESC',
-                limit=1)
-        if parent_ids:
-            msg_dict['parent_id'] = parent_ids.id
-            msg_dict['is_internal'] = parent_ids.subtype_id and parent_ids.subtype_id.internal or False
+        parent_id = self._get_parent_message(message)
+
+        if parent_id:
+            msg_dict['parent_id'] = parent_id.id
+            msg_dict['is_internal'] = parent_id.subtype_id and parent_id.subtype_id.internal or False
 
         msg_dict.update(self._message_parse_extract_payload(message, save_original=save_original))
         msg_dict.update(self._message_parse_extract_bounce(message, msg_dict))
         return msg_dict
+
+    def _get_parent_message(self, message):
+        """Find the <mail.message> which is the parent of the given email.
+
+        :param message: The EmailMessage object
+        :return: The <mail.message> or None if nothing has been found
+        """
+        in_reply_to = tools.decode_message_header(message, 'In-Reply-To').strip()
+        if in_reply_to:
+            parent_id = self.env['mail.message'].search(
+                [('message_id', '=', in_reply_to)],
+                order='create_date DESC, id DESC', limit=1)
+            if parent_id:
+                return parent_id
+
+        reference_ids = tools.mail_header_msgid_re.findall(tools.decode_message_header(message, 'References'))
+
+        if reference_ids:
+            parent_id = self.env['mail.message'].search(
+                [('message_id', 'in', [x.strip() for x in reference_ids])],
+                order='create_date DESC, id DESC', limit=1)
+            if parent_id:
+                return parent_id
+
+        return None
+
+    def _get_bounced_message(self, message, message_dict):
+        """Receive a bounce email and find the original <mail.message>.
+
+        :param message: The EmailMessage object
+        :param message_dict: The dict values already parsed
+        :return:
+            A tuple with
+            - The <mail.message> (or empty recordset if nothing has been found)
+            - The list of references ids used to find the bounced mail message
+        """
+        reference_ids = []
+        headers = ('Message-Id', 'X-Microsoft-Original-Message-ID')
+        for header in headers:
+            value = tools.decode_message_header(message, header)
+            references = tools.mail_header_msgid_re.findall(value)
+            reference_ids.extend([reference.strip() for reference in references])
+
+        if reference_ids:
+            bounced_message = self.env['mail.message'].search(
+                [('message_id', 'in', reference_ids)],
+                order='create_date DESC, id DESC', limit=1)
+
+            if bounced_message:
+                return bounced_message, reference_ids
+
+        reference_ids.extend(tools.mail_header_msgid_re.findall(message_dict['in_reply_to']))
+        reference_ids.extend(tools.mail_header_msgid_re.findall(message_dict['references']))
+
+        if message_dict.get('parent_id'):
+            # Parent based on References, In-Reply-To, etc
+            # has already been searched (see @_get_parent_message)
+            bounced_message = self.env['mail.message'].browse(message_dict['parent_id'])
+            return bounced_message, reference_ids
+
+        return self.env['mail.message'], reference_ids
 
     # ------------------------------------------------------
     # RECIPIENTS MANAGEMENT TOOLS

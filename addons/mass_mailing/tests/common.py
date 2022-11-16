@@ -168,7 +168,7 @@ class MassMailCase(MailCase, MockLinkTracker):
             parsed_bounce_values.update(bounce_base_values)
         parsed_bounce_values.update({
             'bounced_email': trace.email,
-            'bounced_msg_id': [trace.message_id],
+            'bounced_msg_ids': [trace.message_id],
         })
         self.env['mail.thread']._routing_handle_bounce(False, parsed_bounce_values)
 

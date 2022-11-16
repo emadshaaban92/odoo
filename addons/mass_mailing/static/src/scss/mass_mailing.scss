@@ -232,3 +232,8 @@
         width: 100%;
     }
 }
+
+.o_mailing_trace_failure_reason {
+    max-height: 300px;
+    overflow-y: auto;
+}

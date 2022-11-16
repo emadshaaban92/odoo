@@ -34,13 +34,16 @@ class MailResendMessage(models.TransientModel):
         if message_id:
             mail_message_id = self.env['mail.message'].browse(message_id)
             notification_ids = mail_message_id.notification_ids.filtered(lambda notif: notif.notification_type == 'email' and notif.notification_status in ('exception', 'bounce'))
-            partner_ids = [Command.create({
-                "partner_id": notif.res_partner_id.id,
-                "name": notif.res_partner_id.name,
-                "email": notif.res_partner_id.email,
+            partner_ids = [({
+                "notification_id": notif.id,
                 "resend": True,
                 "message": notif.format_failure_reason(),
             }) for notif in notification_ids]
+
+            # mail.resend.partner need to exist to be able to execute an action
+            partner_ids = self.env['mail.resend.partner'].create(partner_ids).ids
+            partner_ids = [Command.link(partner_id) for partner_id in partner_ids]
+
             has_user = any(notif.res_partner_id.user_ids for notif in notification_ids)
             if has_user:
                 partner_readonly = not self.env['res.users'].check_access_rights('write', raise_exception=False)
@@ -94,9 +97,20 @@ class PartnerResend(models.TransientModel):
     _name = 'mail.resend.partner'
     _description = 'Partner with additional information for mail resend'
 
-    partner_id = fields.Many2one('res.partner', string='Partner', required=True, ondelete='cascade')
+    notification_id = fields.Many2one('mail.notification', string='Notification', required=True, ondelete='cascade')
+    partner_id = fields.Many2one('res.partner', string='Partner', related='notification_id.res_partner_id')
     name = fields.Char(related='partner_id.name', string='Recipient Name', related_sudo=False, readonly=False)
     email = fields.Char(related='partner_id.email', string='Email Address', related_sudo=False, readonly=False)
     resend = fields.Boolean(string='Try Again', default=True)
     resend_wizard_id = fields.Many2one('mail.resend.message', string="Resend wizard")
     message = fields.Char(string='Error message')
+
+    def action_open_notification(self):
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'mail.notification',
+            'res_id': self.notification_id.id,
+            'view_ids': [(False, 'form')],
+            'view_mode': 'form',
+        }

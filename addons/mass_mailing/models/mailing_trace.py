@@ -98,7 +98,9 @@ class MailingTrace(models.Model):
         ("mail_bl", "Blacklisted Address"),
         ("mail_optout", "Opted Out"),
         ("mail_dup", "Duplicated Email"),
+        ("mail_bounce", "Received a bounce email"),
     ], string='Failure type')
+    failure_reason = fields.Text('Failure reason', copy=False)
     # Link tracking
     links_click_ids = fields.One2many('link.tracker.click', 'mailing_trace_id', string='Links click')
     links_click_datetime = fields.Datetime('Clicked On', help='Stores last click datetime in case of multi clicks.')
@@ -157,9 +159,15 @@ class MailingTrace(models.Model):
         traces.write({'trace_status': 'reply', 'reply_datetime': fields.Datetime.now()})
         return traces
 
-    def set_bounced(self, domain=None):
+    def set_bounced(self, domain=None, bounce_message=None):
         traces = self + (self.search(domain) if domain else self.env['mailing.trace'])
         traces.write({'trace_status': 'bounce'})
+
+        traces.write({
+            'trace_status': 'bounce',
+            'failure_type': 'mail_bounce',
+            'failure_reason': bounce_message,
+        })
         return traces
 
     def set_failed(self, domain=None, failure_type=False):

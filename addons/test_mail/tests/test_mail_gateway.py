@@ -87,7 +87,7 @@ class TestEmailParsing(TestMailCommon):
         )
         res = self.env['mail.thread'].message_parse(self.from_string(mail))
 
-        self.assertEqual(res['bounced_msg_id'], [msg_id], "Message-Id is not extracted from Text/RFC822-Headers attachment")
+        self.assertEqual(res['bounced_msg_ids'], [msg_id], "Message-Id is not extracted from Text/RFC822-Headers attachment")
 
     def test_message_parse_plaintext(self):
         """ Incoming email in plaintext should be stored as html """
@@ -908,6 +908,11 @@ class TestMailgateway(TestMailCommon):
         self.assertEqual(self.partner_1.message_bounce, 0)
         self.assertEqual(self.test_record.message_bounce, 0)
 
+        notification = self.env['mail.notification'].create({
+            'mail_message_id': self.fake_email.id,
+            'res_partner_id': self.partner_1.id,
+        })
+
         bounced_mail_id = 4442
         bounce_email_to = '%s@%s' % ('bounce.test', 'test.com')
         extra = self.fake_email.message_id
@@ -915,6 +920,10 @@ class TestMailgateway(TestMailCommon):
         self.assertFalse(record)
         self.assertEqual(self.partner_1.message_bounce, 1)
         self.assertEqual(self.test_record.message_bounce, 1)
+        self.assertIn(
+            'This is the mail system at host mail2.test.ironsky.',
+            notification.failure_reason,
+            msg='Should store the bounce email body on the notification')
 
     @mute_logger('odoo.addons.mail.models.mail_thread')
     def test_message_process_bounce_multipart_alias_whatever_from(self):

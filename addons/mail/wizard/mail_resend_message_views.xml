@@ -16,7 +16,9 @@
                             <field name="name" readonly="1"/>
                             <field name="email" attrs="{'readonly': [('parent.partner_readonly', '=', True)]}"/>
                             <field name="message" readonly="1" class="text-wrap"/>
-                            <field name="partner_id" invisible="1"/>
+                            <field name="notification_id" readonly="1" class="oe_link"/>
+                            <button name="action_open_notification" type="object"
+                                string="Open Notification" class="btn-link" groups="base.group_system"/>
                             <field name="resend" widget="boolean_toggle"/>
                         </tree>
                     </field>
