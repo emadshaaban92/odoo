@@ -46,6 +46,15 @@ QUnit.module("Project", {}, () => {
                             { id: 2, name: "In Progress" },
                             { id: 3, name: "Done" },
                         ],
+                    },
+                    "project.task.type": {
+                        fields: {
+                            name: { string: "Name", type: "char" },
+                            sequence: { type: "integer"}
+
+                        },
+                        records: []
+
                     }
                 },
                 views: {
