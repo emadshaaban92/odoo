@@ -21,7 +21,6 @@ import json
 
 from lxml import etree
 from contextlib import closing
-from reportlab.graphics.barcode import createBarcodeDrawing
 from PyPDF2 import PdfFileWriter, PdfFileReader, utils
 from collections import OrderedDict
 from collections.abc import Iterable
@@ -37,10 +36,10 @@ _logger = logging.getLogger(__name__)
 # before rendering a barcode (done in a C extension) and this part is not thread safe. We attempt
 # here to init the T1 fonts cache at the start-up of Odoo so that rendering of barcode in multiple
 # thread does not lock the server.
-try:
-    createBarcodeDrawing('Code128', value='foo', format='png', width=100, height=100, humanReadable=1).asString('png')
-except Exception:
-    pass
+# try:
+#     createBarcodeDrawing('Code128', value='foo', format='png', width=100, height=100, humanReadable=1).asString('png')
+# except Exception:
+#     pass
 
 datamatrix_available = True
 try:
@@ -560,6 +559,8 @@ class IrActionsReport(models.Model):
             barcode_type = 'Code128'
 
         try:
+            from reportlab.graphics.barcode import createBarcodeDrawing
+
             barcode = createBarcodeDrawing(barcode_type, value=value, format='png', **kwargs)
 
             # If a mask is asked and it is available, call its function to

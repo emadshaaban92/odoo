@@ -5,7 +5,6 @@ from collections import OrderedDict
 
 from odoo import models, _
 from odoo.exceptions import UserError
-from odoo.tools import pdf
 
 
 class IrActionsReport(models.Model):
@@ -32,6 +31,7 @@ class IrActionsReport(models.Model):
                 if attachment.mimetype == 'application/pdf':
                     record = self.env[attachment.res_model].browse(attachment.res_id)
                     try:
+                        from odoo.tools import pdf
                         stream = pdf.add_banner(stream, record.name, logo=True)
                     except ValueError:
                         raise UserError(_(

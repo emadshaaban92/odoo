@@ -5,11 +5,7 @@ import base64
 import io
 
 from PyPDF2 import PdfFileReader, PdfFileMerger
-from reportlab.platypus import Frame, Paragraph, KeepInFrame
-from reportlab.lib.units import mm
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.pdfgen.canvas import Canvas
+
 
 from odoo import fields, models, api, _
 from odoo.addons.iap.tools import iap_tools
@@ -440,6 +436,11 @@ class SnailmailLetter(models.Model):
         return all(record[key] for key in required_keys)
 
     def _append_cover_page(self, invoice_bin: bytes):
+        from reportlab.platypus import Frame, Paragraph, KeepInFrame
+        from reportlab.lib.units import mm
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.styles import getSampleStyleSheet
+        from reportlab.pdfgen.canvas import Canvas
         address = self.partner_id.with_context(show_address=True, lang='en_US')._get_name().replace('\n', '<br/>')
         address_x = 118 * mm
         address_y = 60 * mm

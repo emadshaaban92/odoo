@@ -10,10 +10,7 @@ from PyPDF2 import PdfFileWriter, PdfFileReader
 from PyPDF2.generic import DictionaryObject, NameObject, ArrayObject, DecodedStreamObject, NumberObject, createStringObject, ByteStringObject
 from zlib import compress, decompress
 from PIL import Image
-from reportlab.lib import colors
-from reportlab.lib.units import cm
-from reportlab.lib.utils import ImageReader
-from reportlab.pdfgen import canvas
+
 
 try:
     from fontTools.ttLib import TTFont
@@ -83,6 +80,8 @@ def rotate_pdf(pdf):
         writer.write(_buffer)
         return _buffer.getvalue()
 
+inch = 72.0
+cm = inch / 2.54
 
 def add_banner(pdf_stream, text=None, logo=False, thickness=2 * cm):
     """ Add a banner on a PDF in the upper right corner, with Odoo's logo (optionally).
@@ -93,6 +92,9 @@ def add_banner(pdf_stream, text=None, logo=False, thickness=2 * cm):
     :param thickness (float):       The thickness of the banner in pixels.
     :return (BytesIO):              The modified PDF stream.
     """
+    from reportlab.lib import colors
+    from reportlab.lib.utils import ImageReader
+    from reportlab.pdfgen import canvas
 
     old_pdf = PdfFileReader(pdf_stream, strict=False, overwriteWarnings=False)
     packet = io.BytesIO()
