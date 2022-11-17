@@ -101,7 +101,7 @@ QUnit.module("mail", {}, function () {
         });
 
         QUnit.test("Notification Sent", async function (assert) {
-            assert.expect(9);
+            assert.expect(13);
 
             const pyEnv = await startServer();
             const [threadId, resPartnerId] = pyEnv["res.partner"].create([
@@ -119,6 +119,13 @@ QUnit.module("mail", {}, function () {
                 notification_status: "sent",
                 notification_type: "email",
                 res_partner_id: resPartnerId,
+            });
+
+            pyEnv["mail.notification"].create({
+                mail_message_id: mailMessageId,
+                notification_status: "sent",
+                notification_type: "email",
+                unpartnered_email: 'testEmail@test.lan',
             });
             const { click, openView } = await start();
             await openView({
@@ -153,9 +160,10 @@ QUnit.module("mail", {}, function () {
                 ".o_MessageNotificationPopoverContentView",
                 "notification popover should be open"
             );
-            assert.containsOnce(
+            assert.containsN(
                 document.body,
                 ".o_MessageNotificationPopoverContentView_notificationIcon",
+                2,
                 "popover should have one icon"
             );
             assert.hasClass(
@@ -163,6 +171,13 @@ QUnit.module("mail", {}, function () {
                 "fa-check",
                 "popover should have the sent icon"
             );
+            for (const icon of document.querySelectorAll(".o_MessageNotificationPopoverContentView_notificationIcon")) {
+                assert.hasClass(
+                    icon,
+                    "fa-check",
+                    "popover should have the sent icon"
+                );
+            }
             assert.containsOnce(
                 document.body,
                 ".o_MessageNotificationPopoverContentView_notificationPartnerName",
@@ -177,28 +192,27 @@ QUnit.module("mail", {}, function () {
                 "Someone",
                 "partner name should be correct"
             );
+            assert.containsOnce(
+                document.body,
+                ".o_MessageNotificationPopoverContentView_notificationUnpartneredEmail",
+                "popover should have the unpartnered email"
+            );
+            assert.strictEqual(
+                document.querySelector(".o_MessageNotificationPopoverContentView_notificationUnpartneredEmail").textContent.trim(),
+                "testEmail@test.lan",
+                "unpartnered email should be correct"
+            );
         });
 
-        QUnit.test("Notification Error", async function (assert) {
+        /**
+         * Separate common function to ensure the behaviour of
+         * partner notifications and unpartnered email notifications is the same
+         * @param {*} assert 
+         * @param {*} threadId 
+         * @param {*} mailMessageId 
+         */
+        async function testNotificationError(assert, threadId, mailMessageId) {
             assert.expect(8);
-
-            const pyEnv = await startServer();
-            const [threadId, resPartnerId] = pyEnv["res.partner"].create([
-                {},
-                { name: "Someone", partner_share: true },
-            ]);
-            const mailMessageId = pyEnv["mail.message"].create({
-                body: "not empty",
-                message_type: "email",
-                model: "res.partner",
-                res_id: threadId,
-            });
-            pyEnv["mail.notification"].create({
-                mail_message_id: mailMessageId,
-                notification_status: "exception",
-                notification_type: "email",
-                res_partner_id: resPartnerId,
-            });
             const openResendActionDef = makeDeferred();
             const { env, openView } = await start();
             await openView({
@@ -249,6 +263,46 @@ QUnit.module("mail", {}, function () {
                 ["do_action"],
                 "should do an action to display the resend email dialog"
             );
+        }
+
+        QUnit.test("Notification Error", async function (assert) {
+
+            const pyEnv = await startServer();
+            const [threadId, resPartnerId] = pyEnv["res.partner"].create([
+                {},
+                { name: "Someone", partner_share: true },
+            ]);
+            const mailMessageId = pyEnv["mail.message"].create({
+                body: "not empty",
+                message_type: "email",
+                model: "res.partner",
+                res_id: threadId,
+            });
+            pyEnv["mail.notification"].create({
+                mail_message_id: mailMessageId,
+                notification_status: "exception",
+                notification_type: "email",
+                res_partner_id: resPartnerId,
+            });
+            await testNotificationError(assert, threadId, mailMessageId);
+        });
+
+        QUnit.test('Unpartnered Email Notification Error', async function (assert) {
+            const pyEnv = await startServer();
+            const threadId = pyEnv['res.partner'].create([{}, { name: 'Someone', partner_share: true }])[0];
+            const mailMessageId = pyEnv['mail.message'].create({
+                body: "not empty",
+                message_type: 'email',
+                model: "res.partner",
+                res_id: threadId,
+            });
+            pyEnv['mail.notification'].create({
+                mail_message_id: mailMessageId,
+                notification_status: 'exception',
+                notification_type: 'email',
+                unpartnered_email: "test@test.lan",
+            });
+            await testNotificationError(assert, threadId, mailMessageId);
         });
 
         QUnit.test(

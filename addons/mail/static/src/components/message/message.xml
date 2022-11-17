@@ -76,11 +76,11 @@
                                 on <a class="o_MessageView_originThreadLink fs-6" t-att-href="message.originThread.url" t-on-click="onClickOriginThread"><t t-if="message.originThread.displayName"><t t-esc="message.originThread.displayName"/></t><t t-else="">document</t></a>
                             </t>
                         </small>
-                        <div t-if="messageListViewItemOwner and message.originThread and message.originThread === messageListViewItemOwner.messageListViewOwner.threadViewOwner.thread and message.notifications.length > 0" t-att-class="{ 'ms-2': isInChatWindowAndIsAlignedRight }">
-                            <span t-if="message.failureNotifications.length > 0" class="o_MessageView_notificationIconClickable o-error cursor-pointer text-danger" role="button" tabindex="0" t-on-click="onClickFailure">
+                        <div t-if="messageListViewItemOwner and message.originThread and message.originThread === messageListViewItemOwner.messageListViewOwner.threadViewOwner.thread and message.hasStatusNotification" t-att-class="{ 'ms-2': isInChatWindowAndIsAlignedRight }">
+                            <span t-if="!message.isSuccess" class="o_MessageView_notificationIconClickable o-error cursor-pointer text-danger" role="button" tabindex="0" t-att-title="message.failureTitle" t-on-click="onClickFailure">
                                 <i class="o_MessageView_notificationIcon" t-att-class="failureNotificationIconClassName" role="img" aria-label="Delivery failure"/> <span t-if="failureNotificationIconLabel" t-out="failureNotificationIconLabel"/>
                             </span>
-                            <span t-else="" class="o_MessageView_notificationIconClickable text-600 cursor-pointer" t-on-click="onClickNotificationIcon" t-ref="notificationIcon">
+                            <span t-else="" class="o_MessageView_notificationIconClickable text-600 cursor-pointer" t-att-title="message.failureTitle" t-on-click="onClickNotificationIcon" t-ref="notificationIcon">
                                 <i class="o_MessageView_notificationIcon" t-att-class="notificationIconClassName"/> <span t-if="notificationIconLabel" t-out="notificationIconLabel"/>
                             </span>
                         </div>

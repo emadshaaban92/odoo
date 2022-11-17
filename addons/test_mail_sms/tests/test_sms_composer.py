@@ -460,7 +460,7 @@ class TestSMSComposerMass(TestSMSCommon):
             })
 
             with self.mockSMSGateway():
-                composer.action_send_sms()
+                sms_ids = composer._action_send_sms()
 
         for record in self.records:
             self.assertSMSOutgoing(
@@ -468,6 +468,9 @@ class TestSMSComposerMass(TestSMSCommon):
                 content='Dear %s this is an SMS.' % record.display_name
             )
             self.assertSMSLogged(record, 'Dear %s this is an SMS.' % record.display_name)
+        # check that notifications exist
+        for sms in sms_ids:
+            self.assertSMSNotification([{'partner': partner, 'state': 'ready'} for partner in sms.partner_id], sms.body, messages=sms.mail_message_id, check_sms=False, sent_unlink=True)
 
     def test_composer_template_context_action(self):
         """ Test the context action from a SMS template (Add context action button)

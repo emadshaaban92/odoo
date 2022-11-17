@@ -711,13 +711,13 @@ class TestComposerResultsComment(TestMailComposer):
         # global outgoing
         self.assertEqual(len(self._mails), 3, 'Should have sent an email each recipient')
         self.assertEqual(len(self._new_mails), 2, 'Should have created 2 mail.mail (1 for users, 1 for customers)')
-        self.assertFalse(self._new_mails.exists(), 'Should have deleted mail.mail records')
+        self.assertEqual(len(self._new_mails.exists()), 2, 'Should not have deleted mail.mail records by default')
 
-        # Check ``auto_delete`` field usage (note: currently not correctly managed)
+        # Check ``auto_delete`` field usage
         composer = self.env['mail.compose.message'].with_context(
             self._get_web_context(self.test_record),
         ).create({
-            'auto_delete': False,
+            'auto_delete': True,
             'body': '<p>Test Body</p>',
             'partner_ids': [(4, self.partner_1.id), (4, self.partner_2.id)]
         })
@@ -731,12 +731,12 @@ class TestComposerResultsComment(TestMailComposer):
         # global outgoing
         self.assertEqual(len(self._mails), 3, 'Should have sent an email each recipient')
         self.assertEqual(len(self._new_mails), 2, 'Should have created 2 mail.mail (1 for users, 1 for customers)')
-        self.assertEqual(len(self._new_mails.exists()), 0, 'To fix: does not respect auto_delete')
+        self.assertEqual(len(self._new_mails.exists()), 0, 'Should have deleted the mail.mail based on compositor auto_delete value')
 
         # ensure ``mail_auto_delete`` context key allow to override this behavior
         composer = self.env['mail.compose.message'].with_context(
             self._get_web_context(self.test_record),
-            mail_auto_delete=False,
+            mail_auto_delete=True,
         ).create({
             'body': '<p>Test Body</p>',
             'partner_ids': [(4, self.partner_1.id), (4, self.partner_2.id)]
@@ -751,7 +751,7 @@ class TestComposerResultsComment(TestMailComposer):
         # global outgoing
         self.assertEqual(len(self._mails), 3, 'Should have sent an email each recipient')
         self.assertEqual(len(self._new_mails), 2, 'Should have created 2 mail.mail (1 for users, 1 for customers)')
-        self.assertEqual(len(self._new_mails.exists()), 2, 'Should not have deleted mail.mail records')
+        self.assertEqual(len(self._new_mails.exists()), 0, 'Should have deleted mail.mail records based on context mail_auto_delete value')
 
     @users('employee')
     @mute_logger('odoo.tests', 'odoo.addons.mail.models.mail_mail', 'odoo.models.unlink')
@@ -957,6 +957,8 @@ class TestComposerResultsMass(TestMailComposer):
         self.assertFalse(self._new_mails.exists(), 'Should have deleted mail.mail records')
         self.assertEqual(len(self._new_msgs), 2, 'Should have created 1 mail.mail per record')
         self.assertEqual(self._new_msgs.exists(), self._new_msgs, 'Should not have deleted mail.message records')
+        self.assertEqual(len(self._new_notifs), 2, 'Should have created 1 mail.notification per record')
+        self.assertEqual(self._new_notifs.exists(), self._new_notifs, 'Should not have deleted mail.notification')
 
         # force composer auto_delete field
         composer_form = Form(self.env['mail.compose.message'].with_context(
@@ -965,15 +967,21 @@ class TestComposerResultsMass(TestMailComposer):
         ))
         composer = composer_form.save()
         composer.auto_delete = False
+        template_previous_auto_delete = self.template.auto_delete
+        self.template.auto_delete = False  # TO FIX this should not be required, composer should have priority
+        # Quick fix would require checking whether the booleans are NULL or False
         with self.mock_mail_gateway(mail_unlink_sent=True), self.mock_mail_app():
             composer._action_send_mail()
 
         self.assertEqual(len(self._mails), 2, 'Should have sent 1 email per record')
         self.assertEqual(len(self._new_mails), 2, 'Should have created 1 mail.mail per record')
-        # self.assertEqual(self._new_mails.exists(), self._new_mails, 'Should not have deleted mail.mail records')
-        self.assertFalse(self._new_mails.exists(), 'Template is forced over composer value, which is not correct')
+        self.assertEqual(self._new_mails.exists(), self._new_mails, 'Should not have deleted mail.mail records')
         self.assertEqual(len(self._new_msgs), 2, 'Should have created 1 mail.mail per record')
         self.assertEqual(self._new_msgs.exists(), self._new_msgs, 'Should not have deleted mail.message records')
+        self.assertEqual(len(self._new_notifs), 2, 'Should have created 1 mail.notification per recipient per record')
+        self.assertEqual(self._new_notifs.exists(), self._new_notifs, 'Should not have deleted mail.notification')
+
+        self.template.auto_delete = template_previous_auto_delete
 
         # check composer auto_delete_message
         composer_form = Form(self.env['mail.compose.message'].with_context(
@@ -991,6 +999,8 @@ class TestComposerResultsMass(TestMailComposer):
         self.assertFalse(self._new_mails.exists(), 'Should have deleted mail.mail records')
         self.assertEqual(len(self._new_msgs), 2, 'Should have created 1 mail.mail per record')
         self.assertFalse(self._new_msgs.exists(), 'Should have deleted mail.message records')
+        self.assertEqual(len(self._new_notifs), 2, 'Should have created 1 mail.notification per record')
+        self.assertFalse(self._new_notifs.exists(), 'Should have deleted mail.notification')
 
     @users('employee')
     @mute_logger('odoo.tests', 'odoo.addons.mail.models.mail_mail', 'odoo.models.unlink')
@@ -1241,6 +1251,38 @@ class TestComposerResultsMass(TestMailComposer):
         composer = composer_form.save()
         with self.mock_mail_gateway(mail_unlink_sent=False), self.assertRaises(ValueError):
             composer._action_send_mail()
+
+        #4: _message_get_default_recipients
+        email_addrs = ['test1@test.lan', 'test2@test.lan']
+        records = self.env['mail.test.ticket'].create([{'name': 'Test %s' % email,
+                                                        'email_from': email} for email in email_addrs])
+        composer = self.env['mail.compose.message'].with_context(self._get_web_context(records)).create({})
+        with self.mock_mail_gateway(mail_unlink_sent=False):
+            composer._action_send_mail()
+
+        self.assertEqual(len(self._new_mails), 2, 'Should have created 1 mail.mail per record')
+        self.assertEqual(len(self._mails), 2, 'Should have sent 1 email per record')
+        self.assertEqual(set(email_addrs), set(self._new_mails.mapped('email_to')), 'Should have sent emails to the default recipients')
+
+        #5: Invalid partner recipients get invalid notifications
+        invalid_partners = self.env['res.partner'].create([
+            {'name': 'Invalid',
+             'email': 'InvalidEmail'},
+             {'name': 'NoEmail',
+              'email': ''},
+        ])
+        invalid_records = self.env[self.test_record._name].create([
+            {'name': 'Test %s' % customer.email,
+             'customer_id': customer.id,} for customer in invalid_partners])
+        composer = self.env['mail.compose.message'].with_context(self._get_web_context(invalid_records)).create({})
+        with self.mock_mail_gateway(mail_unlink_sent=False):
+            composer._action_send_mail()
+
+        self.assertEqual(len(self._new_mails), 2, 'Should have created 1 mail.mail per record')
+        self.assertEqual(self._new_mails.mapped('state'), ['exception', 'exception'], 'All emails should be errors')
+        self.assertEqual(self._new_mails.notification_ids.mapped('notification_status'), ['exception', 'exception'], 'All email notifications should be errors')
+        self.assertEqual(set(self._new_mails.notification_ids.mapped('failure_type')), set(['mail_email_invalid', 'mail_email_missing']),
+                         'One email should fail because missing, the other because invalid')
 
     @users('employee')
     @mute_logger('odoo.models.unlink', 'odoo.addons.mail.models.mail_mail')

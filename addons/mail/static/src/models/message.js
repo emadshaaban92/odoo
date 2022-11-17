@@ -415,6 +415,16 @@ Model({
                 return this.notifications.filter((notifications) => notifications.isFailure);
             },
         }),
+        /**
+         * Computes the title of the notification icon
+         */
+        failureTitle: attr({
+            compute() {
+                return this.failureNotifications.length > 0 ?
+                       this.env._t("Failed Message")
+                       : this.env._t("Fully Processed Message");
+            },
+        }),
         guestAuthor: one("Guest", { inverse: "authoredMessages" }),
         /**
          * States whether the message has some attachments.
@@ -422,6 +432,14 @@ Model({
         hasAttachments: attr({
             compute() {
                 return this.attachments.length > 0;
+            },
+        }),
+        /**
+         * Whether the message has notification statuses to display
+         */
+        hasStatusNotification: attr({
+            compute() {
+                return this.notifications.length > 0;
             },
         }),
         /**
@@ -564,6 +582,14 @@ Model({
                     }
                 }
                 return false;
+            },
+        }),
+        /**
+         * Whether the message was successfully sent/canceled
+         */
+         isSuccess: attr({
+            compute() {
+                return this.failureNotifications.length === 0;
             },
         }),
         isTemporary: attr({ default: false }),

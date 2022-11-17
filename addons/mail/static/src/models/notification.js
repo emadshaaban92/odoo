@@ -33,6 +33,9 @@ Model({
                     });
                 }
             }
+            if ('unpartnered_email' in data) {
+                data2.unpartnered_email = data.unpartnered_email;
+            }
             return data2;
         },
     },
@@ -120,5 +123,6 @@ Model({
         notification_status: attr(),
         notification_type: attr(),
         partner: one("Partner"),
+        unpartnered_email: attr(),
     },
 });

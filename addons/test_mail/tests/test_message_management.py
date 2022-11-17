@@ -95,9 +95,9 @@ class TestMailResend(TestMailCommon):
         )
 
         wizard = self.env['mail.resend.message'].with_context({'mail_message_to_resend': message.id}).create({})
-        partners = wizard.partner_ids.mapped("partner_id")
+        partners = wizard.contact_ids.mapped("partner_id")
         self.assertEqual(self.invalid_email_partners, partners)
-        wizard.partner_ids.filtered(lambda p: p.partner_id == self.partner1).write({"resend": False})
+        wizard.contact_ids.filtered(lambda p: p.partner_id == self.partner1).write({"resend": False})
         wizard.resend_mail_action()
 
         self.assertMailNotifications(message, [
@@ -127,4 +127,125 @@ class TestMailResend(TestMailCommon):
              'notif': [{'partner': partner, 'type': 'email',
                         'check_send': partner in self.user1.partner_id | self.partner1,
                         'status': 'canceled' if partner in self.user1.partner_id | self.partner1 else 'sent'} for partner in self.partners]}]
+        )
+
+
+@tagged('mail_wizards')
+class TestMailResendNoPartner(TestMailCommon):
+    @classmethod
+    def setUpClass(cls):
+        super(TestMailResendNoPartner, cls).setUpClass()
+        cls.valid_email = 'valid@test.lan'
+        # individual invalid emails are currently not handled in the composer (either silently removed or bounced depending format)
+        cls.valid_email2 = 'valid2@test.lan'
+        cls.unpartnered_emails = set([cls.valid_email, cls.valid_email2])
+        cls.test_record = cls.env['mail.test.ticket'].with_context(cls._test_context).create([
+            {'name': 'Test Valid Email',
+             'email_from':  ','.join(cls.unpartnered_emails),
+            }
+            ])
+        # composer without partners required to generate unpartnered_email notifications
+        cls.composer = cls.env['mail.compose.message'].with_user(cls.user_admin).create({
+            'model': cls.test_record._name,
+            'composition_mode': 'mass_mail',
+            'res_id': cls.test_record.id,
+            'subject': 'My amazing subject',
+            'body': '<p>Test Body</p>',
+            'subtype_id': cls.env.ref('mail.mt_comment').id,
+            'message_type': 'notification',
+            })
+
+    @mute_logger('odoo.addons.mail.models.mail_mail')
+    def test_mail_resend_workflow_email(self):
+        with self.assertSinglePostNotifications(
+                [{'unpartnered_email': email, 'type': 'email', 'status': 'exception'} for email in self.unpartnered_emails],
+                message_info={'message_type': 'email'}):
+
+            def _connect(*args, **kwargs):
+                raise Exception("Some exception")
+            self.connect_mocked.side_effect = _connect
+
+            mails_sudo, _ = self.composer._action_send_mail()
+
+        message = mails_sudo.mail_message_id
+        self.assertEqual(len(message), 1)
+        wizard = self.env['mail.resend.message'].with_context({'mail_message_to_resend': message.id}).create({})
+        self.assertEqual(set(wizard.notification_ids.mapped('unpartnered_email')), self.unpartnered_emails, "wizard should manage notifications for each failed partner")
+
+        #check notified of resend
+        self._reset_bus()
+        expected_bus_notifications = [
+            (self.cr.dbname, 'res.partner', self.partner_admin.id),
+            (self.cr.dbname, 'res.partner', self.env.user.partner_id.id),
+        ]
+        # resend without server error and update email
+        with self.mock_mail_gateway(), self.assertBus(expected_bus_notifications):
+            new_valid_email = 'valid3@example.lan'
+            wizard = self.env['mail.resend.message'].with_context({'mail_message_to_resend': message.id}).create({})
+            wizard.contact_ids.filtered(lambda contact: contact.email == self.valid_email2).write({"email": new_valid_email})
+            wizard.resend_mail_action()
+
+        done_msgs, done_notifs = self.assertMailNotifications(message, [
+            {'content': '', 'message_type': 'email',
+             'notif': [{'unpartnered_email': email, 'type': 'email', 'status': 'sent'} for email in [new_valid_email, self.valid_email]]}]
+        )
+        self.assertEqual(wizard.notification_ids, done_notifs)
+        self.assertEqual(done_msgs, message)
+
+    @mute_logger('odoo.addons.mail.models.mail_mail')
+    def test_cancel_half_email(self):
+        # two failure sent on bus, one for each mail
+        self._reset_bus()
+        with self.mock_mail_gateway(), self.assertBus([(self.cr.dbname, 'res.partner', self.partner_admin.id)]):
+            def _connect(*args, **kwargs):
+                raise Exception("Some exception")
+            self.connect_mocked.side_effect = _connect
+
+            mails_sudo, _ = self.composer._action_send_mail()
+        message = mails_sudo.mail_message_id
+
+        self.assertMailNotifications(message, [
+            {'content': '', 'message_type': 'email',
+             'notif': [{'unpartnered_email': email, 'type': 'email', 'status': 'exception'} for email in self.unpartnered_emails]}]
+        )
+
+        wizard = self.env['mail.resend.message'].with_context({'mail_message_to_resend': message.id}).create({})
+        email_addrs = set(wizard.contact_ids.mapped("email"))
+        self.assertEqual(self.unpartnered_emails, email_addrs)
+        wizard.contact_ids.filtered(lambda c: c.email == self.valid_email2).write({"resend": False})
+        with self.mock_mail_gateway():
+            wizard.resend_mail_action()
+
+        self.assertMailNotifications(message, [
+            {'content': '', 'message_type': 'email',
+             'notif': [{'unpartnered_email': email, 'type': 'email',
+                        'status': (email == self.valid_email and 'sent') or (email == self.valid_email2 and 'canceled') or 'sent'} for email in self.unpartnered_emails]}]
+        )
+
+    @mute_logger('odoo.addons.mail.models.mail_mail')
+    def test_cancel_all_email(self):
+        self._reset_bus()
+        with self.mock_mail_gateway(), self.assertBus([(self.cr.dbname, 'res.partner', self.partner_admin.id)]):
+            def _connect(*args, **kwargs):
+                raise Exception("Some exception")
+            self.connect_mocked.side_effect = _connect
+
+            mails_sudo, _ = self.composer._action_send_mail()
+        message = mails_sudo.mail_message_id
+
+        wizard = self.env['mail.resend.message'].with_context({'mail_message_to_resend': message.id}).create({})
+
+        self._reset_bus()
+        expected_bus_notifications = [
+            (self.cr.dbname, 'res.partner', self.partner_admin.id),
+            (self.cr.dbname, 'res.partner', self.env.user.partner_id.id),
+        ]
+        with self.mock_mail_gateway(), self.assertBus(expected_bus_notifications):
+            wizard.cancel_mail_action()
+
+        self.assertMailNotifications(message, [
+            {'content': '', 'message_type': 'email',
+             'notif': [{'unpartnered_email': email, 'type': 'email',
+                        'check_send': True,
+                        'status': 'canceled'} for email in self.unpartnered_emails]}]
         )
