@@ -417,7 +417,7 @@ class TestMailAPIPerformance(BaseMailPerformance):
             }).create({})
             composer._onchange_template_id_wrapper()
 
-        with self.assertQueryCount(__system__=126, employee=159), self.mock_mail_gateway():
+        with self.assertQueryCount(__system__=147, employee=180), self.mock_mail_gateway():
             composer._action_send_mail()
 
         self.assertEqual(len(self._new_mails), 10)
@@ -1072,7 +1072,7 @@ class TestMailComplexPerformance(BaseMailPerformance):
         rec1 = rec.with_context(active_test=False)      # to see inactive records
         self.assertEqual(rec1.message_partner_ids, self.partners | self.env.user.partner_id | self.user_portal.partner_id)
 
-        with self.assertQueryCount(__system__=19, employee=20):
+        with self.assertQueryCount(__system__=23, employee=24):
             rec.write({
                 'name': 'Test2',
                 'customer_id': customer_id,
@@ -1197,7 +1197,7 @@ class TestMailComplexPerformance(BaseMailPerformance):
         self.env.flush_all()
         self.env.invalidate_all()
 
-        with self.assertQueryCount(employee=19):
+        with self.assertQueryCount(employee=21):
             res = messages.message_format()
             self.assertEqual(len(res), 2)
             for message in res:
@@ -1225,7 +1225,7 @@ class TestMailComplexPerformance(BaseMailPerformance):
         self.env.flush_all()
         self.env.invalidate_all()
 
-        with self.assertQueryCount(employee=14):
+        with self.assertQueryCount(employee=16):
             res = messages.message_format()
             self.assertEqual(len(res), 6)
 
