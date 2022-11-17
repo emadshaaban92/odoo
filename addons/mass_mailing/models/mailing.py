@@ -1042,7 +1042,8 @@ class MassMailing(models.Model):
         return url
 
     def action_send_mail(self, res_ids=None):
-        author_id = self.env.user.partner_id.id
+        # keep responsible as author, if any
+        author_id = self.user_id.partner_id.id or self.env.user.partner_id.id
 
         # If no recipient is passed, we don't want to use the recipients of the first
         # mailing for all the others

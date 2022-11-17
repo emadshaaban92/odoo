@@ -29,9 +29,7 @@ class MailComposeMessage(models.TransientModel):
         self.ensure_one()
         res = super(MailComposeMessage, self).get_mail_values(res_ids)
         # use only for allowed models in mass mailing
-        if self.composition_mode == 'mass_mail' and \
-                (self.mass_mailing_name or self.mass_mailing_id) and \
-                self.model_is_thread:
+        if self._should_add_traces():
             mass_mailing = self.mass_mailing_id
             if not mass_mailing:
                 mass_mailing = self.env['mailing.mailing'].create(
@@ -54,20 +52,21 @@ class MailComposeMessage(models.TransientModel):
                     if body:
                         mail_values['body_html'] = body
 
-                trace_vals = {
-                    # if mail_to is void, keep falsy values to allow searching / debugging traces
-                    'email': recipients_info[res_id]['mail_to'][0] if recipients_info[res_id]['mail_to'] else '',
+                traces_vals = [{
+                    'email': email,
                     'mass_mailing_id': mass_mailing.id,
                     'model': self.model,
                     'res_id': res_id,
-                }
+                } for email in (recipients_info[res_id]['mail_to'] or [''])]  # if mail_to is void, keep falsy values to allow searching / debugging traces
+
                 # propagate failed states to trace when still-born
-                if mail_values.get('state') == 'cancel':
-                    trace_vals['trace_status'] = 'cancel'
-                elif mail_values.get('state') == 'exception':
-                    trace_vals['trace_status'] = 'error'
-                if mail_values.get('failure_type'):
-                    trace_vals['failure_type'] = mail_values['failure_type']
+                for trace_vals in traces_vals:
+                    if mail_values.get('state') == 'cancel':
+                        trace_vals['trace_status'] = 'cancel'
+                    elif mail_values.get('state') == 'exception':
+                        trace_vals['trace_status'] = 'error'
+                    if mail_values.get('failure_type'):
+                        trace_vals['failure_type'] = mail_values['failure_type']
 
                 mail_values.update({
                     'auto_delete': not mass_mailing.keep_archives,
@@ -83,6 +82,11 @@ class MailComposeMessage(models.TransientModel):
             return False
         return super()._get_mail_values_auto_delete()
 
+    def _should_add_traces(self):
+        return self.composition_mode == 'mass_mail' and \
+            (self.mass_mailing_name or self.mass_mailing_id) and \
+            self.model_is_thread
+
     def _get_done_emails(self, mail_values_dict):
         seen_list = super(MailComposeMessage, self)._get_done_emails(mail_values_dict)
         if self.mass_mailing_id:
@@ -97,17 +101,26 @@ class MailComposeMessage(models.TransientModel):
 
     def _prepare_mailing_values(self):
         now = fields.Datetime.now()
+
+        active_ids = self._context.get('active_ids')
+        # add active_ids to domain so that it doesn't resend on records that were not selected
+        if active_ids:
+            active_ids_domain = [('id', 'in', active_ids)]
+            current_active_domain = literal_eval(self.active_domain) if self.active_domain else []
+            enhanced_active_domain = expression.AND([current_active_domain, active_ids_domain])
+
         return {
             'attachment_ids': [(6, 0, self.attachment_ids.ids)],
             'body_html': self.body,
             'campaign_id': self.campaign_id.id,
             'keep_archives': not self.auto_delete_message,
             'mailing_model_id': self.env['ir.model']._get(self.model).id,
-            'mailing_domain': self.active_domain,
+            'mailing_domain': enhanced_active_domain,
             'name': self.mass_mailing_name,
             'reply_to': self.reply_to if self.reply_to_mode == 'new' else False,
             'reply_to_mode': 'new' if self.auto_delete_message else 'update',  # if creating a new mailing and not archiving, reply as mails
             'sent_date': now,
             'state': 'done',
             'subject': self.subject,
+            'user_id': next(iter(self.author_id.user_ids.ids), None),
         }
