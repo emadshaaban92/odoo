@@ -1063,6 +1063,7 @@ class MassMailing(models.Model):
                 'mailing_list_ids': [(4, l.id) for l in mailing.contact_list_ids],
                 'mass_mailing_id': mailing.id,
                 'model': mailing.mailing_model_real,
+                'notify': False,
                 'record_name': False,
                 'reply_to_force_new': mailing.reply_to_mode == 'new',
                 'subject': mailing.subject,

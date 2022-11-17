@@ -127,7 +127,7 @@ class MailComposer(models.TransientModel):
     subtype_id = fields.Many2one(
         'mail.message.subtype', 'Subtype', ondelete='set null',
         default=lambda self: self.env['ir.model.data']._xmlid_to_res_id('mail.mt_comment'))
-    notify = fields.Boolean('Notify followers', help='Notify followers of the document (mass post only)')
+    notify = fields.Boolean('Notify followers', help='Notify followers of the document', default=True)
     mail_activity_type_id = fields.Many2one('mail.activity.type', 'Mail Activity Type', ondelete='set null')
     # destination
     reply_to = fields.Char('Reply To', help='Reply email address. Setting the reply_to bypasses the automatic thread creation.')
@@ -293,7 +293,7 @@ class MailComposer(models.TransientModel):
             batch_size = int(self.env['ir.config_parameter'].sudo().get_param('mail.batch_size')) or self._batch_size
             sliced_res_ids = [res_ids[i:i + batch_size] for i in range(0, len(res_ids), batch_size)]
 
-            if wizard.composition_mode == 'mass_mail' or wizard.is_log or (wizard.composition_mode == 'mass_post' and not wizard.notify):  # log a note: subtype is False
+            if wizard.is_log or (mass_mode and not wizard.notify):  # log a note: subtype is False
                 subtype_id = False
             elif wizard.subtype_id:
                 subtype_id = wizard.subtype_id.id
@@ -309,6 +309,8 @@ class MailComposer(models.TransientModel):
                 all_mail_values = wizard.get_mail_values(res_ids)
                 for res_id, mail_values in all_mail_values.items():
                     if wizard.composition_mode == 'mass_mail':
+                        mail_values.setdefault('message_type', wizard.message_type)
+                        mail_values.setdefault('subtype_id', subtype_id)  # mt_comment by default
                         batch_mails_sudo += self.env['mail.mail'].sudo().create(mail_values)
                     else:
                         post_params = dict(

@@ -244,7 +244,7 @@ class SMSCase(MockSMS):
     def assertSMSLogged(self, records, body):
         for record in records:
             message = record.message_ids[-1]
-            self.assertEqual(message.subtype_id, self.env.ref('mail.mt_note'))
+            self.assertEqual(message.subtype_id, self.env.ref('mail.mt_comment'))
             self.assertEqual(message.message_type, 'sms')
             self.assertEqual(tools.html2plaintext(message.body).rstrip('\n'), body)
 

@@ -1069,9 +1069,8 @@ class TestComposerResultsMass(TestMailComposer):
             self.assertEqual(message.subject, 'TemplateSubject %s' % record.name)
             self.assertEqual(message.body, '<p>TemplateBody %s</p>' % record.name)
             self.assertEqual(message.author_id, self.user_employee.partner_id)
-            # post-related fields are void
-            self.assertFalse(message.subtype_id)
-            self.assertFalse(message.partner_ids)
+
+            self.assertEqual(message.subtype_id, self.env.ref('mail.mt_comment'), "Type from composer message should be mt_comment by default")
 
     @users('employee')
     @mute_logger('odoo.models.unlink', 'odoo.addons.mail.models.mail_mail')
