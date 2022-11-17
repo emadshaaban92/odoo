@@ -117,10 +117,16 @@ options.registry.SocialMedia = options.Class.extend({
                         this._removeSocialMediaClasses(anchorEl);
                     }
                     const faIcon = isDbField ? `fa-${entry.media}` : 'fa-pencil';
-                    anchorEl.querySelector('i').classList.add(faIcon);
+                    const iconEl = anchorEl.querySelector('i');
+                    iconEl.classList.add(faIcon);
                     if (isDbField) {
                         anchorEl.href = `/website/social/${entry.media}`;
                         anchorEl.classList.add(`s_social_media_${entry.media}`);
+                        iconEl.removeAttribute('contenteditable');
+
+                    } else {
+                        // Permit to change the icon.
+                        iconEl.setAttribute('contenteditable', 'true');
                     }
                 } else {
                     // TODO remove this 'else' in master

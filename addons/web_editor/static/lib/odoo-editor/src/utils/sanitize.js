@@ -187,8 +187,13 @@ class Sanitize {
 
             // Ensure elements which should not contain any content are tagged
             // contenteditable=false to avoid any hiccup.
+            // TODO: Some i.fa must have the contenteditable attribute set to
+            // true because they are descendants of an o_not_editable but the
+            // user should still be able to change the icon. The way to prevent
+            // the user from typing text in <i> tags should be improved.
             if (
-                (isMediaElement(node) || node.tagName === 'HR') &&
+                ((isMediaElement(node) && node.getAttribute('contenteditable') !== 'true') ||
+                node.tagName === 'HR') &&
                 node.getAttribute('contenteditable') !== 'false'
             ) {
                 node.setAttribute('contenteditable', 'false');

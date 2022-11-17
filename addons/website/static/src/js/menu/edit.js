@@ -355,9 +355,20 @@ var EditPageMenu = websiteNavbarData.WebsiteNavbarActionWidget.extend({
         // this badly relies on the contenteditable="true" attribute being on
         // those images but it is rightfully lost after the first save.
         // grep: COMPANY_TEAM_CONTENTEDITABLE
-        const $extraEditableZones = $editableSavableZones.find('.s_company_team .o_not_editable img');
+        let $extraEditableZones = $editableSavableZones.find('.s_company_team .o_not_editable img');
 
-        return $editableSavableZones.add($extraEditableZones).toArray();
+        // Same fix as above (COMPANY_TEAM_CONTENTEDITABLE) but for the social
+        // media title and for social media custom links icons.
+        // grep: SOCIAL_MEDIA_CONTENTEDITABLE
+        $extraEditableZones = $extraEditableZones.add($editableSavableZones
+            .find('.s_social_media .s_social_media_title'));
+        // TODO master: add contenteditable="true" on custom social media links.
+        $extraEditableZones = $extraEditableZones.add($editableSavableZones
+            .find('.s_social_media a:not([href^="/website/social/"]) > i'));
+
+        return $editableSavableZones
+            .add($extraEditableZones)
+            .toArray();
     },
 
     _getReadOnlyAreas () {

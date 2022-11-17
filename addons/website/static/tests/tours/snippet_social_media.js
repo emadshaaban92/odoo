@@ -129,5 +129,50 @@ tour.register('snippet_social_media', {
         content: "Wait until save's calls are finished",
         trigger: "body:not(.editor_enable)",
         run: function () {}, // it's a check
+    },
+    wTourUtils.clickOnEdit(),
+    wTourUtils.clickOnSnippet({
+        id: 's_social_media',
+        name: 'Social Media',
+    }),
+    {
+        content: "Check if we can still change custom icons",
+        trigger: '.s_social_media a[href="https://whatever.it/1EdSw9X"] i.fa-pencil',
+        run: 'dblclick',
+    },
+    {
+        content: "Select a new icon",
+        trigger: '#editor-media-icon .fa-heart',
+        run: 'click',
+    },
+    {
+        content: "Click on the select to set a title to the social medias",
+        trigger: 'we-select:has(we-button:contains("Top")) we-toggler',
+        run: 'click',
+
+    },
+    {
+        content: "Click on the title position 'Top'",
+        trigger: 'we-select we-button:contains("Top")',
+        run: 'click',
+    },
+    {
+        content: "Change the title to 'Our social media'",
+        trigger: '.s_social_media_title',
+        run: 'text Our social media',
+    },
+    {
+        content: "Check if the result is correct after setting the title and the icon",
+        trigger: ".s_social_media" +
+                 ":has(.s_social_media_title:contains('Our social media'))" +
+                 ":has(a:eq(0)[href='/website/social/twitter'])" +
+                 ":has(a:eq(1)[href='/website/social/linkedin'])" +
+                 ":has(a:eq(2)[href='/website/social/youtube'])" +
+                 ":has(a:eq(3)[href='/website/social/instagram'])" +
+                 ":has(a:eq(4)[href='/website/social/github'])" +
+                 ":has(a:eq(5)[href='/website/social/facebook'])" +
+                 ":has(a:eq(6)[href='https://whatever.it/1EdSw9X']:has(i.fa-heart))" +
+                 ":has(a:eq(7)[href='https://instagr.am/odoo.official/']:has(i.fa-instagram))",
+        run: () => {}, // This is a check.
     }
 ]);
