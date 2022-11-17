@@ -31,6 +31,14 @@
         'data/mailing_list_demo.xml',
         'data/mailing_demo.xml',
     ],
+    'assets': {
+        'mail.assets_messaging': [
+            'mass_mailing_sms/static/src/models/mailing_trace.js',
+        ],
+        'web.assets_qweb': [
+            'mass_mailing_sms/static/src/components/*/*.xml',
+        ],
+    },
     'application': True,
     'license': 'LGPL-3',
 }

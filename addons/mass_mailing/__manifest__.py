@@ -90,6 +90,7 @@
             'mass_mailing/static/src/js/mailing_portal.js',
         ],
         'web.assets_backend': [
+            'mass_mailing/static/src/components/*/*.xml',
             'mass_mailing/static/src/scss/mailing_filter_widget.scss',
             'mass_mailing/static/src/scss/mass_mailing.scss',
             'mass_mailing/static/src/scss/mass_mailing_mobile.scss',
@@ -127,12 +128,19 @@
             'mass_mailing/static/src/js/tours/**/*',
         ],
         'web.qunit_suite_tests': [
+            'mass_mailing/static/tests/helpers/**/*.js',
+            'mass_mailing/static/tests/qunit_suite_tests/*.js',
             'mass_mailing/static/tests/mass_mailing_favourite_filter_tests.js',
             'mass_mailing/static/src/js/mass_mailing_snippets.js',
             'mass_mailing/static/src/snippets/s_media_list/options.js',
             'mass_mailing/static/src/snippets/s_showcase/options.js',
             'mass_mailing/static/src/snippets/s_rating/options.js',
             'mass_mailing/static/tests/mass_mailing_html_tests.js',
+        ],
+        'mail.assets_messaging': [
+            'mass_mailing/static/src/models/mailing_trace.js',
+            'mass_mailing/static/src/models/message.js',
+            'mass_mailing/static/src/models/message_view.js',
         ],
     },
     'license': 'LGPL-3',

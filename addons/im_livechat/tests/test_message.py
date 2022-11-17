@@ -43,7 +43,8 @@ class TestImLivechatMessage(TransactionCase):
             % (record_rating.rating_image_url, record_rating.rating, record_rating.feedback),
             rating_id=record_rating.id,
         )
-        self.assertEqual(message.message_format(), [{
+        formated_message = message.message_format()
+        expected_format = {
             'attachment_ids': [],
             'author': {
                 'id': self.users[1].partner_id.id,
@@ -78,4 +79,7 @@ class TestImLivechatMessage(TransactionCase):
             'subtype_description': False,
             'subtype_id': (self.env.ref('mail.mt_note').id, 'Note'),
             'trackingValues': [],
-        }])
+        }
+        self.assertEqual(len(formated_message), 1)
+        # only test expected keys, in case fields are added by other modules
+        self.assertEqual({key: value for key, value in formated_message[0].items() if key in expected_format.keys()}, expected_format)

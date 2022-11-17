@@ -73,8 +73,12 @@ class MailComposeMessage(models.TransientModel):
                     # email-mode: keep original message for routing
                     'is_notification': mass_mailing.reply_to_mode == 'update',
                     'mailing_id': mass_mailing.id,
-                    'mailing_trace_ids': [(0, 0, trace_vals)],
+                    'mailing_trace_ids': [(0, 0, trace_vals) for trace_vals in traces_vals],
                 })
+                # we need to keep mails to link messages to traces with archives
+                # we do not need to keep mails if we do not want archives
+                mail_values['auto_delete'] = not mass_mailing.keep_archives
+
         return res
 
     def _get_mail_values_auto_delete(self):
@@ -124,3 +128,8 @@ class MailComposeMessage(models.TransientModel):
             'subject': self.subject,
             'user_id': next(iter(self.author_id.user_ids.ids), None),
         }
+
+    def _action_send_mail_create_notifications(self, *args):
+        # Notifications not needed, information gathered through traces
+        if not self._should_add_traces():
+            super()._action_send_mail_create_notifications(*args)
