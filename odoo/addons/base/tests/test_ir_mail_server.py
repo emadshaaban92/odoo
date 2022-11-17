@@ -323,7 +323,7 @@ class TestIrMailServer(TransactionCase, MockSmtplibCase):
         )
 
     @mute_logger('odoo.models.unlink')
-    @patch.dict("odoo.tools.config.options", {"from_filter": "test.com", "smtp_server": "example.com"})
+    @patch.dict("odoo.tools.config.config.options", {"from_filter": "test.com", "smtp_server": "example.com"})
     def test_mail_server_binary_arguments_domain(self):
         """Test the configuration provided in the odoo-bin arguments.
 
@@ -375,7 +375,7 @@ class TestIrMailServer(TransactionCase, MockSmtplibCase):
         )
 
     @mute_logger('odoo.models.unlink')
-    @patch.dict("odoo.tools.config.options", {"from_filter": "test.com", "smtp_server": "example.com"})
+    @patch.dict("odoo.tools.config.config.options", {"from_filter": "test.com", "smtp_server": "example.com"})
     def test_mail_server_binary_arguments_domain_smtp_session(self):
         """Test the configuration provided in the odoo-bin arguments.
 
@@ -418,7 +418,7 @@ class TestIrMailServer(TransactionCase, MockSmtplibCase):
         )
 
     @mute_logger('odoo.models.unlink')
-    @patch.dict('odoo.tools.config.options', {'from_filter': 'test.com', 'smtp_server': 'example.com'})
+    @patch.dict('odoo.tools.config.config.options', {'from_filter': 'test.com', 'smtp_server': 'example.com'})
     def test_mail_server_mail_default_from_filter(self):
         """Test that the config parameter "mail.default.from_filter" overwrite the odoo-bin
         argument "--from-filter"

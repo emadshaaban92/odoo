@@ -102,9 +102,9 @@ class TestSanitizer(BaseCase):
                 ['background-color:red', 'Coin coin'],
                 ['position', 'top', 'left']
             ), (
-                """<div style='before: "Email Address; coincoin cheval: lapin";  
+                """<div style='before: "Email Address; coincoin cheval: lapin";
    font-size: 30px; max-width: 100%; after: "Not sure
-    
+
           this; means: anything ?#ùµ"
     ; some-property: 2px; top: 3'>youplaboum</div>""",
                 ['font-size:30px', 'youplaboum'],
@@ -464,7 +464,7 @@ class TestEmailTools(BaseCase):
 
 
 class EmailConfigCase(TransactionCase):
-    @patch.dict("odoo.tools.config.options", {"email_from": "settings@example.com"})
+    @patch.dict("odoo.tools.config.config.options", {"email_from": "settings@example.com"})
     def test_default_email_from(self, *args):
         """Email from setting is respected."""
         # ICP setting is more important
