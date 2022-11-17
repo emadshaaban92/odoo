@@ -1134,7 +1134,7 @@ class Task(models.Model):
     subtask_planned_hours = fields.Float("Sub-tasks Planned Hours", compute='_compute_subtask_planned_hours',
         help="Sum of the hours allocated for all the sub-tasks (and their own sub-tasks) linked to this task. Usually less than or equal to the allocated hours of this task.")
     # Tracking of this field is done in the write function
-    user_ids = fields.Many2many('res.users', relation='project_task_user_rel', column1='task_id', column2='user_id', string='Assignees', context={'active_test': False}, tracking=True)
+    user_ids = fields.Many2many('res.users', relation='project_task_user_rel', column1='task_id', column2='user_id', string='Assignees', context={'active_test': False}, tracking=True, group_expand='_read_group_user_ids')
     # User names displayed in project sharing views
     portal_user_names = fields.Char(compute='_compute_portal_user_names', compute_sudo=True, search='_search_portal_user_names')
     # Second Many2many containing the actual personal stage for the current user
@@ -2124,6 +2124,37 @@ class Task(models.Model):
         if any(self.mapped('recurrence_id')):
             # TODO: show a dialog to stop the recurrence
             raise UserError(_('You cannot delete recurring tasks. Please disable the recurrence first.'))
+
+    @api.model
+    def _read_group_user_ids(self, users, domain, order):
+        """
+        _read_group_user_ids allow to display empty rows in the Gantt view of a given project (user with open task assigned in the current project)
+        """
+        # 1. filter domain to remove planned_date_begin and planned_date_ending
+        filtered_domain = [dom for dom in domain if isinstance(dom, list) or isinstance(dom, tuple) and len(dom) == 3 and not dom[0] in ['planned_date_begin', 'planned_date_end']]
+
+        # 2. Check if the Gantt view is only related to a single project (if not, the function do nothing and return 'users')
+        display_project_id = False
+        for dom in filtered_domain:
+            if dom[0] == 'display_project_id':
+                if dom[1] in ['=', 'ilike']:
+                    display_project_id = dom[2]
+                elif dom[1] == 'in':
+                    converted_dom = dom[2] if isinstance(dom[2], set) or isinstance(dom[2], list) or isinstance(dom[2], tuple) else json.loads(dom[2]) #converting string representation of a list to a list
+                    if isinstance(converted_dom, list) or isinstance(converted_dom, tuple) or isinstance(converted_dom, set) and len(converted_dom) >= 2:
+                        return users
+                    elif isinstance(converted_dom, list) or isinstance(converted_dom, tuple) or isinstance(converted_dom, set) and len(converted_dom) == 1:
+                        if display_project_id:
+                            return users
+                        else:
+                            display_project_id = converted_dom[0]
+        if not display_project_id:
+            return users
+
+        # 3. Get user_ids that have an open task assigned in this project
+        matching_tasks = self.env['project.task'].search_read([('project_id', '=', display_project_id), ('is_closed', '=', False)], ['user_ids']) # Open tasks belonging to current project
+        matching_user_ids = {uid for task in matching_tasks for uid in task['user_ids']}
+        return self.env['res.users'].search([('id', 'in', list(matching_user_ids))])
 
     # ---------------------------------------------------
     # Subtasks
