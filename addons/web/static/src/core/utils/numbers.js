@@ -32,3 +32,18 @@ export function computeVariation(value, comparisonValue) {
 export function clamp(num, min, max) {
     return Math.max(Math.min(num, max), min);
 }
+
+/**
+ * @param {number} a
+ * @param {number} b
+ * @returns {number} greatest common divisor of a and b
+ */
+export function greatestCommonDivisor(a, b) {
+    if (b === 0) {
+        return a;
+    }
+    if (a < b) {
+        return greatestCommonDivisor(b, a);
+    }
+    return greatestCommonDivisor(b, a % b);
+}
