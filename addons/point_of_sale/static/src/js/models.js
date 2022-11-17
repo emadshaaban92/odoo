@@ -2707,10 +2707,10 @@ class Order extends PosModel {
         line.set_unit_price(line.compute_fixed_price(line.price));
     }
 
-    add_product(product, options){
+    async add_product(product, options){
         if(this._printed){
             this.destroy();
-            return this.pos.get_order().add_product(product, options);
+            return await this.pos.get_order().add_product(product, options);
         }
         this.assert_editable();
         options = options || {};

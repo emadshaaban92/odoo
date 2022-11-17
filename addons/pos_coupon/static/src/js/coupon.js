@@ -295,8 +295,8 @@ odoo.define('pos_coupon.pos', function (require) {
             result.generated_coupons = this.generated_coupons;
             return result;
         }
-        add_product(product, options) {
-            super.add_product(...arguments);
+        async add_product(product, options) {
+            await super.add_product(...arguments);
             this._updateRewards();
         }
         get_last_orderline() {
