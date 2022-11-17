@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
+
+from ast import literal_eval
 from odoo import api, fields, models
+from odoo.osv import expression
 
 
 class MailComposeMessage(models.TransientModel):
@@ -37,6 +40,8 @@ class MailComposeMessage(models.TransientModel):
                 self.mass_mailing_id = mass_mailing.id
 
             recipients_info = self._process_recipient_values(res)
+            # if not keeping archive, delete messages (consistent with not logging SMS)
+            self.auto_delete_message = not mass_mailing.keep_archives
             for res_id in res_ids:
                 mail_values = res[res_id]
                 if mail_values.get('body_html'):
@@ -73,6 +78,11 @@ class MailComposeMessage(models.TransientModel):
                 })
         return res
 
+    def _get_mail_values_auto_delete(self):
+        if self.mass_mailing_id.keep_archives:
+            return False
+        return super()._get_mail_values_auto_delete()
+
     def _get_done_emails(self, mail_values_dict):
         seen_list = super(MailComposeMessage, self)._get_done_emails(mail_values_dict)
         if self.mass_mailing_id:
@@ -91,11 +101,12 @@ class MailComposeMessage(models.TransientModel):
             'attachment_ids': [(6, 0, self.attachment_ids.ids)],
             'body_html': self.body,
             'campaign_id': self.campaign_id.id,
+            'keep_archives': not self.auto_delete_message,
             'mailing_model_id': self.env['ir.model']._get(self.model).id,
             'mailing_domain': self.active_domain,
             'name': self.mass_mailing_name,
             'reply_to': self.reply_to if self.reply_to_mode == 'new' else False,
-            'reply_to_mode': self.reply_to_mode,
+            'reply_to_mode': 'new' if self.auto_delete_message else 'update',  # if creating a new mailing and not archiving, reply as mails
             'sent_date': now,
             'state': 'done',
             'subject': self.subject,

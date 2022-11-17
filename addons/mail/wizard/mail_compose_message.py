@@ -317,7 +317,7 @@ class MailComposer(models.TransientModel):
                             subtype_id=subtype_id,
                             email_layout_xmlid=wizard.email_layout_xmlid,
                             email_add_signature=not bool(wizard.template_id) and wizard.email_add_signature,
-                            mail_auto_delete=wizard.template_id.auto_delete if wizard.template_id else self._context.get('mail_auto_delete', True),
+                            mail_auto_delete=wizard._get_mail_values_auto_delete(),
                             model_description=model_description)
                         post_params.update(mail_values)
                         if ActiveModel._name == 'mail.thread':
@@ -511,8 +511,7 @@ class MailComposer(models.TransientModel):
                 # keep a copy unless specifically requested, reset record name (avoid browsing records)
                 mail_values.update(is_notification=not self.auto_delete_message, model=self.model, res_id=res_id, record_name=False)
                 # auto deletion of mail_mail
-                if self.auto_delete or self.template_id.auto_delete:
-                    mail_values['auto_delete'] = True
+                mail_values['auto_delete'] = self._get_mail_values_auto_delete()
                 # rendered values using template
                 email_dict = rendered_values[res_id]
                 mail_values['partner_ids'] += email_dict.pop('partner_ids', [])
@@ -544,6 +543,9 @@ class MailComposer(models.TransientModel):
 
         results = self._process_state(results)
         return results
+
+    def _get_mail_values_auto_delete(self):
+        return self.auto_delete or (self.template_id.auto_delete if self.template_id else self._context.get('mail_auto_delete', False))
 
     def _process_recipient_values(self, mail_values_dict):
         # Preprocess res.partners to batch-fetch from db if recipient_ids is present
