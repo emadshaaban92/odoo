@@ -1362,6 +1362,9 @@ class PosGlobalState extends PosModel {
     htmlToImgLetterRendering() {
         return false;
     }
+    doNotAllowRefundAndSales() {
+        return false;
+    }
 }
 PosGlobalState.prototype.electronic_payment_interfaces = {};
 Registries.Model.add(PosGlobalState);
@@ -2707,7 +2710,21 @@ class Order extends PosModel {
         line.set_unit_price(line.compute_fixed_price(line.price));
     }
 
+    _isRefundAndSaleOrder() {
+        if(this.orderlines.length && this.orderlines[0].refunded_orderline_id)
+            return true;
+        else
+            return false;
+    }
+
     async add_product(product, options){
+        if(this.pos.doNotAllowRefundAndSales() && this._isRefundAndSaleOrder()) {
+            await Gui.showPopup('ErrorPopup',{
+                    'title': _t("POS error"),
+                    'body':  _t("Can't mix order with refund products with new products."),
+                });
+            return false;
+        }
         if(this._printed){
             this.destroy();
             return await this.pos.get_order().add_product(product, options);
