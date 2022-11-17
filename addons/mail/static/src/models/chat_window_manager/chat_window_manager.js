@@ -106,7 +106,7 @@ function factory(dependencies) {
          * @param {boolean} [param1.notifyServer]
          * @param {boolean} [param1.replaceNewMessage=false]
          */
-        openThread(thread, {
+        async openThread(thread, {
             isFolded = false,
             makeActive = false,
             notifyServer,
@@ -124,6 +124,7 @@ function factory(dependencies) {
                     manager: [['link', this]],
                     thread: [['link', thread]],
                 });
+                await thread.fetchData();
             } else {
                 chatWindow.update({ isFolded });
             }

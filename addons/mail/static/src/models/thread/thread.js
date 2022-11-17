@@ -688,6 +688,7 @@ function factory(dependencies) {
             }
             const {
                 attachments: attachmentsData,
+                hasWriteAccess,
             } = await this.env.services.rpc({
                 route: '/mail/thread/data',
                 params: {
@@ -699,7 +700,7 @@ function factory(dependencies) {
             if (!this.exists()) {
                 return;
             }
-            const values = {};
+            const values = { hasWriteAccess };
             if (attachmentsData) {
                 Object.assign(values, {
                     areAttachmentsLoaded: true,
@@ -1925,6 +1926,7 @@ function factory(dependencies) {
                 'model',
             ],
         }),
+        hasWriteAccess: attr({ default: true }),
         id: attr(),
         /**
          * States whether this thread is a `mail.channel` qualified as chat.

@@ -140,6 +140,12 @@ class MailController(http.Controller):
     def mail_thread_data(self, thread_model, thread_id, request_list, **kwargs):
         res = {}
         thread = request.env[thread_model].with_context(active_test=False).search([('id', '=', thread_id)])
+        try:
+            thread.check_access_rights("write")
+            thread.check_access_rule("write")
+            res['hasWriteAccess'] = True
+        except AccessError:
+            res['hasWriteAccess'] = False
         if 'attachments' in request_list:
             res['attachments'] = thread.env['ir.attachment'].search([('res_id', '=', thread.id), ('res_model', '=', thread._name)], order='id desc')._attachment_format(commands=True)
         return res
@@ -154,9 +160,7 @@ class MailController(http.Controller):
         followers = []
         follower_id = None
         for follower in follower_recs:
-            if follower.partner_id == request.env.user.partner_id:
-                follower_id = follower.id
-            followers.append({
+            follower_data = {
                 'id': follower.id,
                 'partner_id': follower.partner_id.id,
                 'channel_id': follower.channel_id.id,
@@ -164,10 +168,18 @@ class MailController(http.Controller):
                 'display_name': follower.display_name,
                 'email': follower.email,
                 'is_active': follower.is_active,
-                # When editing the followers, the "pencil" icon that leads to the edition of subtypes
-                # should be always be displayed and not only when "debug" mode is activated.
-                'is_editable': True
-            })
+            }
+            if follower.partner_id == request.env.user.partner_id:
+                follower_id = follower.id
+                follower_data['is_editable'] = True
+            else:
+                try:
+                    request.env[res_model].check_access_rights("write")
+                    request.env[res_model].browse(res_id).check_access_rule("write")
+                    follower_data['is_editable'] = True
+                except AccessError:
+                    follower_data['is_editable'] = False
+            followers.append(follower_data)
         return {
             'followers': followers,
             'subtypes': self.read_subscription_data(follower_id) if follower_id else None
