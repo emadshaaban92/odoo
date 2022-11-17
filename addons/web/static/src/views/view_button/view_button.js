@@ -139,6 +139,7 @@ ViewButton.props = [
     "disabled?",
     "enable?",
     "size?",
+    "hotKey?",
     "tabindex?",
     "title?",
     "style?",
