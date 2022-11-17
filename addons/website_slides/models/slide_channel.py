@@ -250,7 +250,7 @@ class Channel(models.Model):
     total_slides = fields.Integer('Number of Contents', compute='_compute_slides_statistics', store=True)
     total_views = fields.Integer('Visits', compute='_compute_slides_statistics', store=True)
     total_votes = fields.Integer('Votes', compute='_compute_slides_statistics', store=True)
-    total_time = fields.Float('Duration', compute='_compute_slides_statistics', digits=(10, 2), store=True)
+    total_time = fields.Float('Duration', compute='_compute_slides_statistics', digits=(10, 7), store=True)
     rating_avg_stars = fields.Float("Rating Average (Stars)", compute='_compute_rating_stats', digits=(16, 1), compute_sudo=True)
     # configuration
     allow_comment = fields.Boolean(
