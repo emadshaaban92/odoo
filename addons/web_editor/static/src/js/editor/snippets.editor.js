@@ -997,8 +997,10 @@ var SnippetEditor = Widget.extend({
             if (allowGridMode) {
                 // Toggle grid mode if it is not already on.
                 if (!rowEl.classList.contains('o_grid_mode')) {
+                    this.options.wysiwyg.odooEditor.observerActive('dragAndDropMoveSnippet');
                     const containerEl = rowEl.parentNode;
                     gridUtils._toggleGridMode(containerEl);
+                    this.options.wysiwyg.odooEditor.observerUnactive('dragAndDropMoveSnippet');
                 }
 
                 // Computing the moving column width and height in terms of columns
@@ -1153,6 +1155,7 @@ var SnippetEditor = Widget.extend({
                 const $dropzone = $(this).first().after(self.$target);
                 $dropzone.addClass('invisible');
 
+                self.options.wysiwyg.odooEditor.observerActive('dragAndDropMoveSnippet');
                 // Checking if the "out" event happened before this "over": if
                 // `self.dragState.currentDropzoneEl` exists, "out" didn't
                 // happen because it deletes it. We are therefore in the case
@@ -1225,6 +1228,7 @@ var SnippetEditor = Widget.extend({
                     self.onDragMove = self._onDragMove.bind(self);
                     self.$body[0].addEventListener('mousemove', self.onDragMove, false);
                 }
+                self.options.wysiwyg.odooEditor.observerUnactive('dragAndDropMoveSnippet');
             },
             out: function () {
                 const dropzoneEl = this;
@@ -1238,6 +1242,7 @@ var SnippetEditor = Widget.extend({
 
                 if (sameDropzoneAsCurrent) {
                     if (rowEl.classList.contains('o_grid_mode')) {
+                        self.options.wysiwyg.odooEditor.observerActive('dragAndDropMoveSnippet');
                         // Removing the listener + cleaning.
                         self.$body[0].removeEventListener('mousemove', self.onDragMove, false);
                         gridUtils._gridCleanUp(rowEl, self.$target[0]);
@@ -1250,6 +1255,7 @@ var SnippetEditor = Widget.extend({
                         gridUtils._resizeGrid(rowEl);
                         const rowCount = parseInt(rowEl.dataset.rowCount);
                         dropzoneEl.style.gridRowEnd = Math.max(rowCount + 1, 1);
+                        self.options.wysiwyg.odooEditor.observerUnactive('dragAndDropMoveSnippet');
                     }
 
                     var prev = self.$target.prev();
@@ -1283,6 +1289,7 @@ var SnippetEditor = Widget.extend({
         this.options.wysiwyg.odooEditor.automaticStepSkipStack();
         this.options.wysiwyg.odooEditor.unbreakableStepUnactive();
 
+        this.options.wysiwyg.odooEditor.observerActive('dragAndDropMoveSnippet');
         const rowEl = this.$target[0].parentNode;
         if (rowEl && rowEl.classList.contains('o_grid_mode')) {
             // Case when dropping the column in a grid.
@@ -1314,6 +1321,7 @@ var SnippetEditor = Widget.extend({
             this.$target[0].classList.remove('o_grid_item', 'o_grid_item_image', 'o_grid_item_image_contain');
             this.$target[0].style.removeProperty('grid-area');
         }
+        this.options.wysiwyg.odooEditor.observerUnactive('dragAndDropMoveSnippet');
 
         // TODO lot of this is duplicated code of the d&d feature of snippets
         if (!this.dropped) {
@@ -1323,6 +1331,7 @@ var SnippetEditor = Widget.extend({
             $el = $el.filter(this.$dropZones);
             if ($el.length) {
                 $el.after(this.$target);
+                this.options.wysiwyg.odooEditor.observerActive('dragAndDropMoveSnippet');
                 // If the column is not dropped inside a dropzone.
                 if ($el[0].classList.contains('oe_grid_zone')) {
                     // Case when a column is dropped near a grid.
@@ -1357,6 +1366,7 @@ var SnippetEditor = Widget.extend({
                     }
                 }
 
+                this.options.wysiwyg.odooEditor.observerUnactive('dragAndDropMoveSnippet');
                 this.dropped = true;
             }
         }
