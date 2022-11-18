@@ -667,6 +667,16 @@ class ResPartner(models.Model):
                 _logger.debug('Another transaction already locked partner rows. Cannot update partner ranks.')
 
     @api.model
+    def _run_vat_test(self, vat_number, default_country, partner_is_company=True):
+        # allow enterprise modules to call the base_vat validation methods without depending on base_vat
+        return default_country.code.lower()
+
+    @api.model
+    def _build_vat_error_message(self, country_code, wrong_vat, record_label):
+        # allow enterprise modules to call the base_vat validation methods without depending on base_vat
+        return ""
+
+    @api.model
     def get_partner_localisation_fields_required_to_invoice(self, country_id):
         """ Returns the list of fields that needs to be filled when creating an invoice for the selected country.
         This is required for some flows that would allow a user to request an invoice from the portal.
