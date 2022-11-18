@@ -863,3 +863,20 @@ class MrpWorkorder(models.Model):
         self.ensure_one()
         if self.qty_producing:
             self.qty_producing = quantity
+
+    def action_mark_as_done(self):
+        for wo in self:
+            if wo.allow_employee:
+                raise UserError(_('You must be logged in to process some of these work orders.'))
+
+            if wo.working_state == 'blocked':
+                raise UserError(_('Some workorders require another workorder to be completed first'))
+
+            if wo.duration == 0.0:
+                print("no time spent on it yet")
+                wo.duration = wo.duration_expected
+                wo.duration_percent = 100
+                wo.state = 'done'
+            else:
+                print("time already spend in it")
+                wo.state = 'done'
