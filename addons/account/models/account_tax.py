@@ -304,6 +304,12 @@ class AccountTax(models.Model):
 
         return super(AccountTax, self)._search(domain, offset, limit, order, access_rights_uid=access_rights_uid)
 
+    def fetch(self, field_names):
+        # TOFIX: the override made in _search() above basically screws up method
+        # fetch(); one has to check whether it is essential for _search()
+        self = self.with_context(move_type=None, journal_id=None)
+        return super().fetch(field_names)
+
     @api.onchange('amount')
     def onchange_amount(self):
         if self.amount_type in ('percent', 'division') and self.amount != 0.0 and not self.description:
