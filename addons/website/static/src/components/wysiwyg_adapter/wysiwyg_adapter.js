@@ -370,7 +370,13 @@ export class WysiwygAdapterComponent extends ComponentAdapter {
         // this badly relies on the contenteditable="true" attribute being on
         // those images but it is rightfully lost after the first save.
         // grep: COMPANY_TEAM_CONTENTEDITABLE
-        const $extraEditableZones = $editableSavableZones.find('.s_company_team .o_not_editable img');
+        let $extraEditableZones = $editableSavableZones.find('.s_company_team .o_not_editable img');
+
+        // Same fix as above (COMPANY_TEAM_CONTENTEDITABLE) but for the images
+        // in image comparison snippet.
+        // grep: IMAGE_COMPARISON_CONTENTEDITABLE
+        $extraEditableZones = $extraEditableZones.add($editableSavableZones
+            .find('.s_image_comparison .o_media_right, .s_image_comparison .o_media_left, .s_image_comparison .o_description'));
 
         return $editableSavableZones.add($extraEditableZones).toArray();
     }
