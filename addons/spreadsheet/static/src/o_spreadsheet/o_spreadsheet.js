@@ -1632,27 +1632,27 @@
     // TODO in the future : remove these constants MONTHS/DAYS, and use a library such as luxon to handle it
     // + possibly handle automatic translation of day/month
     const MONTHS = {
-        0: "January",
-        1: "February",
-        2: "March",
-        3: "April",
-        4: "May",
-        5: "June",
-        6: "July",
-        7: "August",
-        8: "September",
-        9: "October",
-        10: "November",
-        11: "December",
+        0: _lt("January"),
+        1: _lt("February"),
+        2: _lt("March"),
+        3: _lt("April"),
+        4: _lt("May"),
+        5: _lt("June"),
+        6: _lt("July"),
+        7: _lt("August"),
+        8: _lt("September"),
+        9: _lt("October"),
+        10: _lt("November"),
+        11: _lt("December"),
     };
     const DAYS$1 = {
-        0: "Sunday",
-        1: "Monday",
-        2: "Tuesday",
-        3: "Wednesday",
-        4: "Thursday",
-        5: "Friday",
-        6: "Saturday",
+        0: _lt("Sunday"),
+        1: _lt("Monday"),
+        2: _lt("Tuesday"),
+        3: _lt("Wednesday"),
+        4: _lt("Thursday"),
+        5: _lt("Friday"),
+        6: _lt("Saturday"),
     };
     // -----------------------------------------------------------------------------
     // FORMAT REPRESENTATION CACHE
@@ -30245,1582 +30245,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     ];
 
     /**
-     * This plugin manage the autofill.
-     *
-     * The way it works is the next one:
-     * For each line (row if the direction is left/right, col otherwise), we create
-     * a "AutofillGenerator" object which is used to compute the cells to
-     * autofill.
-     *
-     * When we need to autofill a cell, we compute the origin cell in the source.
-     *  EX: from A1:A2, autofill A3->A6.
-     *      Target | Origin cell
-     *        A3   |   A1
-     *        A4   |   A2
-     *        A5   |   A1
-     *        A6   |   A2
-     * When we have the origin, we take the associated cell in the AutofillGenerator
-     * and we apply the modifier (AutofillModifier) associated to the content of the
-     * cell.
-     */
-    /**
-     * This class is used to generate the next values to autofill.
-     * It's done from a selection (the source) and describe how the next values
-     * should be computed.
-     */
-    class AutofillGenerator {
-        constructor(cells, getters, direction) {
-            this.index = 0;
-            this.cells = cells;
-            this.getters = getters;
-            this.direction = direction;
-        }
-        /**
-         * Get the next value to autofill
-         */
-        next() {
-            const genCell = this.cells[this.index++ % this.cells.length];
-            const rule = genCell.rule;
-            const { cellData, tooltip } = autofillModifiersRegistry
-                .get(rule.type)
-                .apply(rule, genCell.data, this.getters, this.direction);
-            return {
-                cellData,
-                tooltip,
-                origin: {
-                    col: genCell.data.col,
-                    row: genCell.data.row,
-                },
-            };
-        }
-    }
-    /**
-     * Autofill Plugin
-     *
-     */
-    class AutofillPlugin extends UIPlugin {
-        constructor() {
-            super(...arguments);
-            this.lastCellSelected = {};
-        }
-        // ---------------------------------------------------------------------------
-        // Command Handling
-        // ---------------------------------------------------------------------------
-        allowDispatch(cmd) {
-            switch (cmd.type) {
-                case "AUTOFILL_SELECT":
-                    const sheetId = this.getters.getActiveSheetId();
-                    this.lastCellSelected.col =
-                        cmd.col === -1
-                            ? this.lastCellSelected.col
-                            : clip(cmd.col, 0, this.getters.getNumberCols(sheetId));
-                    this.lastCellSelected.row =
-                        cmd.row === -1
-                            ? this.lastCellSelected.row
-                            : clip(cmd.row, 0, this.getters.getNumberRows(sheetId));
-                    if (this.lastCellSelected.col !== undefined && this.lastCellSelected.row !== undefined) {
-                        return 0 /* CommandResult.Success */;
-                    }
-                    return 43 /* CommandResult.InvalidAutofillSelection */;
-                case "AUTOFILL_AUTO":
-                    const zone = this.getters.getSelectedZone();
-                    return zone.top === zone.bottom
-                        ? 0 /* CommandResult.Success */
-                        : 1 /* CommandResult.CancelledForUnknownReason */;
-            }
-            return 0 /* CommandResult.Success */;
-        }
-        handle(cmd) {
-            switch (cmd.type) {
-                case "AUTOFILL":
-                    this.autofill(true);
-                    break;
-                case "AUTOFILL_SELECT":
-                    this.select(cmd.col, cmd.row);
-                    break;
-                case "AUTOFILL_AUTO":
-                    this.autofillAuto();
-                    break;
-                case "AUTOFILL_CELL":
-                    this.autoFillMerge(cmd.originCol, cmd.originRow, cmd.col, cmd.row);
-                    const sheetId = this.getters.getActiveSheetId();
-                    this.dispatch("UPDATE_CELL", {
-                        sheetId,
-                        col: cmd.col,
-                        row: cmd.row,
-                        style: cmd.style || null,
-                        content: cmd.content || "",
-                        format: cmd.format || "",
-                    });
-                    this.dispatch("SET_BORDER", {
-                        sheetId,
-                        col: cmd.col,
-                        row: cmd.row,
-                        border: cmd.border,
-                    });
-            }
-        }
-        // ---------------------------------------------------------------------------
-        // Getters
-        // ---------------------------------------------------------------------------
-        getAutofillTooltip() {
-            return this.tooltip;
-        }
-        // ---------------------------------------------------------------------------
-        // Private methods
-        // ---------------------------------------------------------------------------
-        /**
-         * Autofill the autofillZone from the current selection
-         * @param apply Flag set to true to apply the autofill in the model. It's
-         *              useful to set it to false when we need to fill the tooltip
-         */
-        autofill(apply) {
-            if (!this.autofillZone || this.direction === undefined) {
-                this.tooltip = undefined;
-                return;
-            }
-            const source = this.getters.getSelectedZone();
-            const target = this.autofillZone;
-            switch (this.direction) {
-                case 1 /* DIRECTION.DOWN */:
-                    for (let col = source.left; col <= source.right; col++) {
-                        const xcs = [];
-                        for (let row = source.top; row <= source.bottom; row++) {
-                            xcs.push(toXC(col, row));
-                        }
-                        const generator = this.createGenerator(xcs);
-                        for (let row = target.top; row <= target.bottom; row++) {
-                            this.computeNewCell(generator, col, row, apply);
-                        }
-                    }
-                    break;
-                case 0 /* DIRECTION.UP */:
-                    for (let col = source.left; col <= source.right; col++) {
-                        const xcs = [];
-                        for (let row = source.bottom; row >= source.top; row--) {
-                            xcs.push(toXC(col, row));
-                        }
-                        const generator = this.createGenerator(xcs);
-                        for (let row = target.bottom; row >= target.top; row--) {
-                            this.computeNewCell(generator, col, row, apply);
-                        }
-                    }
-                    break;
-                case 2 /* DIRECTION.LEFT */:
-                    for (let row = source.top; row <= source.bottom; row++) {
-                        const xcs = [];
-                        for (let col = source.right; col >= source.left; col--) {
-                            xcs.push(toXC(col, row));
-                        }
-                        const generator = this.createGenerator(xcs);
-                        for (let col = target.right; col >= target.left; col--) {
-                            this.computeNewCell(generator, col, row, apply);
-                        }
-                    }
-                    break;
-                case 3 /* DIRECTION.RIGHT */:
-                    for (let row = source.top; row <= source.bottom; row++) {
-                        const xcs = [];
-                        for (let col = source.left; col <= source.right; col++) {
-                            xcs.push(toXC(col, row));
-                        }
-                        const generator = this.createGenerator(xcs);
-                        for (let col = target.left; col <= target.right; col++) {
-                            this.computeNewCell(generator, col, row, apply);
-                        }
-                    }
-                    break;
-            }
-            if (apply) {
-                const zone = union(this.getters.getSelectedZone(), this.autofillZone);
-                this.autofillZone = undefined;
-                this.lastCellSelected = {};
-                this.direction = undefined;
-                this.tooltip = undefined;
-                this.selection.selectZone({ cell: { col: zone.left, row: zone.top }, zone });
-            }
-        }
-        /**
-         * Select a cell which becomes the last cell of the autofillZone
-         */
-        select(col, row) {
-            const source = this.getters.getSelectedZone();
-            if (isInside(col, row, source)) {
-                this.autofillZone = undefined;
-                return;
-            }
-            this.direction = this.getDirection(col, row);
-            switch (this.direction) {
-                case 0 /* DIRECTION.UP */:
-                    this.saveZone(row, source.top - 1, source.left, source.right);
-                    break;
-                case 1 /* DIRECTION.DOWN */:
-                    this.saveZone(source.bottom + 1, row, source.left, source.right);
-                    break;
-                case 2 /* DIRECTION.LEFT */:
-                    this.saveZone(source.top, source.bottom, col, source.left - 1);
-                    break;
-                case 3 /* DIRECTION.RIGHT */:
-                    this.saveZone(source.top, source.bottom, source.right + 1, col);
-                    break;
-            }
-            this.autofill(false);
-        }
-        /**
-         * Computes the autofillZone to autofill when the user double click on the
-         * autofiller
-         */
-        autofillAuto() {
-            const zone = this.getters.getSelectedZone();
-            const sheetId = this.getters.getActiveSheetId();
-            let col = zone.left;
-            let row = zone.bottom;
-            if (col > 0) {
-                let left = this.getters.getEvaluatedCell({ sheetId, col: col - 1, row });
-                while (left.type !== CellValueType.empty) {
-                    row += 1;
-                    left = this.getters.getEvaluatedCell({ sheetId, col: col - 1, row });
-                }
-            }
-            if (row === zone.bottom) {
-                col = zone.right;
-                if (col <= this.getters.getNumberCols(sheetId)) {
-                    let right = this.getters.getEvaluatedCell({ sheetId, col: col + 1, row });
-                    while (right.type !== CellValueType.empty) {
-                        row += 1;
-                        right = this.getters.getEvaluatedCell({ sheetId, col: col + 1, row });
-                    }
-                }
-            }
-            if (row !== zone.bottom) {
-                this.select(zone.left, row - 1);
-                this.autofill(true);
-            }
-        }
-        /**
-         * Generate the next cell
-         */
-        computeNewCell(generator, col, row, apply) {
-            const { cellData, tooltip, origin } = generator.next();
-            const { content, style, border, format } = cellData;
-            this.tooltip = tooltip;
-            if (apply) {
-                this.dispatch("AUTOFILL_CELL", {
-                    originCol: origin.col,
-                    originRow: origin.row,
-                    col,
-                    row,
-                    content,
-                    style,
-                    border,
-                    format,
-                });
-            }
-        }
-        /**
-         * Get the rule associated to the current cell
-         */
-        getRule(cell, cells) {
-            const rules = autofillRulesRegistry.getAll().sort((a, b) => a.sequence - b.sequence);
-            const rule = rules.find((rule) => rule.condition(cell, cells));
-            return rule && rule.generateRule(cell, cells);
-        }
-        /**
-         * Create the generator to be able to autofill the next cells.
-         */
-        createGenerator(source) {
-            const nextCells = [];
-            const cellsData = [];
-            const sheetId = this.getters.getActiveSheetId();
-            for (let xc of source) {
-                const { col, row } = toCartesian(xc);
-                const cell = this.getters.getCell(sheetId, col, row);
-                cellsData.push({
-                    col,
-                    row,
-                    cell,
-                    sheetId,
-                });
-            }
-            const cells = cellsData.map((cellData) => cellData.cell);
-            for (let cellData of cellsData) {
-                let rule = { type: "COPY_MODIFIER" };
-                if (cellData && cellData.cell) {
-                    const newRule = this.getRule(cellData.cell, cells);
-                    rule = newRule || rule;
-                }
-                const { sheetId, col, row } = cellData;
-                const border = this.getters.getCellBorder(sheetId, col, row) || undefined;
-                nextCells.push({
-                    data: { ...cellData, border },
-                    rule,
-                });
-            }
-            return new AutofillGenerator(nextCells, this.getters, this.direction);
-        }
-        saveZone(top, bottom, left, right) {
-            this.autofillZone = { top, bottom, left, right };
-        }
-        /**
-         * Compute the direction of the autofill from the last selected zone and
-         * a given cell (col, row)
-         */
-        getDirection(col, row) {
-            const source = this.getters.getSelectedZone();
-            const position = {
-                up: { number: source.top - row, value: 0 /* DIRECTION.UP */ },
-                down: { number: row - source.bottom, value: 1 /* DIRECTION.DOWN */ },
-                left: { number: source.left - col, value: 2 /* DIRECTION.LEFT */ },
-                right: { number: col - source.right, value: 3 /* DIRECTION.RIGHT */ },
-            };
-            if (Object.values(position)
-                .map((x) => (x.number > 0 ? 1 : 0))
-                .reduce((acc, value) => acc + value) === 1) {
-                return Object.values(position).find((x) => (x.number > 0 ? 1 : 0)).value;
-            }
-            const first = position.up.number > 0 ? "up" : "down";
-            const second = position.left.number > 0 ? "left" : "right";
-            return Math.abs(position[first].number) >= Math.abs(position[second].number)
-                ? position[first].value
-                : position[second].value;
-        }
-        autoFillMerge(originCol, originRow, col, row) {
-            const activeSheet = this.getters.getActiveSheet();
-            if (this.getters.isInMerge(activeSheet.id, col, row) &&
-                !this.getters.isInMerge(activeSheet.id, originCol, originRow)) {
-                const zone = this.getters.getMerge(activeSheet.id, col, row);
-                if (zone) {
-                    this.dispatch("REMOVE_MERGE", {
-                        sheetId: activeSheet.id,
-                        target: [zone],
-                    });
-                }
-            }
-            const originMerge = this.getters.getMerge(activeSheet.id, originCol, originRow);
-            if ((originMerge === null || originMerge === void 0 ? void 0 : originMerge.topLeft.col) === originCol && (originMerge === null || originMerge === void 0 ? void 0 : originMerge.topLeft.row) === originRow) {
-                this.dispatch("ADD_MERGE", {
-                    sheetId: activeSheet.id,
-                    target: [
-                        {
-                            top: row,
-                            bottom: row + originMerge.bottom - originMerge.top,
-                            left: col,
-                            right: col + originMerge.right - originMerge.left,
-                        },
-                    ],
-                });
-            }
-        }
-        // ---------------------------------------------------------------------------
-        // Grid rendering
-        // ---------------------------------------------------------------------------
-        drawGrid(renderingContext) {
-            if (!this.autofillZone) {
-                return;
-            }
-            const { ctx, thinLineWidth } = renderingContext;
-            const { x, y, width, height } = this.getters.getVisibleRect(this.autofillZone);
-            if (width > 0 && height > 0) {
-                ctx.strokeStyle = "black";
-                ctx.lineWidth = thinLineWidth;
-                ctx.setLineDash([3]);
-                ctx.strokeRect(x, y, width, height);
-                ctx.setLineDash([]);
-            }
-        }
-    }
-    AutofillPlugin.layers = [5 /* LAYERS.Autofill */];
-    AutofillPlugin.getters = ["getAutofillTooltip"];
-
-    class AutomaticSumPlugin extends UIPlugin {
-        handle(cmd) {
-            switch (cmd.type) {
-                case "SUM_SELECTION":
-                    const sheetId = this.getters.getActiveSheetId();
-                    const { zones, anchor } = this.getters.getSelection();
-                    for (const zone of zones) {
-                        const sums = this.getAutomaticSums(sheetId, zone, anchor.cell);
-                        this.dispatchCellUpdates(sheetId, sums);
-                    }
-                    break;
-            }
-        }
-        getAutomaticSums(sheetId, zone, anchor) {
-            return this.shouldFindData(sheetId, zone)
-                ? this.sumAdjacentData(sheetId, zone, anchor)
-                : this.sumData(sheetId, zone);
-        }
-        // ---------------------------------------------------------------------------
-        // Private methods
-        // ---------------------------------------------------------------------------
-        sumData(sheetId, zone) {
-            const dimensions = this.dimensionsToSum(sheetId, zone);
-            const sums = this.sumDimensions(sheetId, zone, dimensions).filter(({ zone }) => !this.getters.isEmpty(sheetId, zone));
-            if (dimensions.has("ROW") && dimensions.has("COL")) {
-                sums.push(this.sumTotal(zone));
-            }
-            return sums;
-        }
-        sumAdjacentData(sheetId, zone, anchor) {
-            const { col, row } = isInside(anchor.col, anchor.row, zone)
-                ? anchor
-                : { col: zone.left, row: zone.top };
-            const dataZone = this.findAdjacentData(sheetId, col, row);
-            if (!dataZone) {
-                return [];
-            }
-            if (this.getters.isSingleCellOrMerge(sheetId, zone) ||
-                isOneDimensional(union(dataZone, zone))) {
-                return [{ position: { col, row }, zone: dataZone }];
-            }
-            else {
-                return this.sumDimensions(sheetId, union(dataZone, zone), this.transpose(this.dimensionsToSum(sheetId, zone)));
-            }
-        }
-        /**
-         * Find a zone to automatically sum a column or row of numbers.
-         *
-         * We first decide which direction will be summed (column or row).
-         * Here is the strategy:
-         *  1. If the left cell is a number and the top cell is not: choose horizontal
-         *  2. Try to find a valid vertical zone. If it's valid: choose vertical
-         *  3. Try to find a valid horizontal zone. If it's valid: choose horizontal
-         *  4. Otherwise, no zone is returned
-         *
-         * Now, how to find a valid zone?
-         * The zone starts directly above or on the left of the starting point
-         * (depending on the direction).
-         * The zone ends where the first continuous sequence of numbers ends.
-         * Empty or text cells can be part of the zone while no number has been found.
-         * Other kind of cells (boolean, dates, etc.) are not valid in the zone and the
-         * search stops immediately if one is found.
-         *
-         *  -------                                       -------
-         * |   1   |                                     |   1   |
-         *  -------                                       -------
-         * |       |                                     |       |
-         *  -------  <= end of the sequence, stop here    -------
-         * |   2   |                                     |   2   |
-         *  -------                                       -------
-         * |   3   | <= start of the number sequence     |   3   |
-         *  -------                                       -------
-         * |       | <= ignored                          | FALSE | <= invalid, no zone is found
-         *  -------                                       -------
-         * |   A   | <= ignored                          |   A   | <= ignored
-         *  -------                                       -------
-         */
-        findAdjacentData(sheetId, col, row) {
-            const sheet = this.getters.getSheet(sheetId);
-            const mainCellPosition = this.getters.getMainCellPosition(sheetId, col, row);
-            const zone = this.findSuitableZoneToSum(sheet, mainCellPosition.col, mainCellPosition.row);
-            if (zone) {
-                return this.getters.expandZone(sheetId, zone);
-            }
-            return undefined;
-        }
-        /**
-         * Return the zone to sum if a valid one is found.
-         * @see getAutomaticSumZone
-         */
-        findSuitableZoneToSum(sheet, col, row) {
-            const topCell = this.getters.getEvaluatedCell({ sheetId: sheet.id, col, row: row - 1 });
-            const leftCell = this.getters.getEvaluatedCell({ sheetId: sheet.id, col: col - 1, row });
-            if (this.isNumber(leftCell) && !this.isNumber(topCell)) {
-                return this.findHorizontalZone(sheet, col, row);
-            }
-            const verticalZone = this.findVerticalZone(sheet, col, row);
-            if (this.isZoneValid(verticalZone)) {
-                return verticalZone;
-            }
-            const horizontalZone = this.findHorizontalZone(sheet, col, row);
-            if (this.isZoneValid(horizontalZone)) {
-                return horizontalZone;
-            }
-            return undefined;
-        }
-        findVerticalZone(sheet, col, row) {
-            const zone = {
-                top: 0,
-                bottom: row - 1,
-                left: col,
-                right: col,
-            };
-            const top = this.reduceZoneStart(sheet, zone, zone.bottom);
-            return { ...zone, top };
-        }
-        findHorizontalZone(sheet, col, row) {
-            const zone = {
-                top: row,
-                bottom: row,
-                left: 0,
-                right: col - 1,
-            };
-            const left = this.reduceZoneStart(sheet, zone, zone.right);
-            return { ...zone, left };
-        }
-        /**
-         * Reduces a column or row zone to a valid zone for the automatic sum.
-         * @see getAutomaticSumZone
-         * @param sheet
-         * @param zone one dimensional zone (a single row or a single column). The zone is
-         *             assumed to start at the beginning of the column (top=0) or the row (left=0)
-         * @param end end index of the zone (`bottom` or `right` depending on the dimension)
-         * @returns the starting position of the valid zone or Infinity if the zone is not valid.
-         */
-        reduceZoneStart(sheet, zone, end) {
-            const cells = this.getters.getEvaluatedCellsInZone(sheet.id, zone);
-            const cellPositions = range(end, -1, -1);
-            const invalidCells = cellPositions.filter((position) => cells[position] && !cells[position].isAutoSummable);
-            const maxValidPosition = Math.max(...invalidCells);
-            const numberSequences = groupConsecutive(cellPositions.filter((position) => this.isNumber(cells[position])));
-            const firstSequence = numberSequences[0] || [];
-            if (Math.max(...firstSequence) < maxValidPosition) {
-                return Infinity;
-            }
-            return Math.min(...firstSequence);
-        }
-        shouldFindData(sheetId, zone) {
-            return this.getters.isEmpty(sheetId, zone) || this.getters.isSingleCellOrMerge(sheetId, zone);
-        }
-        isNumber(cell) {
-            var _a;
-            return cell.type === CellValueType.number && !((_a = cell.format) === null || _a === void 0 ? void 0 : _a.match(DATETIME_FORMAT));
-        }
-        isZoneValid(zone) {
-            return zone.bottom >= zone.top && zone.right >= zone.left;
-        }
-        lastColIsEmpty(sheetId, zone) {
-            return this.getters.isEmpty(sheetId, { ...zone, left: zone.right });
-        }
-        lastRowIsEmpty(sheetId, zone) {
-            return this.getters.isEmpty(sheetId, { ...zone, top: zone.bottom });
-        }
-        /**
-         * Decides which dimensions (columns or rows) should be summed
-         * based on its shape and what's inside the zone.
-         */
-        dimensionsToSum(sheetId, zone) {
-            const dimensions = new Set();
-            if (isOneDimensional(zone)) {
-                dimensions.add(zoneToDimension(zone).width === 1 ? "COL" : "ROW");
-                return dimensions;
-            }
-            if (this.lastColIsEmpty(sheetId, zone)) {
-                dimensions.add("ROW");
-            }
-            if (this.lastRowIsEmpty(sheetId, zone)) {
-                dimensions.add("COL");
-            }
-            if (dimensions.size === 0) {
-                dimensions.add("COL");
-            }
-            return dimensions;
-        }
-        /**
-         * Sum each column and/or row in the zone in the appropriate cells,
-         * depending on the available space.
-         */
-        sumDimensions(sheetId, zone, dimensions) {
-            return [
-                ...(dimensions.has("COL") ? this.sumColumns(zone, sheetId) : []),
-                ...(dimensions.has("ROW") ? this.sumRows(zone, sheetId) : []),
-            ];
-        }
-        /**
-         * Sum the total of the zone in the bottom right cell, assuming
-         * the last row contains summed columns.
-         */
-        sumTotal(zone) {
-            const { bottom, right } = zone;
-            return {
-                position: { col: right, row: bottom },
-                zone: { ...zone, top: bottom, right: right - 1 },
-            };
-        }
-        sumColumns(zone, sheetId) {
-            const target = this.nextEmptyRow(sheetId, { ...zone, bottom: zone.bottom - 1 });
-            zone = { ...zone, bottom: Math.min(zone.bottom, target.bottom - 1) };
-            return positions(target).map((position) => ({
-                position,
-                zone: { ...zone, right: position.col, left: position.col },
-            }));
-        }
-        sumRows(zone, sheetId) {
-            const target = this.nextEmptyCol(sheetId, { ...zone, right: zone.right - 1 });
-            zone = { ...zone, right: Math.min(zone.right, target.right - 1) };
-            return positions(target).map((position) => ({
-                position,
-                zone: { ...zone, top: position.row, bottom: position.row },
-            }));
-        }
-        dispatchCellUpdates(sheetId, sums) {
-            for (const sum of sums) {
-                const { col, row } = sum.position;
-                this.dispatch("UPDATE_CELL", {
-                    sheetId,
-                    col,
-                    row,
-                    content: `=SUM(${this.getters.zoneToXC(sheetId, sum.zone)})`,
-                });
-            }
-        }
-        /**
-         * Find the first row where all cells below the zone are empty.
-         */
-        nextEmptyRow(sheetId, zone) {
-            let start = zone.bottom + 1;
-            const { left, right } = zone;
-            while (!this.getters.isEmpty(sheetId, { bottom: start, top: start, left, right })) {
-                start++;
-            }
-            return {
-                ...zone,
-                top: start,
-                bottom: start,
-            };
-        }
-        /**
-         * Find the first column where all cells right of the zone are empty.
-         */
-        nextEmptyCol(sheetId, zone) {
-            let start = zone.right + 1;
-            const { top, bottom } = zone;
-            while (!this.getters.isEmpty(sheetId, { left: start, right: start, top, bottom })) {
-                start++;
-            }
-            return {
-                ...zone,
-                left: start,
-                right: start,
-            };
-        }
-        /**
-         * Transpose the given dimensions.
-         * COL becomes ROW
-         * ROW becomes COL
-         */
-        transpose(dimensions) {
-            return new Set([...dimensions.values()].map((dimension) => (dimension === "COL" ? "ROW" : "COL")));
-        }
-    }
-    AutomaticSumPlugin.getters = ["getAutomaticSums"];
-
-    /**
-     * Plugin managing the display of components next to cells.
-     */
-    class CellPopoverPlugin extends UIPlugin {
-        allowDispatch(cmd) {
-            switch (cmd.type) {
-                case "OPEN_CELL_POPOVER":
-                    try {
-                        cellPopoverRegistry.get(cmd.popoverType);
-                    }
-                    catch (error) {
-                        return 70 /* CommandResult.InvalidCellPopover */;
-                    }
-                    return 0 /* CommandResult.Success */;
-                default:
-                    return 0 /* CommandResult.Success */;
-            }
-        }
-        handle(cmd) {
-            switch (cmd.type) {
-                case "ACTIVATE_SHEET":
-                    this.persistentPopover = undefined;
-                    break;
-                case "OPEN_CELL_POPOVER":
-                    this.persistentPopover = {
-                        col: cmd.col,
-                        row: cmd.row,
-                        type: cmd.popoverType,
-                    };
-                    break;
-                case "CLOSE_CELL_POPOVER":
-                    this.persistentPopover = undefined;
-                    break;
-            }
-        }
-        getCellPopover({ col, row }) {
-            var _a, _b;
-            const sheetId = this.getters.getActiveSheetId();
-            if (this.persistentPopover &&
-                this.getters.isVisibleInViewport(sheetId, this.persistentPopover.col, this.persistentPopover.row)) {
-                const mainPosition = this.getters.getMainCellPosition(sheetId, this.persistentPopover.col, this.persistentPopover.row);
-                const popover = (_b = (_a = cellPopoverRegistry
-                    .get(this.persistentPopover.type)).onOpen) === null || _b === void 0 ? void 0 : _b.call(_a, { sheetId, ...mainPosition }, this.getters);
-                return !(popover === null || popover === void 0 ? void 0 : popover.isOpen)
-                    ? { isOpen: false }
-                    : {
-                        ...popover,
-                        ...this.computePopoverProps(this.persistentPopover, popover.cellCorner),
-                    };
-            }
-            if (col === undefined ||
-                row === undefined ||
-                !this.getters.isVisibleInViewport(sheetId, col, row)) {
-                return { isOpen: false };
-            }
-            const mainPosition = this.getters.getMainCellPosition(sheetId, col, row);
-            const popover = cellPopoverRegistry
-                .getAll()
-                .map((matcher) => { var _a; return (_a = matcher.onHover) === null || _a === void 0 ? void 0 : _a.call(matcher, { sheetId, ...mainPosition }, this.getters); })
-                .find((popover) => popover === null || popover === void 0 ? void 0 : popover.isOpen);
-            return !(popover === null || popover === void 0 ? void 0 : popover.isOpen)
-                ? { isOpen: false }
-                : {
-                    ...popover,
-                    ...this.computePopoverProps(mainPosition, popover.cellCorner),
-                };
-        }
-        getPersistentPopoverTypeAtPosition({ col, row }) {
-            if (this.persistentPopover &&
-                this.persistentPopover.col === col &&
-                this.persistentPopover.row === row) {
-                return this.persistentPopover.type;
-            }
-            return undefined;
-        }
-        computePopoverProps({ col, row }, corner) {
-            const { width, height } = this.getters.getVisibleRect(positionToZone({ col, row }));
-            return {
-                coordinates: this.computePopoverPosition({ col, row }, corner),
-                cellWidth: -width,
-                cellHeight: -height,
-            };
-        }
-        computePopoverPosition({ col, row }, corner) {
-            const sheetId = this.getters.getActiveSheetId();
-            const merge = this.getters.getMerge(sheetId, col, row);
-            if (merge) {
-                col = corner === "TopRight" ? merge.right : merge.left;
-                row = corner === "TopRight" ? merge.top : merge.bottom;
-            }
-            // x, y are relative to the canvas
-            const { x, y, width, height } = this.getters.getVisibleRect(positionToZone({ col, row }));
-            switch (corner) {
-                case "BottomLeft":
-                    return { x, y: y + height };
-                case "TopRight":
-                    return { x: x + width, y: y };
-            }
-        }
-    }
-    CellPopoverPlugin.getters = ["getCellPopover", "getPersistentPopoverTypeAtPosition"];
-    CellPopoverPlugin.modes = ["normal"];
-
-    /** Abstract state of the clipboard when copying/cutting content that is pasted in cells of the sheet */
-    class ClipboardCellsAbstractState {
-        constructor(operation, getters, dispatch, selection) {
-            this.getters = getters;
-            this.dispatch = dispatch;
-            this.selection = selection;
-            this.operation = operation;
-            this.sheetId = getters.getActiveSheetId();
-        }
-        isCutAllowed(target) {
-            return 0 /* CommandResult.Success */;
-        }
-        isPasteAllowed(target, clipboardOption) {
-            return 0 /* CommandResult.Success */;
-        }
-        /**
-         * Add columns and/or rows to ensure that col + width and row + height are still
-         * in the sheet
-         */
-        addMissingDimensions(width, height, col, row) {
-            const sheetId = this.getters.getActiveSheetId();
-            const missingRows = height + row - this.getters.getNumberRows(sheetId);
-            if (missingRows > 0) {
-                this.dispatch("ADD_COLUMNS_ROWS", {
-                    dimension: "ROW",
-                    base: this.getters.getNumberRows(sheetId) - 1,
-                    sheetId,
-                    quantity: missingRows,
-                    position: "after",
-                });
-            }
-            const missingCols = width + col - this.getters.getNumberCols(sheetId);
-            if (missingCols > 0) {
-                this.dispatch("ADD_COLUMNS_ROWS", {
-                    dimension: "COL",
-                    base: this.getters.getNumberCols(sheetId) - 1,
-                    sheetId,
-                    quantity: missingCols,
-                    position: "after",
-                });
-            }
-        }
-        isColRowDirtyingClipboard(position, dimension) {
-            return false;
-        }
-        drawClipboard(renderingContext) { }
-    }
-
-    /** State of the clipboard when copying/cutting cells */
-    class ClipboardCellsState extends ClipboardCellsAbstractState {
-        constructor(zones, operation, getters, dispatch, selection) {
-            super(operation, getters, dispatch, selection);
-            if (!zones.length) {
-                this.cells = [[]];
-                this.zones = [];
-                this.copiedTables = [];
-                return;
-            }
-            const lefts = new Set(zones.map((z) => z.left));
-            const rights = new Set(zones.map((z) => z.right));
-            const tops = new Set(zones.map((z) => z.top));
-            const bottoms = new Set(zones.map((z) => z.bottom));
-            const areZonesCompatible = (tops.size === 1 && bottoms.size === 1) || (lefts.size === 1 && rights.size === 1);
-            // In order to don't paste several times the same cells in intersected zones
-            // --> we merge zones that have common cells
-            const clippedZones = areZonesCompatible
-                ? mergeOverlappingZones(zones)
-                : [zones[zones.length - 1]];
-            const cellsPosition = clippedZones.map((zone) => positions(zone)).flat();
-            const columnsIndex = [...new Set(cellsPosition.map((p) => p.col))].sort((a, b) => a - b);
-            const rowsIndex = [...new Set(cellsPosition.map((p) => p.row))].sort((a, b) => a - b);
-            const cellsInClipboard = [];
-            const sheetId = getters.getActiveSheetId();
-            for (let row of rowsIndex) {
-                let cellsInRow = [];
-                for (let col of columnsIndex) {
-                    cellsInRow.push({
-                        cell: getters.getCell(sheetId, col, row),
-                        evaluatedCell: getters.getEvaluatedCell({ sheetId, col, row }),
-                        border: getters.getCellBorder(sheetId, col, row) || undefined,
-                        position: { col, row, sheetId },
-                    });
-                }
-                cellsInClipboard.push(cellsInRow);
-            }
-            const tables = [];
-            for (const zone of zones) {
-                for (const table of this.getters.getFilterTablesInZone(sheetId, zone)) {
-                    const values = [];
-                    for (const col of range(table.zone.left, table.zone.right + 1)) {
-                        values.push(this.getters.getFilterValues(sheetId, col, table.zone.top));
-                    }
-                    tables.push({ filtersValues: values, zone: table.zone });
-                }
-            }
-            this.cells = cellsInClipboard;
-            this.zones = clippedZones;
-            this.copiedTables = tables;
-        }
-        isCutAllowed(target) {
-            if (target.length !== 1) {
-                return 18 /* CommandResult.WrongCutSelection */;
-            }
-            return 0 /* CommandResult.Success */;
-        }
-        isPasteAllowed(target, clipboardOption) {
-            const sheetId = this.getters.getActiveSheetId();
-            if (this.operation === "CUT" && (clipboardOption === null || clipboardOption === void 0 ? void 0 : clipboardOption.pasteOption) !== undefined) {
-                // cannot paste only format or only value if the previous operation is a CUT
-                return 20 /* CommandResult.WrongPasteOption */;
-            }
-            if (target.length > 1) {
-                // cannot paste if we have a clipped zone larger than a cell and multiple
-                // zones selected
-                if (this.cells.length > 1 || this.cells[0].length > 1) {
-                    return 19 /* CommandResult.WrongPasteSelection */;
-                }
-            }
-            const clipboardHeight = this.cells.length;
-            const clipboardWidth = this.cells[0].length;
-            for (let zone of this.getPasteZones(target)) {
-                if (this.getters.doesIntersectMerge(sheetId, zone)) {
-                    if (target.length > 1 ||
-                        !this.getters.isSingleCellOrMerge(sheetId, target[0]) ||
-                        clipboardHeight * clipboardWidth !== 1) {
-                        return 2 /* CommandResult.WillRemoveExistingMerge */;
-                    }
-                }
-            }
-            const { xSplit, ySplit } = this.getters.getPaneDivisions(sheetId);
-            for (const zone of this.getPasteZones(target)) {
-                if ((zone.left < xSplit && zone.right >= xSplit) ||
-                    (zone.top < ySplit && zone.bottom >= ySplit)) {
-                    return 73 /* CommandResult.FrozenPaneOverlap */;
-                }
-            }
-            return 0 /* CommandResult.Success */;
-        }
-        /**
-         * Paste the clipboard content in the given target
-         */
-        paste(target, options) {
-            if (this.operation === "COPY") {
-                this.pasteFromCopy(target, options);
-            }
-            else {
-                this.pasteFromCut(target, options);
-            }
-            const height = this.cells.length;
-            const width = this.cells[0].length;
-            const isCutOperation = this.operation === "CUT";
-            if (options === null || options === void 0 ? void 0 : options.selectTarget) {
-                this.selectPastedZone(width, height, isCutOperation, target);
-            }
-        }
-        pasteFromCopy(target, options) {
-            if (target.length === 1) {
-                // in this specific case, due to the isPasteAllowed function:
-                // state.cells can contains several cells.
-                // So if the target zone is larger than the copied zone,
-                // we duplicate each cells as many times as possible to fill the zone.
-                const height = this.cells.length;
-                const width = this.cells[0].length;
-                const pasteZones = this.pastedZones(target, width, height);
-                for (const zone of pasteZones) {
-                    this.pasteZone(zone.left, zone.top, options);
-                }
-            }
-            else {
-                // in this case, due to the isPasteAllowed function: state.cells contains
-                // only one cell
-                for (const zone of target) {
-                    for (let col = zone.left; col <= zone.right; col++) {
-                        for (let row = zone.top; row <= zone.bottom; row++) {
-                            this.pasteZone(col, row, options);
-                        }
-                    }
-                }
-            }
-            if ((options === null || options === void 0 ? void 0 : options.pasteOption) === undefined) {
-                this.pasteCopiedTables(target);
-            }
-        }
-        pasteFromCut(target, options) {
-            this.clearClippedZones();
-            const selection = target[0];
-            this.pasteZone(selection.left, selection.top, options);
-            this.dispatch("MOVE_RANGES", {
-                target: this.zones,
-                sheetId: this.sheetId,
-                targetSheetId: this.getters.getActiveSheetId(),
-                col: selection.left,
-                row: selection.top,
-            });
-            for (const filterTable of this.copiedTables) {
-                this.dispatch("REMOVE_FILTER_TABLE", {
-                    sheetId: this.getters.getActiveSheetId(),
-                    target: [filterTable.zone],
-                });
-            }
-            this.pasteCopiedTables(target);
-        }
-        /**
-         * The clipped zone is copied as many times as it fits in the target.
-         * This returns the list of zones where the clipped zone is copy-pasted.
-         */
-        pastedZones(target, originWidth, originHeight) {
-            const selection = target[0];
-            const repeatHorizontally = Math.max(1, Math.floor((selection.right + 1 - selection.left) / originWidth));
-            const repeatVertically = Math.max(1, Math.floor((selection.bottom + 1 - selection.top) / originHeight));
-            const zones = [];
-            for (let x = 0; x < repeatHorizontally; x++) {
-                for (let y = 0; y < repeatVertically; y++) {
-                    const top = selection.top + y * originHeight;
-                    const left = selection.left + x * originWidth;
-                    zones.push({
-                        left,
-                        top,
-                        bottom: top + originHeight - 1,
-                        right: left + originWidth - 1,
-                    });
-                }
-            }
-            return zones;
-        }
-        /**
-         * Compute the complete zones where to paste the current clipboard
-         */
-        getPasteZones(target) {
-            const cells = this.cells;
-            if (!cells.length || !cells[0].length) {
-                return target;
-            }
-            const pasteZones = [];
-            const height = cells.length;
-            const width = cells[0].length;
-            const selection = target[target.length - 1];
-            const col = selection.left;
-            const row = selection.top;
-            const repetitionCol = Math.max(1, Math.floor((selection.right + 1 - col) / width));
-            const repetitionRow = Math.max(1, Math.floor((selection.bottom + 1 - row) / height));
-            for (let x = 1; x <= repetitionCol; x++) {
-                for (let y = 1; y <= repetitionRow; y++) {
-                    pasteZones.push({
-                        left: col,
-                        top: row,
-                        right: col - 1 + x * width,
-                        bottom: row - 1 + y * height,
-                    });
-                }
-            }
-            return pasteZones;
-        }
-        /**
-         * Update the selection with the newly pasted zone
-         */
-        selectPastedZone(width, height, isCutOperation, target) {
-            const selection = target[0];
-            const col = selection.left;
-            const row = selection.top;
-            if (height > 1 || width > 1 || isCutOperation) {
-                const zones = this.pastedZones(target, width, height);
-                const newZone = isCutOperation ? zones[0] : union(...zones);
-                this.selection.selectZone({ cell: { col, row }, zone: newZone });
-            }
-        }
-        /**
-         * Clear the clipped zones: remove the cells and clear the formatting
-         */
-        clearClippedZones() {
-            for (const row of this.cells) {
-                for (const cell of row) {
-                    if (cell.cell) {
-                        this.dispatch("CLEAR_CELL", cell.position);
-                    }
-                }
-            }
-            this.dispatch("CLEAR_FORMATTING", {
-                sheetId: this.sheetId,
-                target: this.zones,
-            });
-        }
-        pasteZone(col, row, clipboardOptions) {
-            const height = this.cells.length;
-            const width = this.cells[0].length;
-            // This condition is used to determine if we have to paste the CF or not.
-            // We have to do it when the command handled is "PASTE", not "INSERT_CELL"
-            // or "DELETE_CELL". So, the state should be the local state
-            const shouldPasteCF = (clipboardOptions === null || clipboardOptions === void 0 ? void 0 : clipboardOptions.pasteOption) !== "onlyValue" && (clipboardOptions === null || clipboardOptions === void 0 ? void 0 : clipboardOptions.shouldPasteCF);
-            const sheetId = this.getters.getActiveSheetId();
-            // first, add missing cols/rows if needed
-            this.addMissingDimensions(width, height, col, row);
-            // then, perform the actual paste operation
-            for (let r = 0; r < height; r++) {
-                const rowCells = this.cells[r];
-                for (let c = 0; c < width; c++) {
-                    const origin = rowCells[c];
-                    const position = { col: col + c, row: row + r, sheetId: sheetId };
-                    // TODO: refactor this part. the "Paste merge" action is also executed with
-                    // MOVE_RANGES in pasteFromCut. Adding a condition on the operation type here
-                    // is not appropriate
-                    if (this.operation !== "CUT") {
-                        this.pasteMergeIfExist(origin.position, position);
-                    }
-                    this.pasteCell(origin, position, this.operation, clipboardOptions);
-                    if (shouldPasteCF) {
-                        this.dispatch("PASTE_CONDITIONAL_FORMAT", {
-                            origin: origin.position,
-                            target: position,
-                            operation: this.operation,
-                        });
-                    }
-                }
-            }
-        }
-        /**
-         * Paste the cell at the given position to the target position
-         */
-        pasteCell(origin, target, operation, clipboardOption) {
-            const { sheetId, col, row } = target;
-            const targetCell = this.getters.getEvaluatedCell(target);
-            if ((clipboardOption === null || clipboardOption === void 0 ? void 0 : clipboardOption.pasteOption) !== "onlyValue") {
-                const targetBorders = this.getters.getCellBorder(sheetId, col, row);
-                const originBorders = origin.border;
-                const border = {
-                    top: (targetBorders === null || targetBorders === void 0 ? void 0 : targetBorders.top) || (originBorders === null || originBorders === void 0 ? void 0 : originBorders.top),
-                    bottom: (targetBorders === null || targetBorders === void 0 ? void 0 : targetBorders.bottom) || (originBorders === null || originBorders === void 0 ? void 0 : originBorders.bottom),
-                    left: (targetBorders === null || targetBorders === void 0 ? void 0 : targetBorders.left) || (originBorders === null || originBorders === void 0 ? void 0 : originBorders.left),
-                    right: (targetBorders === null || targetBorders === void 0 ? void 0 : targetBorders.right) || (originBorders === null || originBorders === void 0 ? void 0 : originBorders.right),
-                };
-                this.dispatch("SET_BORDER", { sheetId, col, row, border });
-            }
-            if (origin.cell) {
-                if ((clipboardOption === null || clipboardOption === void 0 ? void 0 : clipboardOption.pasteOption) === "onlyFormat") {
-                    this.dispatch("UPDATE_CELL", {
-                        ...target,
-                        style: origin.cell.style,
-                        format: origin.evaluatedCell.format,
-                    });
-                    return;
-                }
-                if ((clipboardOption === null || clipboardOption === void 0 ? void 0 : clipboardOption.pasteOption) === "onlyValue") {
-                    const content = formatValue(origin.evaluatedCell.value);
-                    this.dispatch("UPDATE_CELL", { ...target, content });
-                    return;
-                }
-                let content = origin.cell.content;
-                if (origin.cell.isFormula && operation === "COPY") {
-                    const offsetX = col - origin.position.col;
-                    const offsetY = row - origin.position.row;
-                    content = this.getUpdatedContent(sheetId, origin.cell, offsetX, offsetY, operation);
-                }
-                this.dispatch("UPDATE_CELL", {
-                    ...target,
-                    content,
-                    style: origin.cell.style || null,
-                    format: origin.cell.format,
-                });
-            }
-            else if (targetCell) {
-                if ((clipboardOption === null || clipboardOption === void 0 ? void 0 : clipboardOption.pasteOption) === "onlyValue") {
-                    this.dispatch("UPDATE_CELL", { ...target, content: "" });
-                }
-                else if ((clipboardOption === null || clipboardOption === void 0 ? void 0 : clipboardOption.pasteOption) === "onlyFormat") {
-                    this.dispatch("UPDATE_CELL", { ...target, style: null, format: "" });
-                }
-                else {
-                    this.dispatch("CLEAR_CELL", target);
-                }
-            }
-        }
-        /**
-         * Get the newly updated formula, after applying offsets
-         */
-        getUpdatedContent(sheetId, cell, offsetX, offsetY, operation) {
-            const ranges = this.getters.createAdaptedRanges(cell.dependencies, offsetX, offsetY, sheetId);
-            return this.getters.buildFormulaContent(sheetId, cell, ranges);
-        }
-        /**
-         * If the origin position given is the top left of a merge, merge the target
-         * position.
-         */
-        pasteMergeIfExist(origin, target) {
-            let { sheetId, col, row } = origin;
-            const { col: mainCellColOrigin, row: mainCellRowOrigin } = this.getters.getMainCellPosition(sheetId, col, row);
-            if (mainCellColOrigin === col && mainCellRowOrigin === row) {
-                const merge = this.getters.getMerge(sheetId, col, row);
-                if (!merge) {
-                    return;
-                }
-                ({ sheetId, col, row } = target);
-                this.dispatch("ADD_MERGE", {
-                    sheetId,
-                    force: true,
-                    target: [
-                        {
-                            left: col,
-                            top: row,
-                            right: col + merge.right - merge.left,
-                            bottom: row + merge.bottom - merge.top,
-                        },
-                    ],
-                });
-            }
-        }
-        /** Paste the filter tables that are in the state */
-        pasteCopiedTables(target) {
-            const sheetId = this.getters.getActiveSheetId();
-            const selection = target[0];
-            const cutZone = this.zones[0];
-            const cutOffset = [
-                selection.left - cutZone.left,
-                selection.top - cutZone.top,
-            ];
-            for (const table of this.copiedTables) {
-                const newTableZone = createAdaptedZone(table.zone, "both", "MOVE", cutOffset);
-                this.dispatch("CREATE_FILTER_TABLE", { sheetId, target: [newTableZone] });
-                for (const i of range(0, table.filtersValues.length)) {
-                    this.dispatch("UPDATE_FILTER", {
-                        sheetId,
-                        col: newTableZone.left + i,
-                        row: newTableZone.top,
-                        values: table.filtersValues[i],
-                    });
-                }
-            }
-        }
-        getClipboardContent() {
-            return (this.cells
-                .map((cells) => {
-                return cells
-                    .map((c) => c.cell ? this.getters.getCellText(c.position, this.getters.shouldShowFormulas()) : "")
-                    .join("\t");
-            })
-                .join("\n") || "\t");
-        }
-        isColRowDirtyingClipboard(position, dimension) {
-            if (!this.zones)
-                return false;
-            for (let zone of this.zones) {
-                if (dimension === "COL" && position <= zone.right) {
-                    return true;
-                }
-                if (dimension === "ROW" && position <= zone.bottom) {
-                    return true;
-                }
-            }
-            return false;
-        }
-        drawClipboard(renderingContext) {
-            const { ctx, thinLineWidth } = renderingContext;
-            if (this.sheetId !== this.getters.getActiveSheetId() || !this.zones || !this.zones.length) {
-                return;
-            }
-            ctx.setLineDash([8, 5]);
-            ctx.strokeStyle = SELECTION_BORDER_COLOR;
-            ctx.lineWidth = 3.3 * thinLineWidth;
-            for (const zone of this.zones) {
-                const { x, y, width, height } = this.getters.getVisibleRect(zone);
-                if (width > 0 && height > 0) {
-                    ctx.strokeRect(x, y, width, height);
-                }
-            }
-        }
-    }
-
-    /** State of the clipboard when copying/cutting figures */
-    class ClipboardFigureState {
-        constructor(operation, getters, dispatch) {
-            this.getters = getters;
-            this.dispatch = dispatch;
-            this.sheetId = getters.getActiveSheetId();
-            const copiedFigureId = getters.getSelectedFigureId();
-            if (!copiedFigureId) {
-                throw new Error(`No figure selected`);
-            }
-            const figure = getters.getFigure(this.sheetId, copiedFigureId);
-            if (!figure) {
-                throw new Error(`No figure for the given id: ${copiedFigureId}`);
-            }
-            this.copiedFigure = { ...figure };
-            const chart = getters.getChart(copiedFigureId);
-            if (!chart) {
-                throw new Error(`No chart for the given id: ${copiedFigureId}`);
-            }
-            this.copiedChart = chart.copyInSheetId(this.sheetId);
-            this.operation = operation;
-        }
-        isCutAllowed(target) {
-            return 0 /* CommandResult.Success */;
-        }
-        isPasteAllowed(target, option) {
-            if (target.length === 0) {
-                return 71 /* CommandResult.EmptyTarget */;
-            }
-            if ((option === null || option === void 0 ? void 0 : option.pasteOption) !== undefined) {
-                return 21 /* CommandResult.WrongFigurePasteOption */;
-            }
-            return 0 /* CommandResult.Success */;
-        }
-        /**
-         * Paste the clipboard content in the given target
-         */
-        paste(target) {
-            const sheetId = this.getters.getActiveSheetId();
-            const position = {
-                x: this.getters.getColDimensions(sheetId, target[0].left).start,
-                y: this.getters.getRowDimensions(sheetId, target[0].top).start,
-            };
-            const newChart = this.copiedChart.copyInSheetId(sheetId);
-            const newId = new UuidGenerator().uuidv4();
-            this.dispatch("CREATE_CHART", {
-                id: newId,
-                sheetId,
-                position,
-                size: { height: this.copiedFigure.height, width: this.copiedFigure.width },
-                definition: newChart.getDefinition(),
-            });
-            if (this.operation === "CUT") {
-                this.dispatch("DELETE_FIGURE", {
-                    sheetId: this.copiedChart.sheetId,
-                    id: this.copiedFigure.id,
-                });
-            }
-            this.dispatch("SELECT_FIGURE", { id: newId });
-        }
-        getClipboardContent() {
-            return "\t";
-        }
-        isColRowDirtyingClipboard(position, dimension) {
-            return false;
-        }
-        drawClipboard(renderingContext) { }
-    }
-
-    /** State of the clipboard when copying/cutting from the OS clipboard*/
-    class ClipboardOsState extends ClipboardCellsAbstractState {
-        constructor(content, getters, dispatch, selection) {
-            super("COPY", getters, dispatch, selection);
-            this.values = content
-                .replace(/\r/g, "")
-                .split("\n")
-                .map((vals) => vals.split("\t"));
-        }
-        isPasteAllowed(target, clipboardOption) {
-            const sheetId = this.getters.getActiveSheetId();
-            const pasteZone = this.getPasteZone(target);
-            if (this.getters.doesIntersectMerge(sheetId, pasteZone)) {
-                return 2 /* CommandResult.WillRemoveExistingMerge */;
-            }
-            return 0 /* CommandResult.Success */;
-        }
-        paste(target) {
-            const values = this.values;
-            const pasteZone = this.getPasteZone(target);
-            const { left: activeCol, top: activeRow } = pasteZone;
-            const { width, height } = zoneToDimension(pasteZone);
-            const sheetId = this.getters.getActiveSheetId();
-            this.addMissingDimensions(width, height, activeCol, activeRow);
-            for (let i = 0; i < values.length; i++) {
-                for (let j = 0; j < values[i].length; j++) {
-                    this.dispatch("UPDATE_CELL", {
-                        row: activeRow + i,
-                        col: activeCol + j,
-                        content: values[i][j],
-                        sheetId,
-                    });
-                }
-            }
-            const zone = {
-                left: activeCol,
-                top: activeRow,
-                right: activeCol + width - 1,
-                bottom: activeRow + height - 1,
-            };
-            this.selection.selectZone({ cell: { col: activeCol, row: activeRow }, zone });
-        }
-        getClipboardContent() {
-            return this.values.map((values) => values.join("\t")).join("\n");
-        }
-        getPasteZone(target) {
-            const height = this.values.length;
-            const width = Math.max(...this.values.map((a) => a.length));
-            const { left: activeCol, top: activeRow } = target[0];
-            return {
-                top: activeRow,
-                left: activeCol,
-                bottom: activeRow + height - 1,
-                right: activeCol + width - 1,
-            };
-        }
-    }
-
-    /**
-     * Clipboard Plugin
-     *
-     * This clipboard manages all cut/copy/paste interactions internal to the
-     * application, and with the OS clipboard as well.
-     */
-    class ClipboardPlugin extends UIPlugin {
-        constructor() {
-            super(...arguments);
-            this.status = "invisible";
-            this._isPaintingFormat = false;
-        }
-        // ---------------------------------------------------------------------------
-        // Command Handling
-        // ---------------------------------------------------------------------------
-        allowDispatch(cmd) {
-            switch (cmd.type) {
-                case "CUT":
-                    const zones = cmd.target || this.getters.getSelectedZones();
-                    const state = this.getClipboardState(zones, cmd.type);
-                    return state.isCutAllowed(zones);
-                case "PASTE":
-                    if (!this.state) {
-                        return 22 /* CommandResult.EmptyClipboard */;
-                    }
-                    const pasteOption = cmd.pasteOption || (this._isPaintingFormat ? "onlyFormat" : undefined);
-                    return this.state.isPasteAllowed(cmd.target, { pasteOption });
-                case "PASTE_FROM_OS_CLIPBOARD": {
-                    const state = new ClipboardOsState(cmd.text, this.getters, this.dispatch, this.selection);
-                    return state.isPasteAllowed(cmd.target);
-                }
-                case "INSERT_CELL": {
-                    const { cut, paste } = this.getInsertCellsTargets(cmd.zone, cmd.shiftDimension);
-                    const state = this.getClipboardStateForCopyCells(cut, "CUT");
-                    return state.isPasteAllowed(paste);
-                }
-                case "DELETE_CELL": {
-                    const { cut, paste } = this.getDeleteCellsTargets(cmd.zone, cmd.shiftDimension);
-                    const state = this.getClipboardStateForCopyCells(cut, "CUT");
-                    return state.isPasteAllowed(paste);
-                }
-            }
-            return 0 /* CommandResult.Success */;
-        }
-        handle(cmd) {
-            var _a, _b;
-            switch (cmd.type) {
-                case "COPY":
-                case "CUT":
-                    const zones = ("target" in cmd && cmd.target) || this.getters.getSelectedZones();
-                    this.state = this.getClipboardState(zones, cmd.type);
-                    this.status = "visible";
-                    break;
-                case "PASTE":
-                    if (!this.state) {
-                        break;
-                    }
-                    const pasteOption = cmd.pasteOption || (this._isPaintingFormat ? "onlyFormat" : undefined);
-                    this._isPaintingFormat = false;
-                    this.state.paste(cmd.target, { pasteOption, shouldPasteCF: true, selectTarget: true });
-                    if (this.state.operation === "CUT") {
-                        this.state = undefined;
-                    }
-                    this.status = "invisible";
-                    break;
-                case "DELETE_CELL": {
-                    const { cut, paste } = this.getDeleteCellsTargets(cmd.zone, cmd.shiftDimension);
-                    const state = this.getClipboardStateForCopyCells(cut, "CUT");
-                    state.paste(paste);
-                    break;
-                }
-                case "INSERT_CELL": {
-                    const { cut, paste } = this.getInsertCellsTargets(cmd.zone, cmd.shiftDimension);
-                    const state = this.getClipboardStateForCopyCells(cut, "CUT");
-                    state.paste(paste);
-                    break;
-                }
-                case "ADD_COLUMNS_ROWS": {
-                    this.status = "invisible";
-                    // If we add a col/row inside or before the cut area, we invalidate the clipboard
-                    if (((_a = this.state) === null || _a === void 0 ? void 0 : _a.operation) !== "CUT") {
-                        return;
-                    }
-                    const isClipboardDirty = this.state.isColRowDirtyingClipboard(cmd.position === "before" ? cmd.base : cmd.base + 1, cmd.dimension);
-                    if (isClipboardDirty) {
-                        this.state = undefined;
-                    }
-                    break;
-                }
-                case "REMOVE_COLUMNS_ROWS": {
-                    this.status = "invisible";
-                    // If we remove a col/row inside or before the cut area, we invalidate the clipboard
-                    if (((_b = this.state) === null || _b === void 0 ? void 0 : _b.operation) !== "CUT") {
-                        return;
-                    }
-                    for (let el of cmd.elements) {
-                        const isClipboardDirty = this.state.isColRowDirtyingClipboard(el, cmd.dimension);
-                        if (isClipboardDirty) {
-                            this.state = undefined;
-                            break;
-                        }
-                    }
-                    this.status = "invisible";
-                    break;
-                }
-                case "PASTE_FROM_OS_CLIPBOARD":
-                    const state = new ClipboardOsState(cmd.text, this.getters, this.dispatch, this.selection);
-                    state.paste(cmd.target);
-                    this.status = "invisible";
-                    break;
-                case "ACTIVATE_PAINT_FORMAT": {
-                    const zones = this.getters.getSelectedZones();
-                    this.state = this.getClipboardStateForCopyCells(zones, "COPY");
-                    this._isPaintingFormat = true;
-                    this.status = "visible";
-                    break;
-                }
-                default:
-                    if (isCoreCommand(cmd)) {
-                        this.status = "invisible";
-                    }
-            }
-        }
-        // ---------------------------------------------------------------------------
-        // Getters
-        // ---------------------------------------------------------------------------
-        /**
-         * Format the current clipboard to a string suitable for being pasted in other
-         * programs.
-         *
-         * - add a tab character between each consecutive cells
-         * - add a newline character between each line
-         *
-         * Note that it returns \t if the clipboard is empty. This is necessary for the
-         * clipboard copy event to add it as data, otherwise an empty string is not
-         * considered as a copy content.
-         */
-        getClipboardContent() {
-            var _a;
-            return ((_a = this.state) === null || _a === void 0 ? void 0 : _a.getClipboardContent()) || "\t";
-        }
-        isCutOperation() {
-            return this.state ? this.state.operation === "CUT" : false;
-        }
-        isPaintingFormat() {
-            return this._isPaintingFormat;
-        }
-        // ---------------------------------------------------------------------------
-        // Private methods
-        // ---------------------------------------------------------------------------
-        getDeleteCellsTargets(zone, dimension) {
-            const sheetId = this.getters.getActiveSheetId();
-            let cut;
-            if (dimension === "COL") {
-                cut = {
-                    ...zone,
-                    left: zone.right + 1,
-                    right: this.getters.getNumberCols(sheetId) - 1,
-                };
-            }
-            else {
-                cut = {
-                    ...zone,
-                    top: zone.bottom + 1,
-                    bottom: this.getters.getNumberRows(sheetId) - 1,
-                };
-            }
-            return { cut: [cut], paste: [zone] };
-        }
-        getInsertCellsTargets(zone, dimension) {
-            const sheetId = this.getters.getActiveSheetId();
-            let cut;
-            let paste;
-            if (dimension === "COL") {
-                cut = {
-                    ...zone,
-                    right: this.getters.getNumberCols(sheetId) - 1,
-                };
-                paste = {
-                    ...zone,
-                    left: zone.right + 1,
-                    right: zone.right + 1,
-                };
-            }
-            else {
-                cut = {
-                    ...zone,
-                    bottom: this.getters.getNumberRows(sheetId) - 1,
-                };
-                paste = { ...zone, top: zone.bottom + 1, bottom: this.getters.getNumberRows(sheetId) - 1 };
-            }
-            return { cut: [cut], paste: [paste] };
-        }
-        getClipboardStateForCopyCells(zones, operation) {
-            return new ClipboardCellsState(zones, operation, this.getters, this.dispatch, this.selection);
-        }
-        /**
-         * Get the clipboard state from the given zones.
-         */
-        getClipboardState(zones, operation) {
-            const selectedFigureId = this.getters.getSelectedFigureId();
-            if (selectedFigureId) {
-                return new ClipboardFigureState(operation, this.getters, this.dispatch);
-            }
-            return new ClipboardCellsState(zones, operation, this.getters, this.dispatch, this.selection);
-        }
-        // ---------------------------------------------------------------------------
-        // Grid rendering
-        // ---------------------------------------------------------------------------
-        drawGrid(renderingContext) {
-            if (this.status !== "visible" || !this.state) {
-                return;
-            }
-            this.state.drawClipboard(renderingContext);
-        }
-    }
-    ClipboardPlugin.layers = [2 /* LAYERS.Clipboard */];
-    ClipboardPlugin.getters = ["getClipboardContent", "isCutOperation", "isPaintingFormat"];
-
-    /**
      * https://tomekdev.com/posts/sorting-colors-in-js
      */
     function sortWithClusters(colorsToSort) {
@@ -32931,6 +31355,1635 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         "isFilterActive",
     ];
 
+    class InternalViewport {
+        constructor(getters, sheetId, boundaries, sizeInGrid, options, offsets) {
+            this.getters = getters;
+            this.sheetId = sheetId;
+            this.boundaries = boundaries;
+            this.width = sizeInGrid.width;
+            this.height = sizeInGrid.height;
+            this.offsetScrollbarX = offsets.x;
+            this.offsetScrollbarY = offsets.y;
+            this.canScrollVertically = options.canScrollVertically;
+            this.canScrollHorizontally = options.canScrollHorizontally;
+            this.offsetCorrectionX = this.getters.getColDimensions(this.sheetId, this.boundaries.left).start;
+            this.offsetCorrectionY = this.getters.getRowDimensions(this.sheetId, this.boundaries.top).start;
+            this.adjustViewportOffsetX();
+            this.adjustViewportOffsetY();
+        }
+        // PUBLIC
+        getMaxSize() {
+            const lastCol = this.getters.findLastVisibleColRowIndex(this.sheetId, "COL", {
+                first: this.boundaries.left,
+                last: this.boundaries.right,
+            });
+            const lastRow = this.getters.findLastVisibleColRowIndex(this.sheetId, "ROW", {
+                first: this.boundaries.top,
+                last: this.boundaries.bottom,
+            });
+            const { end: lastColEnd, size: lastColSize } = this.getters.getColDimensions(this.sheetId, lastCol);
+            const { end: lastRowEnd, size: lastRowSize } = this.getters.getRowDimensions(this.sheetId, lastRow);
+            const leftColIndex = this.searchHeaderIndex("COL", lastColEnd - this.width, 0);
+            const leftColSize = this.getters.getColSize(this.sheetId, leftColIndex);
+            const leftRowIndex = this.searchHeaderIndex("ROW", lastRowEnd - this.height, 0);
+            const topRowSize = this.getters.getRowSize(this.sheetId, leftRowIndex);
+            const width = lastColEnd -
+                this.offsetCorrectionX +
+                (this.canScrollHorizontally
+                    ? Math.max(DEFAULT_CELL_WIDTH, Math.min(leftColSize, this.width - lastColSize))
+                    : 0);
+            const height = lastRowEnd -
+                this.offsetCorrectionY +
+                (this.canScrollVertically
+                    ? Math.max(DEFAULT_CELL_HEIGHT + 5, Math.min(topRowSize, this.height - lastRowSize))
+                    : 0);
+            return { width, height };
+        }
+        /**
+         * Return the index of a column given an offset x, based on the pane left
+         * visible cell.
+         * It returns -1 if no column is found.
+         */
+        getColIndex(x, absolute = false) {
+            if (x < this.offsetCorrectionX || x > this.offsetCorrectionX + this.width) {
+                return -1;
+            }
+            return this.searchHeaderIndex("COL", x - this.offsetCorrectionX, this.left, absolute);
+        }
+        /**
+         * Return the index of a row given an offset y, based on the pane top
+         * visible cell.
+         * It returns -1 if no row is found.
+         */
+        getRowIndex(y, absolute = false) {
+            if (y < this.offsetCorrectionY || y > this.offsetCorrectionY + this.height) {
+                return -1;
+            }
+            return this.searchHeaderIndex("ROW", y - this.offsetCorrectionY, this.top, absolute);
+        }
+        /**
+         * This function will make sure that the provided cell position (or current selected position) is part of
+         * the pane that is actually displayed on the client. We therefore adjust the offset of the pane
+         * until it contains the cell completely.
+         */
+        adjustPosition(position) {
+            const sheetId = this.sheetId;
+            if (!position) {
+                position = this.getters.getSheetPosition(sheetId);
+            }
+            const mainCellPosition = this.getters.getMainCellPosition(sheetId, position.col, position.row);
+            const { col, row } = this.getters.getNextVisibleCellPosition(sheetId, mainCellPosition.col, mainCellPosition.row);
+            if (isInside(col, this.boundaries.top, this.boundaries)) {
+                this.adjustPositionX(col);
+            }
+            if (isInside(this.boundaries.left, row, this.boundaries)) {
+                this.adjustPositionY(row);
+            }
+        }
+        adjustPositionX(col) {
+            const sheetId = this.sheetId;
+            const { start, end } = this.getters.getColDimensions(sheetId, col);
+            while (end > this.offsetX + this.offsetCorrectionX + this.width &&
+                this.offsetX + this.offsetCorrectionX < start) {
+                this.offsetX = this.getters.getColDimensions(sheetId, this.left).end - this.offsetCorrectionX;
+                this.offsetScrollbarX = this.offsetX;
+                this.adjustViewportZoneX();
+            }
+            while (col < this.left) {
+                let leftCol;
+                for (leftCol = this.left; leftCol >= 0; leftCol--) {
+                    if (!this.getters.isColHidden(sheetId, leftCol)) {
+                        break;
+                    }
+                }
+                this.offsetX =
+                    this.getters.getColDimensions(sheetId, leftCol - 1).start - this.offsetCorrectionX;
+                this.offsetScrollbarX = this.offsetX;
+                this.adjustViewportZoneX();
+            }
+        }
+        adjustPositionY(row) {
+            const sheetId = this.sheetId;
+            while (this.getters.getRowDimensions(sheetId, row).end >
+                this.offsetY + this.height + this.offsetCorrectionY &&
+                this.offsetY + this.offsetCorrectionY < this.getters.getRowDimensions(sheetId, row).start) {
+                this.offsetY = this.getters.getRowDimensions(sheetId, this.top).end - this.offsetCorrectionY;
+                this.offsetScrollbarY = this.offsetY;
+                this.adjustViewportZoneY();
+            }
+            while (row < this.top) {
+                let topRow;
+                for (topRow = this.top; topRow >= 0; topRow--) {
+                    if (!this.getters.isRowHidden(sheetId, topRow)) {
+                        break;
+                    }
+                }
+                this.offsetY =
+                    this.getters.getRowDimensions(sheetId, topRow - 1).start - this.offsetCorrectionY;
+                this.offsetScrollbarY = this.offsetY;
+                this.adjustViewportZoneY();
+            }
+        }
+        setViewportOffset(offsetX, offsetY) {
+            this.setViewportOffsetX(offsetX);
+            this.setViewportOffsetY(offsetY);
+        }
+        adjustViewportZone() {
+            this.adjustViewportZoneX();
+            this.adjustViewportZoneY();
+        }
+        getRect(zone) {
+            const targetZone = intersection(zone, this.zone);
+            if (targetZone) {
+                return {
+                    x: this.getters.getColRowOffset("COL", this.zone.left, targetZone.left) +
+                        this.offsetCorrectionX,
+                    y: this.getters.getColRowOffset("ROW", this.zone.top, targetZone.top) +
+                        this.offsetCorrectionY,
+                    width: this.getters.getColRowOffset("COL", targetZone.left, targetZone.right + 1),
+                    height: this.getters.getColRowOffset("ROW", targetZone.top, targetZone.bottom + 1),
+                };
+            }
+            else {
+                return undefined;
+            }
+        }
+        isVisible(col, row) {
+            const isInside = row <= this.bottom && row >= this.top && col >= this.left && col <= this.right;
+            return (isInside &&
+                !this.getters.isColHidden(this.sheetId, col) &&
+                !this.getters.isRowHidden(this.sheetId, row));
+        }
+        // PRIVATE
+        searchHeaderIndex(dimension, position, startIndex = 0, absolute = false) {
+            let size = 0;
+            const sheetId = this.sheetId;
+            const headers = this.getters.getNumberHeaders(sheetId, dimension);
+            for (let i = startIndex; i <= headers - 1; i++) {
+                const isHiddenInViewport = !absolute && dimension === "COL"
+                    ? i < this.left && i > this.right
+                    : i < this.top && i > this.bottom;
+                if (this.getters.isHeaderHidden(sheetId, dimension, i) || isHiddenInViewport) {
+                    continue;
+                }
+                size +=
+                    dimension === "COL"
+                        ? this.getters.getColSize(sheetId, i)
+                        : this.getters.getRowSize(sheetId, i);
+                if (size > position) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+        get zone() {
+            return { left: this.left, right: this.right, top: this.top, bottom: this.bottom };
+        }
+        setViewportOffsetX(offsetX) {
+            if (!this.canScrollHorizontally) {
+                return;
+            }
+            this.offsetScrollbarX = offsetX;
+            this.adjustViewportZoneX();
+        }
+        setViewportOffsetY(offsetY) {
+            if (!this.canScrollVertically) {
+                return;
+            }
+            this.offsetScrollbarY = offsetY;
+            this.adjustViewportZoneY();
+        }
+        /** Corrects the viewport's horizontal offset based on the current structure
+         *  To make sure that at least on column is visible inside the viewport.
+         */
+        adjustViewportOffsetX() {
+            if (this.canScrollHorizontally) {
+                const { width: viewportWidth } = this.getMaxSize();
+                if (this.width + this.offsetScrollbarX > viewportWidth) {
+                    this.offsetScrollbarX = Math.max(0, viewportWidth - this.width);
+                }
+            }
+            this.left = this.getColIndex(this.offsetScrollbarX, true);
+            this.right = this.getColIndex(this.offsetScrollbarX + this.width, true);
+            if (this.right === -1) {
+                this.right = this.boundaries.right;
+            }
+            this.adjustViewportZoneX();
+        }
+        /** Corrects the viewport's vertical offset based on the current structure
+         *  To make sure that at least on row is visible inside the viewport.
+         */
+        adjustViewportOffsetY() {
+            if (this.canScrollVertically) {
+                const { height: paneHeight } = this.getMaxSize();
+                if (this.height + this.offsetScrollbarY > paneHeight) {
+                    this.offsetScrollbarY = Math.max(0, paneHeight - this.height);
+                }
+            }
+            this.top = this.getRowIndex(this.offsetScrollbarY, true);
+            this.bottom = this.getRowIndex(this.offsetScrollbarY + this.width, true);
+            if (this.bottom === -1) {
+                this.bottom = this.boundaries.bottom;
+            }
+            this.adjustViewportZoneY();
+        }
+        /** Updates the pane zone and snapped offset based on its horizontal
+         * offset (will find Left) and its width (will find Right) */
+        adjustViewportZoneX() {
+            const sheetId = this.sheetId;
+            this.left = this.searchHeaderIndex("COL", this.offsetScrollbarX, this.boundaries.left);
+            this.right = Math.min(this.boundaries.right, this.searchHeaderIndex("COL", this.width, this.left));
+            if (this.right === -1) {
+                this.right = this.getters.getNumberCols(sheetId) - 1;
+            }
+            this.offsetX =
+                this.getters.getColDimensions(sheetId, this.left).start -
+                    this.getters.getColDimensions(sheetId, this.boundaries.left).start;
+        }
+        /** Updates the pane zone and snapped offset based on its vertical
+         * offset (will find Top) and its width (will find Bottom) */
+        adjustViewportZoneY() {
+            const sheetId = this.sheetId;
+            this.top = this.searchHeaderIndex("ROW", this.offsetScrollbarY, this.boundaries.top);
+            this.bottom = Math.min(this.boundaries.bottom, this.searchHeaderIndex("ROW", this.height, this.top));
+            if (this.bottom === -1) {
+                this.bottom = this.getters.getNumberRows(sheetId) - 1;
+            }
+            this.offsetY =
+                this.getters.getRowDimensions(sheetId, this.top).start -
+                    this.getters.getRowDimensions(sheetId, this.boundaries.top).start;
+        }
+    }
+
+    /**
+     *   EdgeScrollCases Schema
+     *
+     *  The dots/double dots represent a freeze (= a split of viewports)
+     *  In this example, we froze vertically between columns D and E
+     *  and horizontally between rows 4 and 5.
+     *
+     *  One can see that we scrolled horizontally from column E to G and
+     *  vertically from row 5 to 7.
+     *
+     *     A  B  C  D   G  H  I  J  K  L  M  N  O  P  Q  R  S  T
+     *     _______________________________________________________
+     *  1 |           :                                           |
+     *  2 |           :                                           |
+     *  3 |           :        B   ↑                 6            |
+     *  4 |           :        |   |                 |            |
+     *     ····················+···+·················+············|
+     *  7 |           :        |   |                 |            |
+     *  8 |           :        ↓   2                 |            |
+     *  9 |           :                              |            |
+     * 10 |       A --+--→                           |            |
+     * 11 |           :                              |            |
+     * 12 |           :                              |            |
+     * 13 |        ←--+-- 1                          |            |
+     * 14 |           :                              |        3 --+--→
+     * 15 |           :                              |            |
+     * 16 |           :                              |            |
+     * 17 |       5 --+-------------------------------------------+--→
+     * 18 |           :                              |            |
+     * 19 |           :                  4           |            |
+     * 20 |           :                  |           |            |
+     *     ______________________________+___________| ____________
+     *                                   |           |
+     *                                   ↓           ↓
+     */
+    /**
+     * Viewport plugin.
+     *
+     * This plugin manages all things related to all viewport states.
+     *
+     */
+    class SheetViewPlugin extends UIPlugin {
+        constructor() {
+            super(...arguments);
+            this.viewports = {};
+            /**
+             * The viewport dimensions are usually set by one of the components
+             * (i.e. when grid component is mounted) to properly reflect its state in the DOM.
+             * In the absence of a component (standalone model), is it mandatory to set reasonable default values
+             * to ensure the correct operation of this plugin.
+             */
+            this.sheetViewWidth = DEFAULT_SHEETVIEW_SIZE;
+            this.sheetViewHeight = DEFAULT_SHEETVIEW_SIZE;
+            this.gridOffsetX = 0;
+            this.gridOffsetY = 0;
+            this.sheetsWithDirtyViewports = new Set();
+        }
+        // ---------------------------------------------------------------------------
+        // Command Handling
+        // ---------------------------------------------------------------------------
+        allowDispatch(cmd) {
+            switch (cmd.type) {
+                case "SET_VIEWPORT_OFFSET":
+                    return this.checkScrollingDirection(cmd);
+                case "RESIZE_SHEETVIEW":
+                    return this.chainValidations(this.checkValuesAreDifferent, this.checkPositiveDimension)(cmd);
+                case "FREEZE_COLUMNS": {
+                    const sheetId = this.getters.getActiveSheetId();
+                    const merges = this.getters.getMerges(sheetId);
+                    for (let merge of merges) {
+                        if (merge.left < cmd.quantity && cmd.quantity <= merge.right) {
+                            return 63 /* CommandResult.MergeOverlap */;
+                        }
+                    }
+                    return 0 /* CommandResult.Success */;
+                }
+                case "FREEZE_ROWS": {
+                    const sheetId = this.getters.getActiveSheetId();
+                    const merges = this.getters.getMerges(sheetId);
+                    for (let merge of merges) {
+                        if (merge.top < cmd.quantity && cmd.quantity <= merge.bottom) {
+                            return 63 /* CommandResult.MergeOverlap */;
+                        }
+                    }
+                    return 0 /* CommandResult.Success */;
+                }
+                default:
+                    return 0 /* CommandResult.Success */;
+            }
+        }
+        handleEvent(event) {
+            switch (event.type) {
+                case "HeadersSelected":
+                case "AlterZoneCorner":
+                    break;
+                case "ZonesSelected":
+                    // altering a zone should not move the viewport
+                    const sheetId = this.getters.getActiveSheetId();
+                    let { col, row } = findCellInNewZone(event.previousAnchor.zone, event.anchor.zone, this.getters.getActiveMainViewport());
+                    col = Math.min(col, this.getters.getNumberCols(sheetId) - 1);
+                    row = Math.min(row, this.getters.getNumberRows(sheetId) - 1);
+                    this.refreshViewport(this.getters.getActiveSheetId(), { col, row });
+                    break;
+            }
+        }
+        handle(cmd) {
+            var _a;
+            this.cleanViewports();
+            switch (cmd.type) {
+                case "START":
+                    this.selection.observe(this, {
+                        handleEvent: this.handleEvent.bind(this),
+                    });
+                    this.resetViewports(this.getters.getActiveSheetId());
+                    break;
+                case "UNDO":
+                case "REDO":
+                    this.resetSheetViews();
+                    break;
+                case "RESIZE_SHEETVIEW":
+                    this.resizeSheetView(cmd.height, cmd.width, cmd.gridOffsetX, cmd.gridOffsetY);
+                    break;
+                case "SET_VIEWPORT_OFFSET":
+                    this.setSheetViewOffset(cmd.offsetX, cmd.offsetY);
+                    break;
+                case "SHIFT_VIEWPORT_DOWN":
+                    const { top } = this.getActiveMainViewport();
+                    const sheetId = this.getters.getActiveSheetId();
+                    const shiftedOffsetY = this.clipOffsetY(this.getters.getRowDimensions(sheetId, top).start + this.sheetViewHeight);
+                    this.shiftVertically(shiftedOffsetY);
+                    break;
+                case "SHIFT_VIEWPORT_UP": {
+                    const { top } = this.getActiveMainViewport();
+                    const sheetId = this.getters.getActiveSheetId();
+                    const shiftedOffsetY = this.clipOffsetY(this.getters.getRowDimensions(sheetId, top).end - this.sheetViewHeight);
+                    this.shiftVertically(shiftedOffsetY);
+                    break;
+                }
+                case "REMOVE_COLUMNS_ROWS":
+                case "RESIZE_COLUMNS_ROWS":
+                case "HIDE_COLUMNS_ROWS":
+                case "ADD_COLUMNS_ROWS":
+                case "UNHIDE_COLUMNS_ROWS":
+                case "UPDATE_FILTER":
+                    this.resetViewports(cmd.sheetId);
+                    break;
+                case "UPDATE_CELL":
+                    // update cell content or format can change hidden rows because of data filters
+                    if ("content" in cmd || "format" in cmd || ((_a = cmd.style) === null || _a === void 0 ? void 0 : _a.fontSize) !== undefined) {
+                        this.sheetsWithDirtyViewports.add(cmd.sheetId);
+                    }
+                    break;
+                case "ACTIVATE_SHEET":
+                    this.setViewports();
+                    this.refreshViewport(cmd.sheetIdTo);
+                    break;
+                case "UNFREEZE_ROWS":
+                case "UNFREEZE_COLUMNS":
+                case "FREEZE_COLUMNS":
+                case "FREEZE_ROWS":
+                case "UNFREEZE_COLUMNS_ROWS":
+                    this.resetViewports(this.getters.getActiveSheetId());
+                    break;
+                case "DELETE_SHEET":
+                    this.sheetsWithDirtyViewports.delete(cmd.sheetId);
+                    break;
+            }
+        }
+        finalize() {
+            for (const sheetId of this.sheetsWithDirtyViewports) {
+                this.resetViewports(sheetId);
+            }
+            this.sheetsWithDirtyViewports = new Set();
+            this.setViewports();
+        }
+        setViewports() {
+            var _a;
+            const sheetIds = this.getters.getSheetIds();
+            for (const sheetId of sheetIds) {
+                if (!((_a = this.viewports[sheetId]) === null || _a === void 0 ? void 0 : _a.bottomRight)) {
+                    this.resetViewports(sheetId);
+                }
+            }
+        }
+        // ---------------------------------------------------------------------------
+        // Getters
+        // ---------------------------------------------------------------------------
+        /**
+         * Return the index of a column given an offset x, based on the viewport left
+         * visible cell.
+         * It returns -1 if no column is found.
+         */
+        getColIndex(x) {
+            const sheetId = this.getters.getActiveSheetId();
+            return Math.max(...this.getSubViewports(sheetId).map((viewport) => viewport.getColIndex(x)));
+        }
+        /**
+         * Return the index of a row given an offset y, based on the viewport top
+         * visible cell.
+         * It returns -1 if no row is found.
+         */
+        getRowIndex(y) {
+            const sheetId = this.getters.getActiveSheetId();
+            return Math.max(...this.getSubViewports(sheetId).map((viewport) => viewport.getRowIndex(y)));
+        }
+        getSheetViewDimensionWithHeaders() {
+            return {
+                width: this.sheetViewWidth + this.gridOffsetX,
+                height: this.sheetViewHeight + this.gridOffsetY,
+            };
+        }
+        getSheetViewDimension() {
+            return {
+                width: this.sheetViewWidth,
+                height: this.sheetViewHeight,
+            };
+        }
+        /** type as pane, not viewport but basically pane extends viewport */
+        getActiveMainViewport() {
+            const sheetId = this.getters.getActiveSheetId();
+            return this.getMainViewport(sheetId);
+        }
+        getActiveSheetScrollInfo() {
+            const sheetId = this.getters.getActiveSheetId();
+            return this.getSheetScrollInfo(sheetId);
+        }
+        getSheetViewVisibleCols() {
+            const sheetId = this.getters.getActiveSheetId();
+            const viewports = this.getSubViewports(sheetId);
+            return [...new Set(viewports.map((v) => range(v.left, v.right + 1)).flat())].filter((col) => !this.getters.isHeaderHidden(sheetId, "COL", col));
+        }
+        getSheetViewVisibleRows() {
+            const sheetId = this.getters.getActiveSheetId();
+            const viewports = this.getSubViewports(sheetId);
+            return [...new Set(viewports.map((v) => range(v.top, v.bottom + 1)).flat())].filter((row) => !this.getters.isHeaderHidden(sheetId, "ROW", row));
+        }
+        /**
+         * Return the main viewport maximum size. That is the zone dimension
+         * with some bottom and right padding.
+         */
+        getMainViewportRect() {
+            const sheetId = this.getters.getActiveSheetId();
+            const viewport = this.getMainInternalViewport(sheetId);
+            const { xSplit, ySplit } = this.getters.getPaneDivisions(sheetId);
+            let { width, height } = viewport.getMaxSize();
+            const x = this.getters.getColDimensions(sheetId, xSplit).start;
+            const y = this.getters.getRowDimensions(sheetId, ySplit).start;
+            return { x, y, width, height };
+        }
+        getMaximumSheetOffset() {
+            const sheetId = this.getters.getActiveSheetId();
+            const { width, height } = this.getMainViewportRect();
+            const viewport = this.getMainInternalViewport(sheetId);
+            return {
+                maxOffsetX: Math.max(0, width - viewport.width + 1),
+                maxOffsetY: Math.max(0, height - viewport.height + 1),
+            };
+        }
+        getColRowOffsetInViewport(dimension, referenceIndex, index) {
+            const sheetId = this.getters.getActiveSheetId();
+            const visibleCols = this.getters.getSheetViewVisibleCols();
+            const visibleRows = this.getters.getSheetViewVisibleRows();
+            if (index < referenceIndex) {
+                return -this.getColRowOffsetInViewport(dimension, index, referenceIndex);
+            }
+            let offset = 0;
+            const visibleIndexes = dimension === "COL" ? visibleCols : visibleRows;
+            for (let i = referenceIndex; i < index; i++) {
+                if (!visibleIndexes.includes(i)) {
+                    continue;
+                }
+                offset +=
+                    dimension === "COL"
+                        ? this.getters.getColSize(sheetId, i)
+                        : this.getters.getRowSize(sheetId, i);
+            }
+            return offset;
+        }
+        /**
+         * Check if a given position is visible in the viewport.
+         */
+        isVisibleInViewport(sheetId, col, row) {
+            return this.getSubViewports(sheetId).some((pane) => pane.isVisible(col, row));
+        }
+        // => return s the new offset
+        getEdgeScrollCol(x, previousX, startingX) {
+            let canEdgeScroll = false;
+            let direction = 0;
+            let delay = 0;
+            /** 4 cases : See EdgeScrollCases Schema at the top
+             * 1. previous in XRight > XLeft
+             * 3. previous in XRight > outside
+             * 5. previous in Left > outside
+             * A. previous in Left > right
+             * with X a position taken in the bottomRIght (aka scrollable) viewport
+             */
+            const { xSplit } = this.getters.getPaneDivisions(this.getters.getActiveSheetId());
+            const { width } = this.getSheetViewDimension();
+            const { x: offsetCorrectionX } = this.getMainViewportCoordinates();
+            const currentOffsetX = this.getActiveSheetScrollInfo().offsetX;
+            if (x > width) {
+                // 3 & 5
+                canEdgeScroll = true;
+                delay = scrollDelay(x - width);
+                direction = 1;
+            }
+            else if (x < offsetCorrectionX && startingX >= offsetCorrectionX && currentOffsetX > 0) {
+                // 1
+                canEdgeScroll = true;
+                delay = scrollDelay(offsetCorrectionX - x);
+                direction = -1;
+            }
+            else if (xSplit && previousX < offsetCorrectionX && x > offsetCorrectionX) {
+                // A
+                canEdgeScroll = true;
+                delay = scrollDelay(x);
+                direction = "reset";
+            }
+            return { canEdgeScroll, direction, delay };
+        }
+        getEdgeScrollRow(y, previousY, tartingY) {
+            let canEdgeScroll = false;
+            let direction = 0;
+            let delay = 0;
+            /** 4 cases : See EdgeScrollCases Schema at the top
+             * 2. previous in XBottom > XTop
+             * 4. previous in XRight > outside
+             * 6. previous in Left > outside
+             * B. previous in Left > right
+             * with X a position taken in the bottomRIght (aka scrollable) viewport
+             */
+            const { ySplit } = this.getters.getPaneDivisions(this.getters.getActiveSheetId());
+            const { height } = this.getSheetViewDimension();
+            const { y: offsetCorrectionY } = this.getMainViewportCoordinates();
+            const currentOffsetY = this.getActiveSheetScrollInfo().offsetY;
+            if (y > height) {
+                // 4 & 6
+                canEdgeScroll = true;
+                delay = scrollDelay(y - height);
+                direction = 1;
+            }
+            else if (y < offsetCorrectionY && tartingY >= offsetCorrectionY && currentOffsetY > 0) {
+                // 2
+                canEdgeScroll = true;
+                delay = scrollDelay(offsetCorrectionY - y);
+                direction = -1;
+            }
+            else if (ySplit && previousY < offsetCorrectionY && y > offsetCorrectionY) {
+                // B
+                canEdgeScroll = true;
+                delay = scrollDelay(y);
+                direction = "reset";
+            }
+            return { canEdgeScroll, direction, delay };
+        }
+        /**
+         * Computes the coordinates and size to draw the zone on the canvas
+         */
+        getVisibleRect(zone) {
+            const sheetId = this.getters.getActiveSheetId();
+            const viewportRects = this.getSubViewports(sheetId)
+                .map((viewport) => viewport.getRect(zone))
+                .filter(isDefined$1);
+            if (viewportRects.length === 0) {
+                return { x: 0, y: 0, width: 0, height: 0 };
+            }
+            const x = Math.min(...viewportRects.map((rect) => rect.x));
+            const y = Math.min(...viewportRects.map((rect) => rect.y));
+            const width = Math.max(...viewportRects.map((rect) => rect.x + rect.width)) - x;
+            const height = Math.max(...viewportRects.map((rect) => rect.y + rect.height)) - y;
+            return {
+                x: x + this.gridOffsetX,
+                y: y + this.gridOffsetY,
+                width,
+                height,
+            };
+        }
+        /**
+         * Returns the position of the MainViewport relatively to the start of the grid (without headers)
+         * It corresponds to the summed dimensions of the visible cols/rows (in x/y respectively)
+         * situated before the pane divisions.
+         */
+        getMainViewportCoordinates() {
+            const sheetId = this.getters.getActiveSheetId();
+            const { xSplit, ySplit } = this.getters.getPaneDivisions(sheetId);
+            const x = this.getters.getColDimensions(sheetId, xSplit).start;
+            const y = this.getters.getRowDimensions(sheetId, ySplit).start;
+            return { x, y };
+        }
+        // ---------------------------------------------------------------------------
+        // Private
+        // ---------------------------------------------------------------------------
+        ensureMainViewportExist(sheetId) {
+            if (!this.viewports[sheetId]) {
+                this.resetViewports(sheetId);
+            }
+        }
+        getSubViewports(sheetId) {
+            this.ensureMainViewportExist(sheetId);
+            return Object.values(this.viewports[sheetId]).filter(isDefined$1);
+        }
+        checkPositiveDimension(cmd) {
+            if (cmd.width < 0 || cmd.height < 0) {
+                return 66 /* CommandResult.InvalidViewportSize */;
+            }
+            return 0 /* CommandResult.Success */;
+        }
+        checkValuesAreDifferent(cmd) {
+            const { height, width } = this.getSheetViewDimension();
+            if (cmd.gridOffsetX === this.gridOffsetX &&
+                cmd.gridOffsetY === this.gridOffsetY &&
+                cmd.width === width &&
+                cmd.height === height) {
+                return 74 /* CommandResult.ValuesNotChanged */;
+            }
+            return 0 /* CommandResult.Success */;
+        }
+        checkScrollingDirection({ offsetX, offsetY, }) {
+            const pane = this.getMainInternalViewport(this.getters.getActiveSheetId());
+            if ((!pane.canScrollHorizontally && offsetX > 0) ||
+                (!pane.canScrollVertically && offsetY > 0)) {
+                return 67 /* CommandResult.InvalidScrollingDirection */;
+            }
+            return 0 /* CommandResult.Success */;
+        }
+        getMainViewport(sheetId) {
+            const viewport = this.getMainInternalViewport(sheetId);
+            return {
+                top: viewport.top,
+                left: viewport.left,
+                bottom: viewport.bottom,
+                right: viewport.right,
+            };
+        }
+        getMainInternalViewport(sheetId) {
+            this.ensureMainViewportExist(sheetId);
+            return this.viewports[sheetId].bottomRight;
+        }
+        getSheetScrollInfo(sheetId) {
+            const viewport = this.getMainInternalViewport(sheetId);
+            return {
+                offsetX: viewport.offsetX,
+                offsetY: viewport.offsetY,
+                offsetScrollbarX: viewport.offsetScrollbarX,
+                offsetScrollbarY: viewport.offsetScrollbarY,
+            };
+        }
+        /** gets rid of deprecated sheetIds */
+        cleanViewports() {
+            const sheetIds = this.getters.getSheetIds();
+            for (let sheetId of Object.keys(this.viewports)) {
+                if (!sheetIds.includes(sheetId)) {
+                    delete this.viewports[sheetId];
+                }
+            }
+        }
+        resetSheetViews() {
+            for (let sheetId of Object.keys(this.viewports)) {
+                const position = this.getters.getSheetPosition(sheetId);
+                this.resetViewports(sheetId);
+                const viewports = this.getSubViewports(sheetId);
+                Object.values(viewports).forEach((viewport) => {
+                    viewport.adjustPosition(position);
+                });
+            }
+        }
+        resizeSheetView(height, width, gridOffsetX = 0, gridOffsetY = 0) {
+            this.sheetViewHeight = height;
+            this.sheetViewWidth = width;
+            this.gridOffsetX = gridOffsetX;
+            this.gridOffsetY = gridOffsetY;
+            this.recomputeViewports();
+        }
+        recomputeViewports() {
+            for (let sheetId of Object.keys(this.viewports)) {
+                this.resetViewports(sheetId);
+            }
+        }
+        setSheetViewOffset(offsetX, offsetY) {
+            const sheetId = this.getters.getActiveSheetId();
+            const { maxOffsetX, maxOffsetY } = this.getMaximumSheetOffset();
+            Object.values(this.getSubViewports(sheetId)).forEach((viewport) => viewport.setViewportOffset(clip(offsetX, 0, maxOffsetX), clip(offsetY, 0, maxOffsetY)));
+        }
+        /**
+         * Clip the vertical offset within the allowed range.
+         * Not above the sheet, nor below the sheet.
+         */
+        clipOffsetY(offsetY) {
+            const { height } = this.getMainViewportRect();
+            const maxOffset = height - this.sheetViewHeight;
+            offsetY = Math.min(offsetY, maxOffset);
+            offsetY = Math.max(offsetY, 0);
+            return offsetY;
+        }
+        getViewportOffset(sheetId) {
+            var _a, _b;
+            return {
+                x: ((_a = this.viewports[sheetId]) === null || _a === void 0 ? void 0 : _a.bottomRight.offsetScrollbarX) || 0,
+                y: ((_b = this.viewports[sheetId]) === null || _b === void 0 ? void 0 : _b.bottomRight.offsetScrollbarY) || 0,
+            };
+        }
+        resetViewports(sheetId) {
+            const { xSplit, ySplit } = this.getters.getPaneDivisions(sheetId);
+            const nCols = this.getters.getNumberCols(sheetId);
+            const nRows = this.getters.getNumberRows(sheetId);
+            const colOffset = this.getters.getColRowOffset("COL", 0, xSplit, sheetId);
+            const rowOffset = this.getters.getColRowOffset("ROW", 0, ySplit, sheetId);
+            const { xRatio, yRatio } = this.getFrozenSheetViewRatio(sheetId);
+            const canScrollHorizontally = xRatio < 1.0;
+            const canScrollVertically = yRatio < 1.0;
+            const previousOffset = this.getViewportOffset(sheetId);
+            const sheetViewports = {
+                topLeft: (ySplit &&
+                    xSplit &&
+                    new InternalViewport(this.getters, sheetId, { left: 0, right: xSplit - 1, top: 0, bottom: ySplit - 1 }, { width: colOffset, height: rowOffset }, { canScrollHorizontally: false, canScrollVertically: false }, { x: 0, y: 0 })) ||
+                    undefined,
+                topRight: (ySplit &&
+                    new InternalViewport(this.getters, sheetId, { left: xSplit, right: nCols - 1, top: 0, bottom: ySplit - 1 }, { width: this.sheetViewWidth - colOffset, height: rowOffset }, { canScrollHorizontally, canScrollVertically: false }, { x: canScrollHorizontally ? previousOffset.x : 0, y: 0 })) ||
+                    undefined,
+                bottomLeft: (xSplit &&
+                    new InternalViewport(this.getters, sheetId, { left: 0, right: xSplit - 1, top: ySplit, bottom: nRows - 1 }, { width: colOffset, height: this.sheetViewHeight - rowOffset }, { canScrollHorizontally: false, canScrollVertically }, { x: 0, y: canScrollVertically ? previousOffset.y : 0 })) ||
+                    undefined,
+                bottomRight: new InternalViewport(this.getters, sheetId, { left: xSplit, right: nCols - 1, top: ySplit, bottom: nRows - 1 }, {
+                    width: this.sheetViewWidth - colOffset,
+                    height: this.sheetViewHeight - rowOffset,
+                }, { canScrollHorizontally, canScrollVertically }, {
+                    x: canScrollHorizontally ? previousOffset.x : 0,
+                    y: canScrollVertically ? previousOffset.y : 0,
+                }),
+            };
+            this.viewports[sheetId] = sheetViewports;
+        }
+        /**
+         * Adjust the viewport such that the anchor position is visible
+         */
+        refreshViewport(sheetId, anchorPosition) {
+            Object.values(this.getSubViewports(sheetId)).forEach((viewport) => {
+                viewport.adjustViewportZone();
+                viewport.adjustPosition(anchorPosition);
+            });
+        }
+        /**
+         * Shift the viewport vertically and move the selection anchor
+         * such that it remains at the same place relative to the
+         * viewport top.
+         */
+        shiftVertically(offset) {
+            const { top } = this.getActiveMainViewport();
+            const { offsetX } = this.getActiveSheetScrollInfo();
+            this.setSheetViewOffset(offsetX, offset);
+            const { anchor } = this.getters.getSelection();
+            const deltaRow = this.getActiveMainViewport().top - top;
+            this.selection.selectCell(anchor.cell.col, anchor.cell.row + deltaRow);
+        }
+        getVisibleFigures() {
+            const sheetId = this.getters.getActiveSheetId();
+            const result = [];
+            const figures = this.getters.getFigures(sheetId);
+            const { offsetX, offsetY } = this.getSheetScrollInfo(sheetId);
+            const { x: offsetCorrectionX, y: offsetCorrectionY } = this.getters.getMainViewportCoordinates();
+            const { width, height } = this.getters.getSheetViewDimensionWithHeaders();
+            for (const figure of figures) {
+                if (figure.x >= offsetCorrectionX &&
+                    (figure.x + figure.width <= offsetCorrectionX + offsetX ||
+                        figure.x >= width + offsetX + offsetCorrectionX)) {
+                    continue;
+                }
+                if (figure.y >= offsetCorrectionY &&
+                    (figure.y + figure.height <= offsetCorrectionY + offsetY ||
+                        figure.y >= height + offsetY + offsetCorrectionY)) {
+                    continue;
+                }
+                result.push(figure);
+            }
+            return result;
+        }
+        getFrozenSheetViewRatio(sheetId) {
+            const { xSplit, ySplit } = this.getters.getPaneDivisions(sheetId);
+            const offsetCorrectionX = this.getters.getColDimensions(sheetId, xSplit).start;
+            const offsetCorrectionY = this.getters.getRowDimensions(sheetId, ySplit).start;
+            const width = this.sheetViewWidth + this.gridOffsetX;
+            const height = this.sheetViewHeight + this.gridOffsetY;
+            return { xRatio: offsetCorrectionX / width, yRatio: offsetCorrectionY / height };
+        }
+    }
+    SheetViewPlugin.getters = [
+        "getColIndex",
+        "getRowIndex",
+        "getActiveMainViewport",
+        "getSheetViewDimension",
+        "getSheetViewDimensionWithHeaders",
+        "getMainViewportRect",
+        "isVisibleInViewport",
+        "getEdgeScrollCol",
+        "getEdgeScrollRow",
+        "getVisibleFigures",
+        "getVisibleRect",
+        "getColRowOffsetInViewport",
+        "getMainViewportCoordinates",
+        "getActiveSheetScrollInfo",
+        "getSheetViewVisibleCols",
+        "getSheetViewVisibleRows",
+        "getFrozenSheetViewRatio",
+    ];
+
+    /**
+     * This plugin manage the autofill.
+     *
+     * The way it works is the next one:
+     * For each line (row if the direction is left/right, col otherwise), we create
+     * a "AutofillGenerator" object which is used to compute the cells to
+     * autofill.
+     *
+     * When we need to autofill a cell, we compute the origin cell in the source.
+     *  EX: from A1:A2, autofill A3->A6.
+     *      Target | Origin cell
+     *        A3   |   A1
+     *        A4   |   A2
+     *        A5   |   A1
+     *        A6   |   A2
+     * When we have the origin, we take the associated cell in the AutofillGenerator
+     * and we apply the modifier (AutofillModifier) associated to the content of the
+     * cell.
+     */
+    /**
+     * This class is used to generate the next values to autofill.
+     * It's done from a selection (the source) and describe how the next values
+     * should be computed.
+     */
+    class AutofillGenerator {
+        constructor(cells, getters, direction) {
+            this.index = 0;
+            this.cells = cells;
+            this.getters = getters;
+            this.direction = direction;
+        }
+        /**
+         * Get the next value to autofill
+         */
+        next() {
+            const genCell = this.cells[this.index++ % this.cells.length];
+            const rule = genCell.rule;
+            const { cellData, tooltip } = autofillModifiersRegistry
+                .get(rule.type)
+                .apply(rule, genCell.data, this.getters, this.direction);
+            return {
+                cellData,
+                tooltip,
+                origin: {
+                    col: genCell.data.col,
+                    row: genCell.data.row,
+                },
+            };
+        }
+    }
+    /**
+     * Autofill Plugin
+     *
+     */
+    class AutofillPlugin extends UIPlugin {
+        constructor() {
+            super(...arguments);
+            this.lastCellSelected = {};
+        }
+        // ---------------------------------------------------------------------------
+        // Command Handling
+        // ---------------------------------------------------------------------------
+        allowDispatch(cmd) {
+            switch (cmd.type) {
+                case "AUTOFILL_SELECT":
+                    const sheetId = this.getters.getActiveSheetId();
+                    this.lastCellSelected.col =
+                        cmd.col === -1
+                            ? this.lastCellSelected.col
+                            : clip(cmd.col, 0, this.getters.getNumberCols(sheetId));
+                    this.lastCellSelected.row =
+                        cmd.row === -1
+                            ? this.lastCellSelected.row
+                            : clip(cmd.row, 0, this.getters.getNumberRows(sheetId));
+                    if (this.lastCellSelected.col !== undefined && this.lastCellSelected.row !== undefined) {
+                        return 0 /* CommandResult.Success */;
+                    }
+                    return 43 /* CommandResult.InvalidAutofillSelection */;
+                case "AUTOFILL_AUTO":
+                    const zone = this.getters.getSelectedZone();
+                    return zone.top === zone.bottom
+                        ? 0 /* CommandResult.Success */
+                        : 1 /* CommandResult.CancelledForUnknownReason */;
+            }
+            return 0 /* CommandResult.Success */;
+        }
+        handle(cmd) {
+            switch (cmd.type) {
+                case "AUTOFILL":
+                    this.autofill(true);
+                    break;
+                case "AUTOFILL_SELECT":
+                    this.select(cmd.col, cmd.row);
+                    break;
+                case "AUTOFILL_AUTO":
+                    this.autofillAuto();
+                    break;
+                case "AUTOFILL_CELL":
+                    this.autoFillMerge(cmd.originCol, cmd.originRow, cmd.col, cmd.row);
+                    const sheetId = this.getters.getActiveSheetId();
+                    this.dispatch("UPDATE_CELL", {
+                        sheetId,
+                        col: cmd.col,
+                        row: cmd.row,
+                        style: cmd.style || null,
+                        content: cmd.content || "",
+                        format: cmd.format || "",
+                    });
+                    this.dispatch("SET_BORDER", {
+                        sheetId,
+                        col: cmd.col,
+                        row: cmd.row,
+                        border: cmd.border,
+                    });
+            }
+        }
+        // ---------------------------------------------------------------------------
+        // Getters
+        // ---------------------------------------------------------------------------
+        getAutofillTooltip() {
+            return this.tooltip;
+        }
+        // ---------------------------------------------------------------------------
+        // Private methods
+        // ---------------------------------------------------------------------------
+        /**
+         * Autofill the autofillZone from the current selection
+         * @param apply Flag set to true to apply the autofill in the model. It's
+         *              useful to set it to false when we need to fill the tooltip
+         */
+        autofill(apply) {
+            if (!this.autofillZone || this.direction === undefined) {
+                this.tooltip = undefined;
+                return;
+            }
+            const source = this.getters.getSelectedZone();
+            const target = this.autofillZone;
+            switch (this.direction) {
+                case 1 /* DIRECTION.DOWN */:
+                    for (let col = source.left; col <= source.right; col++) {
+                        const xcs = [];
+                        for (let row = source.top; row <= source.bottom; row++) {
+                            xcs.push(toXC(col, row));
+                        }
+                        const generator = this.createGenerator(xcs);
+                        for (let row = target.top; row <= target.bottom; row++) {
+                            this.computeNewCell(generator, col, row, apply);
+                        }
+                    }
+                    break;
+                case 0 /* DIRECTION.UP */:
+                    for (let col = source.left; col <= source.right; col++) {
+                        const xcs = [];
+                        for (let row = source.bottom; row >= source.top; row--) {
+                            xcs.push(toXC(col, row));
+                        }
+                        const generator = this.createGenerator(xcs);
+                        for (let row = target.bottom; row >= target.top; row--) {
+                            this.computeNewCell(generator, col, row, apply);
+                        }
+                    }
+                    break;
+                case 2 /* DIRECTION.LEFT */:
+                    for (let row = source.top; row <= source.bottom; row++) {
+                        const xcs = [];
+                        for (let col = source.right; col >= source.left; col--) {
+                            xcs.push(toXC(col, row));
+                        }
+                        const generator = this.createGenerator(xcs);
+                        for (let col = target.right; col >= target.left; col--) {
+                            this.computeNewCell(generator, col, row, apply);
+                        }
+                    }
+                    break;
+                case 3 /* DIRECTION.RIGHT */:
+                    for (let row = source.top; row <= source.bottom; row++) {
+                        const xcs = [];
+                        for (let col = source.left; col <= source.right; col++) {
+                            xcs.push(toXC(col, row));
+                        }
+                        const generator = this.createGenerator(xcs);
+                        for (let col = target.left; col <= target.right; col++) {
+                            this.computeNewCell(generator, col, row, apply);
+                        }
+                    }
+                    break;
+            }
+            if (apply) {
+                const zone = union(this.getters.getSelectedZone(), this.autofillZone);
+                this.autofillZone = undefined;
+                this.lastCellSelected = {};
+                this.direction = undefined;
+                this.tooltip = undefined;
+                this.selection.selectZone({ cell: { col: zone.left, row: zone.top }, zone });
+            }
+        }
+        /**
+         * Select a cell which becomes the last cell of the autofillZone
+         */
+        select(col, row) {
+            const source = this.getters.getSelectedZone();
+            if (isInside(col, row, source)) {
+                this.autofillZone = undefined;
+                return;
+            }
+            this.direction = this.getDirection(col, row);
+            switch (this.direction) {
+                case 0 /* DIRECTION.UP */:
+                    this.saveZone(row, source.top - 1, source.left, source.right);
+                    break;
+                case 1 /* DIRECTION.DOWN */:
+                    this.saveZone(source.bottom + 1, row, source.left, source.right);
+                    break;
+                case 2 /* DIRECTION.LEFT */:
+                    this.saveZone(source.top, source.bottom, col, source.left - 1);
+                    break;
+                case 3 /* DIRECTION.RIGHT */:
+                    this.saveZone(source.top, source.bottom, source.right + 1, col);
+                    break;
+            }
+            this.autofill(false);
+        }
+        /**
+         * Computes the autofillZone to autofill when the user double click on the
+         * autofiller
+         */
+        autofillAuto() {
+            const zone = this.getters.getSelectedZone();
+            const sheetId = this.getters.getActiveSheetId();
+            let col = zone.left;
+            let row = zone.bottom;
+            if (col > 0) {
+                let left = this.getters.getEvaluatedCell({ sheetId, col: col - 1, row });
+                while (left.type !== CellValueType.empty) {
+                    row += 1;
+                    left = this.getters.getEvaluatedCell({ sheetId, col: col - 1, row });
+                }
+            }
+            if (row === zone.bottom) {
+                col = zone.right;
+                if (col <= this.getters.getNumberCols(sheetId)) {
+                    let right = this.getters.getEvaluatedCell({ sheetId, col: col + 1, row });
+                    while (right.type !== CellValueType.empty) {
+                        row += 1;
+                        right = this.getters.getEvaluatedCell({ sheetId, col: col + 1, row });
+                    }
+                }
+            }
+            if (row !== zone.bottom) {
+                this.select(zone.left, row - 1);
+                this.autofill(true);
+            }
+        }
+        /**
+         * Generate the next cell
+         */
+        computeNewCell(generator, col, row, apply) {
+            const { cellData, tooltip, origin } = generator.next();
+            const { content, style, border, format } = cellData;
+            this.tooltip = tooltip;
+            if (apply) {
+                this.dispatch("AUTOFILL_CELL", {
+                    originCol: origin.col,
+                    originRow: origin.row,
+                    col,
+                    row,
+                    content,
+                    style,
+                    border,
+                    format,
+                });
+            }
+        }
+        /**
+         * Get the rule associated to the current cell
+         */
+        getRule(cell, cells) {
+            const rules = autofillRulesRegistry.getAll().sort((a, b) => a.sequence - b.sequence);
+            const rule = rules.find((rule) => rule.condition(cell, cells));
+            return rule && rule.generateRule(cell, cells);
+        }
+        /**
+         * Create the generator to be able to autofill the next cells.
+         */
+        createGenerator(source) {
+            const nextCells = [];
+            const cellsData = [];
+            const sheetId = this.getters.getActiveSheetId();
+            for (let xc of source) {
+                const { col, row } = toCartesian(xc);
+                const cell = this.getters.getCell(sheetId, col, row);
+                cellsData.push({
+                    col,
+                    row,
+                    cell,
+                    sheetId,
+                });
+            }
+            const cells = cellsData.map((cellData) => cellData.cell);
+            for (let cellData of cellsData) {
+                let rule = { type: "COPY_MODIFIER" };
+                if (cellData && cellData.cell) {
+                    const newRule = this.getRule(cellData.cell, cells);
+                    rule = newRule || rule;
+                }
+                const { sheetId, col, row } = cellData;
+                const border = this.getters.getCellBorder(sheetId, col, row) || undefined;
+                nextCells.push({
+                    data: { ...cellData, border },
+                    rule,
+                });
+            }
+            return new AutofillGenerator(nextCells, this.getters, this.direction);
+        }
+        saveZone(top, bottom, left, right) {
+            this.autofillZone = { top, bottom, left, right };
+        }
+        /**
+         * Compute the direction of the autofill from the last selected zone and
+         * a given cell (col, row)
+         */
+        getDirection(col, row) {
+            const source = this.getters.getSelectedZone();
+            const position = {
+                up: { number: source.top - row, value: 0 /* DIRECTION.UP */ },
+                down: { number: row - source.bottom, value: 1 /* DIRECTION.DOWN */ },
+                left: { number: source.left - col, value: 2 /* DIRECTION.LEFT */ },
+                right: { number: col - source.right, value: 3 /* DIRECTION.RIGHT */ },
+            };
+            if (Object.values(position)
+                .map((x) => (x.number > 0 ? 1 : 0))
+                .reduce((acc, value) => acc + value) === 1) {
+                return Object.values(position).find((x) => (x.number > 0 ? 1 : 0)).value;
+            }
+            const first = position.up.number > 0 ? "up" : "down";
+            const second = position.left.number > 0 ? "left" : "right";
+            return Math.abs(position[first].number) >= Math.abs(position[second].number)
+                ? position[first].value
+                : position[second].value;
+        }
+        autoFillMerge(originCol, originRow, col, row) {
+            const activeSheet = this.getters.getActiveSheet();
+            if (this.getters.isInMerge(activeSheet.id, col, row) &&
+                !this.getters.isInMerge(activeSheet.id, originCol, originRow)) {
+                const zone = this.getters.getMerge(activeSheet.id, col, row);
+                if (zone) {
+                    this.dispatch("REMOVE_MERGE", {
+                        sheetId: activeSheet.id,
+                        target: [zone],
+                    });
+                }
+            }
+            const originMerge = this.getters.getMerge(activeSheet.id, originCol, originRow);
+            if ((originMerge === null || originMerge === void 0 ? void 0 : originMerge.topLeft.col) === originCol && (originMerge === null || originMerge === void 0 ? void 0 : originMerge.topLeft.row) === originRow) {
+                this.dispatch("ADD_MERGE", {
+                    sheetId: activeSheet.id,
+                    target: [
+                        {
+                            top: row,
+                            bottom: row + originMerge.bottom - originMerge.top,
+                            left: col,
+                            right: col + originMerge.right - originMerge.left,
+                        },
+                    ],
+                });
+            }
+        }
+        // ---------------------------------------------------------------------------
+        // Grid rendering
+        // ---------------------------------------------------------------------------
+        drawGrid(renderingContext) {
+            if (!this.autofillZone) {
+                return;
+            }
+            const { ctx, thinLineWidth } = renderingContext;
+            const { x, y, width, height } = this.getters.getVisibleRect(this.autofillZone);
+            if (width > 0 && height > 0) {
+                ctx.strokeStyle = "black";
+                ctx.lineWidth = thinLineWidth;
+                ctx.setLineDash([3]);
+                ctx.strokeRect(x, y, width, height);
+                ctx.setLineDash([]);
+            }
+        }
+    }
+    AutofillPlugin.layers = [5 /* LAYERS.Autofill */];
+    AutofillPlugin.getters = ["getAutofillTooltip"];
+
+    class AutomaticSumPlugin extends UIPlugin {
+        handle(cmd) {
+            switch (cmd.type) {
+                case "SUM_SELECTION":
+                    const sheetId = this.getters.getActiveSheetId();
+                    const { zones, anchor } = this.getters.getSelection();
+                    for (const zone of zones) {
+                        const sums = this.getAutomaticSums(sheetId, zone, anchor.cell);
+                        this.dispatchCellUpdates(sheetId, sums);
+                    }
+                    break;
+            }
+        }
+        getAutomaticSums(sheetId, zone, anchor) {
+            return this.shouldFindData(sheetId, zone)
+                ? this.sumAdjacentData(sheetId, zone, anchor)
+                : this.sumData(sheetId, zone);
+        }
+        // ---------------------------------------------------------------------------
+        // Private methods
+        // ---------------------------------------------------------------------------
+        sumData(sheetId, zone) {
+            const dimensions = this.dimensionsToSum(sheetId, zone);
+            const sums = this.sumDimensions(sheetId, zone, dimensions).filter(({ zone }) => !this.getters.isEmpty(sheetId, zone));
+            if (dimensions.has("ROW") && dimensions.has("COL")) {
+                sums.push(this.sumTotal(zone));
+            }
+            return sums;
+        }
+        sumAdjacentData(sheetId, zone, anchor) {
+            const { col, row } = isInside(anchor.col, anchor.row, zone)
+                ? anchor
+                : { col: zone.left, row: zone.top };
+            const dataZone = this.findAdjacentData(sheetId, col, row);
+            if (!dataZone) {
+                return [];
+            }
+            if (this.getters.isSingleCellOrMerge(sheetId, zone) ||
+                isOneDimensional(union(dataZone, zone))) {
+                return [{ position: { col, row }, zone: dataZone }];
+            }
+            else {
+                return this.sumDimensions(sheetId, union(dataZone, zone), this.transpose(this.dimensionsToSum(sheetId, zone)));
+            }
+        }
+        /**
+         * Find a zone to automatically sum a column or row of numbers.
+         *
+         * We first decide which direction will be summed (column or row).
+         * Here is the strategy:
+         *  1. If the left cell is a number and the top cell is not: choose horizontal
+         *  2. Try to find a valid vertical zone. If it's valid: choose vertical
+         *  3. Try to find a valid horizontal zone. If it's valid: choose horizontal
+         *  4. Otherwise, no zone is returned
+         *
+         * Now, how to find a valid zone?
+         * The zone starts directly above or on the left of the starting point
+         * (depending on the direction).
+         * The zone ends where the first continuous sequence of numbers ends.
+         * Empty or text cells can be part of the zone while no number has been found.
+         * Other kind of cells (boolean, dates, etc.) are not valid in the zone and the
+         * search stops immediately if one is found.
+         *
+         *  -------                                       -------
+         * |   1   |                                     |   1   |
+         *  -------                                       -------
+         * |       |                                     |       |
+         *  -------  <= end of the sequence, stop here    -------
+         * |   2   |                                     |   2   |
+         *  -------                                       -------
+         * |   3   | <= start of the number sequence     |   3   |
+         *  -------                                       -------
+         * |       | <= ignored                          | FALSE | <= invalid, no zone is found
+         *  -------                                       -------
+         * |   A   | <= ignored                          |   A   | <= ignored
+         *  -------                                       -------
+         */
+        findAdjacentData(sheetId, col, row) {
+            const sheet = this.getters.getSheet(sheetId);
+            const mainCellPosition = this.getters.getMainCellPosition(sheetId, col, row);
+            const zone = this.findSuitableZoneToSum(sheet, mainCellPosition.col, mainCellPosition.row);
+            if (zone) {
+                return this.getters.expandZone(sheetId, zone);
+            }
+            return undefined;
+        }
+        /**
+         * Return the zone to sum if a valid one is found.
+         * @see getAutomaticSumZone
+         */
+        findSuitableZoneToSum(sheet, col, row) {
+            const topCell = this.getters.getEvaluatedCell({ sheetId: sheet.id, col, row: row - 1 });
+            const leftCell = this.getters.getEvaluatedCell({ sheetId: sheet.id, col: col - 1, row });
+            if (this.isNumber(leftCell) && !this.isNumber(topCell)) {
+                return this.findHorizontalZone(sheet, col, row);
+            }
+            const verticalZone = this.findVerticalZone(sheet, col, row);
+            if (this.isZoneValid(verticalZone)) {
+                return verticalZone;
+            }
+            const horizontalZone = this.findHorizontalZone(sheet, col, row);
+            if (this.isZoneValid(horizontalZone)) {
+                return horizontalZone;
+            }
+            return undefined;
+        }
+        findVerticalZone(sheet, col, row) {
+            const zone = {
+                top: 0,
+                bottom: row - 1,
+                left: col,
+                right: col,
+            };
+            const top = this.reduceZoneStart(sheet, zone, zone.bottom);
+            return { ...zone, top };
+        }
+        findHorizontalZone(sheet, col, row) {
+            const zone = {
+                top: row,
+                bottom: row,
+                left: 0,
+                right: col - 1,
+            };
+            const left = this.reduceZoneStart(sheet, zone, zone.right);
+            return { ...zone, left };
+        }
+        /**
+         * Reduces a column or row zone to a valid zone for the automatic sum.
+         * @see getAutomaticSumZone
+         * @param sheet
+         * @param zone one dimensional zone (a single row or a single column). The zone is
+         *             assumed to start at the beginning of the column (top=0) or the row (left=0)
+         * @param end end index of the zone (`bottom` or `right` depending on the dimension)
+         * @returns the starting position of the valid zone or Infinity if the zone is not valid.
+         */
+        reduceZoneStart(sheet, zone, end) {
+            const cells = this.getters.getEvaluatedCellsInZone(sheet.id, zone);
+            const cellPositions = range(end, -1, -1);
+            const invalidCells = cellPositions.filter((position) => cells[position] && !cells[position].isAutoSummable);
+            const maxValidPosition = Math.max(...invalidCells);
+            const numberSequences = groupConsecutive(cellPositions.filter((position) => this.isNumber(cells[position])));
+            const firstSequence = numberSequences[0] || [];
+            if (Math.max(...firstSequence) < maxValidPosition) {
+                return Infinity;
+            }
+            return Math.min(...firstSequence);
+        }
+        shouldFindData(sheetId, zone) {
+            return this.getters.isEmpty(sheetId, zone) || this.getters.isSingleCellOrMerge(sheetId, zone);
+        }
+        isNumber(cell) {
+            var _a;
+            return cell.type === CellValueType.number && !((_a = cell.format) === null || _a === void 0 ? void 0 : _a.match(DATETIME_FORMAT));
+        }
+        isZoneValid(zone) {
+            return zone.bottom >= zone.top && zone.right >= zone.left;
+        }
+        lastColIsEmpty(sheetId, zone) {
+            return this.getters.isEmpty(sheetId, { ...zone, left: zone.right });
+        }
+        lastRowIsEmpty(sheetId, zone) {
+            return this.getters.isEmpty(sheetId, { ...zone, top: zone.bottom });
+        }
+        /**
+         * Decides which dimensions (columns or rows) should be summed
+         * based on its shape and what's inside the zone.
+         */
+        dimensionsToSum(sheetId, zone) {
+            const dimensions = new Set();
+            if (isOneDimensional(zone)) {
+                dimensions.add(zoneToDimension(zone).width === 1 ? "COL" : "ROW");
+                return dimensions;
+            }
+            if (this.lastColIsEmpty(sheetId, zone)) {
+                dimensions.add("ROW");
+            }
+            if (this.lastRowIsEmpty(sheetId, zone)) {
+                dimensions.add("COL");
+            }
+            if (dimensions.size === 0) {
+                dimensions.add("COL");
+            }
+            return dimensions;
+        }
+        /**
+         * Sum each column and/or row in the zone in the appropriate cells,
+         * depending on the available space.
+         */
+        sumDimensions(sheetId, zone, dimensions) {
+            return [
+                ...(dimensions.has("COL") ? this.sumColumns(zone, sheetId) : []),
+                ...(dimensions.has("ROW") ? this.sumRows(zone, sheetId) : []),
+            ];
+        }
+        /**
+         * Sum the total of the zone in the bottom right cell, assuming
+         * the last row contains summed columns.
+         */
+        sumTotal(zone) {
+            const { bottom, right } = zone;
+            return {
+                position: { col: right, row: bottom },
+                zone: { ...zone, top: bottom, right: right - 1 },
+            };
+        }
+        sumColumns(zone, sheetId) {
+            const target = this.nextEmptyRow(sheetId, { ...zone, bottom: zone.bottom - 1 });
+            zone = { ...zone, bottom: Math.min(zone.bottom, target.bottom - 1) };
+            return positions(target).map((position) => ({
+                position,
+                zone: { ...zone, right: position.col, left: position.col },
+            }));
+        }
+        sumRows(zone, sheetId) {
+            const target = this.nextEmptyCol(sheetId, { ...zone, right: zone.right - 1 });
+            zone = { ...zone, right: Math.min(zone.right, target.right - 1) };
+            return positions(target).map((position) => ({
+                position,
+                zone: { ...zone, top: position.row, bottom: position.row },
+            }));
+        }
+        dispatchCellUpdates(sheetId, sums) {
+            for (const sum of sums) {
+                const { col, row } = sum.position;
+                this.dispatch("UPDATE_CELL", {
+                    sheetId,
+                    col,
+                    row,
+                    content: `=SUM(${this.getters.zoneToXC(sheetId, sum.zone)})`,
+                });
+            }
+        }
+        /**
+         * Find the first row where all cells below the zone are empty.
+         */
+        nextEmptyRow(sheetId, zone) {
+            let start = zone.bottom + 1;
+            const { left, right } = zone;
+            while (!this.getters.isEmpty(sheetId, { bottom: start, top: start, left, right })) {
+                start++;
+            }
+            return {
+                ...zone,
+                top: start,
+                bottom: start,
+            };
+        }
+        /**
+         * Find the first column where all cells right of the zone are empty.
+         */
+        nextEmptyCol(sheetId, zone) {
+            let start = zone.right + 1;
+            const { top, bottom } = zone;
+            while (!this.getters.isEmpty(sheetId, { left: start, right: start, top, bottom })) {
+                start++;
+            }
+            return {
+                ...zone,
+                left: start,
+                right: start,
+            };
+        }
+        /**
+         * Transpose the given dimensions.
+         * COL becomes ROW
+         * ROW becomes COL
+         */
+        transpose(dimensions) {
+            return new Set([...dimensions.values()].map((dimension) => (dimension === "COL" ? "ROW" : "COL")));
+        }
+    }
+    AutomaticSumPlugin.getters = ["getAutomaticSums"];
+
+    /**
+     * Plugin managing the display of components next to cells.
+     */
+    class CellPopoverPlugin extends UIPlugin {
+        allowDispatch(cmd) {
+            switch (cmd.type) {
+                case "OPEN_CELL_POPOVER":
+                    try {
+                        cellPopoverRegistry.get(cmd.popoverType);
+                    }
+                    catch (error) {
+                        return 70 /* CommandResult.InvalidCellPopover */;
+                    }
+                    return 0 /* CommandResult.Success */;
+                default:
+                    return 0 /* CommandResult.Success */;
+            }
+        }
+        handle(cmd) {
+            switch (cmd.type) {
+                case "ACTIVATE_SHEET":
+                    this.persistentPopover = undefined;
+                    break;
+                case "OPEN_CELL_POPOVER":
+                    this.persistentPopover = {
+                        col: cmd.col,
+                        row: cmd.row,
+                        type: cmd.popoverType,
+                    };
+                    break;
+                case "CLOSE_CELL_POPOVER":
+                    this.persistentPopover = undefined;
+                    break;
+            }
+        }
+        getCellPopover({ col, row }) {
+            var _a, _b;
+            const sheetId = this.getters.getActiveSheetId();
+            if (this.persistentPopover &&
+                this.getters.isVisibleInViewport(sheetId, this.persistentPopover.col, this.persistentPopover.row)) {
+                const mainPosition = this.getters.getMainCellPosition(sheetId, this.persistentPopover.col, this.persistentPopover.row);
+                const popover = (_b = (_a = cellPopoverRegistry
+                    .get(this.persistentPopover.type)).onOpen) === null || _b === void 0 ? void 0 : _b.call(_a, { sheetId, ...mainPosition }, this.getters);
+                return !(popover === null || popover === void 0 ? void 0 : popover.isOpen)
+                    ? { isOpen: false }
+                    : {
+                        ...popover,
+                        ...this.computePopoverProps(this.persistentPopover, popover.cellCorner),
+                    };
+            }
+            if (col === undefined ||
+                row === undefined ||
+                !this.getters.isVisibleInViewport(sheetId, col, row)) {
+                return { isOpen: false };
+            }
+            const mainPosition = this.getters.getMainCellPosition(sheetId, col, row);
+            const popover = cellPopoverRegistry
+                .getAll()
+                .map((matcher) => { var _a; return (_a = matcher.onHover) === null || _a === void 0 ? void 0 : _a.call(matcher, { sheetId, ...mainPosition }, this.getters); })
+                .find((popover) => popover === null || popover === void 0 ? void 0 : popover.isOpen);
+            return !(popover === null || popover === void 0 ? void 0 : popover.isOpen)
+                ? { isOpen: false }
+                : {
+                    ...popover,
+                    ...this.computePopoverProps(mainPosition, popover.cellCorner),
+                };
+        }
+        getPersistentPopoverTypeAtPosition({ col, row }) {
+            if (this.persistentPopover &&
+                this.persistentPopover.col === col &&
+                this.persistentPopover.row === row) {
+                return this.persistentPopover.type;
+            }
+            return undefined;
+        }
+        computePopoverProps({ col, row }, corner) {
+            const { width, height } = this.getters.getVisibleRect(positionToZone({ col, row }));
+            return {
+                coordinates: this.computePopoverPosition({ col, row }, corner),
+                cellWidth: -width,
+                cellHeight: -height,
+            };
+        }
+        computePopoverPosition({ col, row }, corner) {
+            const sheetId = this.getters.getActiveSheetId();
+            const merge = this.getters.getMerge(sheetId, col, row);
+            if (merge) {
+                col = corner === "TopRight" ? merge.right : merge.left;
+                row = corner === "TopRight" ? merge.top : merge.bottom;
+            }
+            // x, y are relative to the canvas
+            const { x, y, width, height } = this.getters.getVisibleRect(positionToZone({ col, row }));
+            switch (corner) {
+                case "BottomLeft":
+                    return { x, y: y + height };
+                case "TopRight":
+                    return { x: x + width, y: y };
+            }
+        }
+    }
+    CellPopoverPlugin.getters = ["getCellPopover", "getPersistentPopoverTypeAtPosition"];
+    CellPopoverPlugin.modes = ["normal"];
+
     const BORDER_COLOR = "#8B008B";
     const BACKGROUND_COLOR = "#8B008B33";
     var Direction;
@@ -33962,623 +34015,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     RendererPlugin.layers = [0 /* LAYERS.Background */, 7 /* LAYERS.Headers */];
     RendererPlugin.getters = ["getColDimensionsInViewport", "getRowDimensionsInViewport"];
 
-    const selectionStatisticFunctions = [
-        {
-            name: _lt("Sum"),
-            types: [CellValueType.number],
-            compute: (values) => SUM.compute([values]),
-        },
-        {
-            name: _lt("Avg"),
-            types: [CellValueType.number],
-            compute: (values) => AVERAGE.compute([values]),
-        },
-        {
-            name: _lt("Min"),
-            types: [CellValueType.number],
-            compute: (values) => MIN.compute([values]),
-        },
-        {
-            name: _lt("Max"),
-            types: [CellValueType.number],
-            compute: (values) => MAX.compute([values]),
-        },
-        {
-            name: _lt("Count"),
-            types: [CellValueType.number, CellValueType.text, CellValueType.boolean, CellValueType.error],
-            compute: (values) => COUNTA.compute([values]),
-        },
-        {
-            name: _lt("Count Numbers"),
-            types: [CellValueType.number, CellValueType.text, CellValueType.boolean, CellValueType.error],
-            compute: (values) => COUNT.compute([values]),
-        },
-    ];
-    /**
-     * SelectionPlugin
-     */
-    class GridSelectionPlugin extends UIPlugin {
-        constructor(getters, state, dispatch, config, selection) {
-            super(getters, state, dispatch, config, selection);
-            this.gridSelection = {
-                anchor: {
-                    cell: { col: 0, row: 0 },
-                    zone: { top: 0, left: 0, bottom: 0, right: 0 },
-                },
-                zones: [{ top: 0, left: 0, bottom: 0, right: 0 }],
-            };
-            this.selectedFigureId = null;
-            this.sheetsData = {};
-            // This flag is used to avoid to historize the ACTIVE_SHEET command when it's
-            // the main command.
-            this.activeSheet = null;
-            this.moveClient = config.moveClient;
-        }
-        // ---------------------------------------------------------------------------
-        // Command Handling
-        // ---------------------------------------------------------------------------
-        allowDispatch(cmd) {
-            switch (cmd.type) {
-                case "ACTIVATE_SHEET":
-                    try {
-                        this.getters.getSheet(cmd.sheetIdTo);
-                        break;
-                    }
-                    catch (error) {
-                        return 26 /* CommandResult.InvalidSheetId */;
-                    }
-                case "MOVE_COLUMNS_ROWS":
-                    return this.isMoveElementAllowed(cmd);
-            }
-            return 0 /* CommandResult.Success */;
-        }
-        handleEvent(event) {
-            const anchor = event.anchor;
-            let zones = [];
-            switch (event.mode) {
-                case "overrideSelection":
-                    zones = [anchor.zone];
-                    break;
-                case "updateAnchor":
-                    zones = [...this.gridSelection.zones];
-                    const index = zones.findIndex((z) => isEqual(z, event.previousAnchor.zone));
-                    if (index >= 0) {
-                        zones[index] = anchor.zone;
-                    }
-                    break;
-                case "newAnchor":
-                    zones = [...this.gridSelection.zones, anchor.zone];
-                    break;
-            }
-            this.setSelectionMixin(event.anchor, zones);
-            /** Any change to the selection has to be  reflected in the selection processor. */
-            this.selection.resetDefaultAnchor(this, deepCopy(this.gridSelection.anchor));
-            const { col, row } = this.gridSelection.anchor.cell;
-            this.moveClient({
-                sheetId: this.getters.getActiveSheetId(),
-                col,
-                row,
-            });
-            this.selectedFigureId = null;
-        }
-        handle(cmd) {
-            switch (cmd.type) {
-                case "START_EDITION":
-                case "ACTIVATE_SHEET":
-                    this.selectedFigureId = null;
-                    break;
-                case "DELETE_FIGURE":
-                    if (this.selectedFigureId === cmd.id) {
-                        this.selectedFigureId = null;
-                    }
-                    break;
-                case "DELETE_SHEET":
-                    if (this.selectedFigureId && this.getters.getFigure(cmd.sheetId, this.selectedFigureId)) {
-                        this.selectedFigureId = null;
-                    }
-                    break;
-            }
-            switch (cmd.type) {
-                case "START":
-                    const firstSheetId = this.getters.getVisibleSheetIds()[0];
-                    this.dispatch("ACTIVATE_SHEET", {
-                        sheetIdTo: firstSheetId,
-                        sheetIdFrom: firstSheetId,
-                    });
-                    const { col, row } = this.getters.getNextVisibleCellPosition(firstSheetId, 0, 0);
-                    this.selectCell(col, row);
-                    this.selection.registerAsDefault(this, this.gridSelection.anchor, {
-                        handleEvent: this.handleEvent.bind(this),
-                    });
-                    this.moveClient({ sheetId: firstSheetId, col: 0, row: 0 });
-                    break;
-                case "ACTIVATE_SHEET": {
-                    if (!this.getters.isSheetVisible(cmd.sheetIdTo)) {
-                        this.dispatch("SHOW_SHEET", { sheetId: cmd.sheetIdTo });
-                    }
-                    this.setActiveSheet(cmd.sheetIdTo);
-                    this.sheetsData[cmd.sheetIdFrom] = {
-                        gridSelection: deepCopy(this.gridSelection),
-                    };
-                    if (cmd.sheetIdTo in this.sheetsData) {
-                        Object.assign(this, this.sheetsData[cmd.sheetIdTo]);
-                        this.selection.resetDefaultAnchor(this, deepCopy(this.gridSelection.anchor));
-                    }
-                    else {
-                        const { col, row } = this.getters.getNextVisibleCellPosition(cmd.sheetIdTo, 0, 0);
-                        this.selectCell(col, row);
-                    }
-                    break;
-                }
-                case "REMOVE_COLUMNS_ROWS": {
-                    const sheetId = this.getters.getActiveSheetId();
-                    if (cmd.sheetId === sheetId) {
-                        if (cmd.dimension === "COL") {
-                            this.onColumnsRemoved(cmd);
-                        }
-                        else {
-                            this.onRowsRemoved(cmd);
-                        }
-                        const { col, row } = this.gridSelection.anchor.cell;
-                        this.moveClient({ sheetId, col, row });
-                    }
-                    break;
-                }
-                case "ADD_COLUMNS_ROWS": {
-                    const sheetId = this.getters.getActiveSheetId();
-                    if (cmd.sheetId === sheetId) {
-                        this.onAddElements(cmd);
-                        const { col, row } = this.gridSelection.anchor.cell;
-                        this.moveClient({ sheetId, col, row });
-                    }
-                    break;
-                }
-                case "MOVE_COLUMNS_ROWS":
-                    if (cmd.sheetId === this.getActiveSheetId()) {
-                        this.onMoveElements(cmd);
-                    }
-                    break;
-                case "SELECT_FIGURE":
-                    this.selectedFigureId = cmd.id;
-                    break;
-                case "ACTIVATE_NEXT_SHEET":
-                    this.activateNextSheet("right");
-                    break;
-                case "ACTIVATE_PREVIOUS_SHEET":
-                    this.activateNextSheet("left");
-                    break;
-                case "HIDE_SHEET":
-                    if (cmd.sheetId === this.getActiveSheetId()) {
-                        this.dispatch("ACTIVATE_SHEET", {
-                            sheetIdFrom: cmd.sheetId,
-                            sheetIdTo: this.getters.getVisibleSheetIds()[0],
-                        });
-                    }
-                    break;
-                case "UNDO":
-                case "REDO":
-                case "DELETE_SHEET":
-                    const deletedSheetIds = Object.keys(this.sheetsData).filter((sheetId) => !this.getters.tryGetSheet(sheetId));
-                    for (const sheetId of deletedSheetIds) {
-                        delete this.sheetsData[sheetId];
-                    }
-                    for (const sheetId in this.sheetsData) {
-                        const gridSelection = this.clipSelection(sheetId, this.sheetsData[sheetId].gridSelection);
-                        this.sheetsData[sheetId] = {
-                            gridSelection: deepCopy(gridSelection),
-                        };
-                    }
-                    if (!this.getters.tryGetSheet(this.getters.getActiveSheetId())) {
-                        const currentSheetIds = this.getters.getVisibleSheetIds();
-                        this.activeSheet = this.getters.getSheet(currentSheetIds[0]);
-                        if (this.activeSheet.id in this.sheetsData) {
-                            const { anchor } = this.clipSelection(this.activeSheet.id, this.sheetsData[this.activeSheet.id].gridSelection);
-                            this.selectCell(anchor.cell.col, anchor.cell.row);
-                        }
-                        else {
-                            this.selectCell(0, 0);
-                        }
-                        const { col, row } = this.gridSelection.anchor.cell;
-                        this.moveClient({
-                            sheetId: this.getters.getActiveSheetId(),
-                            col,
-                            row,
-                        });
-                    }
-                    const sheetId = this.getters.getActiveSheetId();
-                    this.gridSelection.zones = this.gridSelection.zones.map((z) => this.getters.expandZone(sheetId, z));
-                    this.gridSelection.anchor.zone = this.getters.expandZone(sheetId, this.gridSelection.anchor.zone);
-                    this.setSelectionMixin(this.gridSelection.anchor, this.gridSelection.zones);
-                    break;
-            }
-            /** Any change to the selection has to be  reflected in the selection processor. */
-            this.selection.resetDefaultAnchor(this, deepCopy(this.gridSelection.anchor));
-        }
-        // ---------------------------------------------------------------------------
-        // Getters
-        // ---------------------------------------------------------------------------
-        getActiveSheet() {
-            return this.activeSheet;
-        }
-        getActiveSheetId() {
-            return this.activeSheet.id;
-        }
-        getActiveCell() {
-            const sheetId = this.getters.getActiveSheetId();
-            const { col, row } = this.gridSelection.anchor.cell;
-            const mainPosition = this.getters.getMainCellPosition(sheetId, col, row);
-            return this.getters.getEvaluatedCell({ sheetId, ...mainPosition });
-        }
-        getActiveCols() {
-            const activeCols = new Set();
-            for (let zone of this.gridSelection.zones) {
-                if (zone.top === 0 &&
-                    zone.bottom === this.getters.getNumberRows(this.getters.getActiveSheetId()) - 1) {
-                    for (let i = zone.left; i <= zone.right; i++) {
-                        activeCols.add(i);
-                    }
-                }
-            }
-            return activeCols;
-        }
-        getActiveRows() {
-            const activeRows = new Set();
-            const sheetId = this.getters.getActiveSheetId();
-            for (let zone of this.gridSelection.zones) {
-                if (zone.left === 0 && zone.right === this.getters.getNumberCols(sheetId) - 1) {
-                    for (let i = zone.top; i <= zone.bottom; i++) {
-                        activeRows.add(i);
-                    }
-                }
-            }
-            return activeRows;
-        }
-        getCurrentStyle() {
-            const zone = this.getters.getSelectedZone();
-            const sheetId = this.getters.getActiveSheetId();
-            return this.getters.getCellStyle({ sheetId, col: zone.left, row: zone.top });
-        }
-        getSelectedZones() {
-            return deepCopy(this.gridSelection.zones);
-        }
-        getSelectedZone() {
-            return deepCopy(this.gridSelection.anchor.zone);
-        }
-        getSelection() {
-            return deepCopy(this.gridSelection);
-        }
-        getSelectedFigureId() {
-            return this.selectedFigureId;
-        }
-        getPosition() {
-            return { col: this.gridSelection.anchor.cell.col, row: this.gridSelection.anchor.cell.row };
-        }
-        getSheetPosition(sheetId) {
-            if (sheetId === this.getters.getActiveSheetId()) {
-                return this.getPosition();
-            }
-            else {
-                const sheetData = this.sheetsData[sheetId];
-                return sheetData
-                    ? {
-                        col: sheetData.gridSelection.anchor.cell.col,
-                        row: sheetData.gridSelection.anchor.cell.row,
-                    }
-                    : this.getters.getNextVisibleCellPosition(sheetId, 0, 0);
-            }
-        }
-        getStatisticFnResults() {
-            // get deduplicated cells in zones
-            const cells = new Set(this.gridSelection.zones
-                .map((zone) => this.getters.getEvaluatedCellsInZone(this.getters.getActiveSheetId(), zone))
-                .flat()
-                .filter((cell) => cell.type !== CellValueType.empty));
-            let cellsTypes = new Set();
-            let cellsValues = [];
-            for (let cell of cells) {
-                cellsTypes.add(cell.type);
-                cellsValues.push(cell.value);
-            }
-            let statisticFnResults = {};
-            for (let fn of selectionStatisticFunctions) {
-                // We don't want to display statistical information when there is no interest:
-                // We set the statistical result to undefined if the data handled by the selection
-                // does not match the data handled by the function.
-                // Ex: if there are only texts in the selection, we prefer that the SUM result
-                // be displayed as undefined rather than 0.
-                let fnResult = undefined;
-                if (fn.types.some((t) => cellsTypes.has(t))) {
-                    fnResult = fn.compute(cellsValues);
-                }
-                statisticFnResults[fn.name] = fnResult;
-            }
-            return statisticFnResults;
-        }
-        getAggregate() {
-            let aggregate = 0;
-            let n = 0;
-            const sheetId = this.getters.getActiveSheetId();
-            const cellPositions = this.gridSelection.zones.map(positions).flat();
-            for (const { col, row } of cellPositions) {
-                const cell = this.getters.getEvaluatedCell({ sheetId, col, row });
-                if (cell.type === CellValueType.number) {
-                    n++;
-                    aggregate += cell.value;
-                }
-            }
-            return n < 2 ? null : formatValue(aggregate);
-        }
-        isSelected(zone) {
-            return !!this.getters.getSelectedZones().find((z) => isEqual(z, zone));
-        }
-        /**
-         * Returns a sorted array of indexes of all columns (respectively rows depending
-         * on the dimension parameter) intersected by the currently selected zones.
-         *
-         * example:
-         * assume selectedZones: [{left:0, right: 2, top :2, bottom: 4}, {left:5, right: 6, top :3, bottom: 5}]
-         *
-         * if dimension === "COL" => [0,1,2,5,6]
-         * if dimension === "ROW" => [2,3,4,5]
-         */
-        getElementsFromSelection(dimension) {
-            if (dimension === "COL" && this.getters.getActiveCols().size === 0) {
-                return [];
-            }
-            if (dimension === "ROW" && this.getters.getActiveRows().size === 0) {
-                return [];
-            }
-            const zones = this.getters.getSelectedZones();
-            let elements = [];
-            const start = dimension === "COL" ? "left" : "top";
-            const end = dimension === "COL" ? "right" : "bottom";
-            for (const zone of zones) {
-                const zoneRows = Array.from({ length: zone[end] - zone[start] + 1 }, (_, i) => zone[start] + i);
-                elements = elements.concat(zoneRows);
-            }
-            return [...new Set(elements)].sort();
-        }
-        // ---------------------------------------------------------------------------
-        // Other
-        // ---------------------------------------------------------------------------
-        /**
-         * Ensure selections are not outside sheet boundaries.
-         * They are clipped to fit inside the sheet if needed.
-         */
-        setSelectionMixin(anchor, zones) {
-            const { anchor: clippedAnchor, zones: clippedZones } = this.clipSelection(this.getters.getActiveSheetId(), { anchor, zones });
-            this.gridSelection.anchor = clippedAnchor;
-            this.gridSelection.zones = uniqueZones(clippedZones);
-        }
-        /**
-         * Change the anchor of the selection active cell to an absolute col and row index.
-         *
-         * This is a non trivial task. We need to stop the editing process and update
-         * properly the current selection.  Also, this method can optionally create a new
-         * range in the selection.
-         */
-        selectCell(col, row) {
-            const sheetId = this.getters.getActiveSheetId();
-            const zone = this.getters.expandZone(sheetId, { left: col, right: col, top: row, bottom: row });
-            this.setSelectionMixin({ zone, cell: { col, row } }, [zone]);
-        }
-        setActiveSheet(id) {
-            const sheet = this.getters.getSheet(id);
-            this.activeSheet = sheet;
-        }
-        activateNextSheet(direction) {
-            const sheetIds = this.getters.getSheetIds();
-            const oldSheetPosition = sheetIds.findIndex((id) => id === this.activeSheet.id);
-            const delta = direction === "left" ? sheetIds.length - 1 : 1;
-            const newPosition = (oldSheetPosition + delta) % sheetIds.length;
-            this.dispatch("ACTIVATE_SHEET", {
-                sheetIdFrom: this.getActiveSheetId(),
-                sheetIdTo: sheetIds[newPosition],
-            });
-        }
-        onColumnsRemoved(cmd) {
-            const { cell, zone } = this.gridSelection.anchor;
-            const selectedZone = updateSelectionOnDeletion(zone, "left", [...cmd.elements]);
-            let anchorZone = { left: cell.col, right: cell.col, top: cell.row, bottom: cell.row };
-            anchorZone = updateSelectionOnDeletion(anchorZone, "left", [...cmd.elements]);
-            const anchor = {
-                cell: {
-                    col: anchorZone.left,
-                    row: anchorZone.top,
-                },
-                zone: selectedZone,
-            };
-            this.setSelectionMixin(anchor, [selectedZone]);
-        }
-        onRowsRemoved(cmd) {
-            const { cell, zone } = this.gridSelection.anchor;
-            const selectedZone = updateSelectionOnDeletion(zone, "top", [...cmd.elements]);
-            let anchorZone = { left: cell.col, right: cell.col, top: cell.row, bottom: cell.row };
-            anchorZone = updateSelectionOnDeletion(anchorZone, "top", [...cmd.elements]);
-            const anchor = {
-                cell: {
-                    col: anchorZone.left,
-                    row: anchorZone.top,
-                },
-                zone: selectedZone,
-            };
-            this.setSelectionMixin(anchor, [selectedZone]);
-        }
-        onAddElements(cmd) {
-            const selection = this.gridSelection.anchor.zone;
-            const zone = updateSelectionOnInsertion(selection, cmd.dimension === "COL" ? "left" : "top", cmd.base, cmd.position, cmd.quantity);
-            const anchor = { cell: { col: zone.left, row: zone.top }, zone };
-            this.setSelectionMixin(anchor, [zone]);
-        }
-        onMoveElements(cmd) {
-            const thickness = cmd.elements.length;
-            this.dispatch("ADD_COLUMNS_ROWS", {
-                dimension: cmd.dimension,
-                sheetId: cmd.sheetId,
-                base: cmd.base,
-                quantity: thickness,
-                position: "before",
-            });
-            const isCol = cmd.dimension === "COL";
-            const start = cmd.elements[0];
-            const end = cmd.elements[thickness - 1];
-            const isBasedBefore = cmd.base < start;
-            const deltaCol = isBasedBefore && isCol ? thickness : 0;
-            const deltaRow = isBasedBefore && !isCol ? thickness : 0;
-            this.dispatch("CUT", {
-                target: [
-                    {
-                        left: isCol ? start + deltaCol : 0,
-                        right: isCol ? end + deltaCol : this.getters.getNumberCols(cmd.sheetId) - 1,
-                        top: !isCol ? start + deltaRow : 0,
-                        bottom: !isCol ? end + deltaRow : this.getters.getNumberRows(cmd.sheetId) - 1,
-                    },
-                ],
-            });
-            this.dispatch("PASTE", {
-                target: [
-                    {
-                        left: isCol ? cmd.base : 0,
-                        right: isCol ? cmd.base + thickness - 1 : this.getters.getNumberCols(cmd.sheetId) - 1,
-                        top: !isCol ? cmd.base : 0,
-                        bottom: !isCol ? cmd.base + thickness - 1 : this.getters.getNumberRows(cmd.sheetId) - 1,
-                    },
-                ],
-            });
-            const toRemove = isBasedBefore ? cmd.elements.map((el) => el + thickness) : cmd.elements;
-            let currentIndex = cmd.base;
-            for (const element of toRemove) {
-                const size = cmd.dimension === "COL"
-                    ? this.getters.getColSize(cmd.sheetId, element)
-                    : this.getters.getRowSize(cmd.sheetId, element);
-                this.dispatch("RESIZE_COLUMNS_ROWS", {
-                    dimension: cmd.dimension,
-                    sheetId: cmd.sheetId,
-                    size,
-                    elements: [currentIndex],
-                });
-                currentIndex += 1;
-            }
-            this.dispatch("REMOVE_COLUMNS_ROWS", {
-                dimension: cmd.dimension,
-                sheetId: cmd.sheetId,
-                elements: toRemove,
-            });
-        }
-        isMoveElementAllowed(cmd) {
-            const isCol = cmd.dimension === "COL";
-            const start = cmd.elements[0];
-            const end = cmd.elements[cmd.elements.length - 1];
-            const id = cmd.sheetId;
-            const doesElementsHaveCommonMerges = isCol
-                ? this.getters.doesColumnsHaveCommonMerges
-                : this.getters.doesRowsHaveCommonMerges;
-            if (doesElementsHaveCommonMerges(id, start - 1, start) ||
-                doesElementsHaveCommonMerges(id, end, end + 1) ||
-                doesElementsHaveCommonMerges(id, cmd.base - 1, cmd.base)) {
-                return 2 /* CommandResult.WillRemoveExistingMerge */;
-            }
-            return 0 /* CommandResult.Success */;
-        }
-        //-------------------------------------------
-        // Helpers for extensions
-        // ------------------------------------------
-        /**
-         * Clip the selection if it spans outside the sheet
-         */
-        clipSelection(sheetId, selection) {
-            const cols = this.getters.getNumberCols(sheetId) - 1;
-            const rows = this.getters.getNumberRows(sheetId) - 1;
-            const zones = selection.zones.map((z) => {
-                return {
-                    left: clip(z.left, 0, cols),
-                    right: clip(z.right, 0, cols),
-                    top: clip(z.top, 0, rows),
-                    bottom: clip(z.bottom, 0, rows),
-                };
-            });
-            const anchorCol = clip(selection.anchor.cell.col, 0, cols);
-            const anchorRow = clip(selection.anchor.cell.row, 0, rows);
-            const anchorZone = {
-                left: clip(selection.anchor.zone.left, 0, cols),
-                right: clip(selection.anchor.zone.right, 0, cols),
-                top: clip(selection.anchor.zone.top, 0, rows),
-                bottom: clip(selection.anchor.zone.bottom, 0, rows),
-            };
-            return {
-                zones,
-                anchor: {
-                    cell: { col: anchorCol, row: anchorRow },
-                    zone: anchorZone,
-                },
-            };
-        }
-        // ---------------------------------------------------------------------------
-        // Grid rendering
-        // ---------------------------------------------------------------------------
-        drawGrid(renderingContext) {
-            if (this.getters.isDashboard()) {
-                return;
-            }
-            const { ctx, thinLineWidth } = renderingContext;
-            // selection
-            const zones = this.getSelectedZones();
-            ctx.fillStyle = "#f3f7fe";
-            const onlyOneCell = zones.length === 1 && zones[0].left === zones[0].right && zones[0].top === zones[0].bottom;
-            ctx.fillStyle = onlyOneCell ? "#f3f7fe" : "#e9f0ff";
-            ctx.strokeStyle = SELECTION_BORDER_COLOR;
-            ctx.lineWidth = 1.5 * thinLineWidth;
-            for (const zone of zones) {
-                const { x, y, width, height } = this.getters.getVisibleRect(zone);
-                ctx.globalCompositeOperation = "multiply";
-                ctx.fillRect(x, y, width, height);
-                ctx.globalCompositeOperation = "source-over";
-                ctx.strokeRect(x, y, width, height);
-            }
-            ctx.globalCompositeOperation = "source-over";
-            // active zone
-            const activeSheet = this.getters.getActiveSheetId();
-            const { col, row } = this.getPosition();
-            ctx.strokeStyle = SELECTION_BORDER_COLOR;
-            ctx.lineWidth = 3 * thinLineWidth;
-            let zone;
-            if (this.getters.isInMerge(activeSheet, col, row)) {
-                zone = this.getters.getMerge(activeSheet, col, row);
-            }
-            else {
-                zone = {
-                    top: row,
-                    bottom: row,
-                    left: col,
-                    right: col,
-                };
-            }
-            const { x, y, width, height } = this.getters.getVisibleRect(zone);
-            if (width > 0 && height > 0) {
-                ctx.strokeRect(x, y, width, height);
-            }
-        }
-    }
-    GridSelectionPlugin.layers = [6 /* LAYERS.Selection */];
-    GridSelectionPlugin.getters = [
-        "getActiveSheet",
-        "getActiveSheetId",
-        "getActiveCell",
-        "getActiveCols",
-        "getActiveRows",
-        "getCurrentStyle",
-        "getSelectedZones",
-        "getSelectedZone",
-        "getStatisticFnResults",
-        "getAggregate",
-        "getSelectedFigureId",
-        "getSelection",
-        "getPosition",
-        "getSheetPosition",
-        "isSelected",
-        "getElementsFromSelection",
-    ];
-
     /**
      * Selection input Plugin
      *
@@ -35445,868 +34881,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     SelectionMultiUserPlugin.getters = ["getClientsToDisplay"];
     SelectionMultiUserPlugin.layers = [6 /* LAYERS.Selection */];
 
-    class InternalViewport {
-        constructor(getters, sheetId, boundaries, sizeInGrid, options, offsets) {
-            this.getters = getters;
-            this.sheetId = sheetId;
-            this.boundaries = boundaries;
-            this.width = sizeInGrid.width;
-            this.height = sizeInGrid.height;
-            this.offsetScrollbarX = offsets.x;
-            this.offsetScrollbarY = offsets.y;
-            this.canScrollVertically = options.canScrollVertically;
-            this.canScrollHorizontally = options.canScrollHorizontally;
-            this.offsetCorrectionX = this.getters.getColDimensions(this.sheetId, this.boundaries.left).start;
-            this.offsetCorrectionY = this.getters.getRowDimensions(this.sheetId, this.boundaries.top).start;
-            this.adjustViewportOffsetX();
-            this.adjustViewportOffsetY();
-        }
-        // PUBLIC
-        getMaxSize() {
-            const lastCol = this.getters.findLastVisibleColRowIndex(this.sheetId, "COL", {
-                first: this.boundaries.left,
-                last: this.boundaries.right,
-            });
-            const lastRow = this.getters.findLastVisibleColRowIndex(this.sheetId, "ROW", {
-                first: this.boundaries.top,
-                last: this.boundaries.bottom,
-            });
-            const { end: lastColEnd, size: lastColSize } = this.getters.getColDimensions(this.sheetId, lastCol);
-            const { end: lastRowEnd, size: lastRowSize } = this.getters.getRowDimensions(this.sheetId, lastRow);
-            const leftColIndex = this.searchHeaderIndex("COL", lastColEnd - this.width, 0);
-            const leftColSize = this.getters.getColSize(this.sheetId, leftColIndex);
-            const leftRowIndex = this.searchHeaderIndex("ROW", lastRowEnd - this.height, 0);
-            const topRowSize = this.getters.getRowSize(this.sheetId, leftRowIndex);
-            const width = lastColEnd -
-                this.offsetCorrectionX +
-                (this.canScrollHorizontally
-                    ? Math.max(DEFAULT_CELL_WIDTH, Math.min(leftColSize, this.width - lastColSize))
-                    : 0);
-            const height = lastRowEnd -
-                this.offsetCorrectionY +
-                (this.canScrollVertically
-                    ? Math.max(DEFAULT_CELL_HEIGHT + 5, Math.min(topRowSize, this.height - lastRowSize))
-                    : 0);
-            return { width, height };
-        }
-        /**
-         * Return the index of a column given an offset x, based on the pane left
-         * visible cell.
-         * It returns -1 if no column is found.
-         */
-        getColIndex(x, absolute = false) {
-            if (x < this.offsetCorrectionX || x > this.offsetCorrectionX + this.width) {
-                return -1;
-            }
-            return this.searchHeaderIndex("COL", x - this.offsetCorrectionX, this.left, absolute);
-        }
-        /**
-         * Return the index of a row given an offset y, based on the pane top
-         * visible cell.
-         * It returns -1 if no row is found.
-         */
-        getRowIndex(y, absolute = false) {
-            if (y < this.offsetCorrectionY || y > this.offsetCorrectionY + this.height) {
-                return -1;
-            }
-            return this.searchHeaderIndex("ROW", y - this.offsetCorrectionY, this.top, absolute);
-        }
-        /**
-         * This function will make sure that the provided cell position (or current selected position) is part of
-         * the pane that is actually displayed on the client. We therefore adjust the offset of the pane
-         * until it contains the cell completely.
-         */
-        adjustPosition(position) {
-            const sheetId = this.sheetId;
-            if (!position) {
-                position = this.getters.getSheetPosition(sheetId);
-            }
-            const mainCellPosition = this.getters.getMainCellPosition(sheetId, position.col, position.row);
-            const { col, row } = this.getters.getNextVisibleCellPosition(sheetId, mainCellPosition.col, mainCellPosition.row);
-            if (isInside(col, this.boundaries.top, this.boundaries)) {
-                this.adjustPositionX(col);
-            }
-            if (isInside(this.boundaries.left, row, this.boundaries)) {
-                this.adjustPositionY(row);
-            }
-        }
-        adjustPositionX(col) {
-            const sheetId = this.sheetId;
-            const { start, end } = this.getters.getColDimensions(sheetId, col);
-            while (end > this.offsetX + this.offsetCorrectionX + this.width &&
-                this.offsetX + this.offsetCorrectionX < start) {
-                this.offsetX = this.getters.getColDimensions(sheetId, this.left).end - this.offsetCorrectionX;
-                this.offsetScrollbarX = this.offsetX;
-                this.adjustViewportZoneX();
-            }
-            while (col < this.left) {
-                let leftCol;
-                for (leftCol = this.left; leftCol >= 0; leftCol--) {
-                    if (!this.getters.isColHidden(sheetId, leftCol)) {
-                        break;
-                    }
-                }
-                this.offsetX =
-                    this.getters.getColDimensions(sheetId, leftCol - 1).start - this.offsetCorrectionX;
-                this.offsetScrollbarX = this.offsetX;
-                this.adjustViewportZoneX();
-            }
-        }
-        adjustPositionY(row) {
-            const sheetId = this.sheetId;
-            while (this.getters.getRowDimensions(sheetId, row).end >
-                this.offsetY + this.height + this.offsetCorrectionY &&
-                this.offsetY + this.offsetCorrectionY < this.getters.getRowDimensions(sheetId, row).start) {
-                this.offsetY = this.getters.getRowDimensions(sheetId, this.top).end - this.offsetCorrectionY;
-                this.offsetScrollbarY = this.offsetY;
-                this.adjustViewportZoneY();
-            }
-            while (row < this.top) {
-                let topRow;
-                for (topRow = this.top; topRow >= 0; topRow--) {
-                    if (!this.getters.isRowHidden(sheetId, topRow)) {
-                        break;
-                    }
-                }
-                this.offsetY =
-                    this.getters.getRowDimensions(sheetId, topRow - 1).start - this.offsetCorrectionY;
-                this.offsetScrollbarY = this.offsetY;
-                this.adjustViewportZoneY();
-            }
-        }
-        setViewportOffset(offsetX, offsetY) {
-            this.setViewportOffsetX(offsetX);
-            this.setViewportOffsetY(offsetY);
-        }
-        adjustViewportZone() {
-            this.adjustViewportZoneX();
-            this.adjustViewportZoneY();
-        }
-        getRect(zone) {
-            const targetZone = intersection(zone, this.zone);
-            if (targetZone) {
-                return {
-                    x: this.getters.getColRowOffset("COL", this.zone.left, targetZone.left) +
-                        this.offsetCorrectionX,
-                    y: this.getters.getColRowOffset("ROW", this.zone.top, targetZone.top) +
-                        this.offsetCorrectionY,
-                    width: this.getters.getColRowOffset("COL", targetZone.left, targetZone.right + 1),
-                    height: this.getters.getColRowOffset("ROW", targetZone.top, targetZone.bottom + 1),
-                };
-            }
-            else {
-                return undefined;
-            }
-        }
-        isVisible(col, row) {
-            const isInside = row <= this.bottom && row >= this.top && col >= this.left && col <= this.right;
-            return (isInside &&
-                !this.getters.isColHidden(this.sheetId, col) &&
-                !this.getters.isRowHidden(this.sheetId, row));
-        }
-        // PRIVATE
-        searchHeaderIndex(dimension, position, startIndex = 0, absolute = false) {
-            let size = 0;
-            const sheetId = this.sheetId;
-            const headers = this.getters.getNumberHeaders(sheetId, dimension);
-            for (let i = startIndex; i <= headers - 1; i++) {
-                const isHiddenInViewport = !absolute && dimension === "COL"
-                    ? i < this.left && i > this.right
-                    : i < this.top && i > this.bottom;
-                if (this.getters.isHeaderHidden(sheetId, dimension, i) || isHiddenInViewport) {
-                    continue;
-                }
-                size +=
-                    dimension === "COL"
-                        ? this.getters.getColSize(sheetId, i)
-                        : this.getters.getRowSize(sheetId, i);
-                if (size > position) {
-                    return i;
-                }
-            }
-            return -1;
-        }
-        get zone() {
-            return { left: this.left, right: this.right, top: this.top, bottom: this.bottom };
-        }
-        setViewportOffsetX(offsetX) {
-            if (!this.canScrollHorizontally) {
-                return;
-            }
-            this.offsetScrollbarX = offsetX;
-            this.adjustViewportZoneX();
-        }
-        setViewportOffsetY(offsetY) {
-            if (!this.canScrollVertically) {
-                return;
-            }
-            this.offsetScrollbarY = offsetY;
-            this.adjustViewportZoneY();
-        }
-        /** Corrects the viewport's horizontal offset based on the current structure
-         *  To make sure that at least on column is visible inside the viewport.
-         */
-        adjustViewportOffsetX() {
-            if (this.canScrollHorizontally) {
-                const { width: viewportWidth } = this.getMaxSize();
-                if (this.width + this.offsetScrollbarX > viewportWidth) {
-                    this.offsetScrollbarX = Math.max(0, viewportWidth - this.width);
-                }
-            }
-            this.left = this.getColIndex(this.offsetScrollbarX, true);
-            this.right = this.getColIndex(this.offsetScrollbarX + this.width, true);
-            if (this.right === -1) {
-                this.right = this.boundaries.right;
-            }
-            this.adjustViewportZoneX();
-        }
-        /** Corrects the viewport's vertical offset based on the current structure
-         *  To make sure that at least on row is visible inside the viewport.
-         */
-        adjustViewportOffsetY() {
-            if (this.canScrollVertically) {
-                const { height: paneHeight } = this.getMaxSize();
-                if (this.height + this.offsetScrollbarY > paneHeight) {
-                    this.offsetScrollbarY = Math.max(0, paneHeight - this.height);
-                }
-            }
-            this.top = this.getRowIndex(this.offsetScrollbarY, true);
-            this.bottom = this.getRowIndex(this.offsetScrollbarY + this.width, true);
-            if (this.bottom === -1) {
-                this.bottom = this.boundaries.bottom;
-            }
-            this.adjustViewportZoneY();
-        }
-        /** Updates the pane zone and snapped offset based on its horizontal
-         * offset (will find Left) and its width (will find Right) */
-        adjustViewportZoneX() {
-            const sheetId = this.sheetId;
-            this.left = this.searchHeaderIndex("COL", this.offsetScrollbarX, this.boundaries.left);
-            this.right = Math.min(this.boundaries.right, this.searchHeaderIndex("COL", this.width, this.left));
-            if (this.right === -1) {
-                this.right = this.getters.getNumberCols(sheetId) - 1;
-            }
-            this.offsetX =
-                this.getters.getColDimensions(sheetId, this.left).start -
-                    this.getters.getColDimensions(sheetId, this.boundaries.left).start;
-        }
-        /** Updates the pane zone and snapped offset based on its vertical
-         * offset (will find Top) and its width (will find Bottom) */
-        adjustViewportZoneY() {
-            const sheetId = this.sheetId;
-            this.top = this.searchHeaderIndex("ROW", this.offsetScrollbarY, this.boundaries.top);
-            this.bottom = Math.min(this.boundaries.bottom, this.searchHeaderIndex("ROW", this.height, this.top));
-            if (this.bottom === -1) {
-                this.bottom = this.getters.getNumberRows(sheetId) - 1;
-            }
-            this.offsetY =
-                this.getters.getRowDimensions(sheetId, this.top).start -
-                    this.getters.getRowDimensions(sheetId, this.boundaries.top).start;
-        }
-    }
-
-    /**
-     *   EdgeScrollCases Schema
-     *
-     *  The dots/double dots represent a freeze (= a split of viewports)
-     *  In this example, we froze vertically between columns D and E
-     *  and horizontally between rows 4 and 5.
-     *
-     *  One can see that we scrolled horizontally from column E to G and
-     *  vertically from row 5 to 7.
-     *
-     *     A  B  C  D   G  H  I  J  K  L  M  N  O  P  Q  R  S  T
-     *     _______________________________________________________
-     *  1 |           :                                           |
-     *  2 |           :                                           |
-     *  3 |           :        B   ↑                 6            |
-     *  4 |           :        |   |                 |            |
-     *     ····················+···+·················+············|
-     *  7 |           :        |   |                 |            |
-     *  8 |           :        ↓   2                 |            |
-     *  9 |           :                              |            |
-     * 10 |       A --+--→                           |            |
-     * 11 |           :                              |            |
-     * 12 |           :                              |            |
-     * 13 |        ←--+-- 1                          |            |
-     * 14 |           :                              |        3 --+--→
-     * 15 |           :                              |            |
-     * 16 |           :                              |            |
-     * 17 |       5 --+-------------------------------------------+--→
-     * 18 |           :                              |            |
-     * 19 |           :                  4           |            |
-     * 20 |           :                  |           |            |
-     *     ______________________________+___________| ____________
-     *                                   |           |
-     *                                   ↓           ↓
-     */
-    /**
-     * Viewport plugin.
-     *
-     * This plugin manages all things related to all viewport states.
-     *
-     */
-    class SheetViewPlugin extends UIPlugin {
-        constructor() {
-            super(...arguments);
-            this.viewports = {};
-            /**
-             * The viewport dimensions are usually set by one of the components
-             * (i.e. when grid component is mounted) to properly reflect its state in the DOM.
-             * In the absence of a component (standalone model), is it mandatory to set reasonable default values
-             * to ensure the correct operation of this plugin.
-             */
-            this.sheetViewWidth = DEFAULT_SHEETVIEW_SIZE;
-            this.sheetViewHeight = DEFAULT_SHEETVIEW_SIZE;
-            this.gridOffsetX = 0;
-            this.gridOffsetY = 0;
-            this.sheetsWithDirtyViewports = new Set();
-        }
-        // ---------------------------------------------------------------------------
-        // Command Handling
-        // ---------------------------------------------------------------------------
-        allowDispatch(cmd) {
-            switch (cmd.type) {
-                case "SET_VIEWPORT_OFFSET":
-                    return this.checkScrollingDirection(cmd);
-                case "RESIZE_SHEETVIEW":
-                    return this.chainValidations(this.checkValuesAreDifferent, this.checkPositiveDimension)(cmd);
-                case "FREEZE_COLUMNS": {
-                    const sheetId = this.getters.getActiveSheetId();
-                    const merges = this.getters.getMerges(sheetId);
-                    for (let merge of merges) {
-                        if (merge.left < cmd.quantity && cmd.quantity <= merge.right) {
-                            return 63 /* CommandResult.MergeOverlap */;
-                        }
-                    }
-                    return 0 /* CommandResult.Success */;
-                }
-                case "FREEZE_ROWS": {
-                    const sheetId = this.getters.getActiveSheetId();
-                    const merges = this.getters.getMerges(sheetId);
-                    for (let merge of merges) {
-                        if (merge.top < cmd.quantity && cmd.quantity <= merge.bottom) {
-                            return 63 /* CommandResult.MergeOverlap */;
-                        }
-                    }
-                    return 0 /* CommandResult.Success */;
-                }
-                default:
-                    return 0 /* CommandResult.Success */;
-            }
-        }
-        handleEvent(event) {
-            switch (event.type) {
-                case "HeadersSelected":
-                case "AlterZoneCorner":
-                    break;
-                case "ZonesSelected":
-                    // altering a zone should not move the viewport
-                    const sheetId = this.getters.getActiveSheetId();
-                    let { col, row } = findCellInNewZone(event.previousAnchor.zone, event.anchor.zone, this.getters.getActiveMainViewport());
-                    col = Math.min(col, this.getters.getNumberCols(sheetId) - 1);
-                    row = Math.min(row, this.getters.getNumberRows(sheetId) - 1);
-                    this.refreshViewport(this.getters.getActiveSheetId(), { col, row });
-                    break;
-            }
-        }
-        handle(cmd) {
-            var _a;
-            this.cleanViewports();
-            switch (cmd.type) {
-                case "START":
-                    this.selection.observe(this, {
-                        handleEvent: this.handleEvent.bind(this),
-                    });
-                    this.resetViewports(this.getters.getActiveSheetId());
-                    break;
-                case "UNDO":
-                case "REDO":
-                    this.resetSheetViews();
-                    break;
-                case "RESIZE_SHEETVIEW":
-                    this.resizeSheetView(cmd.height, cmd.width, cmd.gridOffsetX, cmd.gridOffsetY);
-                    break;
-                case "SET_VIEWPORT_OFFSET":
-                    this.setSheetViewOffset(cmd.offsetX, cmd.offsetY);
-                    break;
-                case "SHIFT_VIEWPORT_DOWN":
-                    const { top } = this.getActiveMainViewport();
-                    const sheetId = this.getters.getActiveSheetId();
-                    const shiftedOffsetY = this.clipOffsetY(this.getters.getRowDimensions(sheetId, top).start + this.sheetViewHeight);
-                    this.shiftVertically(shiftedOffsetY);
-                    break;
-                case "SHIFT_VIEWPORT_UP": {
-                    const { top } = this.getActiveMainViewport();
-                    const sheetId = this.getters.getActiveSheetId();
-                    const shiftedOffsetY = this.clipOffsetY(this.getters.getRowDimensions(sheetId, top).end - this.sheetViewHeight);
-                    this.shiftVertically(shiftedOffsetY);
-                    break;
-                }
-                case "REMOVE_COLUMNS_ROWS":
-                case "RESIZE_COLUMNS_ROWS":
-                case "HIDE_COLUMNS_ROWS":
-                case "ADD_COLUMNS_ROWS":
-                case "UNHIDE_COLUMNS_ROWS":
-                case "UPDATE_FILTER":
-                    this.resetViewports(cmd.sheetId);
-                    break;
-                case "UPDATE_CELL":
-                    // update cell content or format can change hidden rows because of data filters
-                    if ("content" in cmd || "format" in cmd || ((_a = cmd.style) === null || _a === void 0 ? void 0 : _a.fontSize) !== undefined) {
-                        this.sheetsWithDirtyViewports.add(cmd.sheetId);
-                    }
-                    break;
-                case "ACTIVATE_SHEET":
-                    this.setViewports();
-                    this.refreshViewport(cmd.sheetIdTo);
-                    break;
-                case "UNFREEZE_ROWS":
-                case "UNFREEZE_COLUMNS":
-                case "FREEZE_COLUMNS":
-                case "FREEZE_ROWS":
-                case "UNFREEZE_COLUMNS_ROWS":
-                    this.resetViewports(this.getters.getActiveSheetId());
-                    break;
-            }
-        }
-        finalize() {
-            for (const sheetId of this.sheetsWithDirtyViewports) {
-                this.resetViewports(sheetId);
-            }
-            this.sheetsWithDirtyViewports = new Set();
-            this.setViewports();
-        }
-        setViewports() {
-            var _a;
-            const sheetIds = this.getters.getSheetIds();
-            for (const sheetId of sheetIds) {
-                if (!((_a = this.viewports[sheetId]) === null || _a === void 0 ? void 0 : _a.bottomRight)) {
-                    this.resetViewports(sheetId);
-                }
-            }
-        }
-        // ---------------------------------------------------------------------------
-        // Getters
-        // ---------------------------------------------------------------------------
-        /**
-         * Return the index of a column given an offset x, based on the viewport left
-         * visible cell.
-         * It returns -1 if no column is found.
-         */
-        getColIndex(x) {
-            const sheetId = this.getters.getActiveSheetId();
-            return Math.max(...this.getSubViewports(sheetId).map((viewport) => viewport.getColIndex(x)));
-        }
-        /**
-         * Return the index of a row given an offset y, based on the viewport top
-         * visible cell.
-         * It returns -1 if no row is found.
-         */
-        getRowIndex(y) {
-            const sheetId = this.getters.getActiveSheetId();
-            return Math.max(...this.getSubViewports(sheetId).map((viewport) => viewport.getRowIndex(y)));
-        }
-        getSheetViewDimensionWithHeaders() {
-            return {
-                width: this.sheetViewWidth + this.gridOffsetX,
-                height: this.sheetViewHeight + this.gridOffsetY,
-            };
-        }
-        getSheetViewDimension() {
-            return {
-                width: this.sheetViewWidth,
-                height: this.sheetViewHeight,
-            };
-        }
-        /** type as pane, not viewport but basically pane extends viewport */
-        getActiveMainViewport() {
-            const sheetId = this.getters.getActiveSheetId();
-            return this.getMainViewport(sheetId);
-        }
-        getActiveSheetScrollInfo() {
-            const sheetId = this.getters.getActiveSheetId();
-            return this.getSheetScrollInfo(sheetId);
-        }
-        getSheetViewVisibleCols() {
-            const sheetId = this.getters.getActiveSheetId();
-            const viewports = this.getSubViewports(sheetId);
-            return [...new Set(viewports.map((v) => range(v.left, v.right + 1)).flat())].filter((col) => !this.getters.isHeaderHidden(sheetId, "COL", col));
-        }
-        getSheetViewVisibleRows() {
-            const sheetId = this.getters.getActiveSheetId();
-            const viewports = this.getSubViewports(sheetId);
-            return [...new Set(viewports.map((v) => range(v.top, v.bottom + 1)).flat())].filter((row) => !this.getters.isHeaderHidden(sheetId, "ROW", row));
-        }
-        /**
-         * Return the main viewport maximum size. That is the zone dimension
-         * with some bottom and right padding.
-         */
-        getMainViewportRect() {
-            const sheetId = this.getters.getActiveSheetId();
-            const viewport = this.getMainInternalViewport(sheetId);
-            const { xSplit, ySplit } = this.getters.getPaneDivisions(sheetId);
-            let { width, height } = viewport.getMaxSize();
-            const x = this.getters.getColDimensions(sheetId, xSplit).start;
-            const y = this.getters.getRowDimensions(sheetId, ySplit).start;
-            return { x, y, width, height };
-        }
-        getMaximumSheetOffset() {
-            const sheetId = this.getters.getActiveSheetId();
-            const { width, height } = this.getMainViewportRect();
-            const viewport = this.getMainInternalViewport(sheetId);
-            return {
-                maxOffsetX: Math.max(0, width - viewport.width + 1),
-                maxOffsetY: Math.max(0, height - viewport.height + 1),
-            };
-        }
-        getColRowOffsetInViewport(dimension, referenceIndex, index) {
-            const sheetId = this.getters.getActiveSheetId();
-            const visibleCols = this.getters.getSheetViewVisibleCols();
-            const visibleRows = this.getters.getSheetViewVisibleRows();
-            if (index < referenceIndex) {
-                return -this.getColRowOffsetInViewport(dimension, index, referenceIndex);
-            }
-            let offset = 0;
-            const visibleIndexes = dimension === "COL" ? visibleCols : visibleRows;
-            for (let i = referenceIndex; i < index; i++) {
-                if (!visibleIndexes.includes(i)) {
-                    continue;
-                }
-                offset +=
-                    dimension === "COL"
-                        ? this.getters.getColSize(sheetId, i)
-                        : this.getters.getRowSize(sheetId, i);
-            }
-            return offset;
-        }
-        /**
-         * Check if a given position is visible in the viewport.
-         */
-        isVisibleInViewport(sheetId, col, row) {
-            return this.getSubViewports(sheetId).some((pane) => pane.isVisible(col, row));
-        }
-        // => return s the new offset
-        getEdgeScrollCol(x, previousX, startingX) {
-            let canEdgeScroll = false;
-            let direction = 0;
-            let delay = 0;
-            /** 4 cases : See EdgeScrollCases Schema at the top
-             * 1. previous in XRight > XLeft
-             * 3. previous in XRight > outside
-             * 5. previous in Left > outside
-             * A. previous in Left > right
-             * with X a position taken in the bottomRIght (aka scrollable) viewport
-             */
-            const { xSplit } = this.getters.getPaneDivisions(this.getters.getActiveSheetId());
-            const { width } = this.getSheetViewDimension();
-            const { x: offsetCorrectionX } = this.getMainViewportCoordinates();
-            const currentOffsetX = this.getActiveSheetScrollInfo().offsetX;
-            if (x > width) {
-                // 3 & 5
-                canEdgeScroll = true;
-                delay = scrollDelay(x - width);
-                direction = 1;
-            }
-            else if (x < offsetCorrectionX && startingX >= offsetCorrectionX && currentOffsetX > 0) {
-                // 1
-                canEdgeScroll = true;
-                delay = scrollDelay(offsetCorrectionX - x);
-                direction = -1;
-            }
-            else if (xSplit && previousX < offsetCorrectionX && x > offsetCorrectionX) {
-                // A
-                canEdgeScroll = true;
-                delay = scrollDelay(x);
-                direction = "reset";
-            }
-            return { canEdgeScroll, direction, delay };
-        }
-        getEdgeScrollRow(y, previousY, tartingY) {
-            let canEdgeScroll = false;
-            let direction = 0;
-            let delay = 0;
-            /** 4 cases : See EdgeScrollCases Schema at the top
-             * 2. previous in XBottom > XTop
-             * 4. previous in XRight > outside
-             * 6. previous in Left > outside
-             * B. previous in Left > right
-             * with X a position taken in the bottomRIght (aka scrollable) viewport
-             */
-            const { ySplit } = this.getters.getPaneDivisions(this.getters.getActiveSheetId());
-            const { height } = this.getSheetViewDimension();
-            const { y: offsetCorrectionY } = this.getMainViewportCoordinates();
-            const currentOffsetY = this.getActiveSheetScrollInfo().offsetY;
-            if (y > height) {
-                // 4 & 6
-                canEdgeScroll = true;
-                delay = scrollDelay(y - height);
-                direction = 1;
-            }
-            else if (y < offsetCorrectionY && tartingY >= offsetCorrectionY && currentOffsetY > 0) {
-                // 2
-                canEdgeScroll = true;
-                delay = scrollDelay(offsetCorrectionY - y);
-                direction = -1;
-            }
-            else if (ySplit && previousY < offsetCorrectionY && y > offsetCorrectionY) {
-                // B
-                canEdgeScroll = true;
-                delay = scrollDelay(y);
-                direction = "reset";
-            }
-            return { canEdgeScroll, direction, delay };
-        }
-        /**
-         * Computes the coordinates and size to draw the zone on the canvas
-         */
-        getVisibleRect(zone) {
-            const sheetId = this.getters.getActiveSheetId();
-            const viewportRects = this.getSubViewports(sheetId)
-                .map((viewport) => viewport.getRect(zone))
-                .filter(isDefined$1);
-            if (viewportRects.length === 0) {
-                return { x: 0, y: 0, width: 0, height: 0 };
-            }
-            const x = Math.min(...viewportRects.map((rect) => rect.x));
-            const y = Math.min(...viewportRects.map((rect) => rect.y));
-            const width = Math.max(...viewportRects.map((rect) => rect.x + rect.width)) - x;
-            const height = Math.max(...viewportRects.map((rect) => rect.y + rect.height)) - y;
-            return {
-                x: x + this.gridOffsetX,
-                y: y + this.gridOffsetY,
-                width,
-                height,
-            };
-        }
-        /**
-         * Returns the position of the MainViewport relatively to the start of the grid (without headers)
-         * It corresponds to the summed dimensions of the visible cols/rows (in x/y respectively)
-         * situated before the pane divisions.
-         */
-        getMainViewportCoordinates() {
-            const sheetId = this.getters.getActiveSheetId();
-            const { xSplit, ySplit } = this.getters.getPaneDivisions(sheetId);
-            const x = this.getters.getColDimensions(sheetId, xSplit).start;
-            const y = this.getters.getRowDimensions(sheetId, ySplit).start;
-            return { x, y };
-        }
-        // ---------------------------------------------------------------------------
-        // Private
-        // ---------------------------------------------------------------------------
-        ensureMainViewportExist(sheetId) {
-            if (!this.viewports[sheetId]) {
-                this.resetViewports(sheetId);
-            }
-        }
-        getSubViewports(sheetId) {
-            this.ensureMainViewportExist(sheetId);
-            return Object.values(this.viewports[sheetId]).filter(isDefined$1);
-        }
-        checkPositiveDimension(cmd) {
-            if (cmd.width < 0 || cmd.height < 0) {
-                return 66 /* CommandResult.InvalidViewportSize */;
-            }
-            return 0 /* CommandResult.Success */;
-        }
-        checkValuesAreDifferent(cmd) {
-            const { height, width } = this.getSheetViewDimension();
-            if (cmd.gridOffsetX === this.gridOffsetX &&
-                cmd.gridOffsetY === this.gridOffsetY &&
-                cmd.width === width &&
-                cmd.height === height) {
-                return 74 /* CommandResult.ValuesNotChanged */;
-            }
-            return 0 /* CommandResult.Success */;
-        }
-        checkScrollingDirection({ offsetX, offsetY, }) {
-            const pane = this.getMainInternalViewport(this.getters.getActiveSheetId());
-            if ((!pane.canScrollHorizontally && offsetX > 0) ||
-                (!pane.canScrollVertically && offsetY > 0)) {
-                return 67 /* CommandResult.InvalidScrollingDirection */;
-            }
-            return 0 /* CommandResult.Success */;
-        }
-        getMainViewport(sheetId) {
-            const viewport = this.getMainInternalViewport(sheetId);
-            return {
-                top: viewport.top,
-                left: viewport.left,
-                bottom: viewport.bottom,
-                right: viewport.right,
-            };
-        }
-        getMainInternalViewport(sheetId) {
-            this.ensureMainViewportExist(sheetId);
-            return this.viewports[sheetId].bottomRight;
-        }
-        getSheetScrollInfo(sheetId) {
-            const viewport = this.getMainInternalViewport(sheetId);
-            return {
-                offsetX: viewport.offsetX,
-                offsetY: viewport.offsetY,
-                offsetScrollbarX: viewport.offsetScrollbarX,
-                offsetScrollbarY: viewport.offsetScrollbarY,
-            };
-        }
-        /** gets rid of deprecated sheetIds */
-        cleanViewports() {
-            const sheetIds = this.getters.getSheetIds();
-            for (let sheetId of Object.keys(this.viewports)) {
-                if (!sheetIds.includes(sheetId)) {
-                    delete this.viewports[sheetId];
-                }
-            }
-        }
-        resetSheetViews() {
-            for (let sheetId of Object.keys(this.viewports)) {
-                const position = this.getters.getSheetPosition(sheetId);
-                this.resetViewports(sheetId);
-                const viewports = this.getSubViewports(sheetId);
-                Object.values(viewports).forEach((viewport) => {
-                    viewport.adjustPosition(position);
-                });
-            }
-        }
-        resizeSheetView(height, width, gridOffsetX = 0, gridOffsetY = 0) {
-            this.sheetViewHeight = height;
-            this.sheetViewWidth = width;
-            this.gridOffsetX = gridOffsetX;
-            this.gridOffsetY = gridOffsetY;
-            this.recomputeViewports();
-        }
-        recomputeViewports() {
-            for (let sheetId of Object.keys(this.viewports)) {
-                this.resetViewports(sheetId);
-            }
-        }
-        setSheetViewOffset(offsetX, offsetY) {
-            const sheetId = this.getters.getActiveSheetId();
-            const { maxOffsetX, maxOffsetY } = this.getMaximumSheetOffset();
-            Object.values(this.getSubViewports(sheetId)).forEach((viewport) => viewport.setViewportOffset(clip(offsetX, 0, maxOffsetX), clip(offsetY, 0, maxOffsetY)));
-        }
-        /**
-         * Clip the vertical offset within the allowed range.
-         * Not above the sheet, nor below the sheet.
-         */
-        clipOffsetY(offsetY) {
-            const { height } = this.getMainViewportRect();
-            const maxOffset = height - this.sheetViewHeight;
-            offsetY = Math.min(offsetY, maxOffset);
-            offsetY = Math.max(offsetY, 0);
-            return offsetY;
-        }
-        getViewportOffset(sheetId) {
-            var _a, _b;
-            return {
-                x: ((_a = this.viewports[sheetId]) === null || _a === void 0 ? void 0 : _a.bottomRight.offsetScrollbarX) || 0,
-                y: ((_b = this.viewports[sheetId]) === null || _b === void 0 ? void 0 : _b.bottomRight.offsetScrollbarY) || 0,
-            };
-        }
-        resetViewports(sheetId) {
-            const { xSplit, ySplit } = this.getters.getPaneDivisions(sheetId);
-            const nCols = this.getters.getNumberCols(sheetId);
-            const nRows = this.getters.getNumberRows(sheetId);
-            const colOffset = this.getters.getColRowOffset("COL", 0, xSplit, sheetId);
-            const rowOffset = this.getters.getColRowOffset("ROW", 0, ySplit, sheetId);
-            const { xRatio, yRatio } = this.getFrozenSheetViewRatio(sheetId);
-            const canScrollHorizontally = xRatio < 1.0;
-            const canScrollVertically = yRatio < 1.0;
-            const previousOffset = this.getViewportOffset(sheetId);
-            const sheetViewports = {
-                topLeft: (ySplit &&
-                    xSplit &&
-                    new InternalViewport(this.getters, sheetId, { left: 0, right: xSplit - 1, top: 0, bottom: ySplit - 1 }, { width: colOffset, height: rowOffset }, { canScrollHorizontally: false, canScrollVertically: false }, { x: 0, y: 0 })) ||
-                    undefined,
-                topRight: (ySplit &&
-                    new InternalViewport(this.getters, sheetId, { left: xSplit, right: nCols - 1, top: 0, bottom: ySplit - 1 }, { width: this.sheetViewWidth - colOffset, height: rowOffset }, { canScrollHorizontally, canScrollVertically: false }, { x: canScrollHorizontally ? previousOffset.x : 0, y: 0 })) ||
-                    undefined,
-                bottomLeft: (xSplit &&
-                    new InternalViewport(this.getters, sheetId, { left: 0, right: xSplit - 1, top: ySplit, bottom: nRows - 1 }, { width: colOffset, height: this.sheetViewHeight - rowOffset }, { canScrollHorizontally: false, canScrollVertically }, { x: 0, y: canScrollVertically ? previousOffset.y : 0 })) ||
-                    undefined,
-                bottomRight: new InternalViewport(this.getters, sheetId, { left: xSplit, right: nCols - 1, top: ySplit, bottom: nRows - 1 }, {
-                    width: this.sheetViewWidth - colOffset,
-                    height: this.sheetViewHeight - rowOffset,
-                }, { canScrollHorizontally, canScrollVertically }, {
-                    x: canScrollHorizontally ? previousOffset.x : 0,
-                    y: canScrollVertically ? previousOffset.y : 0,
-                }),
-            };
-            this.viewports[sheetId] = sheetViewports;
-        }
-        /**
-         * Adjust the viewport such that the anchor position is visible
-         */
-        refreshViewport(sheetId, anchorPosition) {
-            Object.values(this.getSubViewports(sheetId)).forEach((viewport) => {
-                viewport.adjustViewportZone();
-                viewport.adjustPosition(anchorPosition);
-            });
-        }
-        /**
-         * Shift the viewport vertically and move the selection anchor
-         * such that it remains at the same place relative to the
-         * viewport top.
-         */
-        shiftVertically(offset) {
-            const { top } = this.getActiveMainViewport();
-            const { offsetX } = this.getActiveSheetScrollInfo();
-            this.setSheetViewOffset(offsetX, offset);
-            const { anchor } = this.getters.getSelection();
-            const deltaRow = this.getActiveMainViewport().top - top;
-            this.selection.selectCell(anchor.cell.col, anchor.cell.row + deltaRow);
-        }
-        getVisibleFigures() {
-            const sheetId = this.getters.getActiveSheetId();
-            const result = [];
-            const figures = this.getters.getFigures(sheetId);
-            const { offsetX, offsetY } = this.getSheetScrollInfo(sheetId);
-            const { x: offsetCorrectionX, y: offsetCorrectionY } = this.getters.getMainViewportCoordinates();
-            const { width, height } = this.getters.getSheetViewDimensionWithHeaders();
-            for (const figure of figures) {
-                if (figure.x >= offsetCorrectionX &&
-                    (figure.x + figure.width <= offsetCorrectionX + offsetX ||
-                        figure.x >= width + offsetX + offsetCorrectionX)) {
-                    continue;
-                }
-                if (figure.y >= offsetCorrectionY &&
-                    (figure.y + figure.height <= offsetCorrectionY + offsetY ||
-                        figure.y >= height + offsetY + offsetCorrectionY)) {
-                    continue;
-                }
-                result.push(figure);
-            }
-            return result;
-        }
-        getFrozenSheetViewRatio(sheetId) {
-            const { xSplit, ySplit } = this.getters.getPaneDivisions(sheetId);
-            const offsetCorrectionX = this.getters.getColDimensions(sheetId, xSplit).start;
-            const offsetCorrectionY = this.getters.getRowDimensions(sheetId, ySplit).start;
-            const width = this.sheetViewWidth + this.gridOffsetX;
-            const height = this.sheetViewHeight + this.gridOffsetY;
-            return { xRatio: offsetCorrectionX / width, yRatio: offsetCorrectionY / height };
-        }
-    }
-    SheetViewPlugin.getters = [
-        "getColIndex",
-        "getRowIndex",
-        "getActiveMainViewport",
-        "getSheetViewDimension",
-        "getSheetViewDimensionWithHeaders",
-        "getMainViewportRect",
-        "isVisibleInViewport",
-        "getEdgeScrollCol",
-        "getEdgeScrollRow",
-        "getVisibleFigures",
-        "getVisibleRect",
-        "getColRowOffsetInViewport",
-        "getMainViewportCoordinates",
-        "getActiveSheetScrollInfo",
-        "getSheetViewVisibleCols",
-        "getSheetViewVisibleRows",
-        "getFrozenSheetViewRatio",
-    ];
-
     class SortPlugin extends UIPlugin {
         allowDispatch(cmd) {
             switch (cmd.type) {
@@ -36848,6 +35422,1435 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         "getColRowOffset",
     ];
 
+    /** Abstract state of the clipboard when copying/cutting content that is pasted in cells of the sheet */
+    class ClipboardCellsAbstractState {
+        constructor(operation, getters, dispatch, selection) {
+            this.getters = getters;
+            this.dispatch = dispatch;
+            this.selection = selection;
+            this.operation = operation;
+            this.sheetId = getters.getActiveSheetId();
+        }
+        isCutAllowed(target) {
+            return 0 /* CommandResult.Success */;
+        }
+        isPasteAllowed(target, clipboardOption) {
+            return 0 /* CommandResult.Success */;
+        }
+        /**
+         * Add columns and/or rows to ensure that col + width and row + height are still
+         * in the sheet
+         */
+        addMissingDimensions(width, height, col, row) {
+            const sheetId = this.getters.getActiveSheetId();
+            const missingRows = height + row - this.getters.getNumberRows(sheetId);
+            if (missingRows > 0) {
+                this.dispatch("ADD_COLUMNS_ROWS", {
+                    dimension: "ROW",
+                    base: this.getters.getNumberRows(sheetId) - 1,
+                    sheetId,
+                    quantity: missingRows,
+                    position: "after",
+                });
+            }
+            const missingCols = width + col - this.getters.getNumberCols(sheetId);
+            if (missingCols > 0) {
+                this.dispatch("ADD_COLUMNS_ROWS", {
+                    dimension: "COL",
+                    base: this.getters.getNumberCols(sheetId) - 1,
+                    sheetId,
+                    quantity: missingCols,
+                    position: "after",
+                });
+            }
+        }
+        isColRowDirtyingClipboard(position, dimension) {
+            return false;
+        }
+        drawClipboard(renderingContext) { }
+    }
+
+    /** State of the clipboard when copying/cutting cells */
+    class ClipboardCellsState extends ClipboardCellsAbstractState {
+        constructor(zones, operation, getters, dispatch, selection) {
+            super(operation, getters, dispatch, selection);
+            if (!zones.length) {
+                this.cells = [[]];
+                this.zones = [];
+                this.copiedTables = [];
+                return;
+            }
+            const lefts = new Set(zones.map((z) => z.left));
+            const rights = new Set(zones.map((z) => z.right));
+            const tops = new Set(zones.map((z) => z.top));
+            const bottoms = new Set(zones.map((z) => z.bottom));
+            const areZonesCompatible = (tops.size === 1 && bottoms.size === 1) || (lefts.size === 1 && rights.size === 1);
+            // In order to don't paste several times the same cells in intersected zones
+            // --> we merge zones that have common cells
+            const clippedZones = areZonesCompatible
+                ? mergeOverlappingZones(zones)
+                : [zones[zones.length - 1]];
+            const cellsPosition = clippedZones.map((zone) => positions(zone)).flat();
+            const columnsIndex = [...new Set(cellsPosition.map((p) => p.col))].sort((a, b) => a - b);
+            const rowsIndex = [...new Set(cellsPosition.map((p) => p.row))].sort((a, b) => a - b);
+            const cellsInClipboard = [];
+            const sheetId = getters.getActiveSheetId();
+            for (let row of rowsIndex) {
+                let cellsInRow = [];
+                for (let col of columnsIndex) {
+                    cellsInRow.push({
+                        cell: getters.getCell(sheetId, col, row),
+                        evaluatedCell: getters.getEvaluatedCell({ sheetId, col, row }),
+                        border: getters.getCellBorder(sheetId, col, row) || undefined,
+                        position: { col, row, sheetId },
+                    });
+                }
+                cellsInClipboard.push(cellsInRow);
+            }
+            const tables = [];
+            for (const zone of zones) {
+                for (const table of this.getters.getFilterTablesInZone(sheetId, zone)) {
+                    const values = [];
+                    for (const col of range(table.zone.left, table.zone.right + 1)) {
+                        values.push(this.getters.getFilterValues(sheetId, col, table.zone.top));
+                    }
+                    tables.push({ filtersValues: values, zone: table.zone });
+                }
+            }
+            this.cells = cellsInClipboard;
+            this.zones = clippedZones;
+            this.copiedTables = tables;
+        }
+        isCutAllowed(target) {
+            if (target.length !== 1) {
+                return 18 /* CommandResult.WrongCutSelection */;
+            }
+            return 0 /* CommandResult.Success */;
+        }
+        isPasteAllowed(target, clipboardOption) {
+            const sheetId = this.getters.getActiveSheetId();
+            if (this.operation === "CUT" && (clipboardOption === null || clipboardOption === void 0 ? void 0 : clipboardOption.pasteOption) !== undefined) {
+                // cannot paste only format or only value if the previous operation is a CUT
+                return 20 /* CommandResult.WrongPasteOption */;
+            }
+            if (target.length > 1) {
+                // cannot paste if we have a clipped zone larger than a cell and multiple
+                // zones selected
+                if (this.cells.length > 1 || this.cells[0].length > 1) {
+                    return 19 /* CommandResult.WrongPasteSelection */;
+                }
+            }
+            const clipboardHeight = this.cells.length;
+            const clipboardWidth = this.cells[0].length;
+            for (let zone of this.getPasteZones(target)) {
+                if (this.getters.doesIntersectMerge(sheetId, zone)) {
+                    if (target.length > 1 ||
+                        !this.getters.isSingleCellOrMerge(sheetId, target[0]) ||
+                        clipboardHeight * clipboardWidth !== 1) {
+                        return 2 /* CommandResult.WillRemoveExistingMerge */;
+                    }
+                }
+            }
+            const { xSplit, ySplit } = this.getters.getPaneDivisions(sheetId);
+            for (const zone of this.getPasteZones(target)) {
+                if ((zone.left < xSplit && zone.right >= xSplit) ||
+                    (zone.top < ySplit && zone.bottom >= ySplit)) {
+                    return 73 /* CommandResult.FrozenPaneOverlap */;
+                }
+            }
+            return 0 /* CommandResult.Success */;
+        }
+        /**
+         * Paste the clipboard content in the given target
+         */
+        paste(target, options) {
+            if (this.operation === "COPY") {
+                this.pasteFromCopy(target, options);
+            }
+            else {
+                this.pasteFromCut(target, options);
+            }
+            const height = this.cells.length;
+            const width = this.cells[0].length;
+            const isCutOperation = this.operation === "CUT";
+            if (options === null || options === void 0 ? void 0 : options.selectTarget) {
+                this.selectPastedZone(width, height, isCutOperation, target);
+            }
+        }
+        pasteFromCopy(target, options) {
+            if (target.length === 1) {
+                // in this specific case, due to the isPasteAllowed function:
+                // state.cells can contains several cells.
+                // So if the target zone is larger than the copied zone,
+                // we duplicate each cells as many times as possible to fill the zone.
+                const height = this.cells.length;
+                const width = this.cells[0].length;
+                const pasteZones = this.pastedZones(target, width, height);
+                for (const zone of pasteZones) {
+                    this.pasteZone(zone.left, zone.top, options);
+                }
+            }
+            else {
+                // in this case, due to the isPasteAllowed function: state.cells contains
+                // only one cell
+                for (const zone of target) {
+                    for (let col = zone.left; col <= zone.right; col++) {
+                        for (let row = zone.top; row <= zone.bottom; row++) {
+                            this.pasteZone(col, row, options);
+                        }
+                    }
+                }
+            }
+            if ((options === null || options === void 0 ? void 0 : options.pasteOption) === undefined) {
+                this.pasteCopiedTables(target);
+            }
+        }
+        pasteFromCut(target, options) {
+            this.clearClippedZones();
+            const selection = target[0];
+            this.pasteZone(selection.left, selection.top, options);
+            this.dispatch("MOVE_RANGES", {
+                target: this.zones,
+                sheetId: this.sheetId,
+                targetSheetId: this.getters.getActiveSheetId(),
+                col: selection.left,
+                row: selection.top,
+            });
+            for (const filterTable of this.copiedTables) {
+                this.dispatch("REMOVE_FILTER_TABLE", {
+                    sheetId: this.getters.getActiveSheetId(),
+                    target: [filterTable.zone],
+                });
+            }
+            this.pasteCopiedTables(target);
+        }
+        /**
+         * The clipped zone is copied as many times as it fits in the target.
+         * This returns the list of zones where the clipped zone is copy-pasted.
+         */
+        pastedZones(target, originWidth, originHeight) {
+            const selection = target[0];
+            const repeatHorizontally = Math.max(1, Math.floor((selection.right + 1 - selection.left) / originWidth));
+            const repeatVertically = Math.max(1, Math.floor((selection.bottom + 1 - selection.top) / originHeight));
+            const zones = [];
+            for (let x = 0; x < repeatHorizontally; x++) {
+                for (let y = 0; y < repeatVertically; y++) {
+                    const top = selection.top + y * originHeight;
+                    const left = selection.left + x * originWidth;
+                    zones.push({
+                        left,
+                        top,
+                        bottom: top + originHeight - 1,
+                        right: left + originWidth - 1,
+                    });
+                }
+            }
+            return zones;
+        }
+        /**
+         * Compute the complete zones where to paste the current clipboard
+         */
+        getPasteZones(target) {
+            const cells = this.cells;
+            if (!cells.length || !cells[0].length) {
+                return target;
+            }
+            const pasteZones = [];
+            const height = cells.length;
+            const width = cells[0].length;
+            const selection = target[target.length - 1];
+            const col = selection.left;
+            const row = selection.top;
+            const repetitionCol = Math.max(1, Math.floor((selection.right + 1 - col) / width));
+            const repetitionRow = Math.max(1, Math.floor((selection.bottom + 1 - row) / height));
+            for (let x = 1; x <= repetitionCol; x++) {
+                for (let y = 1; y <= repetitionRow; y++) {
+                    pasteZones.push({
+                        left: col,
+                        top: row,
+                        right: col - 1 + x * width,
+                        bottom: row - 1 + y * height,
+                    });
+                }
+            }
+            return pasteZones;
+        }
+        /**
+         * Update the selection with the newly pasted zone
+         */
+        selectPastedZone(width, height, isCutOperation, target) {
+            const selection = target[0];
+            const col = selection.left;
+            const row = selection.top;
+            if (height > 1 || width > 1 || isCutOperation) {
+                const zones = this.pastedZones(target, width, height);
+                const newZone = isCutOperation ? zones[0] : union(...zones);
+                this.selection.selectZone({ cell: { col, row }, zone: newZone });
+            }
+        }
+        /**
+         * Clear the clipped zones: remove the cells and clear the formatting
+         */
+        clearClippedZones() {
+            for (const row of this.cells) {
+                for (const cell of row) {
+                    if (cell.cell) {
+                        this.dispatch("CLEAR_CELL", cell.position);
+                    }
+                }
+            }
+            this.dispatch("CLEAR_FORMATTING", {
+                sheetId: this.sheetId,
+                target: this.zones,
+            });
+        }
+        pasteZone(col, row, clipboardOptions) {
+            const height = this.cells.length;
+            const width = this.cells[0].length;
+            // This condition is used to determine if we have to paste the CF or not.
+            // We have to do it when the command handled is "PASTE", not "INSERT_CELL"
+            // or "DELETE_CELL". So, the state should be the local state
+            const shouldPasteCF = (clipboardOptions === null || clipboardOptions === void 0 ? void 0 : clipboardOptions.pasteOption) !== "onlyValue" && (clipboardOptions === null || clipboardOptions === void 0 ? void 0 : clipboardOptions.shouldPasteCF);
+            const sheetId = this.getters.getActiveSheetId();
+            // first, add missing cols/rows if needed
+            this.addMissingDimensions(width, height, col, row);
+            // then, perform the actual paste operation
+            for (let r = 0; r < height; r++) {
+                const rowCells = this.cells[r];
+                for (let c = 0; c < width; c++) {
+                    const origin = rowCells[c];
+                    const position = { col: col + c, row: row + r, sheetId: sheetId };
+                    // TODO: refactor this part. the "Paste merge" action is also executed with
+                    // MOVE_RANGES in pasteFromCut. Adding a condition on the operation type here
+                    // is not appropriate
+                    if (this.operation !== "CUT") {
+                        this.pasteMergeIfExist(origin.position, position);
+                    }
+                    this.pasteCell(origin, position, this.operation, clipboardOptions);
+                    if (shouldPasteCF) {
+                        this.dispatch("PASTE_CONDITIONAL_FORMAT", {
+                            origin: origin.position,
+                            target: position,
+                            operation: this.operation,
+                        });
+                    }
+                }
+            }
+        }
+        /**
+         * Paste the cell at the given position to the target position
+         */
+        pasteCell(origin, target, operation, clipboardOption) {
+            const { sheetId, col, row } = target;
+            const targetCell = this.getters.getEvaluatedCell(target);
+            if ((clipboardOption === null || clipboardOption === void 0 ? void 0 : clipboardOption.pasteOption) !== "onlyValue") {
+                const targetBorders = this.getters.getCellBorder(sheetId, col, row);
+                const originBorders = origin.border;
+                const border = {
+                    top: (targetBorders === null || targetBorders === void 0 ? void 0 : targetBorders.top) || (originBorders === null || originBorders === void 0 ? void 0 : originBorders.top),
+                    bottom: (targetBorders === null || targetBorders === void 0 ? void 0 : targetBorders.bottom) || (originBorders === null || originBorders === void 0 ? void 0 : originBorders.bottom),
+                    left: (targetBorders === null || targetBorders === void 0 ? void 0 : targetBorders.left) || (originBorders === null || originBorders === void 0 ? void 0 : originBorders.left),
+                    right: (targetBorders === null || targetBorders === void 0 ? void 0 : targetBorders.right) || (originBorders === null || originBorders === void 0 ? void 0 : originBorders.right),
+                };
+                this.dispatch("SET_BORDER", { sheetId, col, row, border });
+            }
+            if (origin.cell) {
+                if ((clipboardOption === null || clipboardOption === void 0 ? void 0 : clipboardOption.pasteOption) === "onlyFormat") {
+                    this.dispatch("UPDATE_CELL", {
+                        ...target,
+                        style: origin.cell.style,
+                        format: origin.evaluatedCell.format,
+                    });
+                    return;
+                }
+                if ((clipboardOption === null || clipboardOption === void 0 ? void 0 : clipboardOption.pasteOption) === "onlyValue") {
+                    const content = formatValue(origin.evaluatedCell.value);
+                    this.dispatch("UPDATE_CELL", { ...target, content });
+                    return;
+                }
+                let content = origin.cell.content;
+                if (origin.cell.isFormula && operation === "COPY") {
+                    const offsetX = col - origin.position.col;
+                    const offsetY = row - origin.position.row;
+                    content = this.getUpdatedContent(sheetId, origin.cell, offsetX, offsetY, operation);
+                }
+                this.dispatch("UPDATE_CELL", {
+                    ...target,
+                    content,
+                    style: origin.cell.style || null,
+                    format: origin.cell.format,
+                });
+            }
+            else if (targetCell) {
+                if ((clipboardOption === null || clipboardOption === void 0 ? void 0 : clipboardOption.pasteOption) === "onlyValue") {
+                    this.dispatch("UPDATE_CELL", { ...target, content: "" });
+                }
+                else if ((clipboardOption === null || clipboardOption === void 0 ? void 0 : clipboardOption.pasteOption) === "onlyFormat") {
+                    this.dispatch("UPDATE_CELL", { ...target, style: null, format: "" });
+                }
+                else {
+                    this.dispatch("CLEAR_CELL", target);
+                }
+            }
+        }
+        /**
+         * Get the newly updated formula, after applying offsets
+         */
+        getUpdatedContent(sheetId, cell, offsetX, offsetY, operation) {
+            const ranges = this.getters.createAdaptedRanges(cell.dependencies, offsetX, offsetY, sheetId);
+            return this.getters.buildFormulaContent(sheetId, cell, ranges);
+        }
+        /**
+         * If the origin position given is the top left of a merge, merge the target
+         * position.
+         */
+        pasteMergeIfExist(origin, target) {
+            let { sheetId, col, row } = origin;
+            const { col: mainCellColOrigin, row: mainCellRowOrigin } = this.getters.getMainCellPosition(sheetId, col, row);
+            if (mainCellColOrigin === col && mainCellRowOrigin === row) {
+                const merge = this.getters.getMerge(sheetId, col, row);
+                if (!merge) {
+                    return;
+                }
+                ({ sheetId, col, row } = target);
+                this.dispatch("ADD_MERGE", {
+                    sheetId,
+                    force: true,
+                    target: [
+                        {
+                            left: col,
+                            top: row,
+                            right: col + merge.right - merge.left,
+                            bottom: row + merge.bottom - merge.top,
+                        },
+                    ],
+                });
+            }
+        }
+        /** Paste the filter tables that are in the state */
+        pasteCopiedTables(target) {
+            const sheetId = this.getters.getActiveSheetId();
+            const selection = target[0];
+            const cutZone = this.zones[0];
+            const cutOffset = [
+                selection.left - cutZone.left,
+                selection.top - cutZone.top,
+            ];
+            for (const table of this.copiedTables) {
+                const newTableZone = createAdaptedZone(table.zone, "both", "MOVE", cutOffset);
+                this.dispatch("CREATE_FILTER_TABLE", { sheetId, target: [newTableZone] });
+                for (const i of range(0, table.filtersValues.length)) {
+                    this.dispatch("UPDATE_FILTER", {
+                        sheetId,
+                        col: newTableZone.left + i,
+                        row: newTableZone.top,
+                        values: table.filtersValues[i],
+                    });
+                }
+            }
+        }
+        getClipboardContent() {
+            return (this.cells
+                .map((cells) => {
+                return cells
+                    .map((c) => c.cell ? this.getters.getCellText(c.position, this.getters.shouldShowFormulas()) : "")
+                    .join("\t");
+            })
+                .join("\n") || "\t");
+        }
+        isColRowDirtyingClipboard(position, dimension) {
+            if (!this.zones)
+                return false;
+            for (let zone of this.zones) {
+                if (dimension === "COL" && position <= zone.right) {
+                    return true;
+                }
+                if (dimension === "ROW" && position <= zone.bottom) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        drawClipboard(renderingContext) {
+            const { ctx, thinLineWidth } = renderingContext;
+            if (this.sheetId !== this.getters.getActiveSheetId() || !this.zones || !this.zones.length) {
+                return;
+            }
+            ctx.setLineDash([8, 5]);
+            ctx.strokeStyle = SELECTION_BORDER_COLOR;
+            ctx.lineWidth = 3.3 * thinLineWidth;
+            for (const zone of this.zones) {
+                const { x, y, width, height } = this.getters.getVisibleRect(zone);
+                if (width > 0 && height > 0) {
+                    ctx.strokeRect(x, y, width, height);
+                }
+            }
+        }
+    }
+
+    /** State of the clipboard when copying/cutting figures */
+    class ClipboardFigureState {
+        constructor(operation, getters, dispatch) {
+            this.getters = getters;
+            this.dispatch = dispatch;
+            this.sheetId = getters.getActiveSheetId();
+            const copiedFigureId = getters.getSelectedFigureId();
+            if (!copiedFigureId) {
+                throw new Error(`No figure selected`);
+            }
+            const figure = getters.getFigure(this.sheetId, copiedFigureId);
+            if (!figure) {
+                throw new Error(`No figure for the given id: ${copiedFigureId}`);
+            }
+            this.copiedFigure = { ...figure };
+            const chart = getters.getChart(copiedFigureId);
+            if (!chart) {
+                throw new Error(`No chart for the given id: ${copiedFigureId}`);
+            }
+            this.copiedChart = chart.copyInSheetId(this.sheetId);
+            this.operation = operation;
+        }
+        isCutAllowed(target) {
+            return 0 /* CommandResult.Success */;
+        }
+        isPasteAllowed(target, option) {
+            if (target.length === 0) {
+                return 71 /* CommandResult.EmptyTarget */;
+            }
+            if ((option === null || option === void 0 ? void 0 : option.pasteOption) !== undefined) {
+                return 21 /* CommandResult.WrongFigurePasteOption */;
+            }
+            return 0 /* CommandResult.Success */;
+        }
+        /**
+         * Paste the clipboard content in the given target
+         */
+        paste(target) {
+            const sheetId = this.getters.getActiveSheetId();
+            const position = {
+                x: this.getters.getColDimensions(sheetId, target[0].left).start,
+                y: this.getters.getRowDimensions(sheetId, target[0].top).start,
+            };
+            const newChart = this.copiedChart.copyInSheetId(sheetId);
+            const newId = new UuidGenerator().uuidv4();
+            this.dispatch("CREATE_CHART", {
+                id: newId,
+                sheetId,
+                position,
+                size: { height: this.copiedFigure.height, width: this.copiedFigure.width },
+                definition: newChart.getDefinition(),
+            });
+            if (this.operation === "CUT") {
+                this.dispatch("DELETE_FIGURE", {
+                    sheetId: this.copiedChart.sheetId,
+                    id: this.copiedFigure.id,
+                });
+            }
+            this.dispatch("SELECT_FIGURE", { id: newId });
+        }
+        getClipboardContent() {
+            return "\t";
+        }
+        isColRowDirtyingClipboard(position, dimension) {
+            return false;
+        }
+        drawClipboard(renderingContext) { }
+    }
+
+    /** State of the clipboard when copying/cutting from the OS clipboard*/
+    class ClipboardOsState extends ClipboardCellsAbstractState {
+        constructor(content, getters, dispatch, selection) {
+            super("COPY", getters, dispatch, selection);
+            this.values = content
+                .replace(/\r/g, "")
+                .split("\n")
+                .map((vals) => vals.split("\t"));
+        }
+        isPasteAllowed(target, clipboardOption) {
+            const sheetId = this.getters.getActiveSheetId();
+            const pasteZone = this.getPasteZone(target);
+            if (this.getters.doesIntersectMerge(sheetId, pasteZone)) {
+                return 2 /* CommandResult.WillRemoveExistingMerge */;
+            }
+            return 0 /* CommandResult.Success */;
+        }
+        paste(target) {
+            const values = this.values;
+            const pasteZone = this.getPasteZone(target);
+            const { left: activeCol, top: activeRow } = pasteZone;
+            const { width, height } = zoneToDimension(pasteZone);
+            const sheetId = this.getters.getActiveSheetId();
+            this.addMissingDimensions(width, height, activeCol, activeRow);
+            for (let i = 0; i < values.length; i++) {
+                for (let j = 0; j < values[i].length; j++) {
+                    this.dispatch("UPDATE_CELL", {
+                        row: activeRow + i,
+                        col: activeCol + j,
+                        content: values[i][j],
+                        sheetId,
+                    });
+                }
+            }
+            const zone = {
+                left: activeCol,
+                top: activeRow,
+                right: activeCol + width - 1,
+                bottom: activeRow + height - 1,
+            };
+            this.selection.selectZone({ cell: { col: activeCol, row: activeRow }, zone });
+        }
+        getClipboardContent() {
+            return this.values.map((values) => values.join("\t")).join("\n");
+        }
+        getPasteZone(target) {
+            const height = this.values.length;
+            const width = Math.max(...this.values.map((a) => a.length));
+            const { left: activeCol, top: activeRow } = target[0];
+            return {
+                top: activeRow,
+                left: activeCol,
+                bottom: activeRow + height - 1,
+                right: activeCol + width - 1,
+            };
+        }
+    }
+
+    /**
+     * Clipboard Plugin
+     *
+     * This clipboard manages all cut/copy/paste interactions internal to the
+     * application, and with the OS clipboard as well.
+     */
+    class ClipboardPlugin extends UIPlugin {
+        constructor() {
+            super(...arguments);
+            this.status = "invisible";
+            this._isPaintingFormat = false;
+        }
+        // ---------------------------------------------------------------------------
+        // Command Handling
+        // ---------------------------------------------------------------------------
+        allowDispatch(cmd) {
+            switch (cmd.type) {
+                case "CUT":
+                    const zones = cmd.target || this.getters.getSelectedZones();
+                    const state = this.getClipboardState(zones, cmd.type);
+                    return state.isCutAllowed(zones);
+                case "PASTE":
+                    if (!this.state) {
+                        return 22 /* CommandResult.EmptyClipboard */;
+                    }
+                    const pasteOption = cmd.pasteOption || (this._isPaintingFormat ? "onlyFormat" : undefined);
+                    return this.state.isPasteAllowed(cmd.target, { pasteOption });
+                case "PASTE_FROM_OS_CLIPBOARD": {
+                    const state = new ClipboardOsState(cmd.text, this.getters, this.dispatch, this.selection);
+                    return state.isPasteAllowed(cmd.target);
+                }
+                case "INSERT_CELL": {
+                    const { cut, paste } = this.getInsertCellsTargets(cmd.zone, cmd.shiftDimension);
+                    const state = this.getClipboardStateForCopyCells(cut, "CUT");
+                    return state.isPasteAllowed(paste);
+                }
+                case "DELETE_CELL": {
+                    const { cut, paste } = this.getDeleteCellsTargets(cmd.zone, cmd.shiftDimension);
+                    const state = this.getClipboardStateForCopyCells(cut, "CUT");
+                    return state.isPasteAllowed(paste);
+                }
+            }
+            return 0 /* CommandResult.Success */;
+        }
+        handle(cmd) {
+            var _a, _b;
+            switch (cmd.type) {
+                case "COPY":
+                case "CUT":
+                    const zones = ("target" in cmd && cmd.target) || this.getters.getSelectedZones();
+                    this.state = this.getClipboardState(zones, cmd.type);
+                    this.status = "visible";
+                    break;
+                case "PASTE":
+                    if (!this.state) {
+                        break;
+                    }
+                    const pasteOption = cmd.pasteOption || (this._isPaintingFormat ? "onlyFormat" : undefined);
+                    this._isPaintingFormat = false;
+                    this.state.paste(cmd.target, { pasteOption, shouldPasteCF: true, selectTarget: true });
+                    if (this.state.operation === "CUT") {
+                        this.state = undefined;
+                    }
+                    this.status = "invisible";
+                    break;
+                case "DELETE_CELL": {
+                    const { cut, paste } = this.getDeleteCellsTargets(cmd.zone, cmd.shiftDimension);
+                    const state = this.getClipboardStateForCopyCells(cut, "CUT");
+                    state.paste(paste);
+                    break;
+                }
+                case "INSERT_CELL": {
+                    const { cut, paste } = this.getInsertCellsTargets(cmd.zone, cmd.shiftDimension);
+                    const state = this.getClipboardStateForCopyCells(cut, "CUT");
+                    state.paste(paste);
+                    break;
+                }
+                case "ADD_COLUMNS_ROWS": {
+                    this.status = "invisible";
+                    // If we add a col/row inside or before the cut area, we invalidate the clipboard
+                    if (((_a = this.state) === null || _a === void 0 ? void 0 : _a.operation) !== "CUT") {
+                        return;
+                    }
+                    const isClipboardDirty = this.state.isColRowDirtyingClipboard(cmd.position === "before" ? cmd.base : cmd.base + 1, cmd.dimension);
+                    if (isClipboardDirty) {
+                        this.state = undefined;
+                    }
+                    break;
+                }
+                case "REMOVE_COLUMNS_ROWS": {
+                    this.status = "invisible";
+                    // If we remove a col/row inside or before the cut area, we invalidate the clipboard
+                    if (((_b = this.state) === null || _b === void 0 ? void 0 : _b.operation) !== "CUT") {
+                        return;
+                    }
+                    for (let el of cmd.elements) {
+                        const isClipboardDirty = this.state.isColRowDirtyingClipboard(el, cmd.dimension);
+                        if (isClipboardDirty) {
+                            this.state = undefined;
+                            break;
+                        }
+                    }
+                    this.status = "invisible";
+                    break;
+                }
+                case "PASTE_FROM_OS_CLIPBOARD":
+                    const state = new ClipboardOsState(cmd.text, this.getters, this.dispatch, this.selection);
+                    state.paste(cmd.target);
+                    this.status = "invisible";
+                    break;
+                case "ACTIVATE_PAINT_FORMAT": {
+                    const zones = this.getters.getSelectedZones();
+                    this.state = this.getClipboardStateForCopyCells(zones, "COPY");
+                    this._isPaintingFormat = true;
+                    this.status = "visible";
+                    break;
+                }
+                default:
+                    if (isCoreCommand(cmd)) {
+                        this.status = "invisible";
+                    }
+            }
+        }
+        // ---------------------------------------------------------------------------
+        // Getters
+        // ---------------------------------------------------------------------------
+        /**
+         * Format the current clipboard to a string suitable for being pasted in other
+         * programs.
+         *
+         * - add a tab character between each consecutive cells
+         * - add a newline character between each line
+         *
+         * Note that it returns \t if the clipboard is empty. This is necessary for the
+         * clipboard copy event to add it as data, otherwise an empty string is not
+         * considered as a copy content.
+         */
+        getClipboardContent() {
+            var _a;
+            return ((_a = this.state) === null || _a === void 0 ? void 0 : _a.getClipboardContent()) || "\t";
+        }
+        isCutOperation() {
+            return this.state ? this.state.operation === "CUT" : false;
+        }
+        isPaintingFormat() {
+            return this._isPaintingFormat;
+        }
+        // ---------------------------------------------------------------------------
+        // Private methods
+        // ---------------------------------------------------------------------------
+        getDeleteCellsTargets(zone, dimension) {
+            const sheetId = this.getters.getActiveSheetId();
+            let cut;
+            if (dimension === "COL") {
+                cut = {
+                    ...zone,
+                    left: zone.right + 1,
+                    right: this.getters.getNumberCols(sheetId) - 1,
+                };
+            }
+            else {
+                cut = {
+                    ...zone,
+                    top: zone.bottom + 1,
+                    bottom: this.getters.getNumberRows(sheetId) - 1,
+                };
+            }
+            return { cut: [cut], paste: [zone] };
+        }
+        getInsertCellsTargets(zone, dimension) {
+            const sheetId = this.getters.getActiveSheetId();
+            let cut;
+            let paste;
+            if (dimension === "COL") {
+                cut = {
+                    ...zone,
+                    right: this.getters.getNumberCols(sheetId) - 1,
+                };
+                paste = {
+                    ...zone,
+                    left: zone.right + 1,
+                    right: zone.right + 1,
+                };
+            }
+            else {
+                cut = {
+                    ...zone,
+                    bottom: this.getters.getNumberRows(sheetId) - 1,
+                };
+                paste = { ...zone, top: zone.bottom + 1, bottom: this.getters.getNumberRows(sheetId) - 1 };
+            }
+            return { cut: [cut], paste: [paste] };
+        }
+        getClipboardStateForCopyCells(zones, operation) {
+            return new ClipboardCellsState(zones, operation, this.getters, this.dispatch, this.selection);
+        }
+        /**
+         * Get the clipboard state from the given zones.
+         */
+        getClipboardState(zones, operation) {
+            const selectedFigureId = this.getters.getSelectedFigureId();
+            if (selectedFigureId) {
+                return new ClipboardFigureState(operation, this.getters, this.dispatch);
+            }
+            return new ClipboardCellsState(zones, operation, this.getters, this.dispatch, this.selection);
+        }
+        // ---------------------------------------------------------------------------
+        // Grid rendering
+        // ---------------------------------------------------------------------------
+        drawGrid(renderingContext) {
+            if (this.status !== "visible" || !this.state) {
+                return;
+            }
+            this.state.drawClipboard(renderingContext);
+        }
+    }
+    ClipboardPlugin.layers = [2 /* LAYERS.Clipboard */];
+    ClipboardPlugin.getters = ["getClipboardContent", "isCutOperation", "isPaintingFormat"];
+
+    const selectionStatisticFunctions = [
+        {
+            name: _lt("Sum"),
+            types: [CellValueType.number],
+            compute: (values) => SUM.compute([values]),
+        },
+        {
+            name: _lt("Avg"),
+            types: [CellValueType.number],
+            compute: (values) => AVERAGE.compute([values]),
+        },
+        {
+            name: _lt("Min"),
+            types: [CellValueType.number],
+            compute: (values) => MIN.compute([values]),
+        },
+        {
+            name: _lt("Max"),
+            types: [CellValueType.number],
+            compute: (values) => MAX.compute([values]),
+        },
+        {
+            name: _lt("Count"),
+            types: [CellValueType.number, CellValueType.text, CellValueType.boolean, CellValueType.error],
+            compute: (values) => COUNTA.compute([values]),
+        },
+        {
+            name: _lt("Count Numbers"),
+            types: [CellValueType.number, CellValueType.text, CellValueType.boolean, CellValueType.error],
+            compute: (values) => COUNT.compute([values]),
+        },
+    ];
+    /**
+     * SelectionPlugin
+     */
+    class GridSelectionPlugin extends UIPlugin {
+        constructor(getters, state, dispatch, config, selection) {
+            super(getters, state, dispatch, config, selection);
+            this.gridSelection = {
+                anchor: {
+                    cell: { col: 0, row: 0 },
+                    zone: { top: 0, left: 0, bottom: 0, right: 0 },
+                },
+                zones: [{ top: 0, left: 0, bottom: 0, right: 0 }],
+            };
+            this.selectedFigureId = null;
+            this.sheetsData = {};
+            // This flag is used to avoid to historize the ACTIVE_SHEET command when it's
+            // the main command.
+            this.activeSheet = null;
+            this.moveClient = config.moveClient;
+        }
+        // ---------------------------------------------------------------------------
+        // Command Handling
+        // ---------------------------------------------------------------------------
+        allowDispatch(cmd) {
+            switch (cmd.type) {
+                case "ACTIVATE_SHEET":
+                    try {
+                        this.getters.getSheet(cmd.sheetIdTo);
+                        break;
+                    }
+                    catch (error) {
+                        return 26 /* CommandResult.InvalidSheetId */;
+                    }
+                case "MOVE_COLUMNS_ROWS":
+                    return this.isMoveElementAllowed(cmd);
+            }
+            return 0 /* CommandResult.Success */;
+        }
+        handleEvent(event) {
+            const anchor = event.anchor;
+            let zones = [];
+            switch (event.mode) {
+                case "overrideSelection":
+                    zones = [anchor.zone];
+                    break;
+                case "updateAnchor":
+                    zones = [...this.gridSelection.zones];
+                    const index = zones.findIndex((z) => isEqual(z, event.previousAnchor.zone));
+                    if (index >= 0) {
+                        zones[index] = anchor.zone;
+                    }
+                    break;
+                case "newAnchor":
+                    zones = [...this.gridSelection.zones, anchor.zone];
+                    break;
+            }
+            this.setSelectionMixin(event.anchor, zones);
+            /** Any change to the selection has to be  reflected in the selection processor. */
+            this.selection.resetDefaultAnchor(this, deepCopy(this.gridSelection.anchor));
+            const { col, row } = this.gridSelection.anchor.cell;
+            this.moveClient({
+                sheetId: this.getters.getActiveSheetId(),
+                col,
+                row,
+            });
+            this.selectedFigureId = null;
+        }
+        handle(cmd) {
+            switch (cmd.type) {
+                case "START_EDITION":
+                case "ACTIVATE_SHEET":
+                    this.selectedFigureId = null;
+                    break;
+                case "DELETE_FIGURE":
+                    if (this.selectedFigureId === cmd.id) {
+                        this.selectedFigureId = null;
+                    }
+                    break;
+                case "DELETE_SHEET":
+                    if (this.selectedFigureId && this.getters.getFigure(cmd.sheetId, this.selectedFigureId)) {
+                        this.selectedFigureId = null;
+                    }
+                    break;
+            }
+            switch (cmd.type) {
+                case "START":
+                    const firstSheetId = this.getters.getVisibleSheetIds()[0];
+                    this.dispatch("ACTIVATE_SHEET", {
+                        sheetIdTo: firstSheetId,
+                        sheetIdFrom: firstSheetId,
+                    });
+                    const { col, row } = this.getters.getNextVisibleCellPosition(firstSheetId, 0, 0);
+                    this.selectCell(col, row);
+                    this.selection.registerAsDefault(this, this.gridSelection.anchor, {
+                        handleEvent: this.handleEvent.bind(this),
+                    });
+                    this.moveClient({ sheetId: firstSheetId, col: 0, row: 0 });
+                    break;
+                case "ACTIVATE_SHEET": {
+                    if (!this.getters.isSheetVisible(cmd.sheetIdTo)) {
+                        this.dispatch("SHOW_SHEET", { sheetId: cmd.sheetIdTo });
+                    }
+                    this.setActiveSheet(cmd.sheetIdTo);
+                    this.sheetsData[cmd.sheetIdFrom] = {
+                        gridSelection: deepCopy(this.gridSelection),
+                    };
+                    if (cmd.sheetIdTo in this.sheetsData) {
+                        Object.assign(this, this.sheetsData[cmd.sheetIdTo]);
+                        this.selection.resetDefaultAnchor(this, deepCopy(this.gridSelection.anchor));
+                    }
+                    else {
+                        const { col, row } = this.getters.getNextVisibleCellPosition(cmd.sheetIdTo, 0, 0);
+                        this.selectCell(col, row);
+                    }
+                    break;
+                }
+                case "REMOVE_COLUMNS_ROWS": {
+                    const sheetId = this.getters.getActiveSheetId();
+                    if (cmd.sheetId === sheetId) {
+                        if (cmd.dimension === "COL") {
+                            this.onColumnsRemoved(cmd);
+                        }
+                        else {
+                            this.onRowsRemoved(cmd);
+                        }
+                        const { col, row } = this.gridSelection.anchor.cell;
+                        this.moveClient({ sheetId, col, row });
+                    }
+                    break;
+                }
+                case "ADD_COLUMNS_ROWS": {
+                    const sheetId = this.getters.getActiveSheetId();
+                    if (cmd.sheetId === sheetId) {
+                        this.onAddElements(cmd);
+                        const { col, row } = this.gridSelection.anchor.cell;
+                        this.moveClient({ sheetId, col, row });
+                    }
+                    break;
+                }
+                case "MOVE_COLUMNS_ROWS":
+                    if (cmd.sheetId === this.getActiveSheetId()) {
+                        this.onMoveElements(cmd);
+                    }
+                    break;
+                case "SELECT_FIGURE":
+                    this.selectedFigureId = cmd.id;
+                    break;
+                case "ACTIVATE_NEXT_SHEET":
+                    this.activateNextSheet("right");
+                    break;
+                case "ACTIVATE_PREVIOUS_SHEET":
+                    this.activateNextSheet("left");
+                    break;
+                case "HIDE_SHEET":
+                    if (cmd.sheetId === this.getActiveSheetId()) {
+                        this.dispatch("ACTIVATE_SHEET", {
+                            sheetIdFrom: cmd.sheetId,
+                            sheetIdTo: this.getters.getVisibleSheetIds()[0],
+                        });
+                    }
+                    break;
+                case "UNDO":
+                case "REDO":
+                case "DELETE_SHEET":
+                    const deletedSheetIds = Object.keys(this.sheetsData).filter((sheetId) => !this.getters.tryGetSheet(sheetId));
+                    for (const sheetId of deletedSheetIds) {
+                        delete this.sheetsData[sheetId];
+                    }
+                    for (const sheetId in this.sheetsData) {
+                        const gridSelection = this.clipSelection(sheetId, this.sheetsData[sheetId].gridSelection);
+                        this.sheetsData[sheetId] = {
+                            gridSelection: deepCopy(gridSelection),
+                        };
+                    }
+                    if (!this.getters.tryGetSheet(this.getters.getActiveSheetId())) {
+                        const currentSheetIds = this.getters.getVisibleSheetIds();
+                        this.activeSheet = this.getters.getSheet(currentSheetIds[0]);
+                        if (this.activeSheet.id in this.sheetsData) {
+                            const { anchor } = this.clipSelection(this.activeSheet.id, this.sheetsData[this.activeSheet.id].gridSelection);
+                            this.selectCell(anchor.cell.col, anchor.cell.row);
+                        }
+                        else {
+                            this.selectCell(0, 0);
+                        }
+                        const { col, row } = this.gridSelection.anchor.cell;
+                        this.moveClient({
+                            sheetId: this.getters.getActiveSheetId(),
+                            col,
+                            row,
+                        });
+                    }
+                    const sheetId = this.getters.getActiveSheetId();
+                    this.gridSelection.zones = this.gridSelection.zones.map((z) => this.getters.expandZone(sheetId, z));
+                    this.gridSelection.anchor.zone = this.getters.expandZone(sheetId, this.gridSelection.anchor.zone);
+                    this.setSelectionMixin(this.gridSelection.anchor, this.gridSelection.zones);
+                    break;
+            }
+            /** Any change to the selection has to be  reflected in the selection processor. */
+            this.selection.resetDefaultAnchor(this, deepCopy(this.gridSelection.anchor));
+        }
+        // ---------------------------------------------------------------------------
+        // Getters
+        // ---------------------------------------------------------------------------
+        getActiveSheet() {
+            return this.activeSheet;
+        }
+        getActiveSheetId() {
+            return this.activeSheet.id;
+        }
+        getActiveCell() {
+            const sheetId = this.getters.getActiveSheetId();
+            const { col, row } = this.gridSelection.anchor.cell;
+            const mainPosition = this.getters.getMainCellPosition(sheetId, col, row);
+            return this.getters.getEvaluatedCell({ sheetId, ...mainPosition });
+        }
+        getActiveCols() {
+            const activeCols = new Set();
+            for (let zone of this.gridSelection.zones) {
+                if (zone.top === 0 &&
+                    zone.bottom === this.getters.getNumberRows(this.getters.getActiveSheetId()) - 1) {
+                    for (let i = zone.left; i <= zone.right; i++) {
+                        activeCols.add(i);
+                    }
+                }
+            }
+            return activeCols;
+        }
+        getActiveRows() {
+            const activeRows = new Set();
+            const sheetId = this.getters.getActiveSheetId();
+            for (let zone of this.gridSelection.zones) {
+                if (zone.left === 0 && zone.right === this.getters.getNumberCols(sheetId) - 1) {
+                    for (let i = zone.top; i <= zone.bottom; i++) {
+                        activeRows.add(i);
+                    }
+                }
+            }
+            return activeRows;
+        }
+        getCurrentStyle() {
+            const zone = this.getters.getSelectedZone();
+            const sheetId = this.getters.getActiveSheetId();
+            return this.getters.getCellStyle({ sheetId, col: zone.left, row: zone.top });
+        }
+        getSelectedZones() {
+            return deepCopy(this.gridSelection.zones);
+        }
+        getSelectedZone() {
+            return deepCopy(this.gridSelection.anchor.zone);
+        }
+        getSelection() {
+            return deepCopy(this.gridSelection);
+        }
+        getSelectedFigureId() {
+            return this.selectedFigureId;
+        }
+        getPosition() {
+            return { col: this.gridSelection.anchor.cell.col, row: this.gridSelection.anchor.cell.row };
+        }
+        getSheetPosition(sheetId) {
+            if (sheetId === this.getters.getActiveSheetId()) {
+                return this.getPosition();
+            }
+            else {
+                const sheetData = this.sheetsData[sheetId];
+                return sheetData
+                    ? {
+                        col: sheetData.gridSelection.anchor.cell.col,
+                        row: sheetData.gridSelection.anchor.cell.row,
+                    }
+                    : this.getters.getNextVisibleCellPosition(sheetId, 0, 0);
+            }
+        }
+        getStatisticFnResults() {
+            // get deduplicated cells in zones
+            const cells = new Set(this.gridSelection.zones
+                .map((zone) => this.getters.getEvaluatedCellsInZone(this.getters.getActiveSheetId(), zone))
+                .flat()
+                .filter((cell) => cell.type !== CellValueType.empty));
+            let cellsTypes = new Set();
+            let cellsValues = [];
+            for (let cell of cells) {
+                cellsTypes.add(cell.type);
+                cellsValues.push(cell.value);
+            }
+            let statisticFnResults = {};
+            for (let fn of selectionStatisticFunctions) {
+                // We don't want to display statistical information when there is no interest:
+                // We set the statistical result to undefined if the data handled by the selection
+                // does not match the data handled by the function.
+                // Ex: if there are only texts in the selection, we prefer that the SUM result
+                // be displayed as undefined rather than 0.
+                let fnResult = undefined;
+                if (fn.types.some((t) => cellsTypes.has(t))) {
+                    fnResult = fn.compute(cellsValues);
+                }
+                statisticFnResults[fn.name] = fnResult;
+            }
+            return statisticFnResults;
+        }
+        getAggregate() {
+            let aggregate = 0;
+            let n = 0;
+            const sheetId = this.getters.getActiveSheetId();
+            const cellPositions = this.gridSelection.zones.map(positions).flat();
+            for (const { col, row } of cellPositions) {
+                const cell = this.getters.getEvaluatedCell({ sheetId, col, row });
+                if (cell.type === CellValueType.number) {
+                    n++;
+                    aggregate += cell.value;
+                }
+            }
+            return n < 2 ? null : formatValue(aggregate);
+        }
+        isSelected(zone) {
+            return !!this.getters.getSelectedZones().find((z) => isEqual(z, zone));
+        }
+        /**
+         * Returns a sorted array of indexes of all columns (respectively rows depending
+         * on the dimension parameter) intersected by the currently selected zones.
+         *
+         * example:
+         * assume selectedZones: [{left:0, right: 2, top :2, bottom: 4}, {left:5, right: 6, top :3, bottom: 5}]
+         *
+         * if dimension === "COL" => [0,1,2,5,6]
+         * if dimension === "ROW" => [2,3,4,5]
+         */
+        getElementsFromSelection(dimension) {
+            if (dimension === "COL" && this.getters.getActiveCols().size === 0) {
+                return [];
+            }
+            if (dimension === "ROW" && this.getters.getActiveRows().size === 0) {
+                return [];
+            }
+            const zones = this.getters.getSelectedZones();
+            let elements = [];
+            const start = dimension === "COL" ? "left" : "top";
+            const end = dimension === "COL" ? "right" : "bottom";
+            for (const zone of zones) {
+                const zoneRows = Array.from({ length: zone[end] - zone[start] + 1 }, (_, i) => zone[start] + i);
+                elements = elements.concat(zoneRows);
+            }
+            return [...new Set(elements)].sort();
+        }
+        // ---------------------------------------------------------------------------
+        // Other
+        // ---------------------------------------------------------------------------
+        /**
+         * Ensure selections are not outside sheet boundaries.
+         * They are clipped to fit inside the sheet if needed.
+         */
+        setSelectionMixin(anchor, zones) {
+            const { anchor: clippedAnchor, zones: clippedZones } = this.clipSelection(this.getters.getActiveSheetId(), { anchor, zones });
+            this.gridSelection.anchor = clippedAnchor;
+            this.gridSelection.zones = uniqueZones(clippedZones);
+        }
+        /**
+         * Change the anchor of the selection active cell to an absolute col and row index.
+         *
+         * This is a non trivial task. We need to stop the editing process and update
+         * properly the current selection.  Also, this method can optionally create a new
+         * range in the selection.
+         */
+        selectCell(col, row) {
+            const sheetId = this.getters.getActiveSheetId();
+            const zone = this.getters.expandZone(sheetId, { left: col, right: col, top: row, bottom: row });
+            this.setSelectionMixin({ zone, cell: { col, row } }, [zone]);
+        }
+        setActiveSheet(id) {
+            const sheet = this.getters.getSheet(id);
+            this.activeSheet = sheet;
+        }
+        activateNextSheet(direction) {
+            const sheetIds = this.getters.getSheetIds();
+            const oldSheetPosition = sheetIds.findIndex((id) => id === this.activeSheet.id);
+            const delta = direction === "left" ? sheetIds.length - 1 : 1;
+            const newPosition = (oldSheetPosition + delta) % sheetIds.length;
+            this.dispatch("ACTIVATE_SHEET", {
+                sheetIdFrom: this.getActiveSheetId(),
+                sheetIdTo: sheetIds[newPosition],
+            });
+        }
+        onColumnsRemoved(cmd) {
+            const { cell, zone } = this.gridSelection.anchor;
+            const selectedZone = updateSelectionOnDeletion(zone, "left", [...cmd.elements]);
+            let anchorZone = { left: cell.col, right: cell.col, top: cell.row, bottom: cell.row };
+            anchorZone = updateSelectionOnDeletion(anchorZone, "left", [...cmd.elements]);
+            const anchor = {
+                cell: {
+                    col: anchorZone.left,
+                    row: anchorZone.top,
+                },
+                zone: selectedZone,
+            };
+            this.setSelectionMixin(anchor, [selectedZone]);
+        }
+        onRowsRemoved(cmd) {
+            const { cell, zone } = this.gridSelection.anchor;
+            const selectedZone = updateSelectionOnDeletion(zone, "top", [...cmd.elements]);
+            let anchorZone = { left: cell.col, right: cell.col, top: cell.row, bottom: cell.row };
+            anchorZone = updateSelectionOnDeletion(anchorZone, "top", [...cmd.elements]);
+            const anchor = {
+                cell: {
+                    col: anchorZone.left,
+                    row: anchorZone.top,
+                },
+                zone: selectedZone,
+            };
+            this.setSelectionMixin(anchor, [selectedZone]);
+        }
+        onAddElements(cmd) {
+            const selection = this.gridSelection.anchor.zone;
+            const zone = updateSelectionOnInsertion(selection, cmd.dimension === "COL" ? "left" : "top", cmd.base, cmd.position, cmd.quantity);
+            const anchor = { cell: { col: zone.left, row: zone.top }, zone };
+            this.setSelectionMixin(anchor, [zone]);
+        }
+        onMoveElements(cmd) {
+            const thickness = cmd.elements.length;
+            this.dispatch("ADD_COLUMNS_ROWS", {
+                dimension: cmd.dimension,
+                sheetId: cmd.sheetId,
+                base: cmd.base,
+                quantity: thickness,
+                position: "before",
+            });
+            const isCol = cmd.dimension === "COL";
+            const start = cmd.elements[0];
+            const end = cmd.elements[thickness - 1];
+            const isBasedBefore = cmd.base < start;
+            const deltaCol = isBasedBefore && isCol ? thickness : 0;
+            const deltaRow = isBasedBefore && !isCol ? thickness : 0;
+            this.dispatch("CUT", {
+                target: [
+                    {
+                        left: isCol ? start + deltaCol : 0,
+                        right: isCol ? end + deltaCol : this.getters.getNumberCols(cmd.sheetId) - 1,
+                        top: !isCol ? start + deltaRow : 0,
+                        bottom: !isCol ? end + deltaRow : this.getters.getNumberRows(cmd.sheetId) - 1,
+                    },
+                ],
+            });
+            this.dispatch("PASTE", {
+                target: [
+                    {
+                        left: isCol ? cmd.base : 0,
+                        right: isCol ? cmd.base + thickness - 1 : this.getters.getNumberCols(cmd.sheetId) - 1,
+                        top: !isCol ? cmd.base : 0,
+                        bottom: !isCol ? cmd.base + thickness - 1 : this.getters.getNumberRows(cmd.sheetId) - 1,
+                    },
+                ],
+            });
+            const toRemove = isBasedBefore ? cmd.elements.map((el) => el + thickness) : cmd.elements;
+            let currentIndex = cmd.base;
+            for (const element of toRemove) {
+                const size = cmd.dimension === "COL"
+                    ? this.getters.getColSize(cmd.sheetId, element)
+                    : this.getters.getRowSize(cmd.sheetId, element);
+                this.dispatch("RESIZE_COLUMNS_ROWS", {
+                    dimension: cmd.dimension,
+                    sheetId: cmd.sheetId,
+                    size,
+                    elements: [currentIndex],
+                });
+                currentIndex += 1;
+            }
+            this.dispatch("REMOVE_COLUMNS_ROWS", {
+                dimension: cmd.dimension,
+                sheetId: cmd.sheetId,
+                elements: toRemove,
+            });
+        }
+        isMoveElementAllowed(cmd) {
+            const isCol = cmd.dimension === "COL";
+            const start = cmd.elements[0];
+            const end = cmd.elements[cmd.elements.length - 1];
+            const id = cmd.sheetId;
+            const doesElementsHaveCommonMerges = isCol
+                ? this.getters.doesColumnsHaveCommonMerges
+                : this.getters.doesRowsHaveCommonMerges;
+            if (doesElementsHaveCommonMerges(id, start - 1, start) ||
+                doesElementsHaveCommonMerges(id, end, end + 1) ||
+                doesElementsHaveCommonMerges(id, cmd.base - 1, cmd.base)) {
+                return 2 /* CommandResult.WillRemoveExistingMerge */;
+            }
+            return 0 /* CommandResult.Success */;
+        }
+        //-------------------------------------------
+        // Helpers for extensions
+        // ------------------------------------------
+        /**
+         * Clip the selection if it spans outside the sheet
+         */
+        clipSelection(sheetId, selection) {
+            const cols = this.getters.getNumberCols(sheetId) - 1;
+            const rows = this.getters.getNumberRows(sheetId) - 1;
+            const zones = selection.zones.map((z) => {
+                return {
+                    left: clip(z.left, 0, cols),
+                    right: clip(z.right, 0, cols),
+                    top: clip(z.top, 0, rows),
+                    bottom: clip(z.bottom, 0, rows),
+                };
+            });
+            const anchorCol = clip(selection.anchor.cell.col, 0, cols);
+            const anchorRow = clip(selection.anchor.cell.row, 0, rows);
+            const anchorZone = {
+                left: clip(selection.anchor.zone.left, 0, cols),
+                right: clip(selection.anchor.zone.right, 0, cols),
+                top: clip(selection.anchor.zone.top, 0, rows),
+                bottom: clip(selection.anchor.zone.bottom, 0, rows),
+            };
+            return {
+                zones,
+                anchor: {
+                    cell: { col: anchorCol, row: anchorRow },
+                    zone: anchorZone,
+                },
+            };
+        }
+        // ---------------------------------------------------------------------------
+        // Grid rendering
+        // ---------------------------------------------------------------------------
+        drawGrid(renderingContext) {
+            if (this.getters.isDashboard()) {
+                return;
+            }
+            const { ctx, thinLineWidth } = renderingContext;
+            // selection
+            const zones = this.getSelectedZones();
+            ctx.fillStyle = "#f3f7fe";
+            const onlyOneCell = zones.length === 1 && zones[0].left === zones[0].right && zones[0].top === zones[0].bottom;
+            ctx.fillStyle = onlyOneCell ? "#f3f7fe" : "#e9f0ff";
+            ctx.strokeStyle = SELECTION_BORDER_COLOR;
+            ctx.lineWidth = 1.5 * thinLineWidth;
+            for (const zone of zones) {
+                const { x, y, width, height } = this.getters.getVisibleRect(zone);
+                ctx.globalCompositeOperation = "multiply";
+                ctx.fillRect(x, y, width, height);
+                ctx.globalCompositeOperation = "source-over";
+                ctx.strokeRect(x, y, width, height);
+            }
+            ctx.globalCompositeOperation = "source-over";
+            // active zone
+            const activeSheet = this.getters.getActiveSheetId();
+            const { col, row } = this.getPosition();
+            ctx.strokeStyle = SELECTION_BORDER_COLOR;
+            ctx.lineWidth = 3 * thinLineWidth;
+            let zone;
+            if (this.getters.isInMerge(activeSheet, col, row)) {
+                zone = this.getters.getMerge(activeSheet, col, row);
+            }
+            else {
+                zone = {
+                    top: row,
+                    bottom: row,
+                    left: col,
+                    right: col,
+                };
+            }
+            const { x, y, width, height } = this.getters.getVisibleRect(zone);
+            if (width > 0 && height > 0) {
+                ctx.strokeRect(x, y, width, height);
+            }
+        }
+    }
+    GridSelectionPlugin.layers = [6 /* LAYERS.Selection */];
+    GridSelectionPlugin.getters = [
+        "getActiveSheet",
+        "getActiveSheetId",
+        "getActiveCell",
+        "getActiveCols",
+        "getActiveRows",
+        "getCurrentStyle",
+        "getSelectedZones",
+        "getSelectedZone",
+        "getStatisticFnResults",
+        "getAggregate",
+        "getSelectedFigureId",
+        "getSelection",
+        "getPosition",
+        "getSheetPosition",
+        "isSelected",
+        "getElementsFromSelection",
+    ];
+
     const corePluginRegistry = new Registry()
         .add("sheet", SheetPlugin)
         .add("header visibility", HeaderVisibilityPlugin)
@@ -36859,20 +36862,12 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         .add("conditional formatting", ConditionalFormatPlugin)
         .add("figures", FigurePlugin)
         .add("chart", ChartPlugin);
-    const uiPluginRegistry = new Registry()
-        .add("selection", GridSelectionPlugin)
+    const featurePluginRegistry = new Registry()
         .add("ui_sheet", SheetUIPlugin)
         .add("header_visibility_ui", HeaderVisibilityUIPlugin)
         .add("ui_options", UIOptionsPlugin)
-        .add("evaluation", EvaluationPlugin)
-        .add("evaluation_filter", FilterEvaluationPlugin)
-        .add("evaluation_cf", EvaluationConditionalFormatPlugin)
-        .add("evaluation_chart", EvaluationChartPlugin)
-        .add("clipboard", ClipboardPlugin)
-        .add("edition", EditionPlugin)
         .add("selectionInputManager", SelectionInputsManagerPlugin)
         .add("highlight", HighlightPlugin)
-        .add("viewport", SheetViewPlugin)
         .add("grid renderer", RendererPlugin)
         .add("autofill", AutofillPlugin)
         .add("find_and_replace", FindAndReplacePlugin)
@@ -36880,7 +36875,17 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         .add("automatic_sum", AutomaticSumPlugin)
         .add("format", FormatPlugin)
         .add("cell_popovers", CellPopoverPlugin)
-        .add("selection_multiuser", SelectionMultiUserPlugin)
+        .add("selection_multiuser", SelectionMultiUserPlugin);
+    const statefulUIPluginRegistry = new Registry()
+        .add("selection", GridSelectionPlugin)
+        .add("clipboard", ClipboardPlugin)
+        .add("edition", EditionPlugin);
+    const coreViewsPluginRegistry = new Registry()
+        .add("evaluation", EvaluationPlugin)
+        .add("evaluation_filter", FilterEvaluationPlugin)
+        .add("evaluation_chart", EvaluationChartPlugin)
+        .add("evaluation_cf", EvaluationConditionalFormatPlugin)
+        .add("viewport", SheetViewPlugin)
         .add("custom_colors", CustomColorsPlugin);
 
     const clickableCellRegistry = new Registry();
@@ -41933,7 +41938,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         constructor(data = {}, config = {}, stateUpdateMessages = [], uuidGenerator = new UuidGenerator(), verboseImport = true) {
             super();
             this.corePlugins = [];
-            this.uiPlugins = [];
+            this.featurePlugins = [];
+            this.statefulUIPlugins = [];
+            this.coreViewsPlugins = [];
             /**
              * In a collaborative context, some commands can be replayed, we have to ensure
              * that these commands are not replayed on the UI plugins.
@@ -42014,7 +42021,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 const command = { type, ...payload };
                 const previousStatus = this.status;
                 this.status = 2 /* Status.RunningCore */;
-                const handlers = this.isReplayingCommand ? [this.range, ...this.corePlugins] : this.handlers;
+                const handlers = this.isReplayingCommand
+                    ? [this.range, ...this.corePlugins, ...this.coreViewsPlugins]
+                    : this.handlers;
                 this.dispatchToHandlers(handlers, command);
                 this.status = previousStatus;
                 return DispatchResult.Success;
@@ -42053,8 +42062,14 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 this.setupCorePlugin(Plugin, workbookData);
             }
             Object.assign(this.getters, this.coreGetters);
-            for (let Plugin of uiPluginRegistry.getAll()) {
-                this.setupUiPlugin(Plugin);
+            for (let Plugin of statefulUIPluginRegistry.getAll()) {
+                this.statefulUIPlugins.push(this.setupUiPlugin(Plugin));
+            }
+            for (let Plugin of coreViewsPluginRegistry.getAll()) {
+                this.coreViewsPlugins.push(this.setupUiPlugin(Plugin));
+            }
+            for (let Plugin of featurePluginRegistry.getAll()) {
+                this.featurePlugins.push(this.setupUiPlugin(Plugin));
             }
             this.uuidGenerator.setIsFastStrategy(false);
             // starting plugins
@@ -42078,7 +42093,10 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             owl.markRaw(this);
         }
         get handlers() {
-            return [this.range, ...this.corePlugins, ...this.uiPlugins, this.history];
+            return [this.range, ...this.corePlugins, ...this.allUIPlugins, this.history];
+        }
+        get allUIPlugins() {
+            return [...this.statefulUIPlugins, ...this.coreViewsPlugins, ...this.featurePlugins];
         }
         joinSession() {
             this.session.join(this.config.client);
@@ -42097,10 +42115,10 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 }
                 this.getters[name] = plugin[name].bind(plugin);
             }
-            this.uiPlugins.push(plugin);
             const layers = Plugin.layers.map((l) => [plugin, l]);
             this.renderers.push(...layers);
             this.renderers.sort((p1, p2) => p1[1] - p2[1]);
+            return plugin;
         }
         /**
          * Initialize and properly configure a plugin.
@@ -42124,14 +42142,14 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         }
         onRemoteRevisionReceived({ commands }) {
             for (let command of commands) {
-                this.dispatchToHandlers(this.uiPlugins, command);
+                this.dispatchToHandlers(this.allUIPlugins, command);
             }
             this.finalize();
         }
         setupSession(revisionId) {
             const session = new Session(buildRevisionLog(revisionId, this.state.recordChanges.bind(this.state), (command) => {
                 this.isReplayingCommand = true;
-                this.dispatchToHandlers([this.range, ...this.corePlugins], command);
+                this.dispatchToHandlers([this.range, ...this.corePlugins, ...this.coreViewsPlugins], command);
                 this.isReplayingCommand = false;
             }), this.config.transportService, revisionId);
             return session;
@@ -42288,7 +42306,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         colMenuRegistry,
         linkMenuRegistry,
         functionRegistry,
-        uiPluginRegistry,
+        featurePluginRegistry,
+        statefulUIPluginRegistry,
+        coreViewsPluginRegistry,
         corePluginRegistry,
         rowMenuRegistry,
         sidePanelRegistry,
@@ -42391,8 +42411,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-11-18T08:57:24.801Z';
-    exports.__info__.hash = '9616681';
+    exports.__info__.date = '2022-11-21T07:58:17.962Z';
+    exports.__info__.hash = 'bdb0f5e';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
