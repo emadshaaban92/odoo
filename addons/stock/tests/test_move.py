@@ -2590,7 +2590,8 @@ class StockMove(TransactionCase):
 
         # the second move should not be reservable because of the rounding on the dozen
         move_pack_cust._action_assign()
-        self.assertEqual(move_pack_cust.state, 'partially_available')
+        move_pack_cust._recompute_state()
+        self.assertEqual(move_pack_cust.state, 'waiting')
         move_line_pack_cust = move_pack_cust.move_line_ids
         self.assertEqual(move_line_pack_cust.reserved_uom_qty, 6)
         self.assertEqual(move_line_pack_cust.product_uom_id.id, self.uom_unit.id)
