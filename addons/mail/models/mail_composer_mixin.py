@@ -22,9 +22,17 @@ class MailComposerMixin(models.AbstractModel):
 
     # Content
     subject = fields.Char('Subject', compute='_compute_subject', readonly=False, store=True)
+    subject_synchronized = fields.Boolean(
+        'Subject synchronized with template',
+        compute='_compute_subject_synchronized'
+    )
     body = fields.Html(
         'Contents', compute='_compute_body', readonly=False, store=True,
         render_engine='qweb', render_options={'post_process': True}, sanitize=False)
+    body_synchronized = fields.Boolean(
+        'Body synchronized with template',
+        compute='_compute_body_synchronized'
+    )
     template_id = fields.Many2one('mail.template', 'Mail Template', domain="[('model', '=', render_model)]")
     # Language: override mail.render.mixin field, copy template value
     lang = fields.Char(compute='_compute_lang', precompute=True, readonly=False, store=True)
@@ -40,6 +48,14 @@ class MailComposerMixin(models.AbstractModel):
             elif not composer_mixin.subject:
                 composer_mixin.subject = False
 
+    @api.depends('subject', 'template_id')
+    def _compute_subject_synchronized(self):
+        for composer_mixin in self:
+            if composer_mixin.subject and composer_mixin.template_id:
+                composer_mixin.subject_synchronized = composer_mixin.subject == composer_mixin.template_id.subject
+            else:
+                composer_mixin.subject_synchronized = False
+
     @api.depends('template_id')
     def _compute_body(self):
         for composer_mixin in self:
@@ -47,6 +63,16 @@ class MailComposerMixin(models.AbstractModel):
                 composer_mixin.body = composer_mixin.template_id.body_html
             elif not composer_mixin.body:
                 composer_mixin.body = False
+
+    @api.depends('body', 'template_id')
+    def _compute_body_synchronized(self):
+        for composer_mixin in self:
+            if composer_mixin.body and composer_mixin.template_id:
+                template_value = composer_mixin.template_id.body_html
+                sanitized_template_value = tools.html_sanitize(template_value)
+                composer_mixin.body_synchronized = composer_mixin.subject in (template_value, sanitized_template_value)
+            else:
+                composer_mixin.body_synchronized = False
 
     @api.depends('template_id')
     def _compute_lang(self):
@@ -90,8 +116,7 @@ class MailComposerMixin(models.AbstractModel):
         template_value = self.template_id[template_field]
 
         if field == 'body':
-            sanitized_template_value = tools.html_sanitize(template_value)
-            if not self.can_edit_body or composer_value in (sanitized_template_value, template_value):
+            if not self.can_edit_body or self.body_synchronized:
                 # Take the previous body which we can trust without HTML editor reformatting
                 self.body = self.template_id.body_html
                 return super(MailComposerMixin, self.sudo())._render_field(field, *args, **kwargs)
