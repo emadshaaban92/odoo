@@ -227,7 +227,7 @@ $-seen-urls: ();
 
 $-header-text-color: o-website-value('header-text-color');
 #wrapwrap:not(.o_header_overlay) header, header.o_header_is_scrolled {
-    .nav-link > *, .nav-link::after {
+    .nav-item > .nav-link > *, .nav-item > .nav-link::after {
         color: o-color($-header-text-color);
     }
 }
