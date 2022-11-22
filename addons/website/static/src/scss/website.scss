@@ -802,6 +802,10 @@ $-transition-duration: 200ms;
     }
 }
 
+header.o_header_is_scrolled {
+    background-color: transparent !important;
+}
+
 // Navbar
 .navbar .o_extra_menu_items > .show {
     > li {
