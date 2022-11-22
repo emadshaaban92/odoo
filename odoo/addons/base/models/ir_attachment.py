@@ -552,9 +552,11 @@ class IrAttachment(models.Model):
         # and the permissions are checked in super() and below anyway.
         model_attachments = defaultdict(lambda: defaultdict(set))   # {res_model: {res_id: set(ids)}}
         binary_fields_attachments = set()
-        self._cr.execute("""SELECT id, res_model, res_id, public, res_field FROM ir_attachment WHERE id IN %s""", [tuple(ids)])
+        self._cr.execute("""SELECT id, res_model, res_id, public, res_field, create_uid FROM ir_attachment WHERE id IN %s""", [tuple(ids)])
         for row in self._cr.dictfetchall():
             if not row['res_model'] or row['public']:
+                continue
+            if row['res_model'] and not row['res_id'] and row['create_uid'] == self.env.uid:
                 continue
             # model_attachments = {res_model: {res_id: set(ids)}}
             model_attachments[row['res_model']][row['res_id']].add(row['id'])
