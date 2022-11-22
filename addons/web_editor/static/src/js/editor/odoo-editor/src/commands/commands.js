@@ -213,6 +213,48 @@ export const editorCommands = {
         // element if it's a block then we insert the content in the right places.
         let currentNode = startNode;
         let lastChildNode = false;
+        let firstChildNode = false;
+        let convertList = (node) => {
+            const listParent = closestElement(selection.anchorNode, 'UL, OL');
+            if (node.nodeName === listParent.nodeName && !listParent.firstChild.id ) {
+                return [node];
+            }
+            let liEL = node.firstChild;
+            //find the deepest element of the given nested list.
+            while (liEL) {
+                if (liEL.className) {
+                    liEL = liEL.firstChild.firstChild;
+                    if (liEL.className) {
+                        continue;
+                    }
+                }
+                if (!liEL.nextSibling) {
+                    break;
+                }
+                liEL = liEL.nextSibling;
+            }
+            //convert the respective ul to ol or vice versa.
+            while (liEL && (liEL.nodeName !== listParent.nodeName ||
+                liEL.className !== listParent.className )) {
+            // when the case will be pasting on checklist list parent === liEl parent.
+                if (['OL', 'UL'].includes(liEL.nodeName)) {
+                    liEL = setTagName(liEL, ['OL', 'UL'].includes(listParent.nodeName) ?
+                        listParent.nodeName :
+                        listParent.parentNode.nodeName);
+                    if (listParent.firstChild.id) {
+                        //pasting into checklist.
+                        liEL.classList.add('o_checklist');
+                    } else if (liEL.className) {
+                        // if checklist is pasted into another list, its class= 'o_checklist' should be removed.
+                        liEL.removeAttribute('class');
+                    }
+                }
+                if (['FAKE-ELEMENT-FC', 'FAKE-ELEMENT-LC'].includes(liEL.nodeName)) {
+                    return [liEL.firstChild];
+                }
+                liEL = liEL.parentElement;
+            }
+        }
         const _insertAt = (reference, nodes, insertBefore) => {
             for (const child of (insertBefore ? nodes.reverse() : nodes)) {
                 reference[insertBefore ? 'before' : 'after'](child);
@@ -220,15 +262,19 @@ export const editorCommands = {
             }
         }
         if (containerLastChild.hasChildNodes()) {
-            const toInsert = [...containerLastChild.childNodes]; // Prevent mutation
+            const toInsert = ['UL', 'OL'].includes([...containerLastChild.childNodes][0].nodeName) ?
+                            convertList([...containerLastChild.childNodes][0]):
+                            [...containerLastChild.childNodes]; // Prevent mutation
             _insertAt(currentNode, [...toInsert], insertBefore);
             currentNode = insertBefore ? toInsert[0] : currentNode;
             lastChildNode = toInsert[toInsert.length - 1];
         }
         if (containerFirstChild.hasChildNodes()) {
-            const toInsert = [...containerFirstChild.childNodes]; // Prevent mutation
+            const toInsert = ['UL', 'OL'].includes([...containerFirstChild.childNodes][0].nodeName) ?
+                            convertList([...containerFirstChild.childNodes][0]) :
+                            [...containerFirstChild.childNodes]; // Prevent mutation
             _insertAt(currentNode, [...toInsert], insertBefore);
-            currentNode = toInsert[toInsert.length - 1];
+            currentNode = firstChildNode = toInsert[toInsert.length - 1];
             insertBefore = false;
         }
 
@@ -248,9 +294,15 @@ export const editorCommands = {
         let nodeToInsert;
         const insertedNodes = [...container.childNodes];
         while ((nodeToInsert = container.childNodes[0])) {
-            if (isBlock(nodeToInsert) && !allowsParagraphRelatedElements(currentNode)) {
+            if (nodeToInsert.className === 'oe-nested') {
+                convertList(nodeToInsert.firstElementChild);
+            }
+            if (isBlock(nodeToInsert) && !allowsParagraphRelatedElements(currentNode) ||
+                (!currentNode.nodeType === Node.TEXT_NODE && currentNode.nextSibling &&
+                currentNode.nextSibling === Node.TEXT_NODE &&
+                currentNode.parentElement.closest('li'))) {
                 // Split blocks at the edges if inserting new blocks (preventing
-                // <p><p>text</p></p> or <li><li>text</li></li> scenarios).
+                // <p><p>text</p></p> or <li><li>text</li></li> or <li><ol>...<li></li></ol>text</li> scenarios).
                 while (
                     currentNode.parentElement !== editor.editable &&
                     (!allowsParagraphRelatedElements(currentNode.parentElement) ||
@@ -276,6 +328,11 @@ export const editorCommands = {
                     }
                 }
             }
+            if (nodeToInsert.nodeName === 'P' && currentNode.nodeName === 'LI' ) {
+                //when multiple <p>text1</p><p>text2</p><p>text3</p><p>text3</p> only start and end were converting to <li>,
+                //and rest were pasted as <p> only, convert remaining <p> to <li> before pasting on list.
+                setTagName(nodeToInsert, 'LI');
+            }
             if (insertBefore) {
                 currentNode.before(nodeToInsert);
                 insertBefore = false;
@@ -286,6 +343,11 @@ export const editorCommands = {
                 currentNode.remove();
             }
             currentNode = nodeToInsert;
+        }
+        let nestedChildNode = ['UL', 'OL'].includes(lastChildNode.nodeName) ? lastChildNode : firstChildNode;
+        if (nestedChildNode && ['UL', 'OL'].includes(nestedChildNode.nodeName)) {
+            ['class', 'placeholder'].forEach(attribute =>  nestedChildNode.parentNode.removeAttribute(attribute) )
+            nestedChildNode.parentNode.classList.add('oe-nested');
         }
 
         currentNode = lastChildNode || currentNode;

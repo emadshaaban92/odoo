@@ -1230,6 +1230,15 @@ describe('Copy and paste', () => {
                     contentAfter: '<ul><li>123</li><li>456[]abc</li><li>def</li><li>ghi</li></ul>',
                 });
             });
+            it('should paste a nested list into another list', async () => {
+                await testEditor(BasicEditor, {
+                    contentBefore: '<ol><li>Alpha</li><li>Beta</li><li>[]</li></ol>',
+                    stepFunction: async editor => {
+                        await pasteHtml(editor, '<ul><li>abc</li><li>def</li><li class="oe-nested"><ul><li>123</li><li>456</li></ul></li></ul>');
+                    },
+                    contentAfter: '<ol><li>Alpha</li><li>Beta</li><li>abc</li><li>def</li><li class="oe-nested"><ol><li>123</li><li>456</li></ol>[]</li></ol>',
+                });
+            });
         });
     });
 
