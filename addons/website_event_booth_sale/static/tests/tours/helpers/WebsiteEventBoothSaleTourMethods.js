@@ -1,7 +1,10 @@
-odoo.define('website_event_booth_sale.tour.WebsiteEventBoothSaleTourMethods', function (require) {
-    'use strict';
+odoo.define("website_event_booth_sale.tour.WebsiteEventBoothSaleTourMethods", function (require) {
+    "use strict";
 
-    const { changePricelist, checkPriceCart } = require('website_event_sale.tour.WebsiteEventSaleTourMethods');
+    const {
+        changePricelist,
+        checkPriceCart,
+    } = require("website_event_sale.tour.WebsiteEventSaleTourMethods");
 
     function checkPriceBooth(eventName, price, priceSelected) {
         return [
@@ -18,11 +21,11 @@ odoo.define('website_event_booth_sale.tour.WebsiteEventBoothSaleTourMethods', fu
                 trigger: 'li.nav-item a:has(span:contains("Get A Booth"))',
             },
             {
-                content: 'Select the booth',
+                content: "Select the booth",
                 trigger: '.o_wbooth_booths input[name="event_booth_ids"]',
                 run: function () {
-                        $('.o_wbooth_booths input[name="event_booth_ids"]:lt(1)').click();
-                    },
+                    $('.o_wbooth_booths input[name="event_booth_ids"]:lt(1)').click();
+                },
             },
             {
                 content: "Verify Price displayed",
@@ -34,7 +37,7 @@ odoo.define('website_event_booth_sale.tour.WebsiteEventBoothSaleTourMethods', fu
                 trigger: `div.o_wbooth_booth_total_price span.oe_currency_value:contains(${priceSelected})`,
                 run: function () {}, // it's a check
             },
-        ]
+        ];
     }
     function checkPriceDiscountBooth(eventName, price, priceSelected, discount) {
         return [
@@ -44,15 +47,24 @@ odoo.define('website_event_booth_sale.tour.WebsiteEventBoothSaleTourMethods', fu
                 trigger: `del:contains(${discount})`,
                 run: function () {}, // it's a check
             },
-        ]
+        ];
     }
-    const getPriceListChecksSteps = function ({pricelistName, eventName, price, priceSelected, priceCart, priceBeforeDiscount=false}) {
-        const checkPriceSteps = priceBeforeDiscount ? checkPriceDiscountBooth(eventName, price, priceSelected, priceBeforeDiscount) : checkPriceBooth(eventName, price, priceSelected);
+    const getPriceListChecksSteps = function ({
+        pricelistName,
+        eventName,
+        price,
+        priceSelected,
+        priceCart,
+        priceBeforeDiscount = false,
+    }) {
+        const checkPriceSteps = priceBeforeDiscount
+            ? checkPriceDiscountBooth(eventName, price, priceSelected, priceBeforeDiscount)
+            : checkPriceBooth(eventName, price, priceSelected);
         return [
-           ...changePricelist(pricelistName),
-           ...checkPriceSteps,
-           ...checkPriceCart(priceCart),
-        ]
-    }
-    return { getPriceListChecksSteps }
+            ...changePricelist(pricelistName),
+            ...checkPriceSteps,
+            ...checkPriceCart(priceCart),
+        ];
+    };
+    return { getPriceListChecksSteps };
 });

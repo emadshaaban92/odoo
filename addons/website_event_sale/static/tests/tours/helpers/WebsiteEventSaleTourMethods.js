@@ -1,5 +1,5 @@
-odoo.define('website_event_sale.tour.WebsiteEventSaleTourMethods', function (require) {
-    'use strict';
+odoo.define("website_event_sale.tour.WebsiteEventSaleTourMethods", function (require) {
+    "use strict";
 
     function changePricelist(pricelistName) {
         return [
@@ -10,15 +10,15 @@ odoo.define('website_event_sale.tour.WebsiteEventSaleTourMethods', function (req
             {
                 content: "Toggle Pricelist",
                 trigger: "div.o_pricelist_dropdown a[data-toggle=dropdown]",
-                run: 'click',
+                run: "click",
             },
             {
                 content: `Activate Pricelist ${pricelistName}`,
                 trigger: `.dropdown-item:contains(${pricelistName})`,
-                run: 'click',
+                run: "click",
             },
             {
-                content: 'Wait for pricelist to load',
+                content: "Wait for pricelist to load",
                 trigger: `.dropdown-toggle:contains(${pricelistName})`,
                 run: function () {},
             },
@@ -39,7 +39,7 @@ odoo.define('website_event_sale.tour.WebsiteEventSaleTourMethods', function (req
                 trigger: `.oe_currency_value:contains(${price})`,
                 run: function () {}, // it's a check
             },
-        ]
+        ];
     }
     function checkPriceDiscountEvent(eventName, price, discount) {
         return [
@@ -49,28 +49,31 @@ odoo.define('website_event_sale.tour.WebsiteEventSaleTourMethods', function (req
                 trigger: `del:contains(${discount})`,
                 run: function () {}, // it's a check
             },
-        ]
+        ];
     }
     function checkPriceCart(price) {
         return [
             {
                 content: "Go to page Cart",
-                trigger: '.fa-shopping-cart',
+                trigger: ".fa-shopping-cart",
             },
             {
                 content: "Verify Price",
                 trigger: `#order_total td:contains(${price})`,
                 run: function () {}, // it's a check
             },
-        ]
+        ];
     }
-    const getPriceListChecksSteps = function ({pricelistName, eventName, price, priceBeforeDiscount=false}) {
-        const checkPriceSteps = priceBeforeDiscount ? checkPriceDiscountEvent(eventName, price, priceBeforeDiscount) : checkPriceEvent(eventName, price);
-       return [
-           ...changePricelist(pricelistName),
-           ...checkPriceSteps,
-           ...checkPriceCart(price),
-       ]
-    }
-    return { getPriceListChecksSteps, changePricelist, checkPriceCart }
+    const getPriceListChecksSteps = function ({
+        pricelistName,
+        eventName,
+        price,
+        priceBeforeDiscount = false,
+    }) {
+        const checkPriceSteps = priceBeforeDiscount
+            ? checkPriceDiscountEvent(eventName, price, priceBeforeDiscount)
+            : checkPriceEvent(eventName, price);
+        return [...changePricelist(pricelistName), ...checkPriceSteps, ...checkPriceCart(price)];
+    };
+    return { getPriceListChecksSteps, changePricelist, checkPriceCart };
 });
