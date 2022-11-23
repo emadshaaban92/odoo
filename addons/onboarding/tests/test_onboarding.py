@@ -209,3 +209,41 @@ class TestOnboarding(TestOnboardingCommon):
                 'step_id': self.onboarding_1_step_1.id,
                 'company_id': self.env.company.id,
             })
+
+    def test_onboarding_step_without_onboarding(self):
+        self.step_initially_w_o_onboarding = self.env['onboarding.onboarding.step'].create({
+            'title': 'Step Initially Without Onboarding',
+        })
+        self.assertEqual(self.step_initially_w_o_onboarding.current_step_state, 'not_done')
+        self.step_initially_w_o_onboarding.action_set_just_done()
+
+        # Impossible to create a second progress step record
+        with self.assertRaises(ValidationError):
+            self.env['onboarding.progress.step'].create({
+                'step_id': self.step_initially_w_o_onboarding.id,
+                'company_id': False,
+            })
+        self.assert_step_is_done(self.step_initially_w_o_onboarding)
+
+        self.onboarding_3 = self.env['onboarding.onboarding'].create({
+            'name': 'Test Onboarding 3',
+            'route_name': 'onboarding3',
+        })
+        self.onboarding_3._search_or_create_progress()
+
+        with self.assertRaises(ValidationError):
+            self.step_initially_w_o_onboarding.onboarding_ids = [(4, self.onboarding_3.id)]
+
+        self.step_initially_w_o_onboarding.write({
+            'panel_step_open_action_name': 'action_fake_open_onboarding_step'
+        })
+        self.step_initially_w_o_onboarding.onboarding_ids = [(4, self.onboarding_3.id)]
+
+        # Behaves as others
+        self.assert_onboarding_is_done(self.onboarding_3)
+        self.assert_onboarding_is_not_done(self.onboarding_3.with_company(self.company_2))
+        self.onboarding_3.with_company(self.company_2)._search_or_create_progress()
+        self.assert_onboarding_is_not_done(self.onboarding_3.with_company(self.company_2))
+
+        self.step_initially_w_o_onboarding.with_company(self.company_2).action_set_just_done()
+        self.assert_onboarding_is_done(self.onboarding_3.with_company(self.company_2))

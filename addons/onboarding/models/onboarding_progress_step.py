@@ -14,7 +14,7 @@ class OnboardingProgressStep(models.Model):
     progress_ids = fields.Many2many(
         'onboarding.progress', 'onboarding_progress_onboarding_progress_step_rel',
         'onboarding_progress_step_id', 'onboarding_progress_id',
-        string='Related Onboarding Progress Tracker', required=True)
+        string='Related Onboarding Progress Tracker', required=False)
     step_state = fields.Selection(
         ONBOARDING_PROGRESS_STATES, string='Onboarding Step Progress', default='not_done')
     company_id = fields.Many2one('res.company', string='Company', ondelete='cascade')

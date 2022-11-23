@@ -23,7 +23,9 @@ class OnboardingProgress(models.Model):
     company_id = fields.Many2one('res.company')
     onboarding_id = fields.Many2one(
         'onboarding.onboarding', 'Related onboarding tracked', required=True, ondelete='cascade')
-    progress_step_ids = fields.Many2many('onboarding.progress.step', string='Progress Steps Trackers')
+    progress_step_ids = fields.Many2many(
+        'onboarding.progress.step', string='Progress Steps Trackers', compute='_compute_progress_step_ids',
+        store=True)
 
     @api.depends('onboarding_id.step_ids', 'progress_step_ids', 'progress_step_ids.step_state')
     def _compute_onboarding_state(self):
@@ -35,6 +37,13 @@ class OnboardingProgress(models.Model):
                 )
                 else 'done'
             )
+
+    @api.depends('onboarding_id.step_ids')
+    def _compute_progress_step_ids(self):
+        """Updates progress steps when a step (with existing progress) is added
+        to an onboarding."""
+        for progress in self:
+            progress.progress_step_ids = progress.onboarding_id.step_ids.current_progress_step_id.filtered(bool)
 
     @api.constrains('company_id', 'onboarding_id')
     def check_progress_per_company(self):

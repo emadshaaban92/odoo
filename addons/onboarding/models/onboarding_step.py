@@ -23,7 +23,7 @@ class OnboardingStep(models.Model):
     done_text = fields.Char(
         'Text to show when step is completed', default=_('Step Completed! - Click to review'), translate=True)
     panel_step_open_action_name = fields.Char(
-        string='Opening action', required=True,
+        string='Opening action', required=False,
         help='Name of the onboarding step model action to execute when opening the step, '
              'e.g. action_open_onboarding_1_step_1')
 
@@ -63,6 +63,12 @@ class OnboardingStep(models.Model):
                    for is_step_per_company in self.onboarding_ids.mapped('is_per_company')):
                 raise ValidationError(_('Onboarding and step `is_per_company` must be equal.'))
 
+    @api.constrains('onboarding_ids')
+    def check_step_on_onboarding_has_action(self):
+        for step in self:
+            if step.onboarding_ids and not step.panel_step_open_action_name:
+                raise ValidationError(_('An action name to open is required for steps linked to an onboarding panel.'))
+
     def action_set_just_done(self):
         # Make sure progress records exist for the current context (company)
         steps_without_progress = self.filtered(lambda step: not step.current_progress_step_id)
@@ -70,8 +76,9 @@ class OnboardingStep(models.Model):
         return self.current_progress_step_id.action_set_just_done()
 
     def _create_progress_steps(self):
-        """Create progress step records only for existing `onboarding.progress` records
-        and current company."""
+        """Create progress step records only for (current company if `is_per_company`) and
+        * If no onboarding panel is linked, or
+        * for existing `onboarding.progress` records."""
         onboarding_progress_records = self.env['onboarding.progress'].search([
             ('onboarding_id', 'in', self.onboarding_ids.ids),
             ('company_id', 'in', [False, self.env.company.id])

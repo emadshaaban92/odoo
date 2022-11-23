@@ -80,9 +80,9 @@ class TestOnboardingCommon(TransactionCase):
             self.assert_onboarding_is_done(onboarding.with_company(also_with_company))
 
     def assert_onboarding_is_not_done(self, onboarding, also_with_company=None):
-        self.assertEqual(
-            onboarding.current_progress_id.onboarding_state, 'not_done',
-            f'Expected "not_done" current state for onboarding {onboarding.name} '
+        self.assertIn(
+            onboarding.current_progress_id.onboarding_state, {'not_done', False},
+            f'Expected `"not_done"` or `False` current state for onboarding {onboarding.name} '
             f'for {onboarding.env.company}')
         self.assertEqual(onboarding.current_onboarding_state, 'not_done')
         if also_with_company:
