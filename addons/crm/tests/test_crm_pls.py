@@ -5,6 +5,7 @@ from datetime import timedelta
 
 from odoo import tools
 from odoo.addons.mail.tests.common import mail_new_test_user
+from odoo.exceptions import ValidationError
 from odoo.fields import Date
 from odoo.tests import Form, tagged, users
 from odoo.tests.common import TransactionCase
@@ -608,3 +609,58 @@ class TestCRMPLS(TransactionCase):
             self.assertEqual(frequency.won_count, stat[2])
             self.assertEqual(frequency.lost_count, stat[3])
         self.assertEqual(len(existing_noteam), len(final_noteam))
+
+    def test_won_lost_validity(self):
+        stage_ids = self.env['crm.stage'].search([], limit=3).ids
+        won_stage_id = self.env['crm.stage'].search([('is_won', '=', True)], limit=1).id
+        team_id = self.env['crm.team'].create([{'name': 'Team Test'}]).id
+        lead, lost_lead = self.env['crm.lead'].create([{
+            'name': 'Esta Caramba',
+            'team_id': team_id,
+            'probability': 50,
+            'active': True,
+            'stage_id': stage_ids[0]
+        }, {
+            'name': 'Esta losta',
+            'team_id': team_id,
+            'probability': 0,
+            'active': False,
+            'stage_id': stage_ids[2]
+        }])
+
+        # Test won validity
+        lead.write({'probability': 100})
+        self.assertFalse(lead.is_won, "A lead with proba = 100 is not won as needs to be in won stage.")
+
+        lead.action_set_won()
+        self.assertTrue(lead.probability == 100)
+        self.assertTrue(lead.stage_id.is_won)
+        self.assertFalse(lead.is_lost)
+        self.assertTrue(lead.is_won)
+        with self.assertRaises(ValidationError, msg='A won lead cannot be set as lost.'):
+            lead.action_set_lost()
+        lead.write({'active': False})  # A won lead can be set as inactive.
+        with self.assertRaises(ValidationError, msg='A won lead cannot have a probability different than 100'):
+            lead.write({'probability': 50})
+
+        # restore the lead in a non won stage
+        lead.write({'stage_id': stage_ids[1], 'active': True})
+        # should recompute probability (need to be active = True when writing stage.)
+        self.assertFalse(lead.probability == 100)
+
+        # Test lost Validity
+        lead.action_set_lost()
+        self.assertTrue(lead.probability == 0)
+        self.assertFalse(lead.active)
+        self.assertTrue(lead.is_lost)
+        self.assertFalse(lead.is_won)
+        lead.write({'stage_id': won_stage_id})
+        self.assertTrue(lead.probability == 100) # Writing a won stage leads to 100%
+        self.assertFalse(lead.is_lost, "A lead with proba != 0 is not lost anymore.")
+        self.assertTrue(lead.is_won)
+
+        # back to lost
+        lead.write({'probability': 0, 'stage_id': stage_ids[0]})
+        self.assertTrue(lead.is_lost)
+        lead.write({'active': True})
+        self.assertFalse(lead.is_lost, "An active lead cannot be lost")

@@ -245,6 +245,12 @@ class Lead(models.Model):
         ('check_probability', 'check(probability >= 0 and probability <= 100)', 'The probability of closing the deal should be between 0% and 100%!')
     ]
 
+    @api.constrains('probability', 'stage_id')
+    def check_won_lost_validity(self):
+        for lead in self:
+            if lead.stage_id.is_won and lead.probability != 100:
+                raise ValidationError(_("A won lead cannot have a probability different than 100."))
+
     @api.depends('activity_date_deadline')
     def _compute_kanban_state(self):
         today = date.today()
