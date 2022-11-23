@@ -1,6 +1,7 @@
 /** @odoo-module **/
 
 import { PosLoyalty } from 'pos_loyalty.tour.PosCouponTourMethods';
+import { SelectionPopup } from 'point_of_sale.tour.SelectionPopupTourMethods';
 import { ProductScreen } from 'point_of_sale.tour.ProductScreenTourMethods';
 import { getSteps, startSteps } from 'point_of_sale.tour.utils';
 import Tour from 'web_tour.tour';
@@ -131,6 +132,8 @@ ProductScreen.do.clickPartnerButton();
 ProductScreen.do.clickCustomer('Test Partner CCC');
 PosLoyalty.check.isRewardButtonHighlighted(true);
 PosLoyalty.do.clickRewardButton();
+SelectionPopup.check.isShown();
+SelectionPopup.do.clickItem('Free Product - Whiteboard Pen');
 PosLoyalty.check.hasRewardLine('Free Product - Whiteboard Pen', '-3.20', '1.00');
 ProductScreen.do.clickPartnerButton();
 // This deselects the customer.
