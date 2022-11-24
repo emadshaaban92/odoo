@@ -87,6 +87,7 @@
         'views/stock_rule_views.xml',
         'views/stock_package_level_views.xml',
         'views/stock_package_type_view.xml',
+        'views/sale_product_kanban_views.xml',
     ],
     'installable': True,
     'application': True,
