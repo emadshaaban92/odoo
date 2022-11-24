@@ -449,10 +449,11 @@ class PaymentTransaction(models.Model):
                     message = _("The customer left the payment page.")
                 self._set_error(message)
             else:
-                self._set_error(_(
+                message = _(
                     "The refund did not go through. Please log into your Stripe Dashboard to get "
                     "more information on that matter, and address any accounting discrepancies."
-                ))
+                    )
+                self._set_error(message, extra_allowed_states=['done'])
         else:  # Classify unknown intent statuses as `error` tx state
             _logger.warning(
                 "received invalid payment status (%s) for transaction with reference %s",

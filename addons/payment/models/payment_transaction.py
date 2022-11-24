@@ -631,81 +631,103 @@ class PaymentTransaction(models.Model):
         """
         self.ensure_one()
 
-    def _set_pending(self, state_message=None):
+    def _set_pending(self, state_message=None, extra_allowed_states=None):
         """ Update the transactions' state to `pending`.
 
         :param str state_message: The reason for setting the transactions in the state `pending`.
+        :param list[str] extra_allowed_states: Additional allowed states specific to a provider on
+                                               some flows
         :return: The updated transactions.
         :rtype: recordset of `payment.transaction`
         """
-        allowed_states = ('draft',)
+        allowed_states = ['draft']
         target_state = 'pending'
-        txs_to_process = self._update_state(allowed_states, target_state, state_message)
+        txs_to_process = self._update_state(
+            allowed_states, extra_allowed_states, target_state, state_message
+        )
         txs_to_process._log_received_message()
         return txs_to_process
 
-    def _set_authorized(self, state_message=None):
+    def _set_authorized(self, state_message=None, extra_allowed_states=None):
         """ Update the transactions' state to `authorized`.
 
         :param str state_message: The reason for setting the transactions in the state `authorized`.
+        :param list[str] extra_allowed_states: Additional allowed states specific to a provider on
+                                               some flows
         :return: The updated transactions.
         :rtype: recordset of `payment.transaction`
         """
-        allowed_states = ('draft', 'pending')
+        allowed_states = ['draft', 'pending']
         target_state = 'authorized'
-        txs_to_process = self._update_state(allowed_states, target_state, state_message)
+        txs_to_process = self._update_state(
+            allowed_states, extra_allowed_states, target_state, state_message
+        )
         txs_to_process._log_received_message()
         return txs_to_process
 
-    def _set_done(self, state_message=None):
+    def _set_done(self, state_message=None, extra_allowed_states=None):
         """ Update the transactions' state to `done`.
 
         :param str state_message: The reason for setting the transactions in the state `done`.
+        :param list[str] extra_allowed_states: Additional allowed states specific to a provider on
+                                               some flows
         :return: The updated transactions.
         :rtype: recordset of `payment.transaction`
         """
-        allowed_states = ('draft', 'pending', 'authorized', 'error', 'cancel')  # 'cancel' for Payulatam
+        allowed_states = ['draft', 'pending', 'authorized', 'error']
         target_state = 'done'
-        txs_to_process = self._update_state(allowed_states, target_state, state_message)
+        txs_to_process = self._update_state(
+            allowed_states, extra_allowed_states, target_state, state_message
+        )
         txs_to_process._log_received_message()
         return txs_to_process
 
-    def _set_canceled(self, state_message=None):
+    def _set_canceled(self, state_message=None, extra_allowed_states=None):
         """ Update the transactions' state to `cancel`.
 
         :param str state_message: The reason for setting the transactions in the state `cancel`.
+        :param list[str] extra_allowed_states: Additional allowed states specific to a provider on
+                                               some flows
         :return: The updated transactions.
         :rtype: recordset of `payment.transaction`
         """
-        allowed_states = ('draft', 'pending', 'authorized', 'done')  # 'done' for Authorize refunds.
+        allowed_states = ['draft', 'pending', 'authorized']
         target_state = 'cancel'
-        txs_to_process = self._update_state(allowed_states, target_state, state_message)
+        txs_to_process = self._update_state(
+            allowed_states, extra_allowed_states, target_state, state_message
+        )
         # Cancel the existing payments.
         txs_to_process._log_received_message()
         return txs_to_process
 
-    def _set_error(self, state_message):
+    def _set_error(self, state_message, extra_allowed_states=None):
         """ Update the transactions' state to `error`.
 
         :param str state_message: The reason for setting the transactions in the state `error`.
+        :param list[str] extra_allowed_states: Additional allowed states specific to a provider on
+                                               some flows
         :return: The updated transactions.
         :rtype: recordset of `payment.transaction`
         """
-        allowed_states = ('draft', 'pending', 'authorized', 'done')  # 'done' for Stripe refunds.
+        allowed_states = ['draft', 'pending', 'authorized']
         target_state = 'error'
-        txs_to_process = self._update_state(allowed_states, target_state, state_message)
+        txs_to_process = self._update_state(
+            allowed_states, extra_allowed_states, target_state, state_message
+        )
         txs_to_process._log_received_message()
         return txs_to_process
 
-    def _update_state(self, allowed_states, target_state, state_message):
+    def _update_state(self, allowed_states, extra_allowed_states, target_state, state_message):
         """ Update the transactions' state to the target state if the current state allows it.
 
         If the current state is the same as the target state, the transaction is skipped and a log
         with level INFO is created.
 
-        :param tuple[str] allowed_states: The allowed source states for the target state.
+        :param list[str] allowed_states: The allowed source states for the target state.
         :param str target_state: The target state.
         :param str state_message: The message to set as `state_message`.
+        :param list[str] extra_allowed_states: Additional allowed states specific to a provider on
+                                               some flows
         :return: The recordset of transactions whose state was updated.
         :rtype: recordset of `payment.transaction`
         """
@@ -724,6 +746,8 @@ class PaymentTransaction(models.Model):
                      transactions `to process`, `processed`, and `in wrong state`.
             :rtype: tuple(recordset)
             """
+            if extra_allowed_states:
+                allowed_states.extend(extra_allowed_states)
             txs_to_process_ = transactions_.filtered(lambda _tx: _tx.state in allowed_states)
             txs_already_processed_ = transactions_.filtered(lambda _tx: _tx.state == target_state)
             txs_wrong_state_ = transactions_ - txs_to_process_ - txs_already_processed_
