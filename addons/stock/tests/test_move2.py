@@ -2143,7 +2143,6 @@ class TestSinglePicking(TestStockCommon):
         to define the `location_dest_id`.
         """
         partner = self.env['res.partner'].create({'name': 'Partner'})
-        supplier_location = self.env['stock.location'].browse(self.supplier_location)
         stock_location = self.env['stock.location'].create({
             'name': 'test-stock',
             'usage': 'internal',
@@ -2171,7 +2170,6 @@ class TestSinglePicking(TestStockCommon):
         ), view='stock.view_picking_form')
         receipt_form.partner_id = partner
         receipt_form.picking_type_id = picking_type
-        # <field name="location_id" attrs="{'invisible': [('picking_type_code', '=', 'incoming')]}"
         receipt_form.location_dest_id = stock_location
         receipt = receipt_form.save()
         with receipt_form.move_line_nosuggest_ids.new() as move_line:
@@ -3535,6 +3533,7 @@ class TestAutoAssign(TestStockCommon):
     def test_update_description(self):
         """ Create an empty picking. Adds a move on product1, select the picking type, add
         again a move on product1. Confirm the picking. The two stock moves should be merged. """
+        self.env.user.groups_id += self.env.ref("stock.group_stock_multi_locations")
         product1 = self.env['product.product'].create({
             'name': 'product',
             'type':'product',
