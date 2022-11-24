@@ -133,6 +133,9 @@ export function parseInteger(value) {
             throw new InvalidNumberError(`"${value}" is not a correct number`);
         }
     }
+    if (parsed % 1 || parsed < -2147483648 || parsed > 2147483647) {
+        throw new InvalidNumberError(`"${value}" is not a correct number`);
+    }
     return parsed;
 }
 
