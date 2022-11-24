@@ -594,7 +594,7 @@ QUnit.module("Fields", (hooks) => {
             const input = target.querySelector(".o_progressbar_value.o_input");
             assert.strictEqual(input.value, "99", "Initial value in input is correct");
 
-            await editInput(target, ".o_field_widget input", "1#037:9");
+            await editInput(target, ".o_field_widget input", "1037");
 
             await clickSave(target);
 
@@ -650,4 +650,27 @@ QUnit.module("Fields", (hooks) => {
             assert.verifySteps(["Show error message"], "The error message was shown correctly");
         }
     );
+
+    QUnit.test(
+        "ProgressBarField: check the input value is valid or not in progressbar field",
+        async function (assert) {
+            serverData.models.partner.records[0].int_field = 99;
+            await makeView({
+                serverData,
+                type: "form",
+                resModel: "partner",
+                arch: `
+                    <form>
+                        <field name="int_field" widget="progressbar" options="{'editable': true}"/>
+                    </form>`,
+                resId: 1,
+            });
+
+            await click(target.querySelector(".o_progress"));
+            await editInput(target, ".o_field_widget input", "1037000000000000000000000000000");
+            assert.hasClass(target.querySelector("div.o_field_progressbar"),'o_field_invalid', "Integer field should be displayed as invalid");
+
+        }
+    );
+
 });
