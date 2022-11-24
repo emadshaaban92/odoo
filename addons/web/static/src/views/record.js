@@ -20,7 +20,7 @@ class _Record extends Component {
             viewMode: "form",
             rootType: "record",
             activeFields,
-            mode: this.props.info.mode === "edit" ? "edit" : undefined,
+            mode: this.props.info.mode === "edit" ? "edit" : 'readonly',
             initialValues: this.props.info.initialValues,
         });
         onWillUpdateProps(async (nextProps) => {
