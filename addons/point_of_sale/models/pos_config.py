@@ -7,6 +7,7 @@ import pytz
 
 from odoo import api, fields, models, tools, _
 from odoo.exceptions import ValidationError, UserError
+from odoo.tools import convert
 
 
 class PosConfig(models.Model):
@@ -504,16 +505,6 @@ class PosConfig(models.Model):
         domain = [('available_in_pos', '=', True)]
         if self.limit_categories and self.iface_available_categ_ids:
             domain.append(('pos_categ_id', 'in', self.iface_available_categ_ids.ids))
-        if not self.env['product.product'].search(domain):
-            return {
-                'name': _("There is no products linked to your PoS"),
-                'type': 'ir.actions.act_window',
-                'view_type': 'form',
-                'view_mode': 'form',
-                'res_model': 'pos.session.check_product_wizard',
-                'target': 'new',
-                'context': {'config_id': self.id}
-            }
 
         return self._action_to_open_ui()
 
@@ -670,6 +661,10 @@ class PosConfig(models.Model):
         """, [self.company_id.id, str(self.limited_partners_amount)])
         result = self.env.cr.fetchall()
         return result
+
+    def load_demo_products(self):
+        convert.convert_file(self.env.cr, 'point_of_sale', 'data/point_of_sale_onboarding.xml', None, mode='init',
+                             kind='data')
 
     def action_pos_config_modal_edit(self):
         return {

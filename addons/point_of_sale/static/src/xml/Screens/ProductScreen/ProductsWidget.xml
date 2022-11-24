@@ -18,6 +18,10 @@
                     <p t-else="">
                         There are no products in this category.
                     </p>
+                    <div class="button-no-demo">
+                        <button class="button" t-on-click="_loadDemoDataProducts">Generate demo data</button>
+                        <button class="button" t-on-click="_createNewProducts">Create new products</button>
+                    </div>
                 </div>
                 <div class="portal search-database-button no-results-message" t-att-class="{ oe_hidden:  !shouldShowButton }"></div>
             </div>

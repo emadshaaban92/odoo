@@ -75,6 +75,28 @@ odoo.define('point_of_sale.ProductsWidget', function(require) {
             this.render(true);
             this.trigger('switch-category', 0);
         }
+        async _loadDemoDataProducts() {
+            try {
+                await this.env.services.rpc({
+                    model: 'pos.config',
+                    method: 'load_demo_products',
+                    args: [[this.env.pos.config.id]],
+                });
+                const result = await this.env.services.rpc({
+                    method: 'get_onboarding_data',
+                    model: 'pos.session',
+                    args: [[this.env.pos.pos_session.id]]
+                });
+                this.env.pos.db.add_categories(result['categories']);
+                this.env.pos._loadProductProduct(result['products']);
+                this.render(true);
+            } catch(e) {
+                console.log(e);
+            }
+        }
+        async _createNewProducts() {
+            window.open(window.location.origin);
+        }
     }
     ProductsWidget.template = 'ProductsWidget';
 
