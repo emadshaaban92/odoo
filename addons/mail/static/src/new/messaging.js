@@ -7,6 +7,7 @@ import { sprintf } from "@web/core/utils/strings";
 import { url } from "@web/core/utils/urls";
 import { htmlToTextContentInline, convertBrToLineBreak, removeFromArray } from "./utils";
 import { prettifyMessageContent } from "./message_prettify_utils";
+import { LinkPreview } from "./thread/link_preview/link_preview.class";
 
 const { DateTime } = luxon;
 
@@ -243,6 +244,13 @@ export class Messaging {
             isStarred = true;
         }
 
+        const linkPreviewsClass = [];
+        if (linkPreviews) {
+            for (const linkPreview of linkPreviews) {
+                linkPreviewsClass.push(new LinkPreview(linkPreview));
+            }
+        }
+
         const message = {
             attachments,
             id,
@@ -260,7 +268,7 @@ export class Messaging {
             parentMessage,
             subtypeDescription,
             trackingValues,
-            linkPreviews,
+            linkPreviews: linkPreviewsClass,
         };
         if (parentMessage) {
             const { body, ...data } = parentMessage;
@@ -372,7 +380,7 @@ export class Messaging {
                         if (linkPreviews) {
                             for (const linkPreview of linkPreviews) {
                                 this.messages[linkPreview.message.id].linkPreviews.push(
-                                    linkPreview
+                                    new LinkPreview(linkPreview)
                                 );
                             }
                         }
@@ -836,5 +844,4 @@ export class Messaging {
     stopCall(threadId) {
         this.threads[threadId].inCall = false;
     }
-
 }
