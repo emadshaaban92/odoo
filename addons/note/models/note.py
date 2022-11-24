@@ -3,7 +3,7 @@
 
 from odoo import api, fields, models, _
 from odoo.tools import html2plaintext
-
+from odoo.addons.web_editor.controllers.main import prevent_diverging_history_on_write
 
 class Stage(models.Model):
 
@@ -129,3 +129,8 @@ class Note(models.Model):
 
     def action_open(self):
         return self.write({'open': True})
+
+    def write(self, vals):
+        if len(self) == 1:
+            prevent_diverging_history_on_write(self, 'memo', vals)
+        return super(Note, self).write(vals)
