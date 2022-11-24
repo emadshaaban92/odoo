@@ -1141,7 +1141,7 @@ class MailCommon(common.TransactionCase, MailCase):
             layout_arch_db = """
 <body>
     <p>English Layout for <t t-esc="model_description"/></p>
-    <img t-att-src="'/logo.png?company=%s' % (company.id or 0)" t-att-alt="'%s' % company.name"/>
+    <img t-if="company and not company.uses_default_logo" t-att-src="'/logo.png?company=%s' % (company.id or 0)" t-att-alt="'%s' % company.name"/>
     <a t-if="has_button_access" t-att-href="button_access['url']">
         <t t-esc="button_access['title']"/>
     </a>

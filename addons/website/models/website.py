@@ -352,7 +352,7 @@ class Website(models.Model):
             'module_state': feature.module_id.state,
         } for feature in configurator_features]
         r['logo'] = False
-        if company.logo and company.logo != company._get_logo():
+        if company.logo and not company.uses_default_logo:
             r['logo'] = company.logo.decode('utf-8')
         try:
             result = self._website_api_rpc('/api/website/1/configurator/industries', {'lang': self.env.context.get('lang')})
@@ -528,7 +528,7 @@ class Website(models.Model):
                 'res_field': 'logo',
                 'res_id': website.id,
             })
-        elif not logo_attachment_id and company.logo and company.logo != company._get_logo():
+        elif not logo_attachment_id and company.logo and not company.uses_default_logo:
             website.logo = company.logo.decode('utf-8')
 
         # palette

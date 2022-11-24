@@ -17,7 +17,7 @@
                 <tr><td valign="middle">
                     <span style="font-size: 10px;">Your Lead/Opportunity</span><br/>
                     <span style="font-size: 20px; font-weight: bold;" t-out="object.name or ''">Interest in your products</span>
-                </td><td valign="middle" align="right">
+                </td><td valign="middle" align="right" t-if="not object.company_id.uses_default_logo">
                     <img t-attf-src="/logo.png?company={{ object.company_id.id }}" style="padding: 0px; margin: 0px; height: 48px;" t-att-alt="object.company_id.name"/>
                 </td></tr>
                 <tr><td colspan="2" style="text-align:center;">
