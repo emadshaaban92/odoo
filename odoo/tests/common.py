@@ -1776,7 +1776,8 @@ class HttpCase(TransactionCase):
             # than this transaction.
             self.cr.flush()
             self.cr.clear()
-            uid = self.registry['res.users'].authenticate(session.db, user, password, {'interactive': False})
+            with patch('odoo.addons.base.models.res_users.Users._check_credentials'):
+                uid = self.registry['res.users'].authenticate(session.db, user, password, {'interactive': False})
             env = api.Environment(self.cr, uid, {})
             session.uid = uid
             session.login = user
@@ -1893,12 +1894,14 @@ class HttpCase(TransactionCase):
         ready = kwargs.pop('ready', "odoo.__DEBUG__.services['web_tour.tour'].tours['%s'].ready" % tour_name)
         return self.browser_js(url_path=url_path, code=code, ready=ready, **kwargs)
 
-    def profile(self, **kwargs):
+    def profile(self, http=True, **kwargs):
         """
         for http_case, also patch _get_profiler_context_manager in order to profile all requests
         """
         sup = super()
         _profiler = sup.profile(**kwargs)
+        if not http:
+            return _profiler
         def route_profiler(request):
             return sup.profile(description=request.httprequest.full_path, **kwargs)
         return profiler.Nested(_profiler, patch('odoo.http.Request._get_profiler_context_manager', route_profiler))
