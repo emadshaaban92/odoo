@@ -11,3 +11,16 @@ class Lead(models.Model):
 
     def _merge_get_fields(self):
         return super(Lead, self)._merge_get_fields() + ['lead_mining_request_id']
+
+    def action_generate_leads(self):
+        context = {"is_modal": True}
+        if "default_type" in self.env.context:
+            context["default_lead_type"] = self.env.context["default_type"]
+        return {
+            "name": "Generate Leads",
+            "type": "ir.actions.act_window",
+            "res_model": "crm.iap.lead.mining.request",
+            "target": "new",
+            "views": [[False, "form"]],
+            "context": context,
+        }

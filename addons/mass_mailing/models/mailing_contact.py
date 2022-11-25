@@ -194,6 +194,14 @@ class MassMailingContact(models.Model):
 
         return action
 
+    def action_import(self):
+        action = self.env["ir.actions.actions"]._for_xml_id("mass_mailing.mailing_contact_import_action")
+        context = dict(self.env.context)
+        if ("default_mailing_list_ids" not in context and context.get("active_model") == 'mailing.list' and context.get("active_ids")):
+            context.default_mailing_list_ids = context.active_ids
+        action["context"] = context
+        return action
+
     @api.model
     def get_import_templates(self):
         return [{
