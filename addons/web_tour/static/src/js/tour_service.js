@@ -156,8 +156,7 @@ return session.is_bound.then(function () {
             characterData: true,
         };
 
-        var start_service = (function () {
-            return function (observe) {
+        var start_service = function (observe) {
                 return new Promise(function (resolve, reject) {
                     tour_manager._register_all(observe).then(function () {
                         if (observe) {
@@ -208,7 +207,6 @@ return session.is_bound.then(function () {
                     });
                 });
             };
-        })();
 
         // Enable the MutationObserver for the admin or if a tour is running, when the DOM is ready
         start_service(session.is_admin || tour_manager.running_tour);
