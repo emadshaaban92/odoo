@@ -1,3 +1,60 @@
 .o_product_configurator_img {
     width: 100px;
+    max-height: 240px;
+}
+
+.o_product_configurator_qty {
+    width: 200px;
+    a.input-group-addon {
+        background-color: transparent;
+        border: 0px;
+    }
+
+    .input-group {
+        display: inline-flex;
+    }
+
+    div {
+        width: initial; // We don't want the quantity form to be full-width
+
+        .btn, input {
+            border-color: $input-border-color;
+        }
+
+        input {
+            // Needs !important because themes customize btns' padding direclty
+            // rather than change '$input-btn-padding-X' (shared with inputs).
+            height: auto !important;
+            max-width: 5ch;
+        }
+    }
+}
+
+.o_product_configurator_product_name {
+    word-wrap: break-word;
+    min-width: 140px;
+}
+
+.o_product_configurator_price,
+.o_product_configurator_total {
+    width: 120px;
+}
+
+@include media-breakpoint-down(md) {
+    .o_product_configurator_img,
+    .o_product_configurator_qty {
+        width: 60px;
+    }
+    .o_product_configurator_price {
+        width: 80px;
+    }
+    .o_product_configurator_total {
+        display: none;
+    }
+}
+
+@media (max-width: 476px) {
+    .o_product_configurator_qty {
+        width: 60px;
+    }
 }

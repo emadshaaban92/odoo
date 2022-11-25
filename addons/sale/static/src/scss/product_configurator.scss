@@ -221,25 +221,7 @@ label.css_attribute_color.css_not_available {
 
 .js_product {
 
-    .td-product_name {
-        word-wrap: break-word;
-    }
 
-    .td-product_name {
-        min-width: 140px;
-    }
-
-    .td-qty {
-        width: 200px;
-        a.input-group-addon {
-            background-color: transparent;
-            border: 0px;
-        }
-
-        .input-group {
-            display: inline-flex;
-        }
-    }
     .td-action {
         width: 30px;
     }
@@ -250,13 +232,8 @@ label.css_attribute_color.css_not_available {
     }
 
     @include media-breakpoint-down(md) {
-        .td-img,
         .td-price-total {
             display: none;
-        }
-
-        .td-qty {
-            width: 60px;
         }
 
         .td-price {
@@ -265,9 +242,6 @@ label.css_attribute_color.css_not_available {
     }
 
     @media (max-width: 476px) {
-        .td-qty {
-            width: 60px;
-        }
 
         #modal_optional_products table thead,
         .oe_cart table thead {

@@ -2,6 +2,8 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from odoo import http
+
+from odoo.exceptions import UserError
 from odoo.http import request
 
 
@@ -10,10 +12,10 @@ class ProductConfiguratorController(http.Controller):
     def get_product_configurator_values(
         self,
         product_template_id,
-        pricelist_id,
+        pricelist_id=0,
         quantity=1.0, # TODO no default
         product_template_attribute_value_ids=None, # expected list of ids or None
-        *kw):
+        **kw):
         product_template = request.env['product.template'].browse(int(product_template_id)).exists()
         pricelist = request.env['product.pricelist'].browse(int(pricelist_id)).exists()
 
@@ -38,9 +40,11 @@ class ProductConfiguratorController(http.Controller):
                     no_variant_attributes_price_extra=tuple(no_variant_attributes_price_extra)
                 )
 
+        product_price = pricelist._get_product_price(product or product_template, quantity) if pricelist else product.lst_price
+
         return dict(
             product=product.read(['id', 'description_sale', 'display_name'])[0], # ET SI TU N'EXISTAT PAS TODO Test with no variant
-            product_price = pricelist._get_product_price(product or product_template, quantity)
+            product_price = product_price,
         )
 
     @http.route(['/sale_product_configurator/configure'], type='json', auth="user", methods=['POST'])

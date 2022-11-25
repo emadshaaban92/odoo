@@ -42,8 +42,8 @@ export class ProductConfiguratorDialog extends Component {
 ProductConfiguratorDialog.template = 'sale_product_configurator.dialog';
 ProductConfiguratorDialog.props = {
     productTemplateId: { type: Number, optional: true },
-    pricelistId: { type: Number },
-    currencyId: { type: Number },
+    pricelistId: { type: Number, optional: true },
+    currencyId: { type: Number, optional: true },
     mode: { type: String, optional: true, validate: (mode) => [
         // TODO Convert to Boolean
         "add", // show variant and/or optional products
