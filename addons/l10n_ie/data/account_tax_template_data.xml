@@ -2,7 +2,8 @@
 <odoo>
     <!-- Intra-Community Taxes -->
     <record id="l10n_ie_tax_sale_intra_good_0" model="account.tax.template">
-        <field name="name">EU sales of goods</field>
+        <field name="name">0% EU G</field>
+        <field name="description">0%</field>
         <field name="chart_template_id" ref="l10n_ie_coa"/>
         <field name="type_tax_use">sale</field>
         <field name="amount_type">percent</field>
@@ -30,7 +31,8 @@
         ]"/>
     </record>
     <record id="l10n_ie_tax_purchase_intra_good_0" model="account.tax.template">
-        <field name="name">EU purchases of goods</field>
+        <field name="name">0% EU G</field>
+        <field name="description">0%</field>
         <field name="chart_template_id" ref="l10n_ie_coa"/>
         <field name="type_tax_use">purchase</field>
         <field name="amount_type">percent</field>
@@ -58,7 +60,8 @@
         ]"/>
     </record>
     <record id="l10n_ie_tax_sale_intra_service_0" model="account.tax.template">
-        <field name="name">EU sales of services</field>
+        <field name="name">0% EU S</field>
+        <field name="description">0%</field>
         <field name="chart_template_id" ref="l10n_ie_coa"/>
         <field name="type_tax_use">sale</field>
         <field name="amount_type">percent</field>
@@ -86,7 +89,8 @@
         ]"/>
     </record>
     <record id="l10n_ie_tax_purchase_intra_service_0" model="account.tax.template">
-        <field name="name">EU purchases of services</field>
+        <field name="name">0% EU S</field>
+        <field name="description">0%</field>
         <field name="chart_template_id" ref="l10n_ie_coa"/>
         <field name="type_tax_use">purchase</field>
         <field name="amount_type">percent</field>
@@ -116,7 +120,8 @@
 
     <!-- Extra-Community Taxes -->
     <record id="l10n_ie_tax_sale_extra_good_0" model="account.tax.template">
-        <field name="name">Sale of goods outside of EU</field>
+        <field name="name">0% EX G</field>
+        <field name="description">0%</field>
         <field name="chart_template_id" ref="l10n_ie_coa"/>
         <field name="type_tax_use">sale</field>
         <field name="amount_type">percent</field>
@@ -142,7 +147,8 @@
         ]"/>
     </record>
     <record id="l10n_ie_tax_purchase_extra_good_23" model="account.tax.template">
-        <field name="name">Purchase of goods from outside of EU (23%)</field>
+        <field name="name">23% EX G</field>
+        <field name="description">23%</field>
         <field name="chart_template_id" ref="l10n_ie_coa"/>
         <field name="type_tax_use">purchase</field>
         <field name="amount_type">percent</field>
@@ -168,7 +174,8 @@
         ]"/>
     </record>
     <record id="l10n_ie_tax_sale_extra_service_0" model="account.tax.template">
-        <field name="name">Supply of services outside of EU</field>
+        <field name="name">0% EX S</field>
+        <field name="description">0%</field>
         <field name="chart_template_id" ref="l10n_ie_coa"/>
         <field name="type_tax_use">sale</field>
         <field name="amount_type">percent</field>
@@ -194,7 +201,8 @@
         ]"/>
     </record>
     <record id="l10n_ie_tax_purchase_extra_service_23" model="account.tax.template">
-        <field name="name">Purchase of services from outside of EU (23%)</field>
+        <field name="name">23% EX S</field>
+        <field name="description">23%</field>
         <field name="chart_template_id" ref="l10n_ie_coa"/>
         <field name="type_tax_use">purchase</field>
         <field name="amount_type">percent</field>
@@ -220,7 +228,8 @@
         ]"/>
     </record>
     <record id="l10n_ie_tax_purchase_extra_good_9" model="account.tax.template">
-        <field name="name">Purchase of goods from outside of EU (9%)</field>
+        <field name="name">9% EX G</field>
+        <field name="description">9%</field>
         <field name="chart_template_id" ref="l10n_ie_coa"/>
         <field name="type_tax_use">purchase</field>
         <field name="amount_type">percent</field>
@@ -246,7 +255,8 @@
         ]"/>
     </record>
     <record id="l10n_ie_tax_purchase_extra_service_9" model="account.tax.template">
-        <field name="name">Purchase of services from outside of EU (9%)</field>
+        <field name="name">9% EX S</field>
+        <field name="description">9%</field>
         <field name="chart_template_id" ref="l10n_ie_coa"/>
         <field name="type_tax_use">purchase</field>
         <field name="amount_type">percent</field>
@@ -272,7 +282,8 @@
         ]"/>
     </record>
     <record id="l10n_ie_tax_purchase_extra_good_0" model="account.tax.template">
-        <field name="name">Purchase of goods from outside of EU (0%)</field>
+        <field name="name">0% EX G</field>
+        <field name="description">0%</field>
         <field name="chart_template_id" ref="l10n_ie_coa"/>
         <field name="type_tax_use">purchase</field>
         <field name="amount_type">percent</field>
@@ -288,7 +299,8 @@
         ]"/>
     </record>
     <record id="l10n_ie_tax_purchase_extra_service_0" model="account.tax.template">
-        <field name="name">Purchase of services from outside of EU (0%)</field>
+        <field name="name">0% EX S</field>
+        <field name="description">0%</field>
         <field name="chart_template_id" ref="l10n_ie_coa"/>
         <field name="type_tax_use">purchase</field>
         <field name="amount_type">percent</field>
@@ -308,7 +320,8 @@
     <!-- Domestic Taxes -->
     <!-- Standard rate 23% -->
     <record id="l10n_ie_tax_sale_good_23" model="account.tax.template">
-        <field name="name">Standard rate sales of goods (23%)</field>
+        <field name="name">23% G</field>
+        <field name="description">23%</field>
         <field name="chart_template_id" ref="l10n_ie_coa"/>
         <field name="type_tax_use">sale</field>
         <field name="amount_type">percent</field>
@@ -336,7 +349,8 @@
         ]"/>
     </record>
     <record id="l10n_ie_tax_purchase_good_23" model="account.tax.template">
-        <field name="name">Standard rate purchases of goods (23%)</field>
+        <field name="name">23% G</field>
+        <field name="description">23%</field>
         <field name="chart_template_id" ref="l10n_ie_coa"/>
         <field name="type_tax_use">purchase</field>
         <field name="amount_type">percent</field>
@@ -364,7 +378,8 @@
         ]"/>
     </record>
     <record id="l10n_ie_tax_sale_service_23" model="account.tax.template">
-        <field name="name">Standard rate sales of services (23%)</field>
+        <field name="name">23% S</field>
+        <field name="description">23%</field>
         <field name="chart_template_id" ref="l10n_ie_coa"/>
         <field name="type_tax_use">sale</field>
         <field name="amount_type">percent</field>
@@ -392,7 +407,8 @@
         ]"/>
     </record>
     <record id="l10n_ie_tax_purchase_service_23" model="account.tax.template">
-        <field name="name">Standard rate purchases of services (23%)</field>
+        <field name="name">23% S</field>
+        <field name="description">23%</field>
         <field name="chart_template_id" ref="l10n_ie_coa"/>
         <field name="type_tax_use">purchase</field>
         <field name="amount_type">percent</field>
@@ -421,7 +437,8 @@
     </record>
     <!-- Reduced rate 13.5% -->
     <record id="l10n_ie_tax_sale_good_135" model="account.tax.template">
-        <field name="name">Reduced rate sale of goods (13.5%)</field>
+        <field name="name">13.5% G</field>
+        <field name="description">13.5%</field>
         <field name="chart_template_id" ref="l10n_ie_coa"/>
         <field name="type_tax_use">sale</field>
         <field name="amount_type">percent</field>
@@ -449,7 +466,8 @@
         ]"/>
     </record>
     <record id="l10n_ie_tax_purchase_good_135" model="account.tax.template">
-        <field name="name">Reduced rate purchase of goods (13.5%)</field>
+        <field name="name">13.5% G</field>
+        <field name="description">13.5%</field>
         <field name="chart_template_id" ref="l10n_ie_coa"/>
         <field name="type_tax_use">purchase</field>
         <field name="amount_type">percent</field>
@@ -477,7 +495,8 @@
         ]"/>
     </record>
     <record id="l10n_ie_tax_sale_service_135" model="account.tax.template">
-        <field name="name">Reduced rate sale of services (13.5%)</field>
+        <field name="name">13.5% S</field>
+        <field name="description">13.5%</field>
         <field name="chart_template_id" ref="l10n_ie_coa"/>
         <field name="type_tax_use">sale</field>
         <field name="amount_type">percent</field>
@@ -505,7 +524,8 @@
         ]"/>
     </record>
     <record id="l10n_ie_tax_purchase_service_135" model="account.tax.template">
-        <field name="name">Reduced rate purchase of services (13.5%)</field>
+        <field name="name">13.5% S</field>
+        <field name="description">13.5%</field>
         <field name="chart_template_id" ref="l10n_ie_coa"/>
         <field name="type_tax_use">purchase</field>
         <field name="amount_type">percent</field>
@@ -534,7 +554,8 @@
     </record>
     <!-- Second reduced rate 9% -->
     <record id="l10n_ie_tax_sale_good_9" model="account.tax.template">
-        <field name="name">Second reduced rate sale of goods (9%)</field>
+        <field name="name">9% G</field>
+        <field name="description">9%</field>
         <field name="chart_template_id" ref="l10n_ie_coa"/>
         <field name="type_tax_use">sale</field>
         <field name="amount_type">percent</field>
@@ -562,7 +583,8 @@
         ]"/>
     </record>
     <record id="l10n_ie_tax_purchase_good_9" model="account.tax.template">
-        <field name="name">Second reduced rate purchases of goods (9%)</field>
+        <field name="name">9% G</field>
+        <field name="description">9%</field>
         <field name="chart_template_id" ref="l10n_ie_coa"/>
         <field name="type_tax_use">purchase</field>
         <field name="amount_type">percent</field>
@@ -590,7 +612,8 @@
         ]"/>
     </record>
     <record id="l10n_ie_tax_sale_service_9" model="account.tax.template">
-        <field name="name">Second reduced rate sale of services (9%)</field>
+        <field name="name">9% S</field>
+        <field name="description">9%</field>
         <field name="chart_template_id" ref="l10n_ie_coa"/>
         <field name="type_tax_use">sale</field>
         <field name="amount_type">percent</field>
@@ -618,7 +641,8 @@
         ]"/>
     </record>
     <record id="l10n_ie_tax_purchase_service_9" model="account.tax.template">
-        <field name="name">Second reduced rate purchases of services (9%)</field>
+        <field name="name">9% S</field>
+        <field name="description">9%</field>
         <field name="chart_template_id" ref="l10n_ie_coa"/>
         <field name="type_tax_use">purchase</field>
         <field name="amount_type">percent</field>
@@ -647,7 +671,8 @@
     </record>
     <!-- Livestock rate 4.8% -->
     <record id="l10n_ie_tax_sale_48" model="account.tax.template">
-        <field name="name">Lower rate sale (4.8%)</field>
+        <field name="name">4.8%</field>
+        <field name="description">4.8%</field>
         <field name="chart_template_id" ref="l10n_ie_coa"/>
         <field name="type_tax_use">sale</field>
         <field name="amount_type">percent</field>
@@ -675,7 +700,8 @@
         ]"/>
     </record>
     <record id="l10n_ie_tax_purchase_48" model="account.tax.template">
-        <field name="name">Lower rate purchases (4.8%)</field>
+        <field name="name">4.8%</field>
+        <field name="description">4.8%</field>
         <field name="chart_template_id" ref="l10n_ie_coa"/>
         <field name="type_tax_use">purchase</field>
         <field name="amount_type">percent</field>
@@ -703,7 +729,8 @@
         ]"/>
     </record>
     <record id="l10n_ie_tax_sale_0" model="account.tax.template">
-        <field name="name">Zero rated sales (IE)</field>
+        <field name="name">0%</field>
+        <field name="description">0%</field>
         <field name="chart_template_id" ref="l10n_ie_coa"/>
         <field name="type_tax_use">sale</field>
         <field name="amount_type">percent</field>
@@ -729,7 +756,8 @@
         ]"/>
     </record>
     <record id="l10n_ie_tax_purchase_0" model="account.tax.template">
-        <field name="name">Zero rated purchases (IE)</field>
+        <field name="name">0%</field>
+        <field name="description">0%</field>
         <field name="chart_template_id" ref="l10n_ie_coa"/>
         <field name="type_tax_use">purchase</field>
         <field name="amount_type">percent</field>
@@ -755,7 +783,8 @@
         ]"/>
     </record>
     <record id="l10n_ie_tax_sale_exempt" model="account.tax.template">
-        <field name="name">Exempt sales (IE)</field>
+        <field name="name">Exempt</field>
+        <field name="description">Exempt</field>
         <field name="chart_template_id" ref="l10n_ie_coa"/>
         <field name="type_tax_use">sale</field>
         <field name="amount_type">percent</field>
@@ -781,7 +810,8 @@
         ]"/>
     </record>
     <record id="l10n_ie_tax_purchase_exempt" model="account.tax.template">
-        <field name="name">Exempt purchases (IE)</field>
+        <field name="name">Exempt</field>
+        <field name="description">Exempt</field>
         <field name="chart_template_id" ref="l10n_ie_coa"/>
         <field name="type_tax_use">purchase</field>
         <field name="amount_type">percent</field>
