@@ -53,7 +53,7 @@ def make_suite(module_names, position='at_install'):
             for t in unwrap_suite(loader.loadTestsFromModule(m)):
                 if not isinstance(t, CrossModule):
                     test_cases.append(t)
-        for c in CrossModule.registry:
+        for c in CrossModule.cross_module_classes:
             for t in unwrap_suite(loader.loadTestsFromTestCase(c)):
                 t.test_module = module_name
                 test_cases.append(t)

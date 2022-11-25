@@ -3,6 +3,7 @@
 import logging
 import re
 import odoo.tests
+from odoo.exceptions import ValidationError
 from odoo.modules.module import get_manifest
 
 _logger = logging.getLogger(__name__)
@@ -24,31 +25,48 @@ def qunit_error_checker(message):
     return True  # in other cases, always stop (missing dependency, ...)
 
 
+def generate_qunit_hash(module, testName='undefined'):
+    name = module + '\x1C' + testName
+    name_hash = 0
+
+    for letter in name:
+        name_hash = (name_hash << 5) - name_hash + ord(letter)
+        name_hash |= 0
+
+    hex_repr = hex(name_hash).lstrip('0x').zfill(8)
+    return hex_repr[-8:]
+
+
+@odoo.tests.tagged('post_install', '-at_install')
+class QUnitSuiteCheck(odoo.tests.TransactionCase):
+
+    def test_module_hash(self):
+        self.assertEqual(generate_qunit_hash('web'), '61b27308')
+
+    def test_test_assets_transpiled(self):
+        files, remains = self.env['ir.qweb']._get_asset_content('web.qunit_suite_tests')
+        self.assertFalse(remains)
+        bundle = self.env['ir.qweb']._get_asset_bundle('web.qunit_suite_tests', files, env=self.env, css=False, js=True)
+        not_transpiled = []
+        for asset in bundle.javascripts:
+            if not asset.is_transpiled:
+                not_transpiled.append(asset.name)
+        if not_transpiled:
+            raise ValidationError('All test files should be transpiled:\n%s' % '\n'.join(not_transpiled))
+
+
 @odoo.tests.tagged('post_install', '-at_install')
 class QUnitSuite(odoo.tests.HttpCase, odoo.tests.CrossModule):
 
     @odoo.tests.no_retry
     def test_js(self):
         if 'web.qunit_suite_tests' in get_manifest(self.test_module)['assets']:
-          #with self.profile(db='profiling'):
-            self.browser_js('/web/tests?moduleId=%s ' % self.generate_hash(self.test_module), "", "", login='admin', timeout=1800, error_checker=qunit_error_checker)
+          #with self.profile(db='profiling', http=False):`
+            module_hash = generate_qunit_hash(self.test_module)
+            _logger.info('Starting qunit for module %s (%s)', self.test_module, module_hash)
+            self.browser_js(f'/web/tests?moduleId={module_hash} ', "", "", login='admin', timeout=1800, error_checker=qunit_error_checker)
         else:
             _logger.info('No qunit test found for %s', self.test_module)
-
-    def test_module_hash(self):
-        self.assertEqual(self.generate_hash('web'), '61b27308')
-
-    def generate_hash(self, module, testName='undefined'):
-        name = module + '\x1C' + testName
-        name_hash = 0
-
-        for letter in name:
-            name_hash = (name_hash << 5) - name_hash + ord(letter)
-            name_hash |= 0
-
-        hex_repr = hex(name_hash).lstrip('0x').zfill(8)
-        return hex_repr[-8:]
-
 
 @odoo.tests.tagged('post_install', '-at_install')
 class WebSuite(odoo.tests.HttpCase):

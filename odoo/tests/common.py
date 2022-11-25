@@ -1673,12 +1673,11 @@ class Transport(xmlrpclib.Transport):
 
 
 class CrossModule():
-
-    registry = OrderedSet()
+    cross_module_classes = []
 
     @classmethod
     def __init_subclass__(cls):
-        CrossModule.registry.add(cls)
+        CrossModule.cross_module_classes.add(cls)
         super().__init_subclass__()
 
 
@@ -1714,6 +1713,8 @@ class HttpCase(TransactionCase):
         self.xmlrpc_object = xmlrpclib.ServerProxy(self.xmlrpc_url + 'object', transport=Transport(self.cr))
         # setup an url opener helper
         self.opener = Opener(self.cr)
+        if hasattr(self, 'test_module'):
+            type(self)._logger = logging.getLogger('%s.%s' % (self.test_module, type(self).__name__))
 
     @classmethod
     def start_browser(cls):
@@ -1721,6 +1722,7 @@ class HttpCase(TransactionCase):
         if cls.browser is None:
             cls.browser = ChromeBrowser(cls)
             cls.addClassCleanup(cls.terminate_browser)
+        cls.browser._logger = cls._logger
 
     @classmethod
     def terminate_browser(cls):
