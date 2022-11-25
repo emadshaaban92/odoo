@@ -6,6 +6,43 @@ from odoo.http import request
 
 
 class ProductConfiguratorController(http.Controller):
+    @http.route(['/sale_product_configurator/get_values'], type='json', auth="user")
+    def get_product_configurator_values(
+        self,
+        product_template_id,
+        pricelist_id,
+        quantity=1.0, # TODO no default
+        product_template_attribute_value_ids=None, # expected list of ids or None
+        *kw):
+        product_template = request.env['product.template'].browse(int(product_template_id)).exists()
+        pricelist = request.env['product.pricelist'].browse(int(pricelist_id)).exists()
+
+        if product_template_attribute_value_ids:
+            combination = request.env['product.template.attribute.value'].browse(product_template_attribute_value_ids)
+        else:
+            combination = product_template._get_first_possible_combination()
+
+        product = product_template._get_variant_for_combination(combination)
+
+        # Probably keep using get_combination_info
+        if combination:
+            no_variant_attributes_price_extra = [
+                ptav.price_extra for ptav in combination.filtered(
+                    lambda ptav:
+                        ptav.price_extra and
+                        ptav not in product.product_template_attribute_value_ids
+                )
+            ]
+            if no_variant_attributes_price_extra:
+                product = product.with_context(
+                    no_variant_attributes_price_extra=tuple(no_variant_attributes_price_extra)
+                )
+
+        return dict(
+            product=product.read(['id', 'description_sale', 'display_name'])[0], # ET SI TU N'EXISTAT PAS TODO Test with no variant
+            product_price = pricelist._get_product_price(product or product_template, quantity)
+        )
+
     @http.route(['/sale_product_configurator/configure'], type='json', auth="user", methods=['POST'])
     def configure(self, product_template_id, pricelist_id, **kw):
         add_qty = float(kw.get('add_qty', 1))
