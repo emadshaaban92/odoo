@@ -53,6 +53,11 @@ class TestOnboardingCommon(TransactionCase):
         # Create progress records as would happen through the controller
         (cls.onboarding_1 + cls.onboarding_2).with_company(cls.company_1)._search_or_create_progress()
 
+        # Standalone step
+        cls.step_initially_w_o_onboarding = cls.env['onboarding.onboarding.step'].create({
+            'title': 'Step Initially Without Onboarding',
+        })
+
     def assert_step_is_done(self, step, also_with_company=None):
         self.assertIn(
             step.current_progress_step_id.step_state, {'done', 'just_done'},

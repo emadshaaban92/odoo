@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
+from odoo import Command
 from odoo.addons.onboarding.tests.common import TestOnboardingCommon
 from odoo.exceptions import ValidationError
 from odoo.tools import mute_logger
@@ -84,7 +85,7 @@ class TestOnboarding(TestOnboardingCommon):
         self.assertEqual(self.env.company, self.company_1)
 
         # Updating onboarding (and steps) to per-company
-        self.onboarding_1.is_per_company = True
+        (self.onboarding_1 + self.onboarding_2).action_toggle_is_per_company()
         # Required after progress reset (simulate role of controller)
         self.onboarding_1._search_or_create_progress()
 
@@ -129,11 +130,19 @@ class TestOnboarding(TestOnboardingCommon):
         self.assert_onboarding_is_done(self.onboarding_1)
 
         # Updating onboarding to per-company
-        self.onboarding_1.is_per_company = True
-        # Required after progress reset (simulate role of controller)
+        (self.onboarding_1 + self.onboarding_2).action_toggle_is_per_company()
+        self.assert_onboarding_is_not_done(self.onboarding_1)
+
+        # Simulate role of controller
         self.onboarding_1._search_or_create_progress()
 
         self.assert_onboarding_is_not_done(self.onboarding_1)
+
+        # Same for standalone step
+        self.step_initially_w_o_onboarding.action_set_just_done()
+        self.assert_step_is_done(self.step_initially_w_o_onboarding)
+        self.step_initially_w_o_onboarding.is_per_company = not self.step_initially_w_o_onboarding.is_per_company
+        self.assert_step_is_not_done(self.step_initially_w_o_onboarding)
 
     def test_onboarding_shared_steps(self):
         self.onboarding_2_step_2.action_set_just_done()
@@ -145,25 +154,12 @@ class TestOnboarding(TestOnboardingCommon):
         self.assert_onboarding_is_not_done(self.onboarding_1)
         self.assert_onboarding_is_done(self.onboarding_2)
 
-    def test_onboarding_per_company_consistency(self):
-        with self.assertRaises(ValidationError):
-            self.env['onboarding.onboarding.step'].create([{
-                'title': 'Test Onboarding 1 - Step N',
-                'onboarding_ids': [self.onboarding_1.id],
-                'panel_step_open_action_name': 'action_fake_open_onboarding_step',
-                'is_per_company': True
-            }])
-
-        with self.assertRaises(ValidationError):
-            self.env['onboarding.onboarding'].create([{
-                'name': 'Test Onboarding N',
-                'is_per_company': True,
-                'route_name': 'onboardingN',
-                'step_ids': [self.onboarding_1_step_1.id]
-            }])
-
     @mute_logger('odoo.sql_db')
     def test_only_one_progress_per_company_or_without(self):
+        # Remove shared step
+        self.onboarding_1.write({
+            'step_ids': [Command.unlink(self.onboarding_1_step_1.id)]
+        })
         self.assertFalse(self.onboarding_1.current_progress_id.company_id)
 
         with self.assertRaises(ValidationError):
@@ -173,7 +169,7 @@ class TestOnboarding(TestOnboardingCommon):
             })
 
         # Updating onboarding to per-company
-        self.onboarding_1.is_per_company = True
+        self.onboarding_1.action_toggle_is_per_company()
         # Required after progress reset (simulate role of controller)
         self.onboarding_1._search_or_create_progress()
 
@@ -185,6 +181,8 @@ class TestOnboarding(TestOnboardingCommon):
 
     @mute_logger('odoo.sql_db')
     def test_only_one_progress_step_per_company_or_without(self):
+        # Remove shared step
+        self.onboarding_1.write({'step_ids': [Command.unlink(self.onboarding_1_step_1.id)]})
         self.assertFalse(self.onboarding_1.current_progress_id.company_id)
 
         onboarding_progress = self.onboarding_1._search_or_create_progress()
@@ -198,7 +196,7 @@ class TestOnboarding(TestOnboardingCommon):
             })
 
         # Updating onboarding to per-company
-        self.onboarding_1.is_per_company = True
+        self.onboarding_1.action_toggle_is_per_company()
         # Required after progress reset (simulate role of controller)
         onboarding_progress = self.onboarding_1._search_or_create_progress()
         self.onboarding_1_step_1.action_set_just_done()
@@ -211,9 +209,6 @@ class TestOnboarding(TestOnboardingCommon):
             })
 
     def test_onboarding_step_without_onboarding(self):
-        self.step_initially_w_o_onboarding = self.env['onboarding.onboarding.step'].create({
-            'title': 'Step Initially Without Onboarding',
-        })
         self.assertEqual(self.step_initially_w_o_onboarding.current_step_state, 'not_done')
         self.step_initially_w_o_onboarding.action_set_just_done()
 
@@ -247,3 +242,66 @@ class TestOnboarding(TestOnboardingCommon):
 
         self.step_initially_w_o_onboarding.with_company(self.company_2).action_set_just_done()
         self.assert_onboarding_is_done(self.onboarding_3.with_company(self.company_2))
+
+    def test_onboarding_per_company_consistency(self):
+        self.assertFalse(self.onboarding_1.is_per_company)
+        self.assertFalse(self.onboarding_2.is_per_company)
+        self.assertFalse(self.onboarding_1_step_1.is_per_company)
+
+        with self.assertRaises(ValidationError):
+            # Impossible to add a 'is_per_company' step to a non-per-company onboarding
+            self.env['onboarding.onboarding.step'].create([{
+                'title': 'Test Onboarding 1 - Step N',
+                'onboarding_ids': [self.onboarding_1.id],
+                'panel_step_open_action_name': 'action_fake_open_onboarding_step',
+                'is_per_company': True
+            }])
+
+        with self.assertRaises(ValidationError):
+            # Impossible to create an 'is_per_company' onboarding with non per-company steps
+            self.env['onboarding.onboarding'].create([{
+                'name': 'Test Onboarding N',
+                'is_per_company': True,
+                'route_name': 'onboardingN',
+                'step_ids': [self.onboarding_1_step_1.id]
+            }])
+
+        with self.assertRaises(ValidationError):
+            # Impossible to change 'is_per_company' for step included in an onboarding
+            self.onboarding_1_step_1.write({
+                'is_per_company': True
+            })
+
+        with self.assertRaises(ValidationError):
+            # Impossible to change 'is_per_company' for onboarding including steps
+            self.onboarding_1.write({
+                'is_per_company': True
+            })
+
+        with self.assertRaises(ValidationError):
+            # Impossible to toggle is_per_company for onboarding with steps used in other onboardings
+            self.onboarding_1.action_toggle_is_per_company()
+
+        with self.assertRaises(ValidationError):
+            # Impossible to toggle is_per_company for onboarding with steps used in other onboardings
+            self.onboarding_1.action_toggle_is_per_company()
+
+        # Possible to change is_per_company for a complete set of onboarding + related steps
+        self.assertFalse(self.onboarding_1.is_per_company)
+        (self.onboarding_1 + self.onboarding_2).action_toggle_is_per_company()
+        self.assertTrue(self.onboarding_1.is_per_company)
+
+        # possible to toggle is_per_company for a single onboarding if steps are not shared
+        self.onboarding_2.step_ids = False
+        self.onboarding_1.action_toggle_is_per_company()
+        self.assertFalse(self.onboarding_1.is_per_company)
+
+        # Possible to directly change is_per_company for standalone onboardings and steps
+        self.onboarding_1.step_ids = False
+        self.onboarding_1.is_per_company = not self.onboarding_1.is_per_company
+        self.assertTrue(self.onboarding_1.is_per_company)
+
+        self.assertFalse(self.onboarding_1_step_1.is_per_company)
+        self.onboarding_1_step_1.onboarding_ids = False
+        self.onboarding_1_step_1.is_per_company = not self.onboarding_1_step_1.is_per_company
+        self.assertTrue(self.onboarding_1_step_1.is_per_company)

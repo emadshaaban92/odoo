@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-from odoo import _, api, fields, models
+from odoo import _, api, Command, fields, models
 from odoo.addons.onboarding.models.onboarding_progress import ONBOARDING_PROGRESS_STATES
 from odoo.exceptions import ValidationError
 
@@ -42,7 +42,7 @@ class Onboarding(models.Model):
         ('route_name_uniq', 'UNIQUE (route_name)', 'Onboarding alias must be unique.'),
     ]
 
-    @api.constrains('step_ids')
+    @api.constrains('is_per_company', 'step_ids')
     def check_is_per_company_consistency(self):
         for onboarding in self:
             if any(is_step_per_company != onboarding.is_per_company
@@ -76,14 +76,16 @@ class Onboarding(models.Model):
         if 'is_per_company' in values:
             onboardings_per_company_update = onboardings_per_company_update.filtered(
                 lambda onboarding: onboarding.is_per_company != values['is_per_company'])
+            if onboardings_per_company_update.step_ids:
+                raise ValidationError(
+                    _('To change "is_per_company" for onboardings with associated steps, '
+                      'use the dedicated toggle button (action) of the onboarding.'))
 
         res = super().write(values)
 
         if 'is_per_company' in values:
-            # When changing this parameter, all progress (onboarding and steps) is reset.
+            # When changing this parameter, all progress must be reset.
             onboardings_per_company_update.progress_ids.unlink()
-            onboardings_per_company_update.step_ids.is_per_company = values['is_per_company']
-            onboardings_per_company_update.step_ids.progress_ids.unlink()
         return res
 
     def _search_or_create_progress(self):
@@ -114,3 +116,37 @@ class Onboarding(models.Model):
         }
 
         return values
+
+    def action_toggle_is_per_company(self):
+        """ Toggle onboarding and steps `is_per_company`, discarding existing
+        progress. This action is allowed when the steps included in 'self'
+        onboardings are not used in other onboardings.
+        """
+
+        onboardings_were_per_company = self.filtered(lambda o: o.is_per_company)
+        onboardings_were_not_per_company = self - onboardings_were_per_company
+
+        onboarding_steps_were_per_company = onboardings_were_per_company.step_ids
+        onboarding_steps_were_not_per_company = onboardings_were_not_per_company.step_ids
+
+        # check that steps to update are not used in other onboardings.
+        if (onboarding_steps_were_per_company.onboarding_ids > onboardings_were_per_company
+                or onboarding_steps_were_not_per_company.onboarding_ids > onboardings_were_not_per_company):
+            raise ValidationError(
+                _('Impossible to toggle is_per_company for onboardings with steps used in other onboardings.'))
+
+        self.step_ids.progress_ids.unlink()
+
+        onboardings_to_steps = {onboarding: onboarding.step_ids for onboarding in self if onboarding.step_ids}
+
+        self.step_ids = False
+        self.flush_recordset(['step_ids'])
+
+        onboardings_were_per_company.is_per_company = False
+        onboarding_steps_were_per_company.is_per_company = False
+
+        onboardings_were_not_per_company.is_per_company = True
+        onboarding_steps_were_not_per_company.is_per_company = True
+
+        for onboarding, steps in onboardings_to_steps.items():
+            onboarding.step_ids = [Command.set(steps.ids)]

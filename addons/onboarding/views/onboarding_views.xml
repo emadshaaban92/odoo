@@ -7,6 +7,7 @@
             <tree string="Onboardings">
                 <header>
                     <button name="action_toggle_visibility" type="object" string="Toggle visibility"/>
+                    <button name="action_toggle_is_per_company" type="object" string="Toggle Per Company"/>
                 </header>
                 <field name="sequence" widget="handle"/>
                 <field name="name"/>
@@ -24,12 +25,13 @@
             <form>
                 <header>
                     <button name="action_toggle_visibility" type="object" string="Toggle visibility"/>
+                    <button name="action_toggle_is_per_company" type="object" string="Toggle Per Company"/>
                 </header>
                 <sheet>
                     <group col="2">
                         <field name="name"/>
                         <field name="route_name"/>
-                        <field name="is_per_company"/>
+                        <field name="is_per_company" attrs="{'readonly': [('step_ids', '!=', False)]}"/>
                         <field name="is_onboarding_closed"/>
                     </group>
                     <notebook>
@@ -73,7 +75,7 @@
                         <field name="title"/>
                         <field name="current_step_state"/>
                         <field name="panel_step_open_action_name"/>
-                        <field name="is_per_company"/>
+                        <field name="is_per_company" attrs="{'readonly': [('onboarding_ids', '!=', False)]}"/>
                     </group>
                     <notebook>
                         <page name="Onboardings using this step">

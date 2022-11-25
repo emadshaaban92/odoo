@@ -56,7 +56,7 @@ class OnboardingStep(models.Model):
                 step.current_progress_step_id = False
                 step.current_step_state = 'not_done'
 
-    @api.constrains('onboarding_ids')
+    @api.constrains('is_per_company', 'onboarding_ids')
     def check_is_per_company_consistency(self):
         for step in self:
             if any(is_step_per_company != step.is_per_company
@@ -68,6 +68,18 @@ class OnboardingStep(models.Model):
         for step in self:
             if step.onboarding_ids and not step.panel_step_open_action_name:
                 raise ValidationError(_('An action name to open is required for steps linked to an onboarding panel.'))
+
+    def write(self, vals):
+        all_per_company_before = set(self.mapped('is_per_company'))
+        res = super().write(vals)
+        if 'is_per_company' in vals and all_per_company_before - {vals['is_per_company']}:
+            if self.onboarding_ids:
+                raise ValidationError(
+                    _('To change "is_per_company" for onboarding steps used in an onboarding panel, '
+                      'use the dedicated toggle button (action) of the onboarding.'))
+            # Resetting progress
+            self.progress_ids.unlink()
+        return res
 
     def action_set_just_done(self):
         # Make sure progress records exist for the current context (company)
