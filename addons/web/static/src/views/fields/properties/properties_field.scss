@@ -16,6 +16,9 @@
     .o_dropdown_button,
     .o_datepicker_button {
         @include print-variable(o-input-border-color, $o-form-lightsecondary);
+    }
+    .o_dropdown_button,
+    .o_datepicker_button {
         color: initial !important;
     }
 
@@ -90,7 +93,7 @@
     }
 
     .o_property_field_highlight .o_field_property_empty_label,
-    .o_property_field_highlight b, {
+    .o_property_field_highlight b {
         border: 1px solid $primary;
         padding: 5px;
         margin: -5px;
@@ -139,10 +142,6 @@
                 width: 100%;
             }
         }
-    }
-    .o_field_property_add,
-    .o_field_property_open_popover {
-        display: none;
     }
     .o_field_property_open_popover.disabled {
         pointer-events: none;
