@@ -151,50 +151,6 @@
             </field>
         </record>
 
-    <!-- Set pivot view and arrange in order -->
-    <record id="project_task_kanban_action_view" model="ir.actions.act_window.view">
-        <field name="sequence" eval="10"/>
-        <field name="view_mode">kanban</field>
-        <field name="act_window_id" ref="project.act_project_project_2_project_task_all"/>
-    </record>
-
-    <record id="project_task_tree_action_view" model="ir.actions.act_window.view">
-        <field name="sequence" eval="20"/>
-        <field name="view_mode">tree</field>
-        <field name="act_window_id" ref="project.act_project_project_2_project_task_all"/>
-    </record>
-
-    <record id="project_task_form_action_view" model="ir.actions.act_window.view">
-        <field name="sequence" eval="30"/>
-        <field name="view_mode">form</field>
-        <field name="act_window_id" ref="project.act_project_project_2_project_task_all"/>
-    </record>
-
-    <record id="project_all_task_calendar_action_view" model="ir.actions.act_window.view">
-        <field name="sequence" eval="40"/>
-        <field name="view_mode">calendar</field>
-        <field name="act_window_id" ref="project.act_project_project_2_project_task_all"/>
-    </record>
-
-    <record id="project_all_task_pivot_action_view" model="ir.actions.act_window.view">
-        <field name="sequence" eval="70"/>
-        <field name="view_mode">pivot</field>
-        <field name="view_id" ref="view_project_task_pivot_inherit"/>
-        <field name="act_window_id" ref="act_project_project_2_project_task_all"/>
-    </record>
-
-    <record id="project_all_task_graph_action_view" model="ir.actions.act_window.view">
-        <field name="sequence" eval="80"/>
-        <field name="view_mode">graph</field>
-        <field name="act_window_id" ref="project.act_project_project_2_project_task_all"/>
-    </record>
-
-    <record id="project_all_task_activity_action_view" model="ir.actions.act_window.view">
-        <field name="sequence" eval="90"/>
-        <field name="view_mode">activity</field>
-        <field name="act_window_id" ref="project.act_project_project_2_project_task_all"/>
-    </record>
-
         <record id="project_task_action_sub_task" model="ir.actions.act_window">
             <field name="name">Sub-tasks</field>
             <field name="res_model">project.task</field>
@@ -1509,7 +1465,7 @@
                     <field name="allow_subtasks" invisible="1"/>
                     <field name="name" widget="name_with_subtask_count"/>
                     <field name="project_id" widget="project_private_task" optional="show" readonly="1" options="{'no_open': 1}"/>
-                    <field name="milestone_id" attrs="{'invisible': [('allow_milestones', '=', False)]}" context="{'default_project_id': project_id}" groups="project.group_project_milestone"/>
+                    <field name="milestone_id" attrs="{'invisible': [('allow_milestones', '=', False)]}" context="{'default_project_id': project_id}" groups="project.group_project_milestone" optional="show"/>
                     <field name="partner_id" optional="hide"/>
                     <field name="parent_id" optional="hide" attrs="{'invisible': [('allow_subtasks', '=', False)]}" groups="base.group_no_one"/>
                     <field name="user_ids" optional="show" widget="many2many_avatar_user" domain="[('share', '=', False), ('active', '=', True)]" options='{"no_quick_create": True}'/>
@@ -1536,6 +1492,18 @@
             </field>
         </record>
 
+        <record id="view_task_tree2_inherited" model="ir.ui.view">
+            <field name="name">project.task.tree.inherit</field>
+            <field name="model">project.task</field>
+            <field name="mode">primary</field>
+            <field name="inherit_id" ref="project.view_task_tree2"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='project_id']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+            </field>
+        </record>
+
         <record id="view_task_calendar" model="ir.ui.view">
             <field name="name">project.task.calendar</field>
             <field name="model">project.task</field>
@@ -1557,6 +1525,16 @@
                     <field name="stage_id"/>
                     <field name="kanban_state"/>
                 </calendar>
+            </field>
+        </record>
+
+        <record id="view_task_calendar_inherited" model="ir.ui.view">
+            <field name="name">project.task.calendar.inherit</field>
+            <field name="model">project.task</field>
+            <field name="mode">primary</field>
+            <field name="inherit_id" ref="project.view_task_calendar"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='project_id']" position="replace"/>
             </field>
         </record>
 
@@ -1590,6 +1568,16 @@
             </field>
         </record>
 
+        <record id="view_project_task_graph_inherited" model="ir.ui.view">
+            <field name="name">project.task.graph.inherit</field>
+            <field name="model">project.task</field>
+            <field name="mode">primary</field>
+            <field name="inherit_id" ref="project.view_project_task_graph"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='project_id']" position="replace"/>
+            </field>
+        </record>
+
         <record id="project_task_view_activity" model="ir.ui.view">
             <field name="name">project.task.activity</field>
             <field name="model">project.task</field>
@@ -1613,6 +1601,64 @@
                     </templates>
                 </activity>
             </field>
+        </record>
+
+        <record id="project_task_view_activity_inherited" model="ir.ui.view">
+            <field name="name">project.task.activity.inherit</field>
+            <field name="model">project.task</field>
+            <field name="mode">primary</field>
+            <field name="inherit_id" ref="project.project_task_view_activity"/>
+            <field name="arch" type="xml">
+                <xpath expr="//span[@t-att-title='record.project_id.value']" position="replace"/>
+            </field>
+        </record>
+
+        <!-- Set views and arrange in order -->
+        <record id="project_task_kanban_action_view" model="ir.actions.act_window.view">
+            <field name="sequence" eval="10"/>
+            <field name="view_mode">kanban</field>
+            <field name="act_window_id" ref="project.act_project_project_2_project_task_all"/>
+        </record>
+
+        <record id="project_task_tree_action_view" model="ir.actions.act_window.view">
+            <field name="sequence" eval="20"/>
+            <field name="view_mode">tree</field>
+            <field name="view_id" ref="project.view_task_tree2_inherited"/>
+            <field name="act_window_id" ref="project.act_project_project_2_project_task_all"/>
+        </record>
+
+        <record id="project_task_form_action_view" model="ir.actions.act_window.view">
+            <field name="sequence" eval="30"/>
+            <field name="view_mode">form</field>
+            <field name="act_window_id" ref="project.act_project_project_2_project_task_all"/>
+        </record>
+
+        <record id="project_all_task_calendar_action_view" model="ir.actions.act_window.view">
+            <field name="sequence" eval="40"/>
+            <field name="view_mode">calendar</field>
+            <field name="view_id" ref="project.view_task_calendar_inherited"/>
+            <field name="act_window_id" ref="project.act_project_project_2_project_task_all"/>
+        </record>
+
+        <record id="project_all_task_pivot_action_view" model="ir.actions.act_window.view">
+            <field name="sequence" eval="70"/>
+            <field name="view_mode">pivot</field>
+            <field name="view_id" ref="project.view_project_task_pivot_inherit"/>
+            <field name="act_window_id" ref="act_project_project_2_project_task_all"/>
+        </record>
+
+        <record id="project_all_task_graph_action_view" model="ir.actions.act_window.view">
+            <field name="sequence" eval="80"/>
+            <field name="view_mode">graph</field>
+            <field name="view_id" ref="project.view_project_task_graph_inherited"/>
+            <field name="act_window_id" ref="project.act_project_project_2_project_task_all"/>
+        </record>
+
+        <record id="project_all_task_activity_action_view" model="ir.actions.act_window.view">
+            <field name="sequence" eval="90"/>
+            <field name="view_mode">activity</field>
+            <field name="view_id" ref="project.project_task_view_activity_inherited"/>
+            <field name="act_window_id" ref="project.act_project_project_2_project_task_all"/>
         </record>
 
         <record id="action_view_task" model="ir.actions.act_window">
