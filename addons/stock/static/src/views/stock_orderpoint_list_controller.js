@@ -11,11 +11,9 @@ export class StockOrderpointListController extends ListController {
         if (action) {
             return this.actionService.doAction(action);
         }
-        else {
-            return this.actionService.doAction('stock.action_replenishment', {
-                stackPosition: 'replaceCurrentAction',
-            });
-        }
+        return this.actionService.doAction('stock.action_replenishment', {
+            stackPosition: 'replaceCurrentAction',
+        });
     }
 
     async onClickSnooze() {

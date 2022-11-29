@@ -63,14 +63,14 @@ class TestWarnUnwantedReplenish(common.TransactionCase):
         orderpoint_form = Form(cls.env['stock.warehouse.orderpoint'])
         orderpoint_form.product_id = cls.product_A
         orderpoint_form.product_min_qty = 0.000
-        orderpoint_form.product_max_qty = 0.000
+        orderpoint_form.product_max_qty = 1.000
         cls.orderpoint_A = orderpoint_form.save()
         cls.orderpoint_A.trigger = 'manual'
 
         orderpoint_form = Form(cls.env['stock.warehouse.orderpoint'])
         orderpoint_form.product_id = cls.product_B
         orderpoint_form.product_min_qty = 0.000
-        orderpoint_form.product_max_qty = 0.000
+        orderpoint_form.product_max_qty = 1.000
         cls.orderpoint_B = orderpoint_form.save()
         cls.orderpoint_B.trigger = 'manual'
 
@@ -245,7 +245,7 @@ class TestWarnUnwantedReplenish(common.TransactionCase):
                   Order click SHALL show Wizard
                       Product A
                           Modify Visible Days of A past 1 Week -> unwanted_replenish= false, qty_to_order = 0
-                          Modify Max QTY (such as > than qty_to_rder) -> qty_to_order >0
+                          Modify Max QTY (such as > than qty_to_order) -> qty_to_order >0
                       [Validate Correct Orders] -> New PO for A and B
         """
         self.assertTrue(self.orderpoint_A.unwanted_replenish, 'Orderpoint A not set to unwanted_replenish')
@@ -266,10 +266,10 @@ class TestWarnUnwantedReplenish(common.TransactionCase):
         #Update Orderpoint A
         self.orderpoint_A.visibility_days = 10
         self.assertFalse(self.orderpoint_A.unwanted_replenish, 'Orderpoint A shall not be set to unwanted_replenish')
-        self.assertEqual(self.orderpoint_A.qty_to_order, 0, "Orderpoint A quantity to order shall be equal to 0")
+        self.assertEqual(self.orderpoint_A.qty_to_order, 1, "Orderpoint A quantity to order shall be equal to 1")
         #Max Qty > Change to Order :> unwanted_replenish = false
         self.orderpoint_A.product_max_qty += 10
-        self.assertEqual(self.orderpoint_A.qty_to_order, 10, "Orderpoint A quantity to order shall be equal to 10")
+        self.assertEqual(self.orderpoint_A.qty_to_order, 11, "Orderpoint A quantity to order shall be equal to 10")
         #Valids only
         unwanted_replenish_wizard.action_validate_correct()
 

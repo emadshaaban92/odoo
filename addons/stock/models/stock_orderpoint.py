@@ -174,7 +174,7 @@ class StockWarehouseOrderpoint(models.Model):
     @api.depends('product_id', 'qty_to_order', 'product_max_qty')
     def _compute_unwanted_replenish(self):
         for orderpoint in self:
-            if float_is_zero(orderpoint.qty_to_order, precision_rounding=orderpoint.product_uom.rounding) or float_is_zero(orderpoint.product_max_qty):
+            if float_is_zero(orderpoint.qty_to_order, precision_rounding=orderpoint.product_uom.rounding) or float_is_zero(orderpoint.product_max_qty, precision_rounding=orderpoint.product_uom.rounding):
                 orderpoint.unwanted_replenish = False
             else:
                 after_replenish_qty = orderpoint.product_id.with_context(company_id=orderpoint.company_id.id, location=orderpoint.location_id.id).virtual_available + orderpoint.qty_to_order
@@ -226,10 +226,9 @@ class StockWarehouseOrderpoint(models.Model):
     def action_replenish(self):
         # prevent Reordering too much
         if not(self.env.context.get('force_unwanted_replenish')):
-            orderpoints_with_too_much_replenishment = any(orderpoint.unwanted_replenish for orderpoint in self)
-            ctx = dict(self.env.context or {})
-            if orderpoints_with_too_much_replenishment:
-                ctx['default_stock_orderpoint_ids'] = [orderpoint.id for orderpoint in self]
+            if any(self.mapped('unwanted_replenish')):
+                ctx = dict(self.env.context or {})
+                ctx['default_stock_orderpoint_ids'] = self.ids
                 return {
                     'name': _('Forecasted quantity is higher than max quantity'),
                     'type': 'ir.actions.act_window',
