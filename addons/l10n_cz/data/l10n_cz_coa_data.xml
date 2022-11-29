@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+
+    <menuitem id="account_reports_cz_statements_menu" name="Czech Republic" parent="account.menu_finance_reports" sequence="0" groups="account.group_account_readonly" />
+
     <data>
         <!-- Chart template -->
         <record id="cz_chart_template" model="account.chart.template">
