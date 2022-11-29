@@ -70,31 +70,34 @@ class RegistrationEditor(models.TransientModel):
             ('sale_order_id', '=', sale_order.id),
             ('event_ticket_id', 'in', sale_order.mapped('order_line.event_ticket_id').ids),
             ('state', '!=', 'cancel')])
+        so_line_ticket = sale_order.order_line.grouped('event_ticket_id')
 
         attendee_list = []
-        for so_line in [l for l in sale_order.order_line if l.event_ticket_id]:
-            existing_registrations = [r for r in registrations if r.event_ticket_id == so_line.event_ticket_id]
-            for reg in existing_registrations:
-                attendee_list.append([0, 0, {
-                    'event_id': reg.event_id.id,
-                    'event_ticket_id': reg.event_ticket_id.id,
-                    'registration_id': reg.id,
-                    'name': reg.name,
-                    'email': reg.email,
-                    'phone': reg.phone,
-                    'mobile': reg.mobile,
-                    'sale_order_line_id': so_line.id,
-                }])
-            for count in range(int(so_line.product_uom_qty) - len(existing_registrations)):
-                attendee_list.append([0, 0, {
-                    'event_id': so_line.event_id.id,
-                    'event_ticket_id': so_line.event_ticket_id.id,
-                    'sale_order_line_id': so_line.id,
-                    'name': so_line.order_partner_id.name,
-                    'email': so_line.order_partner_id.email,
-                    'phone': so_line.order_partner_id.phone,
-                    'mobile': so_line.order_partner_id.mobile,
-                }])
+        for event_ticket, so_lines in so_line_ticket.items():
+            for so_line in so_lines:
+                existing_registrations = [r for r in registrations if r.event_ticket_id == event_ticket and r.sale_order_line_id == so_line]
+                for reg in existing_registrations:
+                    attendee_list.append([0, 0, {
+                        'event_id': reg.event_id.id,
+                        'event_ticket_id': reg.event_ticket_id.id,
+                        'registration_id': reg.id,
+                        'name': reg.name,
+                        'email': reg.email,
+                        'phone': reg.phone,
+                        'mobile': reg.mobile,
+                        'sale_order_line_id': so_line.id,
+                    }])
+                    registrations -= reg
+                for count in range(int(so_line.product_uom_qty) - len(existing_registrations)):
+                    attendee_list.append([0, 0, {
+                        'event_id': so_line.event_id.id,
+                        'event_ticket_id': event_ticket.id,
+                        'sale_order_line_id': so_line.id,
+                        'name': so_line.order_partner_id.name,
+                        'email': so_line.order_partner_id.email,
+                        'phone': so_line.order_partner_id.phone,
+                        'mobile': so_line.order_partner_id.mobile,
+                    }])
         res['event_registration_ids'] = attendee_list
         res = self._convert_to_write(res)
         return res
