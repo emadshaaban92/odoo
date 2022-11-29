@@ -126,7 +126,7 @@
                                 <span>Payment part</span>
                             </div>
 
-                            <img class="swissqr" t-att-src="qr_code_urls[o.id]"/>
+                            <img class="swissqr" t-att-src="o._l10n_ch_generate_qr_code()"/>
 
                             <div id="amount_zone" class="amount_zone">
                                 <div class="swissqr_text">

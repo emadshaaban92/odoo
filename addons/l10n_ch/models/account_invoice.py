@@ -367,3 +367,7 @@ class AccountMove(models.Model):
             'isr': isr_invs,
             'classic': self - qr_invs - isr_invs,
         }
+
+    def _l10n_ch_generate_qr_code(self):
+        self.ensure_one()
+        return self.partner_bank_id.build_qr_code_base64(self.amount_residual, self.ref or self.name, self.payment_reference, self.currency_id, self.partner_id, qr_method='ch_qr', silent_errors=False)
