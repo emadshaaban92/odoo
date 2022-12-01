@@ -172,17 +172,29 @@ class ClosePosPopup extends AbstractAwaitablePopup {
                     window.location = "/web#action=point_of_sale.action_client_pos_menu";
                 }
             }
-            this.closeSessionClicked = false;
         }
+        this.closeSessionClicked = false;
     }
+    
     async handleClosingError(response) {
-        await this.showPopup("ErrorPopup", { title: "Error", body: response.message });
+        let popupType = "";
+        let title = "";
+        
+        if (response.type == 'alert') {
+            popupType = 'AlertPopup';
+            title = response.title ? response.title : "";
+        } else {
+            popupType = 'ErrorPopup';
+            title = "Error";
+        }
+
+        await this.showPopup(popupType, {title: title, body: response.message});
         if (response.redirect) {
-            window.location = "/web#action=point_of_sale.action_client_pos_menu";
+            window.location = '/web#action=point_of_sale.action_client_pos_menu';
         }
     }
     _getShowDiff(pm) {
-        return pm.type == "bank" && pm.number !== 0;
+        return pm.type == 'bank' && pm.number !== 0;
     }
 }
 
