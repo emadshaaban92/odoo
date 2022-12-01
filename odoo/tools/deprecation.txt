@@ -1,0 +1,56 @@
+Deprecated without messages:
+
+Since 17.0.
+Since 17.0.
+Since 16.0.
+Since 16.0.
+
+
+Deprecated with an alias:
+
+CONTENT_MAXAGE is a deprecated alias to odoo.http.STATIC_CACHE_LONG
+RedirectWarning attribute 'name' is a deprecated alias to args[0]
+odoo.http.send_file is deprecated, please use odoo.http.Stream instead.
+request.session.geoip have been moved to request.geoip
+fields_get_keys() method is deprecated, use `_fields` or `get_views` instead
+the 'init' method is deprecated since odoo 16.1 and is set for removal in odoo 19, you should override '_init' instead
+get_xml_id() is deprecated method, use get_external_id() instead
+Deprecated method flush(), use flush_model(), flush_recordset() or env.flush_all() instead
+refresh() is deprecated method, use invalidate_cache() instead
+Deprecated method recompute(), use flush_model(), flush_recordset() or env.flush_all() instead
+Since 16.0, 'serialized_cursor' is deprecated, use `cursor` instead
+Deprecated IrRule.clear_cache(), use IrRule.clear_caches() instead
+`load_views` method is deprecated, use `get_views` instead
+keep_query has been moved to {mod}
+Method `_fields_view_get` is deprecated, use `_get_view` instead
+Since 17.0, deprecated method, use `clear_caches` instead
+Since 16.0 `odoo.tools.ignore` is replaced by `contextlib.suppress`.
+deprecated Query.tables, use Query.get_sql() instead
+deprecated Query.add_join, use Query.join() or Query.left_join() instead
+Since 17.0: odoo.osv.osv.{name} is deprecated, use {target.__module__}.{target.__name__}
+The longpolling-port is a deprecated alias to the gevent-port option, please use the latter.
+Deprecated Methods since 16.0, use {'`_cnx.autocommit = True`' if on else '`_cnx.set_isolation_level`'} instead
+rename {candidate!r} to __manifest__.py (valid since 10.0)
+load_information_from_description_file() is a deprecated alias to get_manifest()
+
+
+Deprecated without replacement:
+
+`norecompute` is useless. Deprecated since 17.0.
+Since 16.0, 'serialized' parameter is not used anymore.
+Deprecated method and does nothing since 16.0
+Since 16.0, 'serialized' parameter is deprecated
+
+
+Custom deprecation:
+{__name__!r} has been split over multiple files, you'll find {attr!r} at {module.__name__!r}
+
+
+Since 16.0: use os.walk or a recursive glob or something
+Since 16.0, just byo or use a dedicated library like funcy
+Since 16.0, just use `subprocess`.
+Since 16.0, use `subprocess` directly.
+Since 16.0, use `subprocess` directly.
+Since 16.0, use `subprocess` directly.
+Since 16.0, use proper escaping methods (e.g. `markupsafe.escape`)
+Since 16.0, it's never been super useful.

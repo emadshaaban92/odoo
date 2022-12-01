@@ -164,8 +164,8 @@ from .exceptions import UserError, AccessError, AccessDenied
 from .modules.module import get_manifest
 from .modules.registry import Registry
 from .service import security, model as service_model
-from .tools import (config, consteq, date_utils, file_path, parse_version,
-                    profiler, submap, unique, ustr,)
+from .tools import (config, consteq, date_utils, deprecation, file_path,
+                    parse_version, profiler, submap, unique, ustr,)
 from .tools.geoipresolver import GeoIPResolver
 from .tools.func import filter_kwargs, lazy_property
 from .tools.mimetypes import guess_mimetype
@@ -391,7 +391,7 @@ def serialize_exception(exception):
 
 def send_file(filepath_or_fp, mimetype=None, as_attachment=False, filename=None, mtime=None,
               add_etags=True, cache_timeout=STATIC_CACHE, conditional=True):
-    warnings.warn('odoo.http.send_file is deprecated, please use odoo.http.Stream instead.', DeprecationWarning, stacklevel=2)
+    deprecation.warn_moved('odoo.http.send_file', 'odoo.http.Stream', since=(15, 4), until=(18, 0))
     return _send_file(
         filepath_or_fp,
         request.httprequest.environ,
@@ -887,7 +887,7 @@ class Session(collections.abc.MutableMapping):
     #
     def __getitem__(self, item):
         if item == 'geoip':
-            warnings.warn('request.session.geoip have been moved to request.geoip', DeprecationWarning)
+            deprecation.warn_moved('request.session.geoip', 'request.geoip', since=(15, 3), until=(18, 0))
             return request.geoip if request else {}
         return self.data[item]
 

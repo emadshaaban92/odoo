@@ -1,8 +1,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-import warnings
 from odoo import http
-from odoo.tools import lazy
+from odoo.tools import lazy, deprecation
 from odoo.addons.web.controllers import (
     action, binary, database, dataset, export, home, report, session,
     utils, view, webclient,
@@ -48,7 +47,9 @@ def __getattr__(attr):
 
     @lazy
     def only_one_warn():
-        warnings.warn(f"{__name__!r} has been split over multiple files, you'll find {attr!r} at {module.__name__!r}", DeprecationWarning, stacklevel=4)
+        deprecation.warn(
+            f"{__name__!r} has been split over multiple files, you'll find {attr!r} at {module.__name__!r}",
+            since=(16, 0), until=(18, 0), stacklevel=2)
         return getattr(module, attr)
 
     return only_one_warn

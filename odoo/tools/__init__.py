@@ -4,6 +4,7 @@
 from . import _monkeypatches
 from . import appdirs
 from . import cloc
+from . import deprecation
 from . import pdf
 from . import pycompat
 from . import win32

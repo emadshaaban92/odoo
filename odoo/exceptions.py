@@ -47,8 +47,8 @@ class RedirectWarning(Exception):
     @property
     def name(self):
         warnings.warn(
-            "RedirectWarning attribute 'name' is a deprecated alias to args[0]",
-            DeprecationWarning)
+            "the name attribute is deprecated since odoo 14.0, please use args[0] instead",
+            DeprecationWarning, stacklevel=3)
         return self.args[0]
 
 

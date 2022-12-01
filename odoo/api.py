@@ -26,7 +26,10 @@ from weakref import WeakSet
 from decorator import decorate
 
 from .exceptions import AccessError, CacheMiss
-from .tools import classproperty, frozendict, lazy_property, OrderedSet, Query, StackMap
+from .tools import (
+    classproperty, deprecation, frozendict, lazy_property, OrderedSet,
+    Query, StackMap,
+)
 from .tools.translate import _
 
 _logger = logging.getLogger(__name__)
@@ -781,7 +784,7 @@ class Environment(Mapping):
     @contextmanager
     def norecompute(self):
         """ Deprecated: It does nothing, recomputation is delayed by default. """
-        warnings.warn("`norecompute` is useless. Deprecated since 17.0.", DeprecationWarning, 2)
+        deprecated.warn_useless("norecompute", since=(17, 1), until=(19, 0))
         yield
 
     def cache_key(self, field):

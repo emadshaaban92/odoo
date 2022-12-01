@@ -15,7 +15,7 @@ import odoo.modules.registry
 from odoo import http
 from odoo.modules import get_manifest, get_resource_path
 from odoo.http import request
-from odoo.tools import lazy
+from odoo.tools import lazy, deprecation
 from odoo.tools.misc import file_open
 from .utils import _local_web_translations
 
@@ -25,7 +25,9 @@ _logger = logging.getLogger(__name__)
 
 @lazy
 def CONTENT_MAXAGE():
-    warnings.warn("CONTENT_MAXAGE is a deprecated alias to odoo.http.STATIC_CACHE_LONG", DeprecationWarning)
+    deprecation.warn_moved(
+        'CONTENT_MAXAGE', 'odoo.http.STATIC_CACHE_LONG',
+        since=(15, 3), until=(18, 0))
     return http.STATIC_CACHE_LONG
 
 
