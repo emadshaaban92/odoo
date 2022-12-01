@@ -7,6 +7,7 @@ from dateutil.relativedelta import relativedelta
 from odoo import _, api, fields, models
 from odoo.tools.float_utils import float_round
 from odoo.addons.resource.models.resource import HOURS_PER_DAY
+from odoo.osv import expression
 
 
 class HrEmployeeBase(models.AbstractModel):
@@ -99,7 +100,7 @@ class HrEmployeeBase(models.AbstractModel):
 
     def _compute_allocation_remaining_display(self):
         allocations = self.env['hr.leave.allocation'].search([('employee_id', 'in', self.ids)])
-        leaves_taken = allocations.holiday_status_id._get_employees_days_per_allocation(self.ids)
+        leaves_taken = allocations.holiday_status_id.get_leaves_consumed(self.ids)
         for employee in self:
             employee_remaining_leaves = 0
             for leave_type in leaves_taken[employee.id]:
@@ -293,8 +294,32 @@ class HrEmployee(models.Model):
         is_leave_user = self == self.env.user.employee_id and self.user_has_groups('hr_holidays.group_hr_holidays_user')
 
         if not is_leave_user and stress_days.department_ids:
-            stress_days = stress_days.filtered(lambda sd:\
-                not sd.department_ids\
+            stress_days = stress_days.filtered(lambda sd:
+                not sd.department_ids
                 or self.department_id and not set(self.department_id.ids).isdisjoint(sd.department_ids.get_children_department_ids().ids))
 
         return stress_days
+
+    def get_allocations(self, leave_type_ids=False):
+        domain = [
+            ('state', 'in', ['validate']),
+            ('active', '=', True),
+            '|',
+            '|',
+            '|',
+            '&',
+            ('holiday_type', '=', 'employee'),
+            ('employee_id', 'in', self.ids),
+            '&',
+            ('holiday_type', '=', 'company'),
+            ('mode_company_id', 'in', self.company_id.ids),
+            '&',
+            ('holiday_type', '=', 'department'),
+            ('department_id', 'in', self.department_id.ids),
+            '&',
+            ('holiday_type', '=', 'category'),
+            ('category_id', 'in', self.sudo().category_ids.ids),
+        ]
+        if leave_type_ids:
+            domain = expression.AND([domain, [('holiday_status_id', 'in', leave_type_ids.ids)]])
+        return self.env['hr.leave.allocation'].search(domain)

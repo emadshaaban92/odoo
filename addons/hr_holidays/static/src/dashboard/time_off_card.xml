@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <templates xml:space="preserve">
-    <div t-name="hr_holidays.TimeOffCard" owl="1" class="o_timeoff_card py-3 text-odoo">
+    <div t-name="hr_holidays.TimeOffCard" owl="1" class="o_timeoff_card px-0 py-3 text-odoo col">
         <t t-set="data" t-value="props.data"/>
         <t t-set="duration" t-value="props.requires_allocation ? data.virtual_remaining_leaves : data.virtual_leaves_taken"/>
         <t t-set="show_popover" t-value="true"/>
@@ -10,7 +10,9 @@
             <t t-if="data and data.icon">
                 <img t-att-src="data.icon" />
             </t>
-            <t t-esc="duration"/>
+            <span t-att-style="props.is_today ? '' : 'color: #B6D369;'">
+                <t t-esc="duration"/>
+            </span>
         </span>
         <div class="text-uppercase">
             <t t-if="data.request_unit == 'hour'" name="duration_unit">hours</t>
@@ -24,6 +26,7 @@
             <t t-if="show_popover">
                 <TimeOffCardPopover
                     allocated="data.max_leaves"
+                    accrual_bonus="data.accrual_bonus"
                     approved="data.leaves_approved"
                     planned="data.leaves_requested"
                     left="data.virtual_remaining_leaves" />
@@ -37,6 +40,13 @@
             <t t-else="">
                 (valid until <span t-esc="data.closest_allocation_expire"/>)
             </t>
+        </span>
+        <span class="alert alert-warning m-0 mt-3"
+            t-if="data.closest_allocation_duration &amp;&amp; data.closest_allocation_duration &lt; data.virtual_remaining_leaves">
+            <i class="fa fa-warning"/> Only <t t-esc="data.closest_allocation_duration"/>
+            <t t-if="data.request_unit == 'hour'"> hours</t>
+            <t t-else=""> days</t>
+            can be used before the allocation expire.
         </span>
     </div>
 
@@ -61,6 +71,7 @@
                 <t t-set-slot="opened">
                     <ul>
                         <li>Allocated: <span t-esc="props.allocated"/></li>
+                        <li t-if="props.accrual_bonus">(Accrual Bonus: <span t-esc="props.accrual_bonus"/>)</li>
                         <li>Approved: <span t-esc="props.approved"/></li>
                         <li style="border-bottom: 1px solid gray;">Planned: <span t-esc="props.planned"/></li>
                         <li>Left: <span t-esc="props.left"/></li>

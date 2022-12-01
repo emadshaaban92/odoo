@@ -34,8 +34,8 @@ class CalendarLeaves(models.Model):
         domain = []
         for date in time_domain_dict:
             domain = expression.OR([domain, [
-                    ('date_to', '>', date['date_from']),
-                    ('date_from', '<', date['date_to'])]
+                ('date_to', '>', date['date_from']),
+                ('date_from', '<', date['date_to'])]
             ])
         return expression.AND([domain, [('state', '!=', 'refuse'), ('active', '=', True)]])
 
@@ -63,7 +63,7 @@ class CalendarLeaves(models.Model):
         sick_time_status = self.env.ref('hr_holidays.holiday_status_sl')
         for previous_duration, leave, state in zip(previous_durations, leaves, previous_states):
             duration_difference = previous_duration - leave.number_of_days
-            if duration_difference > 0 and leave['holiday_allocation_id'] and leave.number_of_days == 0.0:
+            if duration_difference > 0 and leave.number_of_days == 0.0:
                 message = _("Due to a change in global time offs, you have been granted %s day(s) back.", duration_difference)
                 leave._notify_change(message)
             if leave.number_of_days > previous_duration\

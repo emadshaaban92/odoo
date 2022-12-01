@@ -220,7 +220,6 @@
             <field name="can_reset" invisible="1"/>
             <field name="can_approve" invisible="1"/>
             <field name="can_cancel" invisible="1"/>
-            <field name="holiday_allocation_id" invisible="1" force_save="1"/>
             <field name="has_stress_day" invisible="1"/>
             <header>
                 <button string="Confirm" name="action_confirm" type="object" class="oe_highlight" attrs="{'invisible': ['|', ('state', '!=', 'draft'), ('active', '=', False)]}"/>
@@ -707,7 +706,6 @@
             'hide_employee_name': 1,
             'holiday_status_name_get': False}
         </field>
-        <field name="domain">[('holiday_allocation_id', '=', active_id)]</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Meet the time off dashboard.

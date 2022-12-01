@@ -51,9 +51,9 @@ class LeaveReport(models.Model):
                 FROM (SELECT
                     allocation.employee_id as employee_id,
                     employee.active as active_employee,
-                    CASE 
+                    CASE
                         WHEN request.number_of_days > 0 THEN allocation.number_of_days - request.number_of_days
-                        ELSE allocation.number_of_days 
+                        ELSE allocation.number_of_days
                     END as number_of_days,
                     allocation.department_id as department_id,
                     allocation.holiday_status_id as leave_type,
@@ -64,9 +64,9 @@ class LeaveReport(models.Model):
                     allocation.employee_company_id as company_id
                 FROM hr_leave_allocation as allocation
                 INNER JOIN hr_employee as employee ON (allocation.employee_id = employee.id)
-                LEFT JOIN 
-                    (SELECT holiday_status_id, employee_id, sum(number_of_days) as number_of_days 
-                    FROM hr_leave GROUP BY holiday_status_id, employee_id) request 
+                LEFT JOIN
+                    (SELECT holiday_status_id, employee_id, sum(number_of_days) as number_of_days
+                    FROM hr_leave GROUP BY holiday_status_id, employee_id) request
                 on (allocation.employee_id=request.employee_id and allocation.holiday_status_id = request.holiday_status_id)
                 UNION ALL SELECT
                     request.employee_id as employee_id,
