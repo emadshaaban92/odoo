@@ -61,13 +61,16 @@ class ProductReplenish(models.TransientModel):
             res['warehouse_id'] = warehouse.id
         if 'date_planned' in fields:
             res['date_planned'] = datetime.datetime.now()
+        if 'route_id' in fields and 'route_id' not in res:
+            domain = ['|', ('company_id', '=', False), ('company_id', '=', company.id)] + self._get_allowed_route_domain()
+            res['route_id'] = self.env['stock.route'].search(domain, limit=1).id
         return res
 
     def launch_replenishment(self):
         uom_reference = self.product_id.uom_id
         self.quantity = self.product_uom_id._compute_quantity(self.quantity, uom_reference)
         try:
-            self.env['procurement.group'].with_context(clean_context(self.env.context)).run([
+            procurement_created = self.env['procurement.group'].with_context(clean_context(self.env.context)).run([
                 self.env['procurement.group'].Procurement(
                     self.product_id,
                     self.quantity,
@@ -79,6 +82,22 @@ class ProductReplenish(models.TransientModel):
                     self._prepare_run_values()  # Values
                 )
             ])
+            if len(procurement_created.values()) == 1:
+                for record in procurement_created.values():
+                    return {
+                        'type': 'ir.actions.client',
+                        'tag': 'display_notification',
+                        'params': {
+                            'title': _('The following replenishment order has been generated'),
+                            'message': '%s',
+                            'links': [{
+                                'label': record.name,
+                                'url': f'#id={record.id}&model={record._name}'
+                            }],
+                            'sticky': False,
+                            'next': {'type': 'ir.actions.act_window_close'},
+                        }
+                    }
         except UserError as error:
             raise UserError(error)
 

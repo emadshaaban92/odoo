@@ -40,6 +40,7 @@ class StockRule(models.Model):
     @api.model
     def _run_manufacture(self, procurements):
         productions_values_by_company = defaultdict(list)
+        MrpProductions = productions_created = self.env['mrp.production']
         for procurement, rule in procurements:
             if float_compare(procurement.product_qty, 0, precision_rounding=procurement.product_uom.rounding) <= 0:
                 # If procurement contains negative quantity, don't create a MO that would be for a negative value.
@@ -50,7 +51,8 @@ class StockRule(models.Model):
 
         for company_id, productions_values in productions_values_by_company.items():
             # create the MO as SUPERUSER because the current user may not have the rights to do it (mto product launched by a sale for example)
-            productions = self.env['mrp.production'].with_user(SUPERUSER_ID).sudo().with_company(company_id).create(productions_values)
+            productions = MrpProductions.with_user(SUPERUSER_ID).sudo().with_company(company_id).create(productions_values)
+            productions_created += productions
             productions.filtered(lambda p: (not p.orderpoint_id and p.move_raw_ids) or\
                 (p.move_dest_ids.procure_method != 'make_to_order' and not p.move_raw_ids and not p.workorder_ids)).action_confirm()
 
@@ -72,7 +74,7 @@ class StockRule(models.Model):
                         'mail.message_origin_link',
                         values={'self': production, 'origin': origin_production},
                         subtype_id=self.env.ref('mail.mt_note').id)
-        return True
+        return productions_created
 
     @api.model
     def _run_pull(self, procurements):

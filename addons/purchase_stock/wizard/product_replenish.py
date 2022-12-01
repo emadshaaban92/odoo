@@ -2,6 +2,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from odoo import _, api, fields, models
+from odoo.osv.expression import AND
 
 
 class ProductReplenish(models.TransientModel):
@@ -24,17 +25,22 @@ class ProductReplenish(models.TransientModel):
                 res['supplier_id'] = orderpoint.supplier_id.id
             elif product_tmpl_id.seller_ids:
                 res['supplier_id'] = product_tmpl_id.seller_ids[0].id
+            if not product_tmpl_id.seller_ids:
+                company = product_tmpl_id.company_id or self.env.company
+                domain = ['|', ('company_id', '=', False), ('company_id', '=', company.id)] + self._get_allowed_route_domain()
+                domain = AND([domain, [('id', '!=', self.env.ref('purchase_stock.route_warehouse0_buy').id)]])
+                res['route_id'] = self.env['stock.route'].search(domain, limit=1).id
         return res
 
     @api.depends('route_id')
     def _compute_show_vendor(self):
         for rec in self:
-            rec.show_vendor = rec.route_id.name == _("Buy")
+            rec.show_vendor = rec.route_id == self.env.ref('purchase_stock.route_warehouse0_buy')
 
     @api.onchange('route_id')
     def _onchange_route_id(self):
         for rec in self:
-            if rec.route_id.name == _("Buy") and not rec.product_id.product_tmpl_id.seller_ids:
+            if rec.route_id == self.env.ref('purchase_stock.route_warehouse0_buy') and not rec.product_id.product_tmpl_id.seller_ids:
                 return {
                     'warning': {
                         'title': _("Vendor Not Found in Product %s", rec.product_id.name),

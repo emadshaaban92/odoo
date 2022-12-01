@@ -45,6 +45,7 @@ class StockRule(models.Model):
     def _run_buy(self, procurements):
         procurements_by_po_domain = defaultdict(list)
         errors = []
+        PurchaseOrder = purchase_order_created = self.env['purchase.order']
         for procurement, rule in procurements:
 
             # Get the schedule date in order to find a valid seller
@@ -90,7 +91,7 @@ class StockRule(models.Model):
             # Get the set of procurement origin for the current domain.
             origins = set([p.origin for p in procurements])
             # Check if a PO exists for the current domain.
-            po = self.env['purchase.order'].sudo().search([dom for dom in domain], limit=1)
+            po = PurchaseOrder.sudo().search([dom for dom in domain], limit=1)
             company_id = procurements[0].company_id
             if not po:
                 positive_values = [p.values for p in procurements if float_compare(p.product_qty, 0.0, precision_rounding=p.product_uom.rounding) >= 0]
@@ -112,6 +113,7 @@ class StockRule(models.Model):
                         po.write({'origin': po.origin + ', ' + ', '.join(missing_origins)})
                 else:
                     po.write({'origin': ', '.join(origins)})
+            purchase_order_created += po
 
             procurements_to_merge = self._get_procurements_to_merge(procurements)
             procurements = self._merge_procurements(procurements_to_merge)
@@ -150,6 +152,7 @@ class StockRule(models.Model):
                     if fields.Date.to_date(order_date_planned) < fields.Date.to_date(po.date_order):
                         po.date_order = order_date_planned
             self.env['purchase.order.line'].sudo().create(po_line_values)
+        return purchase_order_created
 
     def _get_lead_days(self, product, **values):
         """Add the company security lead time and the supplier delay to the cumulative delay

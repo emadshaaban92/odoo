@@ -432,6 +432,7 @@ class ProcurementGroup(models.Model):
 
         actions_to_run = defaultdict(list)
         procurement_errors = []
+        procurement_created = {}
         for procurement in procurements:
             procurement.values.setdefault('company_id', procurement.location_id.company_id)
             procurement.values.setdefault('priority', '0')
@@ -456,7 +457,7 @@ class ProcurementGroup(models.Model):
         for action, procurements in actions_to_run.items():
             if hasattr(self.env['stock.rule'], '_run_%s' % action):
                 try:
-                    getattr(self.env['stock.rule'], '_run_%s' % action)(procurements)
+                    procurement_created.update({action: getattr(self.env['stock.rule'], '_run_%s' % action)(procurements)})
                 except ProcurementException as e:
                     procurement_errors += e.procurement_exceptions
             else:
@@ -464,7 +465,7 @@ class ProcurementGroup(models.Model):
 
         if procurement_errors:
             raise_exception(procurement_errors)
-        return True
+        return procurement_created
 
     @api.model
     def _search_rule(self, route_ids, packaging_id, product_id, warehouse_id, domain):
