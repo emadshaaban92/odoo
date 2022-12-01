@@ -107,6 +107,7 @@ class PosConfig(models.Model):
     current_session_id = fields.Many2one('pos.session', compute='_compute_current_session', string="Current Session")
     current_session_state = fields.Char(compute='_compute_current_session')
     number_of_opened_session = fields.Integer(string="Number of Opened Session", compute='_compute_current_session')
+    number_of_rescue_session = fields.Integer(string="Number of Rescue Session", compute="_compute_current_rescue_session")
     last_session_closing_cash = fields.Float(compute='_compute_last_session')
     last_session_closing_date = fields.Date(compute='_compute_last_session')
     pos_session_username = fields.Char(compute='_compute_current_session_user')
@@ -213,6 +214,12 @@ class PosConfig(models.Model):
             pos_config.has_active_session = opened_sessions and True or False
             pos_config.current_session_id = session and session[0].id or False
             pos_config.current_session_state = session and session[0].state or False
+
+    @api.depends('session_ids', 'session_ids.state')
+    def _compute_current_rescue_session(self):
+        for pos_config in self:
+            rescue_sessions = pos_config.session_ids.filtered(lambda s: not s.state == 'closed' and s.rescue)
+            pos_config.number_of_rescue_session = len(rescue_sessions)
 
     @api.depends('session_ids')
     def _compute_last_session(self):
@@ -543,6 +550,18 @@ class PosConfig(models.Model):
             'view_mode': 'tree,kanban,form',
             'type': 'ir.actions.act_window',
             'domain': [('state', '!=', 'closed'), ('config_id', '=', self.id)]
+        }
+
+    def open_opened_rescue_session_list(self):
+        self.ensure_one()
+
+        return {
+            'name': _('Opened Sessions'),
+            'res_model': 'pos.session',
+            'view_mode': 'form',
+            'res_id': self.session_ids.filtered(lambda s: not s.state == 'closed' and s.rescue).id,
+            'type': 'ir.actions.act_window',
+            'domain': [('state', '!=', 'closed'), ('config_id', '=', self.id), ('rescue', '=', True)]
         }
 
     # All following methods are made to create data needed in POS, when a localisation
