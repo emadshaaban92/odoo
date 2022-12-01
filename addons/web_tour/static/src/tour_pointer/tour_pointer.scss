@@ -1,0 +1,29 @@
+.o_web_tour {
+    position: absolute;
+    z-index: 1000;
+    top: 0;
+    left: 0;
+
+    .o_web_tour_pointer {
+        position: absolute;
+        width: 0;
+        height: 0;
+
+        &.top {
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 20px solid #f00;
+        }
+
+        &.bottom {}
+
+        &.start {}
+
+        &.end {}
+
+        .o_web_tour_pointer_text {
+            // TODO-JCB: should show the text
+            display: none;
+        }
+    }
+}

@@ -23,6 +23,7 @@ This module provides the core of the Odoo Web Client.
         'views/neutralize_views.xml',
         'data/ir_attachment.xml',
         'data/report_layout.xml',
+        'views/tour_manager_actions.xml',
     ],
     'assets': {
         # ---------------------------------------------------------------------
@@ -173,6 +174,7 @@ This module provides the core of the Odoo Web Client.
             'web/static/src/legacy/xml/colorpicker.xml',
             'web/static/src/legacy/js/widgets/translation_dialog.js',
             'web/static/src/legacy/xml/translation_dialog.xml',
+            'web/static/src/tour_manager/**',
         ],
         'web.assets_backend': [
             ('include', 'web._assets_helpers'),

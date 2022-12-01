@@ -38,6 +38,13 @@ commandProviderRegistry.add("debug", {
             });
             result.push({
                 action() {
+                    env.services.action.doAction("web.action_tour_manager_dummy");
+                },
+                category: "debug",
+                name: env._t("Run Tour Manager Dummy"),
+            });
+            result.push({
+                action() {
                     const runTestsURL = browser.location.origin + "/web/tests/mobile?debug=assets";
                     browser.open(runTestsURL);
                 },

@@ -36,6 +36,9 @@ class Macro {
         this.onStep = descr.onStep || (() => {});
         this.onError = descr.onError;
         this.onTimeout = descr.onTimeout;
+        this.onComplete = descr.onComplete || (() => {});
+        this.onFirstStep = descr.onFirstStep || (() => {});
+        this.firstStepDone = false;
         this.setTimer();
     }
 
@@ -67,6 +70,10 @@ class Macro {
 
     advanceStep(el, step) {
         this.safeCall(this.onStep, el, step);
+        if (!this.firstStepDone) {
+            this.safeCall(this.onFirstStep, el, step);
+            this.firstStepDone = true;
+        }
         const action = step.action;
         if (action in ACTION_HELPERS) {
             ACTION_HELPERS[action](el, step);
@@ -75,6 +82,7 @@ class Macro {
         }
         this.currentIndex++;
         if (this.currentIndex === this.steps.length) {
+            this.safeCall(this.onComplete);
             this.isComplete = true;
             browser.clearTimeout(this.timeout);
         } else {
