@@ -83,11 +83,11 @@
                                     <!-- we show the specific discount applied to this item -->
                                     <li class="info">
                                         <t t-if="orderline.get_discount_str() !== '0'">
-                                                <em>
-                                                With a
-                                                    <t t-esc="orderline.get_discount_str()" />%
-                                                discount
-                                                </em>
+                                            <em>
+                                            With a
+                                                <t t-esc="orderline.get_discount_str()" />%
+                                            discount
+                                            </em>
                                         </t>
                                     </li>
                                 </ul>
@@ -100,7 +100,7 @@
                 <!-- we show the 'thank you' message -->
                 <t t-else=""> 
                     <div class="pos-customer_thank_you_message">
-                            <span>Thank you for your purchase!</span>
+                        <span>Thank you for your purchase!</span>
                     </div>
                 </t>
             </t>
