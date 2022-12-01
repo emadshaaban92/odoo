@@ -240,7 +240,7 @@
                             <group>
                                 <field name="name"/>
                                 <field name="mail_template_id" context="{'default_model': 'project.task'}"/>
-                                <field name="rating_template_id" groups="project.group_project_rating" context="{'default_model': 'project.task'}"/>
+                                <field name="rating_template_id" placeholder="Task: Rating Request" groups="project.group_project_rating" context="{'default_model': 'project.task'}"/>
                                 <div class="alert alert-warning" role="alert" colspan='2' attrs="{'invisible': ['|', ('rating_template_id','=', False), ('disabled_rating_warning', '=', False)]}" groups="project.group_project_rating">
                                     <i class="fa fa-warning" title="Customer disabled on projects"/><b> Customer Ratings</b> are disabled on the following project(s) : <br/>
                                     <field name="disabled_rating_warning" class="mb-0" />
@@ -1319,9 +1319,7 @@
                                         <field name="repeat_number" attrs="{'invisible': [('repeat_type', '!=', 'after')], 'required': [('repeat_type', '=', 'after')]}" />
                                     </div>
                                 </group>
-                            </group>
-                            <group attrs="{'invisible': ['|', ('recurring_task', '=', False), ('recurrence_message', '=', False)]}">
-                                <div class="alert alert-success o_form_project_recurrence_message" role="status" colspan="2">
+                                <div class="alert alert-success o_form_project_recurrence_message" role="status" attrs="{'invisible': ['|', ('recurring_task', '=', False), ('recurrence_message', '=', False)]}">
                                     <field name="recurrence_message" widget="html" class="mb-0" />
                                 </div>
                             </group>
