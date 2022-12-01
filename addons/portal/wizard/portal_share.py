@@ -71,8 +71,9 @@ class PortalShare(models.TransientModel):
             template = self.env.ref('portal.portal_share_template', False)
             self.resource_ref.message_post_with_view(template,
                 values={'partner': partner, 'note': self.note, 'record': self.resource_ref,
-                        'share_link': share_link},
-                subject=_("You are invited to access %s", self.resource_ref.display_name),
+                        'share_link': share_link,
+                        'record_description': self.resource_ref.with_context(lang=partner.lang or self.env.user.lang)._description.lower()},
+                subject=_("Invitation to access %s", self.resource_ref.display_name),
                 subtype_id=note.id,
                 email_layout_xmlid='mail.mail_notification_light',
                 partner_ids=[(6, 0, partner.ids)])
@@ -90,8 +91,9 @@ class PortalShare(models.TransientModel):
             template = self.env.ref('portal.portal_share_template', False)
             self.resource_ref.message_post_with_view(template,
                 values={'partner': partner, 'note': self.note, 'record': self.resource_ref,
-                        'share_link': share_link},
-                subject=_("You are invited to access %s", self.resource_ref.display_name),
+                        'share_link': share_link,
+                        'record_description': self.resource_ref.with_context(lang=partner.lang or self.env.user.lang)._description.lower()},
+                subject=_("Invitation to access %s", self.resource_ref.display_name),
                 subtype_id=note.id,
                 email_layout_xmlid='mail.mail_notification_light',
                 partner_ids=[(6, 0, partner.ids)])

@@ -3,12 +3,19 @@
 
     <template id="portal_share_template">
         <div>
+            <br/>
             <p>Dear <span t-esc="partner.name"/>,</p>
-            <p>You have been invited to access the following document:</p>
+            <p><span t-out="record.env.user.name"/> has invited you to access the following <span t-out="record_description"/>:</p>
             <br/>
             <a t-attf-href="#{share_link}" style="background-color: #875A7B; padding: 10px; text-decoration: none; color: #fff; border-radius: 5px; font-size: 12px;"><strong>Open </strong><strong t-esc="record.display_name"/></a><br/>
             <br/>
             <p t-if="note" style="white-space: pre-wrap;" t-esc="note"/>
+        </div>
+        <div style="font-size: 13px; padding: 30px 0;">
+            <div>Best regards,</div>
+            <div style="font-size: 13px;">
+                <span t-out="record.env.user.sudo().signature"/>
+            </div>
         </div>
     </template>
 
