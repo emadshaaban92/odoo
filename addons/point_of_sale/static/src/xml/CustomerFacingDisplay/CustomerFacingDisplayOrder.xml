@@ -27,7 +27,7 @@
                 <div class="pos-company_logo" t-attf-style="background-image:url(/logo?company=#{pos.company.id})"/>
 
                 <div class="pos-payment_info_details">
-                    <!-- Order TOtal -->
+                    <!-- Order Total -->
                     <div class="pos-total">
                         <div>
                             <span class="total-amount-formatting">TOTAL</span>
@@ -59,12 +59,32 @@
             </div>
             <div class="pos_orderlines_list">
                 <t t-if="order">
-                    <div t-foreach="order.get_orderlines()" t-as="orderline" class="pos_orderlines_item">
-                        <div><div t-attf-style="background-image:url(#{productImages[orderline.product.id]})"/></div>
-                        <div t-esc="orderline.get_full_product_name()"/>
-                        <div t-esc="orderline.get_quantity_str()"/>
-                        <div t-esc="pos.format_currency(orderline.get_display_price())"/>
-                    </div>
+                    <t t-if ="order.get_screen_data().name != 'ReceiptScreen'">
+                        <div t-foreach="order.get_orderlines()" t-as="orderline" class="pos_orderlines_item">
+                            <div><div t-attf-style="background-image:url(#{productImages[orderline.product.id]})"/></div>
+                                <ul>
+                                    <li class="info">
+                                        <div t-esc="orderline.get_full_product_name()"/>
+                                    </li>
+                                    <li class="info">
+                                        <t t-if="orderline.get_discount_str() !== '0'">
+                                                <em>
+                                                With a
+                                                    <t t-esc="orderline.get_discount_str()" />%
+                                                discount
+                                                </em>
+                                        </t>
+                                    </li>
+                                </ul>
+                            <div t-esc="orderline.get_quantity_str()"/>
+                            <div t-esc="pos.format_currency(orderline.get_display_price())"/>
+                        </div>
+                    </t>
+                    <t t-else=""> 
+                        <div class="pos-customer_thank_you_message">
+                                <span>Thank you for your purchase!</span>
+                        </div>
+                    </t>
                 </t>
             </div>
         </div>

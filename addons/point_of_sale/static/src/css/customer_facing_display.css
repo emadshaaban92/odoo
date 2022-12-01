@@ -150,10 +150,11 @@ body .pos-customer_facing_display .pos_orderlines .pos_orderlines_item > div:fir
   -ms-flex: 1 1 1%;
   flex: 1 1 1%;
 }
-body .pos-customer_facing_display .pos_orderlines .pos_orderlines_item > div:nth-child(2) {
+body .pos-customer_facing_display .pos_orderlines .pos_orderlines_item ul {
   width: 40%;
   border-left: 1px solid;
   padding-left: 2%;
+  list-style-type: none;
 }
 body .pos-customer_facing_display .pos_orderlines .pos_orderlines_item > div:nth-child(3) {
   text-align: center;
@@ -341,6 +342,13 @@ body .pos-customer_facing_display .pos-payment_info .pos-payment_info_details .p
   }
   body .pos-customer_facing_display .pos-customer_products .pos_orderlines .pos_orderlines_list .pos_orderlines_item > div {
     font-size: 100%;
+  }
+  body .pos-customer_facing_display .pos-customer_products .pos_orderlines .pos_orderlines_list .pos-customer_thank_you_message{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    font-size: 2rem;
   }
   body .pos-customer_facing_display .pos-payment_info {
     max-width: 100%;
