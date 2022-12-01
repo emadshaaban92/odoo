@@ -137,7 +137,7 @@
                             <t t-out="text_completed" />
                         </span>
                         <a type="action" class="btn btn-primary ms-4" data-bs-toggle="collapse" href=".o_onboarding_container" t-att-data-model="close_model" t-att-data-method="close_method">
-                            Close
+                            Close Panel
                         </a>
                     </div>
                 </div>
