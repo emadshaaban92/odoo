@@ -99,7 +99,7 @@
                 <!-- after the order has been validated -->
                 <!-- we show the 'thank you' message -->
                 <t t-else=""> 
-                    <div class="pos-customer_thank_you_message">
+                    <div class="pos-thank_you_message">
                         <span>Thank you for your purchase!</span>
                     </div>
                 </t>
