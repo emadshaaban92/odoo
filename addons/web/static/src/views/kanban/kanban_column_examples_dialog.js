@@ -54,4 +54,4 @@ export class KanbanColumnExamplesDialog extends Component {
 }
 KanbanColumnExamplesDialog.template = "web.KanbanColumnExamplesDialog";
 KanbanColumnExamplesDialog.components = { Dialog, Notebook };
-KanbanColumnExamplesDialog.title = _lt("Kanban Examples");
+KanbanColumnExamplesDialog.title = _lt("Kanban Stages Examples");

@@ -29,7 +29,7 @@
                         Esc to discard
                     </small>
                     <t t-if="props.exampleData and !env.isSmall">
-                        <button type="button" class="btn btn-link o_kanban_examples p-0" t-on-click="showExamples">See examples</button>
+                        <button type="button" class="btn btn-link o_kanban_examples p-0" t-on-click="showExamples">See kanban stages examples</button>
                     </t>
                 </div>
                 <div t-foreach="[,,,]" t-as="i" t-key="i_index" class="o_kanban_muted_record mt-3 py-5 bg-300" />
