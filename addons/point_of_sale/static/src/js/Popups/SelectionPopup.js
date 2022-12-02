@@ -22,6 +22,7 @@ odoo.define('point_of_sale.SelectionPopup', function (require) {
          *      Selection {
          *          id: integer,
          *          label: string,
+         *          description: string,
          *          isSelected: boolean,
          *          item: any,
          *      }

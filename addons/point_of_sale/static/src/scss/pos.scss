@@ -2753,7 +2753,6 @@ td {
     line-height: 50px;
     margin-top: -1px;
     border-top: solid 3px rgba(60,60,60,0.1);
-
 }
 .pos .popup.popup-selection .selection-item {
     width: auto;
@@ -2761,6 +2760,14 @@ td {
     cursor: pointer;
     text-align: left;
     padding: 0px 16px;
+    display:flex;
+    flex-direction: column;
+}
+.pos .popup.popup-selection .selection-item > span:nth-child(2) {
+    line-height: 20px;
+    margin-top: -15px;
+    font-size: 13px;    
+    padding-bottom: 10px;
 }
 .pos .popup.popup-selection .selection-item:nth-child(odd) {
     background: rgb(247,247,247);

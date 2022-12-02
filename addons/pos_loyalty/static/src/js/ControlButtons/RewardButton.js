@@ -102,6 +102,7 @@ export class RewardButton extends PosComponent {
             const rewardsList = rewards.map((reward) => ({
                 id: reward.reward.id,
                 label: reward.reward.description,
+                description: reward.reward.program_id.name,
                 item: reward,
             }));
             const { confirmed, payload: selectedReward } = await this.showPopup('SelectionPopup', {
