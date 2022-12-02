@@ -33,6 +33,13 @@ const PosSaleOrderline = (Orderline) =>
             this.sale_order_line_id = this.sale_order_line_id || options.sale_order_line_id;
             this.down_payment_details = this.down_payment_details || options.down_payment_details;
             this.customerNote = this.customerNote || options.customer_note;
+            if (this.sale_order_origin_id && this.sale_order_origin_id.shipping_date) {
+                this.order.to_ship = true;
+                this.order.shipping_date = this.sale_order_origin_id.shipping_date;
+            } else {
+                this.order.to_ship = false;
+                this.order.shipping_date = false;
+            }
         }
         init_from_JSON(json) {
             super.init_from_JSON(...arguments);

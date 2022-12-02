@@ -138,6 +138,25 @@ class PaymentScreen extends PosComponent {
             this.currentOrder.set_tip(parse.float(payload));
         }
     }
+    async openPopupShippingDatePicker() {
+        this.toggleIsToShip();
+        if (this.currentOrder.is_to_ship()) {
+            const { confirmed, payload: shippingDate } = await this.showPopup("DatePickerPopup", {
+                title: this.env._t("Select the shipping date"),
+            });
+            if (confirmed) {
+                //If the date is anterior to today, set it to today.
+                if (shippingDate == false) {
+                    this.currentOrder.set_shipping_date(new Date().toISOString().split('T')[0]);
+                } else {
+                    this.currentOrder.set_shipping_date(shippingDate);
+                }
+            } else {
+                this.toggleIsToShip();
+            }
+        }
+        
+    }
     toggleIsToShip() {
         // click_ship
         this.currentOrder.set_to_ship(!this.currentOrder.is_to_ship());

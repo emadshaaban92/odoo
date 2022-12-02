@@ -90,8 +90,11 @@
                                 </div>
                                 <div t-if="env.pos.config.ship_later" class="button"
                                         t-att-class="{ highlight: currentOrder.is_to_ship() }"
-                                        t-on-click="toggleIsToShip">
+                                        t-on-click="openPopupShippingDatePicker">
                                     <i class="fa fa-clock-o" /> Ship Later
+                                    <span t-if="currentOrder.is_to_ship()">
+                                        (<t t-esc="currentOrder.shipping_date"/>)
+                                    <span/>
                                 </div>
                             </div>
                         </div>
