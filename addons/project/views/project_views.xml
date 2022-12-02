@@ -928,6 +928,8 @@
                                         <field name="activity_ids" widget="kanban_activity"/>
                                     </div>
                                     <div class="oe_kanban_bottom_right">
+                                    <!--domain="[('active', '=', True), ('company_id', '=', company_id)]"-->
+                                        <field t-if="record.last_update_status.value &amp;&amp; widget.editable" name="last_update_status" widget="project_state_selection" options="{'color_field': 'last_update_color', 'hide_label': 1}"/>
                                         <field t-if="record.last_update_status.value &amp;&amp; widget.editable" name="last_update_status" widget="project_state_selection" options="{'color_field': 'last_update_color', 'hide_label': 1}"/>
                                         <span t-if="record.last_update_status.value &amp;&amp; !widget.editable" t-att-class="'o_status_bubble mx-0 o_color_bubble_' + record.last_update_color.value" t-att-title="record.last_update_status.value"></span>
                                         <field name="user_id" widget="many2one_avatar_user" t-if="record.user_id.raw_value"/>
@@ -1158,6 +1160,13 @@
                             </div>
                             <field name="kanban_state" widget="state_selection" class=""/>
                         </h1>
+                        <h2>
+                            State: 
+                            <field name="state_id" class="" string="State: " domain="[('approval_mode', '=', state_approval_mode), ('user_trigger_possible', '=', True)]"/>
+                            Approval Mode
+                            <field name="state_approval_mode" class="" string="Approval mode"/>
+                        </h2>
+                        
                     </div>
                     <group>
                         <group>

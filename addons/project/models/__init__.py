@@ -10,6 +10,7 @@ from . import project_task_stage_personal
 from . import project
 from . import project_collaborator
 from . import project_update
+from . import project_task_state
 from . import company
 from . import res_config_settings
 from . import res_partner

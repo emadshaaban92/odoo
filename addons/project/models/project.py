@@ -477,11 +477,14 @@ class Project(models.Model):
     def _compute_last_update_status(self):
         for project in self:
             project.last_update_status = project.last_update_id.status or 'to_define'
+            pass
+
 
     @api.depends('last_update_status')
     def _compute_last_update_color(self):
         for project in self:
-            project.last_update_color = STATUS_COLOR[project.last_update_status]
+            project.last_update_color = STATUS_COLOR['on_hold']
+            pass
 
     @api.depends('milestone_ids')
     def _compute_milestone_count(self):
@@ -1081,6 +1084,9 @@ class Task(models.Model):
             return self.env['project.project'].browse(self._context['default_project_id']).company_id
         return self.env.company
 
+    def _default_state_id(self):
+        return self.env['project.task.state'].search([], limit=1)
+
     @api.model
     def _read_group_stage_ids(self, stages, domain, order):
         search_domain = [('id', 'in', stages.ids)]
@@ -1108,11 +1114,26 @@ class Task(models.Model):
         domain="[('project_ids', '=', project_id)]", copy=False, task_dependency_tracking=True)
     tag_ids = fields.Many2many('project.tags', string='Tags',
         help="You can only see tags that are already present in your project. If you try creating a tag that is already existing in other projects, it won't generate any duplicates.")
+    
+    state_id = fields.Many2one('project.task.state', default=_default_state_id, readonly=False, compute='_compute_state_id')
+    state = fields.Selection(selection=[
+        ('normal', 'Unknown'),
+        ('done', 'Done'),
+        ('blocked', 'Blocked'),
+        ('pending', 'Pending Approval'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('change request', 'Change Requested')
+    ], default='normal', readonly=False)
+    state_approval_mode = fields.Boolean(default=False)
+
+    
+    
     kanban_state = fields.Selection([
         ('normal', 'In Progress'),
         ('done', 'Ready'),
         ('blocked', 'Blocked')], string='Status',
-        copy=False, default='normal', required=True, compute='_compute_kanban_state', readonly=False, store=True)
+        copy=False, default='normal', required=True, readonly=False, store=True)
     kanban_state_label = fields.Char(compute='_compute_kanban_state_label', string='Kanban State Label', tracking=True, task_dependency_tracking=True)
     create_date = fields.Datetime("Created On", readonly=True)
     write_date = fields.Datetime("Last Updated On", readonly=True)
@@ -1367,6 +1388,20 @@ class Task(models.Model):
     @api.depends('stage_id', 'project_id')
     def _compute_kanban_state(self):
         self.kanban_state = 'normal'
+
+    @api.depends('depend_on_ids.state')
+    def _compute_state_id(self):
+        #dependent_tasks = self.env['project.task'].search([('depend_ids', 'in', self.ids)])
+        #if self.state_approval_mode:
+        #    self.state_id = self.env['project.task.state'].search([('name', '=', "Pending Approval")])
+        #else:
+        #    self.state_id = self.env['project.task.state'].search([('name', '=', "In Progress")])
+        for dependent_task in self.dependent_ids:
+            if self.state_id == self.env['project.task.state'].search([('name', '=', "Reject")]):
+                dependent_task.state_id = self.env['project.task.state'].search([('name', '=', "Blocked")])
+    #@api.depends('project_id')
+    #def _compute_state(self):
+    #    pass
 
     @api.depends('parent_id.ancestor_id')
     def _compute_ancestor_id(self):

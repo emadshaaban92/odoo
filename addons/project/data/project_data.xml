@@ -22,4 +22,47 @@
         <field name="name">Canceled</field>
         <field name="fold" eval="True"/>
     </record>
+
+    <record id="project_task_state_0" model="project.task.state">
+        <field name="sequence">10</field>
+        <field name="name">In Progress</field>
+        <field name="approval_mode">False</field>
+    </record>
+
+    <record id="project_task_state_1" model="project.task.state">
+        <field name="sequence">11</field>
+        <field name="name">Done</field>
+        <field name="approval_mode">False</field>
+    </record>
+
+    <record id="project_task_state_2" model="project.task.state">
+        <field name="sequence">11</field>
+        <field name="name">Blocked</field>
+        <field name="approval_mode">False</field>
+        <field name="user_trigger_possible">False</field>
+    </record>
+
+    <record id="project_task_state_apr_0" model="project.task.state">
+        <field name="sequence">11</field>
+        <field name="name">Pending Approval</field>
+        <field name="approval_mode">True</field>
+    </record>
+
+    <record id="project_task_state_apr_1" model="project.task.state">
+        <field name="sequence">12</field>
+        <field name="name">Approve</field>
+        <field name="approval_mode">True</field>
+    </record>
+
+    <record id="project_task_state_apr_2" model="project.task.state">
+        <field name="sequence">14</field>
+        <field name="name">Reject</field>
+        <field name="approval_mode">True</field>
+    </record>
+    
+    <record id="project_task_state_apr_3" model="project.task.state">
+        <field name="sequence">13</field>
+        <field name="name">Request changes</field>
+        <field name="approval_mode">True</field>
+    </record>
 </odoo>
