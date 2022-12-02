@@ -2005,6 +2005,9 @@ const Wysiwyg = Widget.extend({
         }
     },
     _getEditorOptions: function (options) {
+        if (!options) {
+            console.log('!options');
+        }
         const finalOptions = {...this.defaultOptions, ...options};
         // autohideToolbar is true by default (false by default if navbar present).
         finalOptions.autohideToolbar = typeof finalOptions.autohideToolbar === 'boolean'
