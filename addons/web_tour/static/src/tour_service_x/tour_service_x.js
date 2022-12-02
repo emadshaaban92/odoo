@@ -125,6 +125,45 @@ function createManualMacro(macroDescription, options) {
     };
 }
 
+/**
+ * TODO-JCB: Not sure of this.
+ * @typedef {string} Markup
+ * @typedef {string} JQuerySelector
+ * TODO-JCB: what is [Actions]?
+ * @typedef {string | (actions: Actions) => void | Promise<void>} Runnable
+ *
+ * @typedef TourMetadata
+ * @property {string} url
+ * @property {string | () => Markup} [rainbowManMessage]
+ * @property {boolean} [rainbowMan]
+ * @property {number} [sequence]
+ * @property {boolean} [test]
+ * @property {Promise<any>} [wait_for]
+ * @property {string} [saveAs]
+ * @property {boolean} [skip_enabled]
+ * // The following is proposed:
+ * @property {string} name
+ *
+ * @typedef TourStep
+ * @property {string} [id]
+ * @property {JQuerySelector} trigger
+ * @property {JQuerySelector} [extra_trigger]
+ * @property {JQuerySelector} [alt_trigger]
+ * @property {JQuerySelector} [skip_trigger]
+ * @property {Markup} [content]
+ * @property {"left" | "top" | "right" | "bottom"} [position]
+ * @property {"community" | "enterprise"} [edition]
+ * @property {Runnable} [run]
+ * @property {boolean} [auto]
+ * @property {boolean} [in_modal]
+ * @property {number} [width]
+ * @property {number} [timeout]
+ * @property {boolean} [consumeVisibleOnly]
+ * @property {boolean} [noPrepend]
+ * @property {string} [consumeEvent]
+ * @property {boolean} [mobile]
+ * @property {string} [title]
+ */
 export const tourService = {
     start() {
         const macroEngine = new MacroEngine(document);
