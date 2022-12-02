@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-from datetime import datetime
+from datetime import date
 from dateutil.relativedelta import relativedelta
 
 from odoo import tests
@@ -28,9 +28,8 @@ class TestHrHolidaysAccessRightsCommon(TestHrHolidaysCommon):
             'holiday_status_id': cls.leave_type.id,
             'department_id': cls.employee_emp.department_id.id,
             'employee_id': cls.employee_emp.id,
-            'date_from': datetime.now() + relativedelta(days=30),
-            'date_to': datetime.now() + relativedelta(days=31),
-            'number_of_days': 1,
+            'request_date_from': date.today() + relativedelta(days=30),
+            'request_date_to': date.today() + relativedelta(days=31),
         })
 
         cls.lt_no_validation = cls.env['hr.leave.type'].create({
@@ -70,13 +69,10 @@ class TestHrHolidaysAccessRightsCommon(TestHrHolidaysCommon):
             cls.lt_validation_both
         ]
 
-    def request_leave(self, user_id, date_from, number_of_days, values=None):
+    def request_leave(self, user_id, request_date_from, number_of_days, values=None):
         values = dict(values or {}, **{
-            'date_from': date_from,
-            'request_date_from': date_from,
-            'date_to': date_from + relativedelta(days=number_of_days),
-            'request_date_to': date_from + relativedelta(days=number_of_days),
-            'number_of_days': number_of_days,
+            'request_date_from': request_date_from,
+            'request_date_to': request_date_from + relativedelta(days=number_of_days - 1),
         })
         return self.env['hr.leave'].with_user(user_id).create(values)
 
@@ -98,7 +94,7 @@ class TestAcessRightsStates(TestHrHolidaysAccessRightsCommon):
                 'employee_id': self.employee_emp.id,
                 'holiday_status_id': status.id,
             }
-            leave = self.request_leave(1, datetime.today() + relativedelta(days=5 + i), 1, values)
+            leave = self.request_leave(1, date.today() + relativedelta(days=5 + i), 1, values)
             leave.action_draft()
 
             values = {
@@ -106,7 +102,7 @@ class TestAcessRightsStates(TestHrHolidaysAccessRightsCommon):
                 'employee_id': self.employee_emp.id,
                 'holiday_status_id': status.id,
             }
-            leave = self.request_leave(1, datetime.today() + relativedelta(days=20 + i), 1, values)
+            leave = self.request_leave(1, date.today() + relativedelta(days=20 + i), 1, values)
             # the state has to be set to draft in a write because it is initialized to confirm if it has validation
             leave.write({'state': 'draft'})
             with self.assertRaises(UserError):
@@ -123,7 +119,7 @@ class TestAcessRightsStates(TestHrHolidaysAccessRightsCommon):
                 'employee_id': self.employee_emp.id,
                 'holiday_status_id': status.id,
             }
-            leave = self.request_leave(1, datetime.today() + relativedelta(days=5 + i), 1, values)
+            leave = self.request_leave(1, date.today() + relativedelta(days=5 + i), 1, values)
             leave.with_user(self.user_employee.id).action_draft()
 
     def test_base_user_draft_other_employee_leave(self):
@@ -137,7 +133,7 @@ class TestAcessRightsStates(TestHrHolidaysAccessRightsCommon):
                 'employee_id': self.employee_hruser.id,
                 'holiday_status_id': status.id,
             }
-            leave = self.request_leave(1, datetime.today() + relativedelta(days=5 + i), 1, values)
+            leave = self.request_leave(1, date.today() + relativedelta(days=5 + i), 1, values)
             with self.assertRaises(UserError):
                 leave.with_user(self.user_employee.id).action_draft()
 
@@ -154,7 +150,7 @@ class TestAcessRightsStates(TestHrHolidaysAccessRightsCommon):
                 'employee_id': self.employee_hruser.id,
                 'holiday_status_id': status.id,
             }
-            leave = self.request_leave(1, datetime.today() + relativedelta(days=5 + i), 1, values)
+            leave = self.request_leave(1, date.today() + relativedelta(days=5 + i), 1, values)
             with self.assertRaises(UserError):
                 leave.with_user(self.user_employee.id).action_draft()
 
@@ -171,7 +167,7 @@ class TestAcessRightsStates(TestHrHolidaysAccessRightsCommon):
                 'employee_id': self.employee_emp.id,
                 'holiday_status_id': status.id,
             }
-            leave = self.request_leave(1, datetime.today() + relativedelta(days=5 + i), 1, values)
+            leave = self.request_leave(1, date.today() + relativedelta(days=5 + i), 1, values)
             leave.with_user(self.user_employee.id).action_draft()
 
     def test_base_user_draft_refused_leave(self):
@@ -184,7 +180,7 @@ class TestAcessRightsStates(TestHrHolidaysAccessRightsCommon):
                 'employee_id': self.employee_emp.id,
                 'holiday_status_id': status.id,
             }
-            leave = self.request_leave(1, datetime.today() + relativedelta(days=5 + i), 1, values)
+            leave = self.request_leave(1, date.today() + relativedelta(days=5 + i), 1, values)
             leave.action_refuse()
             with self.assertRaises(UserError):
                 leave.with_user(self.user_employee.id).action_draft()
@@ -199,7 +195,7 @@ class TestAcessRightsStates(TestHrHolidaysAccessRightsCommon):
                 'employee_id': self.employee_emp.id,
                 'holiday_status_id': status.id,
             }
-            leave = self.request_leave(1, datetime.today() + relativedelta(days=-20 + i), 1, values)
+            leave = self.request_leave(1, date.today() + relativedelta(days=-20 + i), 1, values)
             with self.assertRaises(UserError):
                 leave.with_user(self.user_employee.id).action_draft()
 
@@ -214,7 +210,7 @@ class TestAcessRightsStates(TestHrHolidaysAccessRightsCommon):
                 'employee_id': self.employee_hruser.id,
                 'holiday_status_id': status.id,
             }
-            leave = self.request_leave(1, datetime.today() + relativedelta(days=5 + i), 1, values)
+            leave = self.request_leave(1, date.today() + relativedelta(days=5 + i), 1, values)
             leave.with_user(self.user_hruser.id).action_draft()
 
     def test_holiday_user_draft_other_employee_leave(self):
@@ -228,7 +224,7 @@ class TestAcessRightsStates(TestHrHolidaysAccessRightsCommon):
                 'employee_id': self.employee_emp.id,
                 'holiday_status_id': status.id,
             }
-            leave = self.request_leave(1, datetime.today() + relativedelta(days=5 + i), 1, values)
+            leave = self.request_leave(1, date.today() + relativedelta(days=5 + i), 1, values)
             with self.assertRaises(UserError):
                 leave.with_user(self.user_hruser.id).action_draft()
 
@@ -245,7 +241,7 @@ class TestAcessRightsStates(TestHrHolidaysAccessRightsCommon):
                 'employee_id': self.employee_emp.id,
                 'holiday_status_id': status.id,
             }
-            leave = self.request_leave(1, datetime.today() + relativedelta(days=5 + i), 1, values)
+            leave = self.request_leave(1, date.today() + relativedelta(days=5 + i), 1, values)
             with self.assertRaises(UserError):
                 leave.with_user(self.user_hruser.id).action_draft()
 
@@ -262,7 +258,7 @@ class TestAcessRightsStates(TestHrHolidaysAccessRightsCommon):
                 'employee_id': self.employee_hruser.id,
                 'holiday_status_id': status.id,
             }
-            leave = self.request_leave(1, datetime.today() + relativedelta(days=5 + i), 1, values)
+            leave = self.request_leave(1, date.today() + relativedelta(days=5 + i), 1, values)
             leave.with_user(self.user_hruser.id).action_draft()
 
     def test_holiday_user_draft_refused_leave(self):
@@ -275,7 +271,7 @@ class TestAcessRightsStates(TestHrHolidaysAccessRightsCommon):
                 'employee_id': self.employee_hruser.id,
                 'holiday_status_id': status.id,
             }
-            leave = self.request_leave(1, datetime.today() + relativedelta(days=5 + i), 1, values)
+            leave = self.request_leave(1, date.today() + relativedelta(days=5 + i), 1, values)
             leave.action_refuse()
             with self.assertRaises(UserError):
                 leave.with_user(self.user_hruser.id).action_draft()
@@ -290,7 +286,7 @@ class TestAcessRightsStates(TestHrHolidaysAccessRightsCommon):
                 'employee_id': self.employee_hruser.id,
                 'holiday_status_id': status.id,
             }
-            leave = self.request_leave(1, datetime.today() + relativedelta(days=-20 + i), 1, values)
+            leave = self.request_leave(1, date.today() + relativedelta(days=-20 + i), 1, values)
             with self.assertRaises(UserError):
                 leave.with_user(self.user_hruser.id).action_draft()
 
@@ -304,7 +300,7 @@ class TestAcessRightsStates(TestHrHolidaysAccessRightsCommon):
                 'employee_id': self.employee_hrmanager.id,
                 'holiday_status_id': status.id,
             }
-            leave = self.request_leave(1, datetime.today() + relativedelta(days=5 + i), 1, values)
+            leave = self.request_leave(1, date.today() + relativedelta(days=5 + i), 1, values)
             leave.with_user(self.user_hrmanager.id).action_draft()
 
     def test_holiday_manager_draft_other_employee_leave(self):
@@ -317,7 +313,7 @@ class TestAcessRightsStates(TestHrHolidaysAccessRightsCommon):
                 'employee_id': self.employee_hruser.id,
                 'holiday_status_id': status.id,
             }
-            leave = self.request_leave(1, datetime.today() + relativedelta(days=5 + i), 1, values)
+            leave = self.request_leave(1, date.today() + relativedelta(days=5 + i), 1, values)
             leave.with_user(self.user_hrmanager.id).action_draft()
 
     def test_holiday_manager_draft_other_employee_leave_and_is_leave_manager_id(self):
@@ -331,7 +327,7 @@ class TestAcessRightsStates(TestHrHolidaysAccessRightsCommon):
                 'employee_id': self.employee_hruser.id,
                 'holiday_status_id': status.id,
             }
-            leave = self.request_leave(1, datetime.today() + relativedelta(days=5 + i), 1, values)
+            leave = self.request_leave(1, date.today() + relativedelta(days=5 + i), 1, values)
             leave.with_user(self.user_hrmanager.id).action_draft()
 
     def test_holiday_manager_draft_self_and_is_manager_id(self):
@@ -345,7 +341,7 @@ class TestAcessRightsStates(TestHrHolidaysAccessRightsCommon):
                 'employee_id': self.employee_hrmanager.id,
                 'holiday_status_id': status.id,
             }
-            leave = self.request_leave(1, datetime.today() + relativedelta(days=5 + i), 1, values)
+            leave = self.request_leave(1, date.today() + relativedelta(days=5 + i), 1, values)
             leave.with_user(self.user_hrmanager.id).action_draft()
 
     def test_holiday_manager_draft_refused_leave(self):
@@ -358,7 +354,7 @@ class TestAcessRightsStates(TestHrHolidaysAccessRightsCommon):
                 'employee_id': self.employee_hruser.id,
                 'holiday_status_id': status.id,
             }
-            leave = self.request_leave(1, datetime.today() + relativedelta(days=5 + i), 1, values)
+            leave = self.request_leave(1, date.today() + relativedelta(days=5 + i), 1, values)
             leave.action_refuse()
             leave.with_user(self.user_hrmanager.id).action_draft()
 
@@ -372,7 +368,7 @@ class TestAcessRightsStates(TestHrHolidaysAccessRightsCommon):
                 'employee_id': self.employee_hruser.id,
                 'holiday_status_id': status.id,
             }
-            leave = self.request_leave(1, datetime.today() + relativedelta(days=-20 + i), 1, values)
+            leave = self.request_leave(1, date.today() + relativedelta(days=-20 + i), 1, values)
             leave.with_user(self.user_hrmanager.id).action_draft()
 
 @tests.tagged('access_rights', 'access_rights_create')
@@ -385,7 +381,7 @@ class TestAccessRightsCreate(TestHrHolidaysAccessRightsCommon):
             'employee_id': self.employee_emp_id,
             'holiday_status_id': self.leave_type.id,
         }
-        self.request_leave(self.user_employee_id, datetime.today() + relativedelta(days=5), 1, values)
+        self.request_leave(self.user_employee_id, date.today() + relativedelta(days=5), 1, values)
 
     @mute_logger('odoo.models.unlink', 'odoo.addons.mail.models.mail_mail')
     def test_base_user_create_other(self):
@@ -396,7 +392,7 @@ class TestAccessRightsCreate(TestHrHolidaysAccessRightsCommon):
             'holiday_status_id': self.leave_type.id,
         }
         with self.assertRaises(AccessError):
-            self.request_leave(self.user_employee_id, datetime.today() + relativedelta(days=5), 1, values)
+            self.request_leave(self.user_employee_id, date.today() + relativedelta(days=5), 1, values)
 
 
     @mute_logger('odoo.models.unlink', 'odoo.addons.mail.models.mail_mail')
@@ -409,7 +405,7 @@ class TestAccessRightsCreate(TestHrHolidaysAccessRightsCommon):
             'mode_company_id': 1,
         }
         with self.assertRaises(AccessError):
-            self.request_leave(self.user_employee_id, datetime.today() + relativedelta(days=5), 1, values)
+            self.request_leave(self.user_employee_id, date.today() + relativedelta(days=5), 1, values)
 
     # hr_holidays.group_hr_holidays_user
 
@@ -421,7 +417,7 @@ class TestAccessRightsCreate(TestHrHolidaysAccessRightsCommon):
             'employee_id': self.employee_hruser_id,
             'holiday_status_id': self.leave_type.id,
         }
-        self.request_leave(self.user_hruser_id, datetime.today() + relativedelta(days=5), 1, values)
+        self.request_leave(self.user_hruser_id, date.today() + relativedelta(days=5), 1, values)
 
     @mute_logger('odoo.models.unlink', 'odoo.addons.mail.models.mail_mail')
     def test_holidays_user_create_other(self):
@@ -431,7 +427,7 @@ class TestAccessRightsCreate(TestHrHolidaysAccessRightsCommon):
             'employee_id': self.employee_emp_id,
             'holiday_status_id': self.leave_type.id,
         }
-        self.request_leave(self.user_hruser_id, datetime.today() + relativedelta(days=5), 1, values)
+        self.request_leave(self.user_hruser_id, date.today() + relativedelta(days=5), 1, values)
 
     # hr_holidays.group_hr_holidays_manager
 
@@ -443,7 +439,7 @@ class TestAccessRightsCreate(TestHrHolidaysAccessRightsCommon):
             'employee_id': self.employee_hrmanager_id,
             'holiday_status_id': self.leave_type.id,
         }
-        self.request_leave(self.user_hrmanager_id, datetime.today() + relativedelta(days=5), 1, values)
+        self.request_leave(self.user_hrmanager_id, date.today() + relativedelta(days=5), 1, values)
 
     @mute_logger('odoo.models.unlink', 'odoo.addons.mail.models.mail_mail')
     def test_holidays_manager_create_other(self):
@@ -453,7 +449,7 @@ class TestAccessRightsCreate(TestHrHolidaysAccessRightsCommon):
             'employee_id': self.employee_emp_id,
             'holiday_status_id': self.leave_type.id,
         }
-        self.request_leave(self.user_hrmanager_id, datetime.today() + relativedelta(days=5), 1, values)
+        self.request_leave(self.user_hrmanager_id, date.today() + relativedelta(days=5), 1, values)
 
     @mute_logger('odoo.models.unlink', 'odoo.addons.mail.models.mail_mail')
     def test_holidays_manager_create_batch(self):
@@ -464,7 +460,7 @@ class TestAccessRightsCreate(TestHrHolidaysAccessRightsCommon):
             'holiday_type': 'company',
             'mode_company_id': 1,
         }
-        self.request_leave(self.user_hrmanager_id, datetime.today() + relativedelta(days=5), 1, values)
+        self.request_leave(self.user_hrmanager_id, date.today() + relativedelta(days=5), 1, values)
 
 
 @tests.tagged('access_rights', 'access_rights_read')
@@ -479,9 +475,8 @@ class TestAccessRightsRead(TestHrHolidaysAccessRightsCommon):
             'holiday_status_id': self.leave_type.id,
             'department_id': self.employee_hruser.department_id.id,
             'employee_id': self.employee_hruser.id,
-            'date_from': datetime.now(),
-            'date_to': datetime.now() + relativedelta(days=1),
-            'number_of_days': 1,
+            'request_date_from': date.today(),
+            'request_date_to': date.today() + relativedelta(days=1),
         })
         with self.assertRaises(AccessError), self.cr.savepoint():
             res = other_leave.with_user(self.user_employee_id).read(['number_of_days', 'state', 'name'])
@@ -494,9 +489,8 @@ class TestAccessRightsRead(TestHrHolidaysAccessRightsCommon):
             'holiday_status_id': self.leave_type.id,
             'department_id': self.employee_hruser.department_id.id,
             'employee_id': self.employee_hruser.id,
-            'date_from': datetime.now(),
-            'date_to': datetime.now() + relativedelta(days=1),
-            'number_of_days': 1,
+            'request_date_from': date.today(),
+            'request_date_to': date.today() + relativedelta(days=1),
         })
         with self.assertRaises(AccessError), self.cr.savepoint():
             other_leave.invalidate_model(['name'])
@@ -526,9 +520,8 @@ class TestAccessRightsWrite(TestHrHolidaysAccessRightsCommon):
             'holiday_status_id': self.leave_type.id,
             'department_id': self.employee_hruser.department_id.id,
             'employee_id': self.employee_hruser.id,
-            'date_from': datetime.now(),
-            'date_to': datetime.now() + relativedelta(days=1),
-            'number_of_days': 1,
+            'request_date_from': date.today(),
+            'request_date_to': date.today() + relativedelta(days=1),
         })
         with self.assertRaises(AccessError):
             other_leave.with_user(self.user_employee_id).write({'name': 'Crocodile Dundee is my man'})
@@ -542,9 +535,8 @@ class TestAccessRightsWrite(TestHrHolidaysAccessRightsCommon):
                 'name': 'Hol10',
                 'employee_id': self.employee_hruser_id,
                 'holiday_status_id': self.leave_type.id,
-                'date_from': (datetime.today() - relativedelta(days=1)),
-                'date_to': datetime.today(),
-                'number_of_days': 1,
+                'request_date_from': (date.today() - relativedelta(days=1)),
+                'request_date_to': date.today(),
             })
 
     @mute_logger('odoo.models.unlink', 'odoo.addons.mail.models.mail_mail')
@@ -597,9 +589,8 @@ class TestAccessRightsWrite(TestHrHolidaysAccessRightsCommon):
             'name': 'Hol manager',
             'holiday_status_id': self.leave_type.id,
             'employee_id': self.employee_hrmanager_id,
-            'date_from': (datetime.today() + relativedelta(days=15)),
-            'date_to': (datetime.today() + relativedelta(days=16)),
-            'number_of_days': 1,
+            'request_date_from': (date.today() + relativedelta(days=15)),
+            'request_date_to': (date.today() + relativedelta(days=16)),
         })
         self.assertEqual(manager_leave.state, 'confirm')
         manager_leave.action_approve()
@@ -621,7 +612,7 @@ class TestAccessRightsWrite(TestHrHolidaysAccessRightsCommon):
             'holiday_status_id': self.leave_type.id,
             'state': 'confirm',
         }
-        hr_leave = self.request_leave(self.user_hruser_id, datetime.now() + relativedelta(days=2), 1, values)
+        hr_leave = self.request_leave(self.user_hruser_id, date.today() + relativedelta(days=2), 1, values)
         with self.assertRaises(AccessError):
             hr_leave.with_user(self.user_employee_id).action_approve()
         self.employee_hruser.write({'leave_manager_id': self.user_employee_id})
@@ -639,7 +630,7 @@ class TestAccessRightsWrite(TestHrHolidaysAccessRightsCommon):
             'holiday_status_id': self.leave_type.id,
             'state': 'confirm',
         }
-        hr_leave = self.request_leave(self.user_hruser_id, datetime.now() + relativedelta(days=2), 1, values)
+        hr_leave = self.request_leave(self.user_hruser_id, date.today() + relativedelta(days=2), 1, values)
         hr_leave.with_user(self.user_hruser_id).action_approve()
 
     # ----------------------------------------
@@ -656,7 +647,7 @@ class TestAccessRightsWrite(TestHrHolidaysAccessRightsCommon):
             'state': 'confirm',
         }
         self.employee_hrmanager.leave_manager_id = self.env['res.users'].browse(1)
-        hr_leave = self.request_leave(self.user_hruser_id, datetime.now() + relativedelta(days=6), 1, values)
+        hr_leave = self.request_leave(self.user_hruser_id, date.today() + relativedelta(days=6), 1, values)
 
         with self.assertRaises(AccessError):
             hr_leave.with_user(self.user_employee_id).action_approve()
@@ -679,7 +670,7 @@ class TestAccessRightsWrite(TestHrHolidaysAccessRightsCommon):
             'holiday_status_id': self.leave_type.id,
             'state': 'confirm',
         }
-        hr_leave = self.request_leave(self.user_hrmanager_id, datetime.now() + relativedelta(days=4), 1, values).with_user(self.user_hrmanager_id)
+        hr_leave = self.request_leave(self.user_hrmanager_id, date.today() + relativedelta(days=15), 1, values).with_user(self.user_hrmanager_id)
         hr_leave.action_approve()
         hr_leave.action_validate()
 
@@ -726,7 +717,7 @@ class TestAccessRightsUnlink(TestHrHolidaysAccessRightsCommon):
             'holiday_status_id': self.leave_type.id,
             'state': 'draft',
         }
-        leave = self.request_leave(self.user_employee_id, datetime.now() + relativedelta(days=6), 1, values)
+        leave = self.request_leave(self.user_employee_id, date.today() + relativedelta(days=6), 1, values)
         leave.with_user(self.user_employee.id).unlink()
 
     def test_leave_unlink_confirm_by_user(self):
@@ -737,7 +728,7 @@ class TestAccessRightsUnlink(TestHrHolidaysAccessRightsCommon):
             'holiday_status_id': self.leave_type.id,
             'state': 'confirm',
         }
-        leave = self.request_leave(self.user_employee_id, datetime.now() + relativedelta(days=6), 1, values)
+        leave = self.request_leave(self.user_employee_id, date.today() + relativedelta(days=6), 1, values)
         leave.with_user(self.user_employee.id).unlink()
 
     def test_leave_unlink_confirm_in_past_by_user(self):
@@ -748,7 +739,7 @@ class TestAccessRightsUnlink(TestHrHolidaysAccessRightsCommon):
             'holiday_status_id': self.leave_type.id,
             'state': 'confirm',
         }
-        leave = self.request_leave(self.user_employee_id, datetime.now() + relativedelta(days=-4), 1, values)
+        leave = self.request_leave(self.user_employee_id, date.today() + relativedelta(days=-4), 1, values)
         with self.assertRaises(UserError), self.cr.savepoint():
             leave.with_user(self.user_employee.id).unlink()
 
@@ -759,7 +750,7 @@ class TestAccessRightsUnlink(TestHrHolidaysAccessRightsCommon):
             'employee_id': self.employee_emp.id,
             'holiday_status_id': self.leave_type.id,
         }
-        leave = self.request_leave(self.user_employee_id, datetime.now() + relativedelta(days=6), 1, values)
+        leave = self.request_leave(self.user_employee_id, date.today() + relativedelta(days=6), 1, values)
         leave.with_user(self.user_hrmanager_id).write({'state': 'validate'})
         with self.assertRaises(UserError), self.cr.savepoint():
             leave.with_user(self.user_employee.id).unlink()
@@ -786,9 +777,8 @@ class TestMultiCompany(TestHrHolidaysCommon):
             'holiday_status_id': cls.leave_type.id,
             'department_id': cls.employee_emp.department_id.id,
             'employee_id': cls.employee_emp.id,
-            'date_from': datetime.now(),
-            'date_to': datetime.now() + relativedelta(days=1),
-            'number_of_days': 1,
+            'request_date_from': date.today(),
+            'request_date_to': date.today() + relativedelta(days=1),
         })
 
     @mute_logger('odoo.models.unlink', 'odoo.addons.mail.models.mail_mail')
