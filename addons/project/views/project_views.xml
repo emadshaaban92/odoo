@@ -1088,6 +1088,7 @@
                     <field name="allow_milestones" invisible="1" />
                     <field name="parent_id" invisible="1"/>
                     <field name="company_id" invisible="1"/>
+                    <field name="is_blocked" invisible="1"/>
                     <header>
                         <button name="action_assign_to_me" string="Assign to Me" type="object" class="oe_highlight" attrs="{'invisible' : &quot;['|', ('user_ids', 'in', uid), ('user_ids', '!=', [])]&quot;}" data-hotkey="q"/>
                         <button name="action_assign_to_me" string="Assign to Me" type="object" attrs="{'invisible': &quot;['|', ('user_ids', 'in', uid), ('user_ids', '=', [])]&quot;}" data-hotkey="q"/>
@@ -1097,6 +1098,9 @@
                     <div class="alert alert-info oe_edit_only mb-0" role="status" attrs="{'invisible': ['|', ('recurring_task', '=', False), ('recurrence_id', '=', False)]}" groups="project.group_project_recurring_tasks">
                         <p>Edit recurring task</p>
                         <field name="recurrence_update" widget="radio"/>
+                    </div>
+                    <div class="alert alert-warning oe_edit_only mb-0" role="status" attrs="{'invisible': ['|', ('is_blocked', '=', False), ('is_closed', '=', True)]}" groups="project.group_project_task_dependencies">
+                        <p><b><field name="blocking_task_display"/></b> should be completed before starting working on this task.</p>
                     </div>
                     <sheet string="Task">
                     <div class="oe_button_box" name="button_box">

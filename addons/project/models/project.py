@@ -1226,6 +1226,8 @@ class Task(models.Model):
                                      domain="[('project_id', '!=', False), ('id', '!=', id)]")
     dependent_tasks_count = fields.Integer(string="Dependent Tasks", compute='_compute_dependent_tasks_count')
     is_blocked = fields.Boolean(compute='_compute_is_blocked', store=True, recursive=True)
+    #used to display information about blocking task(s) in form view
+    blocking_task_display = fields.Char(compute='_compute_blocking_task_display', string='Blocking task(s) display')
 
     # Project sharing fields
     display_parent_task_button = fields.Boolean(compute='_compute_display_parent_task_button', compute_sudo=True)
@@ -1675,6 +1677,17 @@ class Task(models.Model):
     def _compute_stage_display(self):
         for task in self:
             task.stage_display = task.stage_id.name if task.project_id else task.personal_stage_id.stage_id.name
+
+    @api.depends('depend_on_ids', 'is_blocked')
+    def _compute_blocking_task_display(self):
+        for record in self:
+            if not record.is_blocked:
+                record.blocking_task_display = ""
+            else:
+                blocking_tasks = [task for task in record.depend_on_ids if not task.is_closed]
+                record.blocking_task_display = "Task " + blocking_tasks[0].name
+                record.blocking_task_display += " (and " + str(len(blocking_tasks)-1) + " other tasks)" if len(blocking_tasks) > 2 else ""
+                record.blocking_task_display += " (and one other task)" if len(blocking_tasks) == 2 else ""
 
     @api.depends('user_ids')
     def _compute_portal_user_names(self):
