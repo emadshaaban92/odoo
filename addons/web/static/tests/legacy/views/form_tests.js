@@ -3034,6 +3034,26 @@ QUnit.module('LegacyViews', {
         form.destroy();
     });
 
+    QUnit.test('archive action not shown with readonly active field', async function (assert) {
+        assert.expect(2);
+
+        // add active field on partner model, but do not put it in the view
+        this.data.partner.fields.active = {string: 'Active', type: 'char', default: true, readonly: true};
+
+        const form = await createView({
+            View: FormView,
+            model: 'partner',
+            data: this.data,
+            res_id: 1,
+            viewOptions: { hasActionMenus: true },
+            arch: '<form><field name="foo"/></form>',
+        });
+
+        assert.containsNone(form, '.o_cp_action_menus a:contains(Archive)');
+
+        form.destroy();
+    });
+
     QUnit.test('can duplicate a record', async function (assert) {
         assert.expect(3);
 
