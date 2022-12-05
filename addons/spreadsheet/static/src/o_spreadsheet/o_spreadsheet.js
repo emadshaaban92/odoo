@@ -394,6 +394,7 @@
     const DEFAULT_GAUGE_MIDDLE_COLOR = "#f1c232";
     const DEFAULT_GAUGE_UPPER_COLOR = "#6aa84f";
     const LINE_FILL_TRANSPARENCY = 0.4;
+    const MIN_FIG_SIZE = 80;
     // session
     const DEBOUNCE_TIME = 200;
     const MESSAGE_VERSION = 1;
@@ -3740,6 +3741,14 @@
         }
         throw new Error("Can't find spreadsheet position");
     }
+    function getElementScrollLeft(el) {
+        return (el === null || el === void 0 ? void 0 : el.scrollLeft) || 0;
+    }
+    function setElementScrollLeft(el, scroll) {
+        if (!el)
+            return;
+        el.scrollLeft = scroll;
+    }
 
     /**
      * Return the o-spreadsheet element position relative
@@ -4092,13 +4101,12 @@
   }
   .o-link-icon {
     float: right;
-    padding-left: 4%;
+    padding-left: 5px;
     .o-icon {
       height: 16px;
     }
   }
   .o-link-icon .o-icon {
-    padding-top: 3px;
     height: 13px;
   }
   .o-link-icon:hover {
@@ -8185,7 +8193,7 @@
             baselineDisplay: getBaselineText(baselineCell, keyValueCell === null || keyValueCell === void 0 ? void 0 : keyValueCell.evaluated, chart.baselineMode),
             baselineArrow: getBaselineArrowDirection(baselineCell === null || baselineCell === void 0 ? void 0 : baselineCell.evaluated, keyValueCell === null || keyValueCell === void 0 ? void 0 : keyValueCell.evaluated, chart.baselineMode),
             baselineColor: getBaselineColor(baselineCell === null || baselineCell === void 0 ? void 0 : baselineCell.evaluated, chart.baselineMode, keyValueCell === null || keyValueCell === void 0 ? void 0 : keyValueCell.evaluated, chart.baselineColorUp, chart.baselineColorDown),
-            baselineDescr: _t(chart.baselineDescr || ""),
+            baselineDescr: chart.baselineDescr ? _t(chart.baselineDescr) : "",
             fontColor: chartFontColor(background),
             background,
             baselineStyle: chart.baselineMode !== "percentage" ? baselineCell === null || baselineCell === void 0 ? void 0 : baselineCell.style : undefined,
@@ -20144,6 +20152,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         // Private
         // ---------------------------------------------------------------------------
         processContent() {
+            const oldScroll = getElementScrollLeft(this.composerRef.el);
             this.contentHelper.removeAll(); // removes the content of the composer, to be added just after
             this.shouldProcessInputEvents = false;
             if (this.props.focus !== "inactive") {
@@ -20157,6 +20166,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     // Put the cursor back where it was before the rendering
                     this.contentHelper.selectRange(start, end);
                 }
+                setElementScrollLeft(this.composerRef.el, oldScroll);
             }
             this.shouldProcessInputEvents = true;
         }
@@ -20513,7 +20523,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     const ANCHOR_SIZE = 8;
     const BORDER_WIDTH = 1;
     const ACTIVE_BORDER_WIDTH = 2;
-    const MIN_FIG_SIZE = 80;
     css /*SCSS*/ `
   div.o-figure {
     box-sizing: content-box;
@@ -20727,10 +20736,10 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             this.dnd.width = figure.width;
             this.dnd.height = figure.height;
             const onMouseMove = (ev) => {
-                const deltaX = dirX * (ev.clientX - initialX);
-                const deltaY = dirY * (ev.clientY - initialY);
-                this.dnd.width = Math.max(figure.width + deltaX, MIN_FIG_SIZE);
-                this.dnd.height = Math.max(figure.height + deltaY, MIN_FIG_SIZE);
+                const deltaX = Math.max(dirX * (ev.clientX - initialX), MIN_FIG_SIZE - figure.width);
+                const deltaY = Math.max(dirY * (ev.clientY - initialY), MIN_FIG_SIZE - figure.height);
+                this.dnd.width = figure.width + deltaX;
+                this.dnd.height = figure.height + deltaY;
                 if (dirX < 0) {
                     this.dnd.x = figure.x - deltaX;
                 }
@@ -21962,6 +21971,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             return {
                 left: `${this.props.position.left + x}px`,
                 bottom: "0px",
+                height: `${SCROLLBAR_WIDTH$1}px`,
                 right: `${SCROLLBAR_WIDTH$1}px`,
             };
         }
@@ -22003,6 +22013,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             return {
                 top: `${this.props.position.top + y}px`,
                 right: "0px",
+                width: `${SCROLLBAR_WIDTH$1}px`,
                 bottom: `${SCROLLBAR_WIDTH$1}px`,
             };
         }
@@ -37286,6 +37297,10 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         border: 1px solid #e0e2e4;
         margin-top: -1px;
         margin-bottom: -1px;
+
+        /* width will be overwritten by the width set by the flex, but needed for the composer overflow to be working */
+        width: 0px;
+        flex-grow: 1;
       }
 
       /* Toolbar */
@@ -37453,6 +37468,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     padding-left: 8px;
     height: 34px;
     background-color: white;
+    overflow: hidden;
   `;
         }
         setup() {
@@ -42055,8 +42071,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-11-25T14:49:18.608Z';
-    exports.__info__.hash = 'f83585f';
+    exports.__info__.date = '2022-12-05T11:58:03.692Z';
+    exports.__info__.hash = '192012d';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
