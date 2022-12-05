@@ -14,6 +14,7 @@ FIGURE_TYPE_SELECTION_VALUES = [
     ('float', "Float"),
     ('date', "Date"),
     ('datetime', "Datetime"),
+    ('bool', 'Boolean'),
     ('none', "No Formatting"),
 ]
 
@@ -627,7 +628,8 @@ class AccountReportExternalValue(models.Model):
     _order = 'date, id'
 
     name = fields.Char(required=True)
-    value = fields.Float(required=True)
+    value = fields.Float(string="Numeric Value")
+    text_value = fields.Char(string="Text Value")
     date = fields.Date(required=True)
 
     target_report_expression_id = fields.Many2one(string="Target Expression", comodel_name="account.report.expression", required=True)
