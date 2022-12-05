@@ -1381,7 +1381,7 @@ class Task(models.Model):
     def _compute_kanban_state(self):
         self.kanban_state = 'normal'
 
-    @api.depends('state_approval_mode')
+    @api.depends('state_approval_mode','depend_on_ids.state_id')
     def _compute_state_id(self):
         for task in self:
             print(f'task: {task}')
@@ -1390,9 +1390,9 @@ class Task(models.Model):
                 task.state_id = self.env['project.task.state'].search([('name', '=', "Pending Approval")])
             else:
                 task.state_id = self.env['project.task.state'].search([('name', '=', "In Progress")])
-        #    for dependent_task in task.dependent_ids:
-        #        if task.state_id == self.env['project.task.state'].search([('name', '=', "Reject")]):
-        #            dependent_task.state_id = self.env['project.task.state'].search([('name', '=', "Blocked")])
+            for dependent_task in task.depend_on_ids:
+                if dependent_task.state_id == self.env['project.task.state'].search([('name', '=', "Reject")]):
+                    task.state_id = self.env['project.task.state'].search([('name', '=', "Blocked")])
     #@api.depends('project_id')
     #def _compute_state(self):
     #    pass
