@@ -64,6 +64,13 @@ PROJECT_TASK_WRITABLE_FIELDS = {
     'priority',
 }
 
+BLOCKING_STATES = [
+    'In Progress', 
+    'Blocked', 
+    'Pending approval', 
+    'Changes requested'
+]
+
 class ProjectTaskType(models.Model):
     _name = 'project.task.type'
     _description = 'Task Stage'
@@ -1386,13 +1393,15 @@ class Task(models.Model):
         for task in self:
             print(f'task: {task}')
         #dependent_tasks = self.env['project.task'].search([('depend_ids', 'in', self.ids)])
+            for dependent_task in task.depend_on_ids:
+                    if dependent_task.state_id in self.env['project.task.state'].search([('name', 'in', BLOCKING_STATES)]):
+                        task.state_id = self.env['project.task.state'].search([('name', '=', "Blocked")])
+                        return
             if task.state_approval_mode:
-                task.state_id = self.env['project.task.state'].search([('name', '=', "Pending Approval")])
+                task.state_id = self.env['project.task.state'].search([('name', '=', "Pending approval")])
             else:
                 task.state_id = self.env['project.task.state'].search([('name', '=', "In Progress")])
-            for dependent_task in task.depend_on_ids:
-                if dependent_task.state_id == self.env['project.task.state'].search([('name', '=', "Reject")]):
-                    task.state_id = self.env['project.task.state'].search([('name', '=', "Blocked")])
+            
     #@api.depends('project_id')
     #def _compute_state(self):
     #    pass
@@ -2497,6 +2506,18 @@ class Task(models.Model):
                     ('email_from', '=', new_partner.email),
                     ('is_closed', '=', False)]).write({'partner_id': new_partner.id})
         return super(Task, self)._message_post_after_hook(message, msg_vals)
+
+    def action_approve_state(self):
+        self.write({'state_id': self.env['project.task.state'].search([('name', '=', "Approved")])})
+
+    def action_request_changes_state(self):
+        self.write({'state_id': self.env['project.task.state'].search([('name', '=', "Changes requested")])})
+
+    def action_reject_state(self):
+        self.write({'state_id': self.env['project.task.state'].search([('name', '=', "Rejected")])})
+
+    def action_mark_as_done(self):
+        self.write({'state_id': self.env['project.task.state'].search([('name', '=', "Done")])})
 
     def action_assign_to_me(self):
         self.write({'user_ids': [(4, self.env.user.id)]})

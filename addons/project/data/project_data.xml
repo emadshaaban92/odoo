@@ -44,25 +44,25 @@
 
     <record id="project_task_state_apr_0" model="project.task.state">
         <field name="sequence">11</field>
-        <field name="name">Pending Approval</field>
+        <field name="name">Pending approval</field>
         <field name="approval_mode">True</field>
     </record>
 
     <record id="project_task_state_apr_1" model="project.task.state">
         <field name="sequence">12</field>
-        <field name="name">Approve</field>
+        <field name="name">Approved</field>
         <field name="approval_mode">True</field>
     </record>
 
     <record id="project_task_state_apr_2" model="project.task.state">
         <field name="sequence">14</field>
-        <field name="name">Reject</field>
+        <field name="name">Rejected</field>
         <field name="approval_mode">True</field>
     </record>
     
     <record id="project_task_state_apr_3" model="project.task.state">
         <field name="sequence">13</field>
-        <field name="name">Request changes</field>
+        <field name="name">Changes requested</field>
         <field name="approval_mode">True</field>
     </record>
 </odoo>
