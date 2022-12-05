@@ -1050,9 +1050,16 @@ class TestSaleStock(TestSaleCommon, ValuationReconciliationTestCommon):
             'type': 'product',
         })
 
-        packaging = self.env['product.packaging'].create({
-            'name': 'box',
+        packOf10 = self.env['product.packaging'].create({
+            'name': 'PackOf10',
             'product_id': product.id,
+            'qty': 10
+        })
+
+        packOf20 = self.env['product.packaging'].create({
+            'name': 'PackOf20',
+            'product_id': product.id,
+            'qty': 20
         })
 
         so = self.env['sale.order'].create({
@@ -1060,13 +1067,26 @@ class TestSaleStock(TestSaleCommon, ValuationReconciliationTestCommon):
             'order_line': [
                 (0, 0, {
                     'product_id': product.id,
-                    'product_uom_qty': 1.0,
+                    'product_uom_qty': 10.0,
                     'product_uom': product.uom_id.id,
-                    'product_packaging_id': packaging.id,
+                    'product_packaging_id': packOf10.id,
                 })],
         })
         so.action_confirm()
-        self.assertEqual(so.order_line.move_ids.product_packaging_id, packaging)
+        self.assertEqual(so.order_line.move_ids.product_packaging_id, packOf10)
+
+        so.order_line[0].write({
+            'product_packaging_id': packOf20.id,
+            'product_uom_qty': 20
+        })
+        self.assertEqual(so.order_line.move_ids.product_packaging_id, packOf20)
+        self.assertEqual(len(so.order_line.move_ids), 1,
+                         "We changed the quantity from 10 -> 20, therefor a new procurement of 10 is created, "
+                         "and the two move lines should merge into 1, because they have the same packaging of 20 that was propagated "
+                         "from the sale.order.line")
+
+        so.order_line[0].write({'product_packaging_id': False})
+        self.assertFalse(so.order_line.move_ids.product_packaging_id)
 
     def test_15_cancel_delivery(self):
         """ Suppose the option "Lock Confirmed Sales" enabled and a product with the invoicing

@@ -428,6 +428,13 @@ class SaleOrderLine(models.Model):
         if 'product_uom_qty' in values:
             lines = self.filtered(lambda r: r.state == 'sale' and not r.is_expense)
 
+        if 'product_packaging_id' in values:
+            moves_to_update = self.env['stock.move']
+            for move_id in self.move_ids:
+                if move_id != values['product_packaging_id'] and move_id.state not in ['cancel', 'done']:
+                    moves_to_update += move_id
+            moves_to_update.product_packaging_id = values['product_packaging_id']
+
         previous_product_uom_qty = {line.id: line.product_uom_qty for line in lines}
         res = super(SaleOrderLine, self).write(values)
         if lines:

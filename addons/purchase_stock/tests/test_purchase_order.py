@@ -475,3 +475,48 @@ class TestPurchaseOrder(ValuationReconciliationTestCommon):
                 line.product_qty = 8
 
         self.assertEqual(po.picking_ids.move_lines.product_uom_qty, 8)
+
+    def test_packaging_propagation(self):
+        """
+        Editing the packaging on an purchase.order.line
+        should propagate to the delivery order, so that
+        when we are editing the packaging, the lines can be merged
+        with the new packaging and quantity.
+        """
+        packOf10 = self.env['product.packaging'].create({
+            'name': 'PackOf10',
+            'product_id': self.product_a.id,
+            'qty': 10
+        })
+
+        packOf20 = self.env['product.packaging'].create({
+            'name': 'PackOf20',
+            'product_id': self.product_a.id,
+            'qty': 20
+        })
+
+        po = self.env['purchase.order'].create({
+            'partner_id': self.partner_a.id,
+            'order_line': [
+                (0, 0, {
+                    'product_id': self.product_a.id,
+                    'product_uom_qty': 10.0,
+                    'product_uom': self.product_a.uom_id.id,
+                    'product_packaging_id': packOf10.id,
+                })],
+        })
+        po.button_confirm()
+        self.assertEqual(po.order_line.move_ids.product_packaging_id, packOf10)
+
+        po.order_line[0].write({
+            'product_packaging_id': packOf20.id,
+            'product_uom_qty': 20
+        })
+        self.assertEqual(po.order_line.move_ids.product_packaging_id, packOf20)
+        self.assertEqual(len(po.order_line.move_ids), 1,
+                         "We changed the quantity from 10 -> 20, therefor a new procurement of 10 is created, "
+                         "and the two move lines should merge into 1, because they have the same packaging of 20 that was propagated "
+                         "from the purchase.order.line")
+
+        po.order_line[0].write({'product_packaging_id': False})
+        self.assertFalse(po.order_line.move_ids.product_packaging_id)

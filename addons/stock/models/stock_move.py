@@ -598,6 +598,13 @@ class StockMove(models.Model):
                 receipt_moves_to_reassign |= move_to_unreserve.filtered(lambda m: m.location_id.usage == 'supplier')
                 receipt_moves_to_reassign |= (self - move_to_unreserve).filtered(lambda m: m.location_id.usage == 'supplier' and m.state in ('partially_available', 'assigned'))
                 move_to_recompute_state |= self - move_to_unreserve - receipt_moves_to_reassign
+        # propagate packaging_id changes in the stock move chain
+        if 'product_packaging_id' in vals:
+            if self.move_dest_ids and \
+                    self.move_dest_ids.state not in ['cancel', 'done'] and \
+                    self.move_dest_ids.product_packaging_id != vals['product_packaging_id'] and \
+                    self.move_dest_ids.move_orig_ids == self:  # checks that you are the only parent move of your destination
+                self.move_dest_ids = vals['product_packaging_id']
         if 'date_deadline' in vals:
             self._set_date_deadline(vals.get('date_deadline'))
         res = super(StockMove, self).write(vals)
