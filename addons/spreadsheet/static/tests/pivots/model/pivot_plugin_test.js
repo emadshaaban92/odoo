@@ -723,4 +723,27 @@ QUnit.module("spreadsheet > pivot plugin", {}, () => {
         assert.deepEqual(model.getters.getPivotFieldMatching("1", filter.id), undefined);
         assert.deepEqual(model.getters.getPivotDataSource("1").getComputedDomain(), []);
     });
+
+    QUnit.test("Title of the first row is inserted as row title", async (assert) => {
+        const { model } = await createSpreadsheetWithPivot({
+            arch: /*xml*/ `
+                <pivot>
+                    <field name="bar" type="row"/>
+                </pivot>`,
+        });
+        assert.strictEqual(getCellContent(model, "A2"), "Bar");
+    });
+
+    QUnit.test(
+        "Title of the first row is not inserted if there is no row group bys",
+        async (assert) => {
+            const { model } = await createSpreadsheetWithPivot({
+                arch: /*xml*/ `
+                <pivot>
+                    <field name="bar" type="col"/>
+                </pivot>`,
+            });
+            assert.strictEqual(getCellContent(model, "A2"), "");
+        }
+    );
 });
