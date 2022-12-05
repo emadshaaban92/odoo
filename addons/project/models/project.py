@@ -1116,15 +1116,7 @@ class Task(models.Model):
         help="You can only see tags that are already present in your project. If you try creating a tag that is already existing in other projects, it won't generate any duplicates.")
     
     state_id = fields.Many2one('project.task.state', default=_default_state_id, readonly=False, compute='_compute_state_id')
-    state = fields.Selection(selection=[
-        ('normal', 'Unknown'),
-        ('done', 'Done'),
-        ('blocked', 'Blocked'),
-        ('pending', 'Pending Approval'),
-        ('approved', 'Approved'),
-        ('rejected', 'Rejected'),
-        ('change request', 'Change Requested')
-    ], default='normal', readonly=False)
+
     state_approval_mode = fields.Boolean(default=False)
 
     
@@ -1133,7 +1125,7 @@ class Task(models.Model):
         ('normal', 'In Progress'),
         ('done', 'Ready'),
         ('blocked', 'Blocked')], string='Status',
-        copy=False, default='normal', required=True, readonly=False, store=True)
+        copy=False, default='normal', required=True, compute='_compute_kanban_state', readonly=False, store=True)
     kanban_state_label = fields.Char(compute='_compute_kanban_state_label', string='Kanban State Label', tracking=True, task_dependency_tracking=True)
     create_date = fields.Datetime("Created On", readonly=True)
     write_date = fields.Datetime("Last Updated On", readonly=True)
@@ -1389,16 +1381,17 @@ class Task(models.Model):
     def _compute_kanban_state(self):
         self.kanban_state = 'normal'
 
-    @api.depends('depend_on_ids.state')
+    @api.depends('project_id')
     def _compute_state_id(self):
-        #dependent_tasks = self.env['project.task'].search([('depend_ids', 'in', self.ids)])
+        for task in self:
+        #dependent_tasks = self.env['project.task'].search([('depend_ids', 'in', self.ids)])t
         #if self.state_approval_mode:
         #    self.state_id = self.env['project.task.state'].search([('name', '=', "Pending Approval")])
         #else:
         #    self.state_id = self.env['project.task.state'].search([('name', '=', "In Progress")])
-        for dependent_task in self.dependent_ids:
-            if self.state_id == self.env['project.task.state'].search([('name', '=', "Reject")]):
-                dependent_task.state_id = self.env['project.task.state'].search([('name', '=', "Blocked")])
+            for dependent_task in task.dependent_ids:
+                if self.state_id == self.env['project.task.state'].search([('name', '=', "Reject")]):
+                    dependent_task.state_id = self.env['project.task.state'].search([('name', '=', "Blocked")])
     #@api.depends('project_id')
     #def _compute_state(self):
     #    pass
