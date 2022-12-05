@@ -338,6 +338,27 @@ class AccountReportLine(models.Model):
     def _inverse_account_codes_formula(self):
         self._create_report_expression(engine='account_codes')
 
+    @api.ondelete(at_uninstall=False)
+    def _unlink_archive_used_tags(self):
+        """
+        Manages unlink or archive of tax_tags when a report.line is deleted.
+        If it's still in use either on amls or on other expressions
+        """
+        for expression in self.expression_ids:
+            if expression.engine == 'tax_tags':
+                country = expression.report_line_id.report_id.country_id
+                tags = self.env['account.account.tag']._get_tax_tags(expression.formula, country.id)
+                for tag in tags:
+                    expression_using_tag = self.env['account.report.expression'].sudo().search([('engine', '=', 'tax_tags'), ('formula', '=', tag.name)], limit=1)
+                    if not expression_using_tag:
+                        rep_lines_with_archived_tags = self.env['account.tax.repartition.line'].sudo().search([('tag_ids', 'in', tag.id)])
+                        rep_lines_with_archived_tags.write({'tag_ids': [(3, tag.id)]})
+                        aml_using_tag = self.env['account.move.line'].sudo().search([('tax_tag_ids', 'in', tag.id)], limit=1)
+                        if aml_using_tag:
+                            tag.active = False
+                        else:
+                            tag.unlink()
+
     def _create_report_expression(self, engine):
         # create account.report.expression for each report line based on the formula provided to each
         # engine-related field. This makes xmls a bit shorter

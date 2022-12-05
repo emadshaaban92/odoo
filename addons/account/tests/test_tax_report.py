@@ -68,11 +68,11 @@ class TaxReportTest(AccountTestInvoicingCommon):
             ],
         })
 
-    def _get_tax_tags(self, country, tag_name=None):
+    def _get_tax_tags(self, country, tag_name=None, active_test=True):
         domain = [('country_id', '=', country.id), ('applicability', '=', 'taxes')]
         if tag_name:
-            domain.append(('name', 'like', '_' + tag_name ))
-        return self.env['account.account.tag'].search(domain)
+            domain.append(('name', 'like', '_' + tag_name))
+        return self.env['account.account.tag'].with_context(active_test=active_test).search(domain)
 
     def test_create_shared_tags(self):
         self.assertEqual(len(self._get_tax_tags(self.test_country_1, tag_name='01')), 2, "tax_tags expressions created for reports within the same countries using the same formula should create a single pair of tags.")
@@ -178,3 +178,58 @@ class TaxReportTest(AccountTestInvoicingCommon):
                 # Tags already exist since 'copied_report_1' belongs to 'test_country_2'
                 for tag in line_tags:
                     self.assertIn(tag, country_2_tags_after_change, "The tax_tags expressions sharing their tags with other report should not receive new tags since they already exist.")
+
+    def test_unlink_report_line_tags_archive(self):
+        test_tax = self.env['account.tax'].create({
+            'name': "Test tax",
+            'amount_type': 'percent',
+            'amount': 25,
+            'country_id': self.tax_report_1.country_id.id,
+            'type_tax_use': 'sale',
+            'invoice_repartition_line_ids': [
+                (0, 0, {
+                    'factor_percent': 100,
+                    'repartition_type': 'base',
+                }),
+
+                (0, 0, {
+                    'factor_percent': 100,
+                    'repartition_type': 'tax',
+                    'tag_ids': [(6, 0, self.tax_report_line_1_55.expression_ids._get_matching_tags()[0].ids)],
+                }),
+            ],
+            'refund_repartition_line_ids': [
+                (0, 0, {
+                    'factor_percent': 100,
+                    'repartition_type': 'base',
+                }),
+
+                (0, 0, {
+                    'factor_percent': 100,
+                    'repartition_type': 'tax',
+                }),
+            ],
+        })
+
+        # Make sure the fiscal country allows using this tax directly
+        self.env.company.account_fiscal_country_id = self.test_country_1
+
+        test_invoice = self.env['account.move'].create({
+            'move_type': 'out_invoice',
+            'partner_id': self.partner_a.id,
+            'date': '1992-12-22',
+            'invoice_line_ids': [
+                (0, 0, {'quantity': 1, 'price_unit': 42, 'tax_ids': [(6, 0, test_tax.ids)]}),
+            ],
+        })
+        test_invoice.action_post()
+
+        tag_name = self.tax_report_line_1_55.expression_ids.formula
+        tags_before = self._get_tax_tags(self.test_country_1, tag_name=tag_name, active_test=False)
+        tags_archived_before = tags_before.filtered(lambda tag: not tag.active)
+        self.tax_report_line_1_55.unlink()
+        tags_after = self._get_tax_tags(self.test_country_1, tag_name=tag_name, active_test=False)
+        tags_archived_after = tags_after.filtered(lambda tag: not tag.active)
+        # only the + tag will survive, - will be deleted as it's not on a move.line
+        self.assertEqual(len(tags_after), len(tags_before) - 1, "Unlinking a report line whose tags are used on move lines should not delete them.")
+        self.assertEqual(len(tags_archived_after), len(tags_archived_before) + 1, "Unlinking a report line whose tags are used on move lines should archive them.")
