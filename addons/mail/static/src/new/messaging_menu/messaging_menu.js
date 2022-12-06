@@ -29,8 +29,8 @@ export class MessagingMenu extends Component {
         return this.messaging.state.menu.previews.filter((preview) => preview.type === target);
     }
 
-    openDiscussion(threadId) {
-        this.messaging.openDiscussion(threadId);
+    openDiscussion(thread) {
+        this.messaging.openDiscussion(thread);
         this.state.isOpen = false;
         // hack: click on window to close dropdown, because we use a dropdown
         // without dropdownitem...

@@ -145,7 +145,7 @@ export class Message extends Component {
 
     openRecord() {
         if (this.message.resModel === "mail.channel") {
-            this.messaging.openDiscussion(this.message.resId);
+            this.messaging.openDiscussion(this.message.originThread);
         } else {
             this.action.doAction({
                 type: "ir.actions.act_window",

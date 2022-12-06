@@ -619,11 +619,11 @@ export class Messaging {
         message.attachments.push(...attachments);
     }
 
-    openDiscussion(threadId) {
+    openDiscussion(thread) {
         if (this.state.discuss.isActive) {
-            this.setDiscussThread(threadId);
+            this.setDiscussThread(thread.id);
         } else {
-            ChatWindow.insert(this.state, { threadId });
+            ChatWindow.insert(this.state, { threadId: thread.id });
         }
     }
 
@@ -739,7 +739,7 @@ export class Messaging {
     async openChat(person) {
         const chat = await this.getChat(person);
         if (chat) {
-            this.openDiscussion(chat.id);
+            this.openDiscussion(chat);
         }
     }
 
