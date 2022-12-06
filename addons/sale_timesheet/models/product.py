@@ -68,6 +68,17 @@ class ProductTemplate(models.Model):
                         "project for the order to track the time spent."
                     )
 
+    @api.onchange('type', 'service_type', 'service_policy')
+    def _update_uom_id(self):
+        for record in self:
+            if record.type == 'service' and record.service_type == 'timesheet' and \
+               (not record._origin or not record._origin.service_policy or record.service_policy != record._origin.service_policy):
+                record.uom_id = self.env.ref('uom.product_uom_hour')
+            elif record._origin and record._origin.uom_id:
+                record.uom_id = record._origin.uom_id
+            else:
+                record.uom_id = self._get_default_uom_id()
+
     def _get_service_to_general_map(self):
         return {
             **super()._get_service_to_general_map(),
