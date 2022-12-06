@@ -688,6 +688,11 @@ class AccountJournal(models.Model):
         # We simply call the setup bar function.
         return self.env['res.company'].setting_init_bank_account_action()
 
+    def action_new_transaction(self):
+        action = self.env['ir.actions.act_window']._for_xml_id('account_accountant.action_bank_statement_line_form_bank_rec_widget')
+        action['context'] = {'default_journal_id': self.id}
+        return action
+
     def _create_document_from_attachment(self, attachment_ids=None):
         """ Create the invoices from files."""
         context_move_type = self._context.get("default_move_type", "entry")
