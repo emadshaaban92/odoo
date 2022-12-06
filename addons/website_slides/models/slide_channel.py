@@ -35,6 +35,7 @@ class ChannelUsersRelation(models.Model):
     channel_visibility = fields.Selection(related='channel_id.visibility')
     channel_enroll = fields.Selection(related='channel_id.enroll')
     channel_website_id = fields.Many2one('website', string='Website', related='channel_id.website_id')
+    next_slide_id = fields.Many2one('slide.slide', string='Next Lesson', compute='_compute_next_slide_id')
 
     _sql_constraints = [
         ('channel_partner_uniq',
@@ -46,6 +47,38 @@ class ChannelUsersRelation(models.Model):
          'The completion of a channel is a percentage and should be between 0% and 100.'
         )
     ]
+
+    def _compute_next_slide_id(self):
+        query = """
+            SELECT DISTINCT ON (partner_id, channel_id)
+                SS.id AS slide_id,
+                SS.channel_id AS channel_id,
+                p.id AS partner_id
+            FROM
+                slide_slide SS
+            JOIN res_partner p
+                 ON p.id IN %s
+            WHERE
+                SS.channel_id IN %s
+                AND SS.is_published = TRUE
+                AND SS.active = TRUE
+                AND NOT EXISTS (
+                    SELECT 1
+                      FROM slide_slide_partner
+                     WHERE slide_id = SS.id
+                       AND partner_id = p.id
+                       AND completed = TRUE
+                )
+            ORDER BY partner_id, channel_id, SS.sequence
+        """
+        self.env.cr.execute(query, [tuple(self.mapped('partner_id').ids), tuple(self.mapped('channel_id').ids)])
+        data = {
+            (line['channel_id'], line['partner_id']): line['slide_id']
+            for line in self.env.cr.dictfetchall()
+        }
+
+        for sc in self:
+            sc.next_slide_id = data.get((sc.channel_id.id, sc.partner_id.id), False)
 
     def _recompute_completion(self):
         read_group_res = self.env['slide.slide.partner'].sudo()._read_group(

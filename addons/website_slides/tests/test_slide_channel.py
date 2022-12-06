@@ -143,6 +143,28 @@ class TestSlidesManagement(slides_common.SlidesCase):
         self.assertFalse(self.channel.exists(),
             "Should have deleted channel along with the slides even if there are slides with quiz and participant(s)")
 
+    def test_channel_partner_next_slide(self):
+        self.channel.sudo()._action_add_members(self.user_portal.partner_id)
+        slide_1, slide_2 = self.channel.slide_ids[:2]
+        channel_partner = self.channel.channel_partner_ids.filtered(lambda partner: partner.partner_id == self.user_portal.partner_id)
+
+        self.assertEqual(
+            channel_partner.next_slide_id, slide_1,
+            "First slide should be set to next slide as none of the slide has been completed"
+        )
+
+        self.env['slide.slide.partner'].create({
+            'slide_id': slide_1.id,
+            'channel_id': self.channel.id,
+            'partner_id': self.user_portal.partner_id.id,
+            'completed': True
+        })
+
+        channel_partner.invalidate_model()
+        self.assertEqual(
+            channel_partner.next_slide_id, slide_2,
+            "Second slide should be set to next slide as first slide has been completed"
+        )
 
 class TestSequencing(slides_common.SlidesCase):
 
