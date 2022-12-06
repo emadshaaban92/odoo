@@ -19,6 +19,7 @@
         'views/loyalty_program_views.xml',
         'views/loyalty_reward_views.xml',
         'views/loyalty_rule_views.xml',
+        'views/res_partner_view.xml',
     ],
     'demo': [
         'data/loyalty_demo.xml',
