@@ -51,7 +51,7 @@ export class Message {
     subtypeDescription;
     /** @type {Object[]} */
     trackingValues;
-    /** @type {string} */
+    /** @type {'email'|'comment'|'notification'|'user_notification'} */
     type;
     now = DateTime.now();
 
