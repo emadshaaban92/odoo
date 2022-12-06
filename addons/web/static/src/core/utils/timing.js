@@ -18,7 +18,6 @@ export function throttleForAnimation(func) {
     const funcName = func.name ? `${func.name} (throttleForAnimation)` : "throttleForAnimation";
     return Object.assign(
         {
-            /** @type {any} */
             [funcName](...args) {
                 browser.cancelAnimationFrame(handle);
                 handle = browser.requestAnimationFrame(() => {
@@ -37,29 +36,49 @@ export function throttleForAnimation(func) {
 
 /**
  * Returns a function, that, as long as it continues to be invoked, will be
- * triggered every N milliseconds.
+ * triggered every 'delay' milliseconds.
+ * NB: it will always trigger the function on the leading edge.
  *
- * @deprecated this function has behaviour that is unexpected considering its
- *      name, prefer _.throttle until this function is rewritten
- * @param {Function} func
+ * @template {Function} T
+ * @param {T} func the function to throttle
  * @param {number} delay
- * @returns {Function}
+ * @returns {T & { cancel: () => void }} the throttled function
  */
 export function throttle(func, delay) {
-    let waiting = false;
+    let handle = null;
+    const calls = new Set();
     const funcName = func.name ? func.name + " (throttle)" : "throttle";
-    return {
-        [funcName](...args) {
-            const context = this;
-            if (!waiting) {
-                waiting = true;
-                browser.setTimeout(function () {
-                    waiting = false;
-                    func.call(context, ...args);
-                }, delay);
-            }
-        },
-    }[funcName];
+    const pending = () => {
+        if (calls.size > 0) {
+            const lastCall = [...calls].pop();
+            calls.clear();
+            func.apply(this, lastCall);
+            handle = browser.setTimeout(pending, delay);
+        } else {
+            handle = null;
+        }
+    };
+    return Object.assign(
+        {
+            [funcName](...args) {
+                const isNew = handle === null;
+                if (isNew) {
+                    func.apply(this, args);
+                    handle = browser.setTimeout(pending, delay);
+                } else {
+                    // add the call to a Set or Map
+                    calls.add(args);
+                }
+            },
+        }[funcName],
+        {
+            cancel() {
+                calls.clear();
+                browser.clearTimeout(handle);
+                handle = null;
+            },
+        }
+    );
 }
 
 /**
@@ -70,7 +89,7 @@ export function throttle(func, delay) {
  * has been fully executed. If `immediate` is passed, trigger the function
  * on the leading edge, instead of the trailing.
  *
- * @template {Function} T the return type of the original function
+ * @template {Function} T
  * @param {T} func the function to debounce
  * @param {number | "animationFrame"} delay how long should elapse before the function
  *      is called. If 'animationFrame' is given instead of a number, 'requestAnimationFrame'
@@ -87,7 +106,6 @@ export function debounce(func, delay, immediate = false) {
     const clearFnName = useAnimationFrame ? "cancelAnimationFrame" : "clearTimeout";
     return Object.assign(
         {
-            /** @type {any} */
             [funcName](...args) {
                 return new Promise((resolve) => {
                     const callNow = immediate && !handle;
@@ -128,6 +146,22 @@ export function useDebounced(callback, delay, immediate = false) {
     const debounced = debounce(callback.bind(component), delay, immediate);
     onWillUnmount(() => debounced.cancel());
     return debounced;
+}
+
+/**
+ * Hook that returns a throttled version of the given function, and cancels
+ * the potential pending execution on willUnmount.
+ * @see debounce
+ * @template {Function} T
+ * @param {T} callback
+ * @param {number | "animationFrame"} delay
+ * @returns {T & { cancel: () => void }}
+ */
+export function useThrottled(callback, delay) {
+    const component = useComponent();
+    const throttled = throttle(callback.bind(component), delay);
+    onWillUnmount(() => throttled.cancel());
+    return throttled;
 }
 
 /**
