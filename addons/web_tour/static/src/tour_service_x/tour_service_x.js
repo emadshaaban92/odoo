@@ -99,6 +99,27 @@ function createManualMacro(macroDescription, options) {
         );
     }
 
+    function hasExtraTrigger(sourceEl, extraTriggerSelector) {
+        if (extraTriggerSelector) {
+            return sourceEl.querySelector(extraTriggerSelector);
+        } else {
+            return true;
+        }
+    }
+
+    function hasSkipTrigger(sourceEl, skipTriggerSelector) {
+        if (skipTriggerSelector) {
+            return sourceEl.querySelector(skipTriggerSelector);
+        } else {
+            return false;
+        }
+    }
+
+    function getModal(doc) {
+        // TODO-JCB: need to take into account :visible pseudo class.
+        return doc.querySelector(".modal") || doc;
+    }
+
     function augmentStep(step) {
         let stepEl;
         const res = { val: false };
@@ -120,22 +141,40 @@ function createManualMacro(macroDescription, options) {
             },
             {
                 trigger: () => {
+                    // [in_modal] - if true, look for the element in the modal (fallback to the document)
+                    const sourceEl = step.in_modal !== false && getModal(document);
+
                     // This callback can be called multiple times until it returns true.
                     // We should take into account the fact the element is not in the
                     // dom. [pointTo] takes into account whether [stepEl] is null or not.
                     let prevEl = stepEl;
-                    stepEl = document.querySelector(step.trigger);
+
+                    // [alt_trigger] - alternative to [trigger].
+                    // [extra_trigger] - should also be present together with the [trigger].
+                    stepEl =
+                        (hasExtraTrigger(sourceEl, step.extra_trigger) &&
+                            sourceEl.querySelector(step.trigger)) ||
+                        sourceEl.querySelector(step.alt_trigger);
+
+                    // [skip_trigger] - if present, immediately consume the [trigger].
+                    if (stepEl && hasSkipTrigger(sourceEl, step.skip_trigger)) {
+                        return stepEl;
+                    }
+
                     if (prevEl) {
                         prevEl.removeEventListener(step.action, moveToNextStep);
                     }
+
                     // TODO-JCB: I think we should only add the listener when [res.val] is falsy.
                     if (stepEl) {
                         stepEl.addEventListener(step.action, moveToNextStep);
                     }
+
                     // Call this everytime so that the pointer is always pointing at the
                     // step's trigger element.
                     // TODO-JCB: Maybe we only point to the trigger when [res.val] is falsy.
                     options.pointTo(stepEl);
+
                     return res.val;
                 },
             },
@@ -205,13 +244,6 @@ export const tourService = {
         });
 
         function activate(macroDescription) {
-            const originalOnFirstStep = macroDescription.onFirstStep;
-            macroDescription.onFirstStep = (...args) => {
-                pointerState.isVisible = true;
-                if (originalOnFirstStep) {
-                    originalOnFirstStep(...args);
-                }
-            };
             const originalOnComplete = macroDescription.onComplete;
             macroDescription.onComplete = (...args) => {
                 browser.setTimeout(() => {
@@ -259,7 +291,6 @@ export const tourService = {
             for (const step of tourDesc.steps) {
                 step.action = "click";
                 delete step.content;
-                delete step.extra_trigger;
             }
 
             if (mode.kind == "auto") {
