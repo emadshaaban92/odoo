@@ -7,8 +7,8 @@ export class ChatWindow {
      * @returns {ChatWindow}
      */
     static insert(state, data) {
-        const { threadId } = data;
-        const chatWindow = state.chatWindows.find((c) => c.threadId === threadId);
+        const { thread } = data;
+        const chatWindow = state.chatWindows.find((cw) => cw.thread.localId === thread.localId);
         if (!chatWindow) {
             const chatWindow = new ChatWindow(data);
             chatWindow._state = state;
@@ -20,12 +20,14 @@ export class ChatWindow {
     }
 
     constructor(data) {
-        const { threadId } = data;
-        Object.assign(this, { threadId, autofocus: 1, folded: false });
+        const { thread } = data;
+        Object.assign(this, { thread, autofocus: 1, folded: false });
     }
 
     close() {
-        const index = this._state.chatWindows.findIndex((c) => c.threadId === this.threadId);
+        const index = this._state.chatWindows.findIndex(
+            (cw) => cw.thread.localId === this.thread.localId
+        );
         if (index > -1) {
             this._state.chatWindows.splice(index, 1);
         }

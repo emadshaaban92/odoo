@@ -28,6 +28,10 @@ export class ChatWindow extends Component {
         useChildSubEnv({ inChatWindow: true });
     }
 
+    get thread() {
+        return this.props.chatWindow.thread;
+    }
+
     toggleFold() {
         this.props.chatWindow.folded = !this.props.chatWindow.folded;
     }
@@ -41,7 +45,7 @@ export class ChatWindow extends Component {
     }
 
     expand() {
-        this.messaging.setDiscussThread(this.props.chatWindow.threadId);
+        this.messaging.setDiscussThread(this.props.chatWindow.thread.id);
         this.action.doAction(
             {
                 type: "ir.actions.client",
@@ -52,7 +56,7 @@ export class ChatWindow extends Component {
     }
 
     startCall() {
-        this.messaging.startCall(this.props.chatWindow.threadId);
+        this.messaging.startCall(this.props.chatWindow.thread.id);
     }
 }
 

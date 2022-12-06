@@ -623,7 +623,7 @@ export class Messaging {
         if (this.state.discuss.isActive) {
             this.setDiscussThread(thread.id);
         } else {
-            ChatWindow.insert(this.state, { threadId: thread.id });
+            ChatWindow.insert(this.state, { thread });
         }
     }
 

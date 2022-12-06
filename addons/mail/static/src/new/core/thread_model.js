@@ -125,6 +125,10 @@ export class Thread {
         return ["chat", "channel", "group"].includes(this.type);
     }
 
+    get localId() {
+        return Thread.createLocalId({ model: this.model, id: this.id });
+    }
+
     /** @returns {import("@mail/new/core/message_model").Message | undefined} */
     get mostRecentMsg() {
         if (!this.mostRecentMsgId) {
