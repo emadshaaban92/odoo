@@ -174,7 +174,7 @@ export class Message {
             if (this.resModel === "mail.channel") {
                 return this.resId;
             }
-            return this.resModel + "," + this.resId;
+            return Thread.createLocalId({ model: this.resModel, id: this.resId });
         })();
         return this._state.threads[threadLocalId];
     }

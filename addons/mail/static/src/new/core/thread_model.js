@@ -35,6 +35,10 @@ export class Thread {
         return state.threads[thread.id];
     }
 
+    static createLocalId({ model, id }) {
+        return `${model},${id}`;
+    }
+
     constructor(state, data) {
         Object.assign(this, {
             id: data.id,

@@ -13,6 +13,7 @@ import {
     useState,
 } from "@odoo/owl";
 import { useBus, useService } from "@web/core/utils/hooks";
+import { Thread } from "../core/thread_model";
 import { removeFromArrayWithPredicate } from "./arrays";
 
 function useExternalListener(target, eventName, handler, eventParams) {
@@ -272,11 +273,13 @@ export function useAttachmentUploader({ threadId, messageId }) {
         const threadModel = upload.data.get("thread_model");
         const originThread =
             messaging.state.threads[
-                threadModel === "mail.channel" ? parseInt(threadId) : `${threadModel},${threadId}`
+                threadModel === "mail.channel"
+                    ? parseInt(threadId, 10)
+                    : Thread.createLocalId({ model: threadModel, id: threadId })
             ];
         abortByUploadId[upload.id] = upload.xhr.abort.bind(upload.xhr);
         state.attachments.push({
-            extension: upload.title.split('.').pop(),
+            extension: upload.title.split(".").pop(),
             filename: upload.title,
             id: upload.id,
             mimetype: upload.type,
@@ -302,11 +305,13 @@ export function useAttachmentUploader({ threadId, messageId }) {
         const threadModel = upload.data.get("thread_model");
         const originThread =
             messaging.state.threads[
-                threadModel === "mail.channel" ? parseInt(threadId) : `${threadModel},${threadId}`
+                threadModel === "mail.channel"
+                    ? parseInt(threadId, 10)
+                    : Thread.createLocalId({ model: threadModel, id: threadId })
             ];
         const attachment = {
             ...response,
-            extension: upload.title.split('.').pop(),
+            extension: upload.title.split(".").pop(),
             originThread,
         };
         const index = state.attachments.findIndex(({ id }) => id === upload.id);
