@@ -76,6 +76,7 @@
         'web.assets_backend': [
             'crm/static/src/views/**/*.js',
             'crm/static/src/views/**/*.xml',
+            'crm/static/src/views/**/*.scss',
             'crm/static/src/js/tours/crm.js',
             'crm/static/src/scss/crm.scss',
             'crm/static/src/scss/crm_team_member_views.scss',

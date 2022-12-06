@@ -17,12 +17,13 @@
                             attrs="{'invisible': ['|', ('probability', '&gt;', 0), ('active', '=', True)]}"/>
                         <button name="action_set_lost" string="Lost" type="object" data-hotkey="l" title="Mark as lost"
                             attrs="{'invisible': ['|', ('type', '=', 'opportunity'), '&amp;', ('probability', '=', 0), ('active', '=', False)]}"/>
-                        <field name="stage_id" widget="statusbar" class="o_field_statusbar"
+                        <field name="stage_id" widget="statusbartime" class="o_field_statusbar"
                             options="{'clickable': '1', 'fold_field': 'fold'}"
                             domain="['|', ('team_id', '=', team_id), ('team_id', '=', False)]"
                             attrs="{'invisible': ['|', ('active', '=', False), ('type', '=', 'lead')]}"/>
                     </header>
                     <sheet>
+                        <field name="time_per_stage" invisible="1" groups="crm.group_use_time_per_stage"/>
                         <field name="active" invisible="1"/>
                         <field name="company_id" invisible="1"/>
                         <div class="oe_button_box" name="button_box">

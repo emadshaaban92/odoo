@@ -1,0 +1,12 @@
+.btn-hover {
+    opacity: 0.2;
+}
+
+.container-hover:hover .btn-hover{
+    opacity: 1;
+}
+
+.o_field_statusbartime {
+    display: flex;
+    align-items: center;
+}

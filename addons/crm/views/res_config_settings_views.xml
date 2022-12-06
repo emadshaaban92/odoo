@@ -25,6 +25,9 @@
                         <setting help="Assign salespersons into multiple Sales Teams.">
                             <field name="is_membership_multi"/>
                         </setting>
+                        <setting help="Allows users to show how much time an opportunity has spent in each stage">
+                            <field name="group_use_time_per_stage"/>
+                        </setting>
                     </block>
                     <block>
                         <field name="predictive_lead_scoring_fields_str" invisible="1"/>

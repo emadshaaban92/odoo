@@ -97,6 +97,7 @@ class Lead(models.Model):
                 'mail.activity.mixin',
                 'utm.mixin',
                 'format.address.mixin',
+                'stage.time.mixin',
                ]
     _primary_email = 'email_from'
     _check_company_auto = True

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="crm.StatusBarTimeField" owl="1">
+        <t t-call-assets="web.assets_common"/>
+        <t t-if="this.showTimeOptions &amp;&amp; this.state.showTimePerStage">
+            <button
+                type="button"
+                class="btn btn-secondary"
+                t-on-click="changeTimePerStage"
+                data-hotkey="t"
+                data-tooltip="Hide time spent"
+                aria-label="Hide time spent"
+            >
+                <i class="fa fa-calendar-times-o fa-fw"/>
+            </button>
+        </t>
+        <t t-if="this.showTimeOptions &amp;&amp; !this.state.showTimePerStage">
+            <div class="container-hover">
+                <button
+                    type="button"
+                    class="btn btn-secondary btn-hover"
+                    t-on-click="changeTimePerStage"
+                    data-hotkey="t"
+                    data-tooltip="Show time spent"
+                    aria-label="Show time spent">
+                    <i class="fa fa-calendar fa-fw"/>
+                </button>
+            </div>
+        </t>
+        <div class="o_statusbar_status">
+            <t t-set="items" t-value="computeItems()" />
+
+            <t t-if="items.folded.length">
+                <button type="button" class="btn o_arrow_button dropdown-toggle text-uppercase">
+                    <Dropdown toggler="'parent'">
+                        <t t-foreach="items.folded" t-as="item" t-key="item.id">
+                            <DropdownItem class="getDropdownItemClassNames(item)" onSelected="() => this.selectItem(item)">
+                                <span class="me-2" t-esc="item.name" />
+                                <span t-if="item.timeInStage" class="text-muted" t-esc="item.timeInStage"/>
+                            </DropdownItem>
+                        </t>
+                    </Dropdown>
+                    <t t-if="env.isSmall">
+                        <t t-esc="currentName" />
+                    </t>
+                    <t t-else="">More</t>
+                </button>
+            </t>
+
+            <t t-foreach="items.unfolded.reverse()" t-as="item" t-key="item.id">
+                <t t-if="item.isSelected">
+                    <button
+                        type="button"
+                        class="btn o_arrow_button_current o_arrow_button disabled text-uppercase"
+                        disabled="disabled"
+                        role="radio"
+                        aria-label="Current state"
+                        aria-checked="true"
+                        aria-current="step"
+                        t-att-disabled="props.isDisabled"
+                        t-att-data-value="item.id"
+                        t-esc="item.name"
+                    />
+                </t>
+                <t t-elif="props.isDisabled">
+                    <button
+                        type="button"
+                        class="btn o_arrow_button disabled text-uppercase"
+                        disabled="disabled"
+                        role="radio"
+                        aria-label="Not active state"
+                        aria-checked="false"
+                        t-att-disabled="props.isDisabled"
+                        t-att-data-value="item.id"
+                    >
+                        <span class="me-1" t-esc="item.name"/>
+                        <span t-if="item.timeInStage" class="text-muted" t-esc="item.timeInStage"/>
+                    </button>
+                </t>
+                <t t-else="">
+                    <button
+                        type="button"
+                        class="btn o_arrow_button text-uppercase"
+                        role="radio"
+                        aria-label="Not active state, click to change it"
+                        aria-checked="false"
+                        t-att-data-value="item.id"
+                        t-on-click="() => this.selectItem(item)"
+                    >
+                        <span class="me-2" t-esc="item.name"/>
+                        <span t-if="item.timeInStage" class="text-muted" t-esc="item.timeInStage"/>
+                    </button>
+                </t>
+            </t>
+        </div>
+    </t>
+
+</templates>

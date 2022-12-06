@@ -12,6 +12,7 @@ class ResConfigSettings(models.TransientModel):
 
     group_use_lead = fields.Boolean(string="Leads", implied_group='crm.group_use_lead')
     group_use_recurring_revenues = fields.Boolean(string="Recurring Revenues", implied_group='crm.group_use_recurring_revenues')
+    group_use_time_per_stage = fields.Boolean(string="Time Per Stage", implied_group='crm.group_use_time_per_stage')
     # Membership
     is_membership_multi = fields.Boolean(string='Multi Teams', config_parameter='sales_team.membership_multi')
     # Lead assignment
