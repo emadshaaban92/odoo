@@ -80,17 +80,17 @@
                 <ChannelSelector category="category" onSelect.bind="stopEditing" />
             </div>
         </t>
-        <t t-foreach="category.threads" t-as="threadId" t-key="threadId">
+        <t t-foreach="category.threads" t-as="thread" t-key="thread.localId">
             <t t-call="mail.discuss_category_item">
-                <t t-set="thread" t-value="messaging.state.threads[threadId]"/>
+                <t t-set="thread" t-value="thread"/>
             </t>
         </t>
     </t>
     <t t-else="">
-        <t t-if="category.threads.includes(messaging.state.discuss.threadId)">
+        <t t-set="currentDiscussThreadInCategory" t-value="category.threads.find(t => t.localId === messaging.state.discuss.threadLocalId)"/>
+        <t t-if="currentDiscussThreadInCategory">
             <t t-call="mail.discuss_category_item">
-                <t t-set="threadId" t-value="messaging.state.discuss.threadId"/>
-                <t t-set="thread" t-value="messaging.state.threads[threadId]"/>
+                <t t-set="thread" t-value="currentDiscussThreadInCategory"/>
             </t>
         </t>
     </t>

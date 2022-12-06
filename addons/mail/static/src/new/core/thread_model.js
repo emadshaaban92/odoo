@@ -76,10 +76,10 @@ export class Thread {
             this[key] = data[key];
         }
         if (this.type === "channel") {
-            this._state.discuss.channels.threads.push(this.id);
+            this._state.discuss.channels.threads.push(this);
         }
         if (this.type === "chat") {
-            this._state.discuss.chats.threads.push(this.id);
+            this._state.discuss.chats.threads.push(this);
             if (serverData) {
                 for (const elem of serverData.channel.channelMembers[0][1]) {
                     Partner.insert(this._state, {

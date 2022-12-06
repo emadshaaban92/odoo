@@ -4,7 +4,7 @@ import { markup, toRaw, reactive } from "@odoo/owl";
 import { Deferred } from "@web/core/utils/concurrency";
 import { sprintf } from "@web/core/utils/strings";
 import { prettifyMessageContent, convertBrToLineBreak } from "@mail/new/utils/format";
-import { removeFromArray } from "@mail/new/utils/arrays";
+import { removeFromArray, removeFromArrayWithPredicate } from "@mail/new/utils/arrays";
 import { MessagingMenu } from "./messaging_menu_model";
 import { ChatWindow } from "./chat_window_model";
 import { Thread } from "./thread_model";
@@ -95,7 +95,7 @@ export class Messaging {
                     canAdd: true,
                     addTitle: env._t("Add or join a channel"),
                     counter: 0,
-                    threads: [], // list of ids
+                    threads: [],
                 },
                 chats: {
                     extraClass: "o-mail-category-chat",
@@ -106,7 +106,7 @@ export class Messaging {
                     canAdd: true,
                     addTitle: env._t("Start a conversation"),
                     counter: 0,
-                    threads: [], // list of ids
+                    threads: [],
                 },
                 // mailboxes in sidebar
                 inbox: null,
@@ -198,10 +198,8 @@ export class Messaging {
     }
 
     sortChannels() {
-        this.state.discuss.channels.threads.sort((id1, id2) => {
-            const thread1 = this.state.threads[id1];
-            const thread2 = this.state.threads[id2];
-            return String.prototype.localeCompare.call(thread1.name, thread2.name);
+        this.state.discuss.channels.threads.sort((t1, t2) => {
+            return String.prototype.localeCompare.call(t1.name, t2.name);
         });
     }
 
@@ -737,7 +735,7 @@ export class Messaging {
 
     async leaveChannel(id) {
         await this.orm.call("mail.channel", "action_unfollow", [id]);
-        removeFromArray(this.state.discuss.channels.threads, id);
+        removeFromArrayWithPredicate(this.state.discuss.channels.threads, (t) => t.id === id);
         this.setDiscussThread(this.state.threads[this.state.discuss.channels.threads[0]]);
     }
 
