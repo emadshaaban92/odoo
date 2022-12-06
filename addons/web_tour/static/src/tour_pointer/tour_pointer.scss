@@ -1,6 +1,7 @@
 .o_web_tour {
     position: absolute;
-    z-index: 1000;
+    // TODO-JCB: Better if we make this dynamic, such that it should have the same z-index to the pointed element.
+    z-index: 1000000;
     top: 0;
     left: 0;
 

@@ -6,35 +6,6 @@ import { TourPointer } from "../tour_pointer/tour_pointer";
 import { MacroEngine } from "@web/core/macro";
 import { browser } from "@web/core/browser/browser";
 
-const SAMPLE_TOUR_MACRO = {
-    steps: [
-        {
-            trigger: "button.inc",
-            action: "click",
-        },
-        {
-            trigger: "button.double",
-            action: "click",
-        },
-        {
-            trigger: "button.inc",
-            action: "click",
-        },
-        {
-            trigger: "button.double",
-            action: "click",
-        },
-        {
-            trigger: "button.dec",
-            action: "click",
-        },
-        {
-            trigger: "button.double",
-            action: "click",
-        },
-    ],
-};
-
 /**
  * Returns an augmented version of a simple tour that automatically
  * points to a step's trigger, perform the action and advances to the
@@ -88,29 +59,35 @@ function createAutoMacro(
 function createManualMacro(macroDescription, options) {
     const augmentStep = (step) => {
         let stepEl;
-        let listening;
         const res = { val: false };
+        const moveToNextStep = () => {
+            res.val = stepEl;
+            options.advance();
+            stepEl.removeEventListener(step.action, moveToNextStep);
+        };
         return [
             { ...step, action: undefined },
             {
                 action: () => {
                     res.val = false;
-                    stepEl = document.querySelector(step.trigger);
-                    options.pointTo(stepEl);
                 },
             },
             {
                 trigger: () => {
-                    if (listening) {
-                        return res.val;
+                    // This callback can be called multiple times until it returns true.
+                    // We should take into account the fact the element is not in the
+                    // dom. [pointTo] takes into account whether [stepEl] is null or not.
+                    let prevEl = stepEl;
+                    stepEl = document.querySelector(step.trigger);
+                    if (prevEl) {
+                        prevEl.removeEventListener(step.action, moveToNextStep);
                     }
-                    const moveToNextStep = () => {
-                        res.val = stepEl;
-                        options.advance();
-                        stepEl.removeEventListener(step.action, moveToNextStep);
-                    };
-                    stepEl.addEventListener(step.action, moveToNextStep);
-                    listening = true;
+                    if (stepEl) {
+                        stepEl.addEventListener(step.action, moveToNextStep);
+                    }
+                    // Call this everytime so that the pointer is always pointing at the
+                    // step's trigger element.
+                    options.pointTo(stepEl);
                     return res.val;
                 },
             },
@@ -200,14 +177,19 @@ export const tourService = {
         const pointerSize = { width: 20, height: 20 };
 
         /**
-         * Update [pointer] to refer to the given [el].
-         * @param {Element} el
+         * Update [pointerState] to refer to the given [el].
+         * If [el] is undefined, hide the pointer.
+         * @param {Element | undefined} el
          */
         function pointTo(el) {
-            const rect = el.getBoundingClientRect();
-            const top = rect.top - pointerSize.width;
-            const left = rect.left + rect.width / 2 - pointerSize.height / 2;
-            Object.assign(pointerState, { x: left, y: top });
+            if (el) {
+                const rect = el.getBoundingClientRect();
+                const top = rect.top - pointerSize.width;
+                const left = rect.left + rect.width / 2 - pointerSize.height / 2;
+                Object.assign(pointerState, { x: left, y: top, isVisible: true });
+            } else {
+                Object.assign(pointerState, { isVisible: false });
+            }
         }
 
         function advanceMacros() {
@@ -220,7 +202,15 @@ export const tourService = {
          */
         function run(params = { tourName: "", mode: { kind: "auto", interval: 0 } }) {
             const { tourName: _tourName, mode } = params;
-            const tourDesc = SAMPLE_TOUR_MACRO;
+            const tourDesc = registry.category("tours").get(params.tourName);
+
+            // Modify the steps to be compatible to Macro system.
+            for (const step of tourDesc.steps) {
+                step.action = "click";
+                delete step.content;
+                delete step.extra_trigger;
+            }
+
             if (mode.kind == "auto") {
                 activate(
                     createAutoMacro(tourDesc, {
@@ -232,7 +222,7 @@ export const tourService = {
             } else if (mode.kind == "manual") {
                 // The pointer points to the trigger and waits for the user to do the action.
                 activate(
-                    createManualMacro(tourDesc, {
+                    createManualMacro(Object.assign(tourDesc, { interval: mode.interval }), {
                         advance: advanceMacros,
                         pointTo,
                     })
