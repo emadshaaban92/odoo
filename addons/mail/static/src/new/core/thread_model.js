@@ -17,12 +17,17 @@ export class Thread {
      * @returns {Thread}
      */
     static insert(state, data) {
+        if (!("id" in data)) {
+            throw new Error("Cannot insert Thread: id is missing.");
+        }
+        if (!("model" in data)) {
+            throw new Error("Cannot insert Thread: model is missing.");
+        }
         let thread;
         if (data.id in state.threads) {
             thread = state.threads[data.id];
         } else {
-            thread = new Thread(state);
-            thread._state = state;
+            thread = new Thread(state, data);
         }
         thread.update(data);
         state.threads[thread.id] = thread;
@@ -30,8 +35,13 @@ export class Thread {
         return state.threads[thread.id];
     }
 
-    constructor(state) {
-        Composer.insert(state, { thread: this });
+    constructor(state, data) {
+        Object.assign(this, {
+            id: data.id,
+            model: data.model,
+            composer: Composer.insert(state, { thread: this }),
+            _state: state,
+        });
     }
 
     update(data) {
@@ -43,7 +53,6 @@ export class Thread {
             type,
             counter: 0,
             isUnread: false,
-            is_pinned: serverData && serverData.is_pinned,
             icon: false,
             loadMore: false,
             description: false,
@@ -54,6 +63,11 @@ export class Thread {
             canLeave: canLeave || false,
             serverLastSeenMsgByCurrentUser: serverData ? serverData.seen_message_id : null,
         });
+        if (serverData) {
+            if ("is_pinned" in serverData) {
+                this.is_pinned = serverData.is_pinned;
+            }
+        }
         for (const key in data) {
             this[key] = data[key];
         }

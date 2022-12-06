@@ -108,12 +108,14 @@ export class Messaging {
         this.state.menu = MessagingMenu.insert(this.state);
         this.state.discuss.inbox = Thread.insert(this.state, {
             id: "inbox",
+            model: "mailbox",
             name: env._t("Inbox"),
             type: "mailbox",
             icon: "fa-inbox",
         });
         this.state.discuss.starred = Thread.insert(this.state, {
             id: "starred",
+            model: "mailbox",
             name: env._t("Starred"),
             type: "mailbox",
             icon: "fa-star-o",
@@ -121,6 +123,7 @@ export class Messaging {
         });
         this.state.discuss.history = Thread.insert(this.state, {
             id: "history",
+            model: "mailbox",
             name: env._t("History"),
             type: "mailbox",
             icon: "fa-history",
@@ -171,6 +174,7 @@ export class Messaging {
         const isAdmin = channelType !== "group" && serverData.create_uid === this.state.user.uid;
         Thread.insert(this.state, {
             id,
+            model: "mail.channel",
             name,
             type,
             isUnread,
@@ -352,6 +356,7 @@ export class Messaging {
         }
         const thread = Thread.insert(this.state, {
             id: localId,
+            model: resModel,
             name: localId,
             type: "chatter",
             resId,
@@ -483,7 +488,11 @@ export class Messaging {
                 .call("mail.channel", "channel_fetch_preview", [ids])
                 .then((previews) => {
                     for (const preview of previews) {
-                        const thread = Thread.insert(this.state, preview.id);
+                        const thread = Thread.insert(this.state, {
+                            id: preview.id,
+                            model: "mail.channel",
+                            type: "channel",
+                        });
                         const data = Object.assign(preview.last_message, {
                             body: markup(preview.last_message.body),
                         });
@@ -690,6 +699,7 @@ export class Messaging {
         });
         Thread.insert(this.state, {
             id,
+            model: "mail.channel",
             name,
             type: "channel",
             serverData: { channel: { avatarCacheKey: "hello" } },
@@ -704,6 +714,7 @@ export class Messaging {
         });
         return Thread.insert(this.state, {
             id: data.id,
+            model: "mail.channel",
             name: undefined,
             type: "chat",
             serverData: data,
