@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
+import base64
+import hmac
+import requests
+import werkzeug.urls
+
 from odoo import _, api, fields, models, tools
 from odoo.osv import expression
 
@@ -18,6 +23,8 @@ class Partner(models.Model):
     parent_id = fields.Many2one(tracking=3)
     user_id = fields.Many2one(tracking=4)
     vat = fields.Char(tracking=5)
+    static_map_url = fields.Char(compute="_compute_static_map_url")
+    static_map_url_is_valid = fields.Boolean(compute="_compute_static_map_url_is_valid")
     # channels
     channel_ids = fields.Many2many('mail.channel', 'mail_channel_member', 'partner_id', 'channel_id', string='Channels', copy=False)
 
@@ -27,6 +34,30 @@ class Partner(models.Model):
         odoobot = self.env['res.partner'].browse(odoobot_id)
         if odoobot in self:
             odoobot.im_status = 'bot'
+
+    @api.depends('zip', 'city', 'country_id', 'street')
+    def _compute_static_map_url(self):
+        for partner in self:
+            partner.static_map_url = partner.google_map_signed_img(zoom=13, width=598, height=200)
+
+    def _compute_static_map_url_is_valid(self):
+        """Compute whether the link is valid.
+
+        This should only remain valid for a relatively short time.
+        Here, for the duration it is in cache.
+        """
+        for partner in self:
+            url = self.static_map_url
+            if not url:
+                partner.static_map_url_is_valid = False
+                continue
+
+            is_valid = False
+            # If the response isn't strictly successful, assume invalid url
+            res = requests.request("GET", url)
+            if res.status_code < 300 and res.status_code >= 200:
+                is_valid = True
+            partner.static_map_url_is_valid = is_valid
 
     # pseudo computes
 
@@ -48,6 +79,35 @@ class Partner(models.Model):
             FROM mail_message_res_partner_starred_rel R
             WHERE R.res_partner_id = %s """, (self.id,))
         return self.env.cr.dictfetchall()[0].get('starred_count')
+
+    def google_map_signed_img(self, zoom=13, width=298, height=298):
+        """Create a signed static image URL for the location of this partner."""
+        def add_base64_padding(string):
+            """Add missing padding to a valid base64 string, if any."""
+            # 1 more than a multiple of 4 is invalid
+            if not string or len(string) % 4 == 1:
+                return ''
+            return string + '=' * ((4 - len(string) % 4) % 4)
+
+        GOOGLE_MAPS_STATIC_API_KEY = self.env['ir.config_parameter'].sudo().get_param('mail.google_maps_static_api_key')
+        GOOGLE_MAPS_STATIC_API_SECRET = add_base64_padding(self.env['ir.config_parameter'].sudo().get_param('mail.google_maps_static_api_secret') or '')
+        if not (GOOGLE_MAPS_STATIC_API_KEY and GOOGLE_MAPS_STATIC_API_SECRET):
+            return False
+        # generate signature as per https://developers.google.com/maps/documentation/maps-static/digital-signature#server-side-signing
+        location_string = '%s, %s %s, %s' % (self.street or '', self.city or '', self.zip or '', self.country_id and self.country_id.display_name or '')
+        params = {
+            'center': location_string,
+            'markers': 'size:mid|'+location_string,
+            'size': "%sx%s" % (width, height),
+            'zoom': zoom,
+            'sensor': "false",
+            'key': GOOGLE_MAPS_STATIC_API_KEY,
+        }
+        if GOOGLE_MAPS_STATIC_API_SECRET:
+            unsigned_path = '/maps/api/staticmap?' + werkzeug.urls.url_encode(params)
+            params['signature'] = base64.urlsafe_b64encode(hmac.digest(base64.urlsafe_b64decode(GOOGLE_MAPS_STATIC_API_SECRET), bytes(unsigned_path, 'ascii'), 'sha1'))
+
+        return 'https://maps.googleapis.com/maps/api/staticmap?' + werkzeug.urls.url_encode(params)
 
     # ------------------------------------------------------------
     # MESSAGING
