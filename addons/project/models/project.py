@@ -47,6 +47,8 @@ PROJECT_TASK_READABLE_FIELDS = {
     'allow_milestones',
     'milestone_id',
     'has_late_and_unreached_milestone',
+    'state_id',
+    'state_approval_mode'
 }
 
 PROJECT_TASK_WRITABLE_FIELDS = {
@@ -62,6 +64,8 @@ PROJECT_TASK_WRITABLE_FIELDS = {
     'child_ids',
     'parent_id',
     'priority',
+    'state_id',
+    'state_approval_mode'
 }
 
 BLOCKING_STATES = [
@@ -1122,9 +1126,10 @@ class Task(models.Model):
     tag_ids = fields.Many2many('project.tags', string='Tags',
         help="You can only see tags that are already present in your project. If you try creating a tag that is already existing in other projects, it won't generate any duplicates.")
     
-    state_id = fields.Many2one('project.task.state', default=_default_state_id, readonly=False, compute='_compute_state_id', store=True)
+    state_id = fields.Many2one('project.task.state', default=_default_state_id, readonly=False, compute='_compute_state_id', store=True, precompute=True,
+        index=True, tracking=True, check_company=True, change_default=True, recursive=True)
 
-    state_approval_mode = fields.Boolean(default=False)
+    state_approval_mode = fields.Boolean(default=False, store=True)
 
     
     
