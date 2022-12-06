@@ -6,6 +6,15 @@ import { TourPointer } from "../tour_pointer/tour_pointer";
 import { MacroEngine } from "@web/core/macro";
 import { browser } from "@web/core/browser/browser";
 
+// TODO-JCB: Replace the following import with the non-legacy version.
+import { device } from "web.config";
+
+/**
+ * TODO-JCB: Don't forget the following:
+ * - It doesn't seem to work in mobile. For the tour from [planning.js],
+ *   the pointer continues to point to the "app" icon even after click.
+ */
+
 /**
  * Returns an augmented version of a simple tour that automatically
  * points to a step's trigger, perform the action and advances to the
@@ -19,7 +28,7 @@ function createAutoMacro(
     macroDescription,
     options = { interval: 500, pointTo: (_el) => {}, advance: () => {} }
 ) {
-    const augmentStep = (step) => {
+    function augmentStep(step) {
         let stepEl;
         let timeout;
         const res = { val: false };
@@ -46,7 +55,8 @@ function createAutoMacro(
                 },
             },
         ];
-    };
+    }
+
     return {
         ...macroDescription,
         steps: macroDescription.steps.reduce(
@@ -56,15 +66,51 @@ function createAutoMacro(
     };
 }
 
+/**
+ * TODO-JCB: Make sure to include "edition" and "isMobile" in the type of [options].
+ * @param {*} macroDescription
+ * @param {*} options
+ * @returns
+ */
 function createManualMacro(macroDescription, options) {
-    const augmentStep = (step) => {
+    /**
+     * Checks if [key] maps to a non-undefined value in [obj].
+     * @param {string} key
+     * @param {object} obj
+     * @returns
+     */
+    function isDefined(key, obj) {
+        return key in obj || obj[key] !== undefined;
+    }
+
+    /**
+     * Returns true if the [step] should not be included in the manual tour.
+     * @param {TourStep} step
+     * @returns {boolean}
+     */
+    function shouldOmit(step) {
+        const correctEdition = isDefined("edition", step) ? step.edition === options.edition : true;
+        const correctDevice = isDefined("mobile", step) ? step.mobile === options.isMobile : true;
+        return (
+            !correctEdition ||
+            !correctDevice ||
+            // TODO-JCB: Confirm if [step.auto = true] means omitting a step in a manual tour.
+            step.auto
+        );
+    }
+
+    function augmentStep(step) {
         let stepEl;
         const res = { val: false };
         const moveToNextStep = () => {
             res.val = stepEl;
-            options.advance();
             stepEl.removeEventListener(step.action, moveToNextStep);
+            stepEl = undefined;
+            options.advance();
         };
+        if (shouldOmit(step)) {
+            return [];
+        }
         return [
             { ...step, action: undefined },
             {
@@ -82,17 +128,20 @@ function createManualMacro(macroDescription, options) {
                     if (prevEl) {
                         prevEl.removeEventListener(step.action, moveToNextStep);
                     }
+                    // TODO-JCB: I think we should only add the listener when [res.val] is falsy.
                     if (stepEl) {
                         stepEl.addEventListener(step.action, moveToNextStep);
                     }
                     // Call this everytime so that the pointer is always pointing at the
                     // step's trigger element.
+                    // TODO-JCB: Maybe we only point to the trigger when [res.val] is falsy.
                     options.pointTo(stepEl);
                     return res.val;
                 },
             },
         ];
-    };
+    }
+
     return {
         ...macroDescription,
         steps: macroDescription.steps.reduce(
@@ -144,6 +193,8 @@ function createManualMacro(macroDescription, options) {
 export const tourService = {
     start() {
         const macroEngine = new MacroEngine(document);
+        const edition = odoo.info.isEnterprise ? "enterprise" : "community";
+        const isMobile = device.isMobile;
 
         const pointerState = reactive({
             x: 0,
@@ -225,6 +276,8 @@ export const tourService = {
                     createManualMacro(Object.assign(tourDesc, { interval: mode.interval }), {
                         advance: advanceMacros,
                         pointTo,
+                        edition,
+                        isMobile,
                     })
                 );
             }
