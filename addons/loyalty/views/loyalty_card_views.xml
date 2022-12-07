@@ -68,15 +68,4 @@
             <p>There haven't been any coupons generated yet.</p>
         </field>
     </record>
-
-    <record id="loyalty_card_action_2" model="ir.actions.act_window">
-        <field name="name">Coupons</field>
-        <field name="res_model">loyalty.card</field>
-        <field name="view_mode">tree,form</field>
-        <field name="context">{'create': False}</field>
-        <field name="help" type="html">
-            <h1>No Coupons Found.</h1>
-            <p>There haven't been any coupons generated yet.</p>
-        </field>
-    </record>
 </odoo>

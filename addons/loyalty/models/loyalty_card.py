@@ -99,16 +99,6 @@ class LoyaltyCard(models.Model):
             'context': ctx,
         }
 
-    def action_show_coupons(self):
-        self.ensure_one()
-        action = {
-            'name': _('Coupons'),
-            'view_mode': 'tree',
-            'res_model': 'loyalty.card',
-            'type': 'ir.actions.act_window',
-        }
-        return action
-
     def _send_creation_communication(self):
         """
         Sends the 'At Creation' communication plan if it exist for the given coupons.
