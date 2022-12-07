@@ -6,6 +6,7 @@ import { registry } from "@web/core/registry";
 import { patch } from 'web.utils';
 
 const websiteSystrayRegistry = registry.category('website_systray');
+const { useEffect } = owl;
 
 patch(NavBar.prototype, 'website_navbar', {
     setup() {
@@ -22,7 +23,24 @@ patch(NavBar.prototype, 'website_navbar', {
             websiteSystrayRegistry.add('web.debug_mode_menu', registry.category('systray').get('web.debug_mode_menu'), {sequence: 100});
         }
 
-        useBus(websiteSystrayRegistry, 'CONTENT-UPDATED', () => this.render(true));
+        // FIXME This is a copy paste of existing code from the navbar in /web
+        let adaptCounter = 0;
+        const renderAndAdapt = () => {
+            this.render(true);
+            adaptCounter++;
+        };
+        useEffect(
+            () => {
+                // We do not want to adapt on the first render
+                // as the super class does it on its own
+                if (adaptCounter > 0) {
+                    this.adapt();
+                }
+            },
+            () => [adaptCounter]
+        );
+
+        useBus(websiteSystrayRegistry, 'CONTENT-UPDATED', renderAndAdapt);
     },
 
     /**
