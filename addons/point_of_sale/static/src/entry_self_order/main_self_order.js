@@ -12,9 +12,6 @@ class Root extends Component {
     }
   static template = xml`<div>Hello Owl</div>`;
 }
-// startWebClient(Root);
-// delay 3 seconds
 setTimeout(() =>{
     mount(Root, document.body);
-},5000);
-// mount(Root, document.body);
+},1000);
