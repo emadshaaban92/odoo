@@ -28,11 +28,11 @@ QUnit.module("mail", (hooks) => {
 
     QUnit.test("Start edition on click edit", async (assert) => {
         const server = new TestServer();
-        server.addChannel(1, "general", "General announcements...");
+        const channel = server.addChannel(1, "general", "General announcements...");
         server.addMessage("comment", 1, 1, "mail.channel", 3, "Hello world");
         const env = makeTestEnv((route, params) => server.rpc(route, params));
         await env.services["mail.messaging"].isReady;
-        env.services["mail.messaging"].setDiscussThread(1);
+        env.services["mail.messaging"].setDiscussThread(channel);
         await mount(Discuss, target, { env });
         target.querySelector(".o-mail-message-actions").classList.remove("invisible");
         await click(target, "i[aria-label='Edit']");
@@ -47,11 +47,11 @@ QUnit.module("mail", (hooks) => {
 
     QUnit.test("Stop edition on click cancel", async (assert) => {
         const server = new TestServer();
-        server.addChannel(1, "general", "General announcements...");
+        const channel = server.addChannel(1, "general", "General announcements...");
         server.addMessage("comment", 1, 1, "mail.channel", 3, "Hello world");
         const env = makeTestEnv((route, params) => server.rpc(route, params));
         await env.services["mail.messaging"].isReady;
-        env.services["mail.messaging"].setDiscussThread(1);
+        env.services["mail.messaging"].setDiscussThread(channel);
         await mount(Discuss, target, { env });
         target.querySelector(".o-mail-message-actions").classList.remove("invisible");
         await click(target, "i[aria-label='Edit']");
@@ -62,11 +62,11 @@ QUnit.module("mail", (hooks) => {
 
     QUnit.test("Stop edition on press escape", async (assert) => {
         const server = new TestServer();
-        server.addChannel(1, "general", "General announcements...");
+        const channel = server.addChannel(1, "general", "General announcements...");
         server.addMessage("comment", 1, 1, "mail.channel", 3, "Hello world");
         const env = makeTestEnv((route, params) => server.rpc(route, params));
         await env.services["mail.messaging"].isReady;
-        env.services["mail.messaging"].setDiscussThread(1);
+        env.services["mail.messaging"].setDiscussThread(channel);
         await mount(Discuss, target, { env });
         target.querySelector(".o-mail-message-actions").classList.remove("invisible");
         await click(target, "i[aria-label='Edit']");
@@ -78,11 +78,11 @@ QUnit.module("mail", (hooks) => {
 
     QUnit.test("Stop edition on click save", async (assert) => {
         const server = new TestServer();
-        server.addChannel(1, "general", "General announcements...");
+        const channel = server.addChannel(1, "general", "General announcements...");
         server.addMessage("comment", 1, 1, "mail.channel", 3, "Hello world");
         const env = makeTestEnv((route, params) => server.rpc(route, params));
         await env.services["mail.messaging"].isReady;
-        env.services["mail.messaging"].setDiscussThread(1);
+        env.services["mail.messaging"].setDiscussThread(channel);
         await mount(Discuss, target, { env });
         target.querySelector(".o-mail-message-actions").classList.remove("invisible");
         await click(target, "i[aria-label='Edit']");
@@ -93,11 +93,11 @@ QUnit.module("mail", (hooks) => {
 
     QUnit.test("Stop edition on press enter", async (assert) => {
         const server = new TestServer();
-        server.addChannel(1, "general", "General announcements...");
+        const channel = server.addChannel(1, "general", "General announcements...");
         server.addMessage("comment", 1, 1, "mail.channel", 3, "Hello world");
         const env = makeTestEnv((route, params) => server.rpc(route, params));
         await env.services["mail.messaging"].isReady;
-        env.services["mail.messaging"].setDiscussThread(1);
+        env.services["mail.messaging"].setDiscussThread(channel);
         await mount(Discuss, target, { env });
         target.querySelector(".o-mail-message-actions").classList.remove("invisible");
         await click(target, "i[aria-label='Edit']");
@@ -109,11 +109,11 @@ QUnit.module("mail", (hooks) => {
 
     QUnit.test("Stop edition on click away", async (assert) => {
         const server = new TestServer();
-        server.addChannel(1, "general", "General announcements...");
+        const channel = server.addChannel(1, "general", "General announcements...");
         server.addMessage("comment", 1, 1, "mail.channel", 3, "Hello world");
         const env = makeTestEnv((route, params) => server.rpc(route, params));
         await env.services["mail.messaging"].isReady;
-        env.services["mail.messaging"].setDiscussThread(1);
+        env.services["mail.messaging"].setDiscussThread(channel);
         await mount(Discuss, target, { env });
         target.querySelector(".o-mail-message-actions").classList.remove("invisible");
         await click(target, "i[aria-label='Edit']");
@@ -125,11 +125,11 @@ QUnit.module("mail", (hooks) => {
 
     QUnit.test("Do not stop edition on click away when clicking on emoji", async (assert) => {
         const server = new TestServer();
-        server.addChannel(1, "general", "General announcements...");
+        const channel = server.addChannel(1, "general", "General announcements...");
         server.addMessage("comment", 1, 1, "mail.channel", 3, "Hello world");
         const env = makeTestEnv((route, params) => server.rpc(route, params));
         await env.services["mail.messaging"].isReady;
-        env.services["mail.messaging"].setDiscussThread(1);
+        env.services["mail.messaging"].setDiscussThread(channel);
         const { Component: PopoverContainer, props } = registry
             .category("main_components")
             .get("PopoverContainer");
@@ -147,11 +147,11 @@ QUnit.module("mail", (hooks) => {
 
     QUnit.test("Save on click", async (assert) => {
         const server = new TestServer();
-        server.addChannel(1, "general", "General announcements...");
+        const channel = server.addChannel(1, "general", "General announcements...");
         server.addMessage("comment", 1, 1, "mail.channel", 3, "Hello world");
         const env = makeTestEnv((route, params) => server.rpc(route, params));
         await env.services["mail.messaging"].isReady;
-        env.services["mail.messaging"].setDiscussThread(1);
+        env.services["mail.messaging"].setDiscussThread(channel);
         await mount(Discuss, target, { env });
         target.querySelector(".o-mail-message-actions").classList.remove("invisible");
         await click(target, "i[aria-label='Edit']");
@@ -166,7 +166,7 @@ QUnit.module("mail", (hooks) => {
 
     QUnit.test("Do not call server on save if no changes", async (assert) => {
         const server = new TestServer();
-        server.addChannel(1, "general", "General announcements...");
+        const channel = server.addChannel(1, "general", "General announcements...");
         server.addMessage("comment", 1, 1, "mail.channel", 3, "Hello world\nGoodbye world");
         const env = makeTestEnv((route, params) => {
             if (route === "/mail/message/update_content") {
@@ -175,7 +175,7 @@ QUnit.module("mail", (hooks) => {
             return server.rpc(route, params);
         });
         await env.services["mail.messaging"].isReady;
-        env.services["mail.messaging"].setDiscussThread(1);
+        env.services["mail.messaging"].setDiscussThread(channel);
         await mount(Discuss, target, { env });
         target.querySelector(".o-mail-message-actions").classList.remove("invisible");
         await click(target, "i[aria-label='Edit']");
@@ -187,11 +187,11 @@ QUnit.module("mail", (hooks) => {
 
     QUnit.test("Scroll bar to the top when edit starts", async (assert) => {
         const server = new TestServer();
-        server.addChannel(1, "general", "General announcements...");
+        const channel = server.addChannel(1, "general", "General announcements...");
         server.addMessage("comment", 1, 1, "mail.channel", 3, "Hello world ! ".repeat(1000));
         const env = makeTestEnv((route, params) => server.rpc(route, params));
         await env.services["mail.messaging"].isReady;
-        env.services["mail.messaging"].setDiscussThread(1);
+        env.services["mail.messaging"].setDiscussThread(channel);
         await mount(Discuss, target, { env });
         target.querySelector(".o-mail-message-actions").classList.remove("invisible");
         await click(target, "i[aria-label='Edit']");

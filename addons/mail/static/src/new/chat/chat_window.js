@@ -45,7 +45,7 @@ export class ChatWindow extends Component {
     }
 
     expand() {
-        this.messaging.setDiscussThread(this.props.chatWindow.thread.id);
+        this.messaging.setDiscussThread(this.props.chatWindow.thread);
         this.action.doAction(
             {
                 type: "ir.actions.client",

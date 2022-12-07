@@ -338,10 +338,10 @@ export class Messaging {
     // actions that can be performed on the messaging system
     // -------------------------------------------------------------------------
 
-    setDiscussThread(threadId) {
-        this.state.discuss.threadId = threadId;
+    setDiscussThread(thread) {
+        this.state.discuss.threadId = thread.id;
         const activeId =
-            typeof threadId === "string" ? `mail.box_${threadId}` : `mail.channel_${threadId}`;
+            typeof thread.id === "string" ? `mail.box_${thread.id}` : `mail.channel_${thread.id}`;
         this.router.pushState({ active_id: activeId });
     }
 
@@ -621,7 +621,7 @@ export class Messaging {
 
     openDiscussion(thread) {
         if (this.state.discuss.isActive) {
-            this.setDiscussThread(thread.id);
+            this.setDiscussThread(thread);
         } else {
             ChatWindow.insert(this.state, { thread });
         }
@@ -724,7 +724,7 @@ export class Messaging {
     async leaveChannel(id) {
         await this.orm.call("mail.channel", "action_unfollow", [id]);
         removeFromArray(this.state.discuss.channels.threads, id);
-        this.setDiscussThread(this.state.discuss.channels.threads[0]);
+        this.setDiscussThread(this.state.threads[this.state.discuss.channels.threads[0]]);
     }
 
     openDocument({ id, model }) {

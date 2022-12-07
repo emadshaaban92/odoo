@@ -139,7 +139,9 @@ function getOpenDiscuss(webClient, { context = {}, params = {}, ...props } = {})
             threadId = parseInt(threadId.split("_")[1]);
         }
         // TODO-DISCUSS-REFACTORING: remove when activeId will be handled.
-        webClient.env.services["mail.messaging"].setDiscussThread(threadId);
+        webClient.env.services["mail.messaging"].setDiscussThread(
+            webClient.env.services["mail.messaging"].state.threads[threadId]
+        );
         if (waitUntilMessagesLoaded) {
             const messagesLoadedPromise = makeDeferred();
             let loadMessageRoute = `/mail/${threadId}/messages`;

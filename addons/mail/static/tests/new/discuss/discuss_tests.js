@@ -70,14 +70,14 @@ QUnit.module("mail", (hooks) => {
 
     QUnit.test("can change the thread name of #general", async (assert) => {
         const server = new TestServer();
-        server.addChannel(1, "general", "General announcements...");
+        const channel = server.addChannel(1, "general", "General announcements...");
         const env = makeTestEnv((route, params) => {
             if (route === "/web/dataset/call_kw/mail.channel/channel_rename") {
                 assert.step(route);
             }
             return server.rpc(route, params);
         });
-        env.services["mail.messaging"].setDiscussThread(1);
+        env.services["mail.messaging"].setDiscussThread(channel);
         await mount(Discuss, target, { env });
         assert.containsOnce(target, "input.o-mail-discuss-thread-name");
         const threadNameElement = target.querySelector("input.o-mail-discuss-thread-name");
@@ -95,14 +95,14 @@ QUnit.module("mail", (hooks) => {
 
     QUnit.test("can change the thread description of #general", async (assert) => {
         const server = new TestServer();
-        server.addChannel(1, "general", "General announcements...");
+        const channel = server.addChannel(1, "general", "General announcements...");
         const env = makeTestEnv((route, params) => {
             if (route === "/web/dataset/call_kw/mail.channel/channel_change_description") {
                 assert.step(route);
             }
             return server.rpc(route, params);
         });
-        env.services["mail.messaging"].setDiscussThread(1);
+        env.services["mail.messaging"].setDiscussThread(channel);
         await mount(Discuss, target, { env });
 
         assert.containsOnce(target, "input.o-mail-discuss-thread-description");
@@ -127,14 +127,14 @@ QUnit.module("mail", (hooks) => {
 
     QUnit.test("can post a message", async (assert) => {
         const server = new TestServer();
-        server.addChannel(1, "general", "General announcements...");
+        const channel = server.addChannel(1, "general", "General announcements...");
         const env = makeTestEnv((route, params) => {
             if (route.startsWith("/mail")) {
                 assert.step(route);
             }
             return server.rpc(route, params);
         });
-        env.services["mail.messaging"].setDiscussThread(1);
+        env.services["mail.messaging"].setDiscussThread(channel);
 
         await mount(Discuss, target, { env });
         assert.containsNone(target, ".o-mail-message");
@@ -255,7 +255,7 @@ QUnit.module("mail", (hooks) => {
 
     QUnit.test("Message following a notification should not be squashed", async (assert) => {
         const server = new TestServer();
-        server.addChannel(1, "general", "General announcements...");
+        const channel = server.addChannel(1, "general", "General announcements...");
         server.addMessage(
             "notification",
             1,
@@ -267,7 +267,7 @@ QUnit.module("mail", (hooks) => {
         server.addMessage("comment", 2, 1, "mail.channel", 3, "Hello world !");
         const env = makeTestEnv((route, params) => server.rpc(route, params));
         await env.services["mail.messaging"].isReady;
-        env.services["mail.messaging"].setDiscussThread(1);
+        env.services["mail.messaging"].setDiscussThread(channel);
         await mount(Discuss, target, { env });
 
         assert.containsOnce(target, ".o-mail-message-sidebar .o-mail-avatar-container");
@@ -275,9 +275,9 @@ QUnit.module("mail", (hooks) => {
 
     QUnit.test("Posting message should transform links.", async (assert) => {
         const server = new TestServer();
-        server.addChannel(1, "general", "General announcements...");
+        const channel = server.addChannel(1, "general", "General announcements...");
         const env = makeTestEnv((route, params) => server.rpc(route, params));
-        env.services["mail.messaging"].setDiscussThread(1);
+        env.services["mail.messaging"].setDiscussThread(channel);
         await mount(Discuss, target, { env });
         await insertText(".o-mail-composer-textarea", "test https://www.odoo.com/");
         await click(target, ".o-mail-composer-send-button");
@@ -292,9 +292,9 @@ QUnit.module("mail", (hooks) => {
 
     QUnit.test("Posting message should transform relevant data to emoji.", async (assert) => {
         const server = new TestServer();
-        server.addChannel(1, "general", "General announcements...");
+        const channel = server.addChannel(1, "general", "General announcements...");
         const env = makeTestEnv((route, params) => server.rpc(route, params));
-        env.services["mail.messaging"].setDiscussThread(1);
+        env.services["mail.messaging"].setDiscussThread(channel);
         await mount(Discuss, target, { env });
         await insertText(".o-mail-composer-textarea", "test :P :laughing:");
         await click(target, ".o-mail-composer-send-button");
@@ -308,14 +308,14 @@ QUnit.module("mail", (hooks) => {
         async (assert) => {
             let flag = false;
             const server = new TestServer();
-            server.addChannel(1, "general", "General announcements...");
+            const channel = server.addChannel(1, "general", "General announcements...");
             const env = makeTestEnv(async (route, params) => {
                 if (flag && route === "/mail/message/post") {
                     await new Promise(() => {});
                 }
                 return server.rpc(route, params);
             });
-            env.services["mail.messaging"].setDiscussThread(1);
+            env.services["mail.messaging"].setDiscussThread(channel);
 
             await mount(Discuss, target, { env });
             // write 1 message

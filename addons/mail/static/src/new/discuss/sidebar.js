@@ -23,7 +23,7 @@ export class Sidebar extends Component {
     }
 
     openThread(thread) {
-        this.messaging.setDiscussThread(thread.id);
+        this.messaging.setDiscussThread(thread);
     }
 
     toggleCategory(category) {
