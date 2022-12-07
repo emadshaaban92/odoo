@@ -1,5 +1,6 @@
 /** @odoo-module **/
 
+import { Thread } from "@mail/new/core/thread_model";
 import { Sidebar } from "@mail/new/discuss/sidebar";
 import { click, getFixture, mount, patchWithCleanup } from "@web/../tests/helpers/utils";
 import { browser } from "@web/core/browser/browser";
@@ -36,6 +37,10 @@ QUnit.module("mail", (hooks) => {
         server.addChannel(46, "def");
         const env = makeTestEnv((route, params) => server.rpc(route, params));
         env.services["mail.messaging"].state.discuss.threadId = 43; // #abc is active
+        env.services["mail.messaging"].state.discuss.threadLocalId = Thread.createLocalId({
+            model: "mail.channel",
+            id: 43,
+        });
 
         await mount(Sidebar, target, { env });
         assert.containsN(target, ".o-mail-category-item", 2);

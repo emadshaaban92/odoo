@@ -79,9 +79,10 @@ export class ChannelSelector extends Component {
             if (this.props.category.id === "channels") {
                 this.messaging.joinChannel(choice.id, choice.label);
             } else {
-                this.messaging
-                    .joinChat(choice.id)
-                    .then((chat) => (this.messaging.state.discuss.threadId = chat.id));
+                this.messaging.joinChat(choice.id).then((chat) => {
+                    this.messaging.state.discuss.threadId = chat.id;
+                    this.messaging.state.discuss.threadLocalId = chat.localId;
+                });
             }
         }
         if (this.props.onSelect) {

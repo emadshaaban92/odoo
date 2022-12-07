@@ -38,7 +38,17 @@ export class Messaging {
         this.setup(...args);
     }
 
-    setup(env, rpc, orm, user, router, initialThreadId, im_status, notification) {
+    setup(
+        env,
+        rpc,
+        orm,
+        user,
+        router,
+        initialThreadId,
+        initialThreadLocalId,
+        im_status,
+        notification
+    ) {
         this.env = env;
         this.rpc = rpc;
         this.orm = orm;
@@ -75,6 +85,7 @@ export class Messaging {
                 isActive: false,
                 messageToReplyTo: null,
                 threadId: initialThreadId,
+                threadLocalId: initialThreadLocalId,
                 channels: {
                     extraClass: "o-mail-category-channel",
                     id: "channels",
@@ -172,7 +183,7 @@ export class Messaging {
             !serverData.message_needaction_counter &&
             !serverData.group_based_subscription;
         const isAdmin = channelType !== "group" && serverData.create_uid === this.state.user.uid;
-        Thread.insert(this.state, {
+        return Thread.insert(this.state, {
             id,
             model: "mail.channel",
             name,
@@ -340,6 +351,7 @@ export class Messaging {
 
     setDiscussThread(thread) {
         this.state.discuss.threadId = thread.id;
+        this.state.discuss.threadLocalId = thread.localId;
         const activeId =
             typeof thread.id === "string" ? `mail.box_${thread.id}` : `mail.channel_${thread.id}`;
         this.router.pushState({ active_id: activeId });
@@ -640,13 +652,14 @@ export class Messaging {
     }
 
     async createChannel(name) {
-        const channel = await this.orm.call("mail.channel", "channel_create", [
+        const channelData = await this.orm.call("mail.channel", "channel_create", [
             name,
             this.state.internalUserGroupId,
         ]);
-        this.createChannelThread(channel);
+        const channel = this.createChannelThread(channelData);
         this.sortChannels();
         this.state.discuss.threadId = channel.id;
+        this.state.discuss.threadLocalId = channel.localId;
     }
 
     async getChat({ userId, partnerId }) {
@@ -697,7 +710,7 @@ export class Messaging {
         await this.orm.call("mail.channel", "add_members", [[id]], {
             partner_ids: [this.state.user.partnerId],
         });
-        Thread.insert(this.state, {
+        const thread = Thread.insert(this.state, {
             id,
             model: "mail.channel",
             name,
@@ -706,6 +719,7 @@ export class Messaging {
         });
         this.sortChannels();
         this.state.discuss.threadId = id;
+        this.state.discuss.threadLocalId = thread.localId;
     }
 
     async joinChat(id) {

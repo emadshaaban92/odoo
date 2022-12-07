@@ -33,8 +33,8 @@
 <t t-name="mail.discuss_mailbox" owl="1">
     <button class="btn d-flex align-items-center py-1 px-0 border-0 rounded-0 fw-normal text-dark"
         t-att-class="{
-            'bg-100': mailbox.id !== messaging.state.discuss.threadId,
-            'o-active bg-200': mailbox.id === messaging.state.discuss.threadId,
+            'bg-100': mailbox.localId !== messaging.state.discuss.threadLocalId,
+            'o-active bg-200': mailbox.localId === messaging.state.discuss.threadLocalId,
             'o-starred-box': mailbox.id === 'starred',
         }"
         t-on-click="() => this.openThread(mailbox)"
@@ -99,8 +99,8 @@
 <t t-name="mail.discuss_category_item" owl="1">
     <button class="o-mail-category-item btn d-flex align-items-center w-100 px-0 py-2 border-0 text-reset"
         t-att-class="{
-            'bg-100': threadId !== messaging.state.discuss.threadId,
-            'o-active bg-200': threadId === messaging.state.discuss.threadId,
+            'bg-100': thread.localId !== messaging.state.discuss.threadLocalId,
+            'o-active bg-200': thread.localId === messaging.state.discuss.threadLocalId,
             'o-unread': thread.isUnread,
         }"
         t-on-click="() => this.openThread(thread)"
