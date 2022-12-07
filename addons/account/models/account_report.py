@@ -417,6 +417,7 @@ class AccountReportExpression(models.Model):
     green_on_positive = fields.Boolean(string="Is Growth Good when Positive", default=True)
     blank_if_zero = fields.Boolean(string="Blank if Zero", help="When checked, 0 values will not show when displaying this expression's value.")
     auditable = fields.Boolean(string="Auditable", store=True, readonly=False, compute='_compute_auditable')
+    is_default = fields.Boolean(default=False)
 
     # Carryover fields
     carryover_target = fields.Char(
