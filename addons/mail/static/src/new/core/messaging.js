@@ -851,7 +851,7 @@ export class Messaging {
         this.state.threads[threadId].inCall = true;
     }
 
-    stopCall(threadId) {
-        this.state.threads[threadId].inCall = false;
+    stopCall(thread) {
+        thread.inCall = false;
     }
 }
