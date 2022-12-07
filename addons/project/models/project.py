@@ -1128,10 +1128,8 @@ class Task(models.Model):
     
     state_id = fields.Many2one('project.task.state', default=_default_state_id, readonly=False, compute='_compute_state_id', store=True, precompute=True,
         index=True, tracking=True, check_company=True, change_default=True, recursive=True)
-
     state_approval_mode = fields.Boolean(default=False, store=True)
-
-    state_pre_block = fields.Char(string='State before block', store=True, copy=False)
+    state_pre_block = fields.Char(string='Remember state before task block', store=True, copy=False)
     
     kanban_state = fields.Selection([
         ('normal', 'In Progress'),
@@ -1396,15 +1394,19 @@ class Task(models.Model):
     @api.depends('depend_on_ids.state_id')
     def _compute_state_id(self):
         for task in self:
-            print(f'task: {task}')
+            print(f'task: {task}'.center(50,'-'))
         #dependent_tasks = self.env['project.task'].search([('depend_ids', 'in', self.ids)])
             for dependent_task in task.depend_on_ids:
                     if dependent_task.state_id in self.env['project.task.state'].search([('name', 'in', BLOCKING_STATES)]):
-                        task.state_pre_block = task.state_id.name
+                        if task.state_id.name != "Blocked":
+                            task.state_pre_block = task.state_id.name 
+                        print("state_pre_block: {}".format(task.state_pre_block))
                         task.state_id = self.env['project.task.state'].search([('name', '=', "Blocked")])
                         return
             default_state = "Pending approval" if task.state_approval_mode else "In Progress"
+            print(default_state)
             future_state = default_state if not task.state_pre_block else task.state_pre_block
+            print(future_state)
             task.state_id = self.env['project.task.state'].search([('name', '=', future_state)])
 
     @api.onchange('state_approval_mode')

@@ -1095,7 +1095,7 @@
                         <button name="action_request_changes_state" string="Request changes" type="object" class="" attrs="{'invisible' : &quot;[('state_approval_mode', '=', False)]&quot;}" icon="fa-pencil"/>
                         <button name="action_reject_state" string="Reject" type="object" class="" attrs="{'invisible' : &quot;[('state_approval_mode', '=', False)]&quot;}" icon="fa-close"/>
                         <button name="action_mark_as_done" string="Mark as done" type="object" class="" attrs="{'invisible' : &quot;[('state_approval_mode', '=', True)]&quot;}" icon="fa-check"/>
-                        <button name="action_assign_to_me" string="Assign to Me" type="object" class="" attrs="{'invisible' : &quot;['|', ('user_ids', 'in', uid), ('user_ids', '!=', [])]&quot;}" data-hotkey="q"/>
+                        <button name="action_assign_to_me" string="Assign to Me" type="object" class="oe_highlight" attrs="{'invisible' : &quot;['|', ('user_ids', 'in', uid), ('user_ids', '!=', [])]&quot;}" data-hotkey="q"/>
                         <button name="action_assign_to_me" string="Assign to Me" type="object" attrs="{'invisible': &quot;['|', ('user_ids', 'in', uid), ('user_ids', '=', [])]&quot;}" data-hotkey="q"/>
                         <field name="stage_id" widget="statusbar" options="{'clickable': '1', 'fold_field': 'fold'}" attrs="{'invisible': [('project_id', '=', False), ('stage_id', '=', False)]}"/>
                         <field name="personal_stage_type_id" widget="statusbar" options="{'clickable': '1', 'fold_field': 'fold'}" attrs="{'invisible': [('project_id', '!=', False)]}" domain="[('user_id', '=', uid)]" string="Personal Stage"/>
@@ -1506,7 +1506,6 @@
                                     </div>
                                     <div class="oe_kanban_bottom_right" t-if="!selection_mode">
                                         <field name="kanban_state" widget="state_selection" groups="base.group_user"/>
-                                        <field name="state_id" groups="base.group_user"/>
                                         <t t-if="record.user_ids.raw_value"><field name="user_ids" widget="many2many_avatar_user"/></t>
                                     </div>
                                 </div>
