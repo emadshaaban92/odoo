@@ -318,7 +318,9 @@ export function ancestors(node, editable) {
 export function descendants(node) {
     const posterity = [];
     for (const child of (node.childNodes || [])) {
+        // if (Node.COMMENT_NODE !== child.nodeType) {
         posterity.push(child, ...descendants(child));
+        // }
     }
     return posterity;
 }
