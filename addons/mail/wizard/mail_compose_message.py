@@ -93,7 +93,7 @@ class MailComposer(models.TransientModel):
             if result['model'] not in self.env or not hasattr(self.env[result['model']], 'message_post'):
                 result['reply_to_mode'] = 'new'
 
-        if result.get('composition_mode') == 'comment' and (set(fields) & set(['model', 'res_ids', 'partner_ids', 'record_name', 'subject'])):
+        if result.get('composition_mode') == 'comment' and (set(fields) & set(['model', 'res_ids', 'partner_ids', 'subject'])):
             result.update(self.get_record_data(result))
 
         # when being in new mode, create_uid is not granted -> ACLs issue may arise
@@ -134,7 +134,9 @@ class MailComposer(models.TransientModel):
     res_domain_user_id = fields.Many2one(
         'res.users', string='Responsible',
         help='Used as context used to evaluate composer domain')
-    record_name = fields.Char('Message Record Name')
+    record_name = fields.Char(
+        'Message Record Name',
+        compute='_compute_record_name', readonly=False, store=True)
     # characteristics
     message_type = fields.Selection([
         ('comment', 'Comment'),
@@ -192,6 +194,17 @@ class MailComposer(models.TransientModel):
             composer.composition_batch = len(res_ids) > 1 if res_ids else False
         self.filtered('res_domain').composition_batch = True
 
+    @api.depends('composition_batch', 'composition_mode', 'model', 'parent_id', 'res_ids')
+    def _compute_record_name(self):
+        for composer in self.filtered(lambda comp: not comp.record_name
+                                                   and comp.composition_mode == 'comment'
+                                                   and not comp.composition_batch):
+            res_ids = composer._parse_res_ids(composer.res_ids)
+            if composer.parent_id and composer.parent_id.record_name:
+                composer.record_name = composer.parent_id.record_name
+            elif composer.model and len(res_ids) == 1:
+                composer.record_name = self.env[composer.model].browse(res_ids).display_name
+
     @api.depends('reply_to_force_new')
     def _compute_reply_to_mode(self):
         for composer in self:
@@ -234,7 +247,6 @@ class MailComposer(models.TransientModel):
         res_ids = self._parse_res_ids(values['res_ids']) if values.get('res_ids') else []
         if values.get('parent_id'):
             parent = self.env['mail.message'].browse(values.get('parent_id'))
-            result['record_name'] = parent.record_name
             subject = tools.ustr(parent.subject or parent.record_name or '')
             if not values.get('model'):
                 result['model'] = parent.model
@@ -244,8 +256,7 @@ class MailComposer(models.TransientModel):
             result['partner_ids'] = partner_ids
         elif values.get('model') and len(res_ids) == 1:
             doc_name_get = self.env[values.get('model')].browse(res_ids[0]).name_get()
-            result['record_name'] = doc_name_get and doc_name_get[0][1] or ''
-            subject = tools.ustr(result['record_name'])
+            subject = tools.ustr(doc_name_get and doc_name_get[0][1] or '')
 
         re_prefix = _('Re:')
         if subject and not (subject.startswith('Re:') or subject.startswith(re_prefix)):
