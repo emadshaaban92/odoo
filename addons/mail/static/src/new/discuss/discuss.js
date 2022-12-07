@@ -41,8 +41,9 @@ export class Discuss extends Component {
     unstarAll() {
         this.messaging.unstarAll();
     }
+
     startCall() {
-        this.messaging.startCall(this.messaging.state.discuss.threadId);
+        this.messaging.startCall(this.thread);
     }
 
     toggleSettings() {

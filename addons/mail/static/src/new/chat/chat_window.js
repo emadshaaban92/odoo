@@ -56,7 +56,7 @@ export class ChatWindow extends Component {
     }
 
     startCall() {
-        this.messaging.startCall(this.props.chatWindow.thread.id);
+        this.messaging.startCall(this.props.chatWindow.thread);
     }
 }
 

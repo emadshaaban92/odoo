@@ -847,8 +847,8 @@ export class Messaging {
     // rtc (audio and video calls)
     // -------------------------------------------------------------------------
 
-    startCall(threadId) {
-        this.state.threads[threadId].inCall = true;
+    startCall(thread) {
+        thread.inCall = true;
     }
 
     stopCall(thread) {
