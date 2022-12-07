@@ -586,4 +586,51 @@ describe('Collaboration', () => {
             });
         });
     });
+
+    describe('blackbox', () => {
+        it('should remove a blackbox before sharing', async () => {
+            testMultiEditor({
+                clientIds: ['c1', 'c2'],
+                contentBefore: unformat(`
+                    <p>a[c1}{c1][c2}{c2]</p>
+                    <div contenteditable="false">
+                        <p>not a secret</p>
+                    </div>
+                    `),
+                afterCreate: clientInfos => {
+                    const blackbox = document.createElement('div');
+                    blackbox.classList.add('oe-blackbox');
+                    const paragraph = document.createElement('p');
+                    const text = document.createTextNode('secret');
+                    paragraph.append(text);
+                    blackbox.append(paragraph);
+                    const container = clientInfos.c1.editable.querySelector('div');
+                    container.appendChild(blackbox);
+                    clientInfos.c1.editor.historyStep();
+                    clientInfos.c2.editor.onExternalHistorySteps([
+                        clientInfos.c1.editor._historySteps[1],
+                    ]);
+                },
+                afterCursorInserted: clientInfos => {
+                    chai.expect(clientInfos.c2.editable.innerHTML).to.equal(
+                        unformat(`
+                        <p>a[c1}{c1][c2}{c2]</p>
+                        <div contenteditable="false" data-oe-keep-contenteditable="">
+                            <p>not a secret</p>
+                        </div>
+                        `)
+                    );
+                    chai.expect(clientInfos.c1.editable.innerHTML).to.equal(
+                        unformat(`
+                        <p>a[c1}{c1][c2}{c2]</p>
+                        <div contenteditable="false" data-oe-keep-contenteditable="">
+                            <p>not a secret</p>
+                            <div class="oe-blackbox"><p>secret</p></div>
+                        </div>
+                        `)
+                    );
+                },
+            });
+        });
+    });
 });
