@@ -2,9 +2,9 @@
 
 import { reactive } from "@odoo/owl";
 import { registry } from "@web/core/registry";
-import { TourPointer } from "../tour_pointer/tour_pointer";
 import { MacroEngine } from "@web/core/macro";
 import { browser } from "@web/core/browser/browser";
+import { TourPointer } from "../tour_pointer/tour_pointer";
 
 // TODO-JCB: Replace the following import with the non-legacy version.
 import { device } from "web.config";
@@ -29,6 +29,7 @@ function createAutoMacro(
     options = { interval: 500, pointTo: (_el) => {}, advance: () => {} }
 ) {
     function augmentStep(step) {
+        // TODO-JCB: Take into account the possibility of multiple step elements because of the alt_trigger.
         let stepEl;
         let timeout;
         const res = { val: false };
@@ -120,15 +121,86 @@ function createManualMacro(macroDescription, options) {
         return doc.querySelector(".modal") || doc;
     }
 
+    /**
+     * Based on [step.run] and the trigger.
+     * @param {Element} el
+     * @param {Runnable} run
+     * @returns {string}
+     */
+    function getConsumeEventType(el, run) {
+        const $element = $(el);
+        if ($element.hasClass("o_field_many2one") || $element.hasClass("o_field_many2manytags")) {
+            return "autocompleteselect";
+        } else if (
+            $element.is("textarea") ||
+            $element.filter("input").is(function () {
+                const type = $(this).attr("type");
+                return !type || !!type.match(/^(email|number|password|search|tel|text|url)$/);
+            })
+        ) {
+            // FieldDateRange triggers a special event when using the widget
+            if ($element.hasClass("o_field_date_range")) {
+                return "apply.daterangepicker input";
+            }
+            if (
+                config.device.isMobile &&
+                $element.closest(".o_field_widget").is(".o_field_many2one, .o_field_many2many")
+            ) {
+                return "click";
+            }
+            return "input";
+        } else if ($element.hasClass("ui-draggable-handle")) {
+            return "drag";
+        } else if (typeof run === "string" && run.indexOf("drag_and_drop") === 0) {
+            // this is a heuristic: the element has to be dragged and dropped but it
+            // doesn't have class 'ui-draggable-handle', so we check if it has an
+            // ui-sortable parent, and if so, we conclude that its event type is 'sort'
+            if ($element.closest(".ui-sortable").length) {
+                return "sort";
+            }
+            if (
+                (run.indexOf("drag_and_drop_native") === 0 &&
+                    $element.hasClass("o_record_draggable")) ||
+                $element.closest(".o_record_draggable").length
+            ) {
+                return "mousedown";
+            }
+        }
+        return "click";
+    }
+
+    function getAnchorEl(el, consumeEvent) {
+        const $anchor = $(el);
+        let $consumeEventAnchors = $anchor;
+        if (consumeEvent === "drag") {
+            // jQuery-ui draggable triggers 'drag' events on the .ui-draggable element,
+            // but the tip is attached to the .ui-draggable-handle element which may
+            // be one of its children (or the element itself)
+            $consumeEventAnchors = $anchor.closest(".ui-draggable");
+        } else if (consumeEvent === "input" && !$anchor.is("textarea, input")) {
+            $consumeEventAnchors = $anchor.closest("[contenteditable='true']");
+        } else if (consumeEvent.includes("apply.daterangepicker")) {
+            $consumeEventAnchors = $anchor.parent().children(".o_field_date_range");
+        } else if (consumeEvent === "sort") {
+            // when an element is dragged inside a sortable container (with classname
+            // 'ui-sortable'), jQuery triggers the 'sort' event on the container
+            $consumeEventAnchors = $anchor.closest(".ui-sortable");
+        }
+        return $consumeEventAnchors;
+    }
+
     function augmentStep(step) {
         let stepEl;
+        /**
+         * [consumeEvent] is the event type that [anchorEl] waits for
+         * in order to proceed to the next step.
+         */
+        let consumeEvent;
+        /**
+         * [anchorEl] is the element where the [consumeEvent] be attached.
+         */
+        let anchorEl;
         const res = { val: false };
-        const moveToNextStep = () => {
-            res.val = stepEl;
-            stepEl.removeEventListener(step.action, moveToNextStep);
-            stepEl = undefined;
-            options.advance();
-        };
         if (shouldOmit(step)) {
             return [];
         }
@@ -156,18 +228,40 @@ function createManualMacro(macroDescription, options) {
                             sourceEl.querySelector(step.trigger)) ||
                         sourceEl.querySelector(step.alt_trigger);
 
+                    consumeEvent = step.consumeEvent || getConsumeEventType(stepEl);
+
                     // [skip_trigger] - if present, immediately consume the [trigger].
                     if (stepEl && hasSkipTrigger(sourceEl, step.skip_trigger)) {
                         return stepEl;
                     }
 
                     if (prevEl) {
-                        prevEl.removeEventListener(step.action, moveToNextStep);
+                        anchorEl.off(".anchor");
                     }
 
                     // TODO-JCB: I think we should only add the listener when [res.val] is falsy.
                     if (stepEl) {
-                        stepEl.addEventListener(step.action, moveToNextStep);
+                        anchorEl = getAnchorEl(stepEl, consumeEvent);
+                        anchorEl.on(`${consumeEvent}.anchor`, () => {
+                            // TODO-JCB: The following logic comes from _getAnchorAndCreateEvent and it might be important to take it into account.
+                            // $consumeEventAnchors.on(consumeEvent + ".anchor", (function (e) {
+                            //     if (e.type !== "mousedown" || e.which === 1) { // only left click
+                            //         if (this.info.consumeVisibleOnly && !this.isShown()) {
+                            //             // Do not consume non-displayed tips.
+                            //             return;
+                            //         }
+                            //         this.trigger("tip_consumed");
+                            //         this._unbind_anchor_events();
+                            //     }
+                            // }).bind(this));
+
+                            res.val = stepEl;
+                            anchorEl.off(".anchor");
+                            stepEl = undefined;
+                            anchorEl = undefined;
+                            consumeEvent = undefined;
+                            options.advance();
+                        });
                     }
 
                     // Call this everytime so that the pointer is always pointing at the
@@ -289,7 +383,6 @@ export const tourService = {
 
             // Modify the steps to be compatible to Macro system.
             for (const step of tourDesc.steps) {
-                step.action = "click";
                 delete step.content;
             }
 
