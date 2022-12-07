@@ -1131,7 +1131,7 @@ class Task(models.Model):
 
     state_approval_mode = fields.Boolean(default=False, store=True)
 
-    
+    state_pre_block = fields.Char(string='State before block', store=True, copy=False)
     
     kanban_state = fields.Selection([
         ('normal', 'In Progress'),
@@ -1393,20 +1393,26 @@ class Task(models.Model):
     def _compute_kanban_state(self):
         self.kanban_state = 'normal'
 
-    @api.depends('state_approval_mode','depend_on_ids.state_id')
+    @api.depends('depend_on_ids.state_id')
     def _compute_state_id(self):
         for task in self:
             print(f'task: {task}')
         #dependent_tasks = self.env['project.task'].search([('depend_ids', 'in', self.ids)])
             for dependent_task in task.depend_on_ids:
                     if dependent_task.state_id in self.env['project.task.state'].search([('name', 'in', BLOCKING_STATES)]):
+                        task.state_pre_block = task.state_id.name
                         task.state_id = self.env['project.task.state'].search([('name', '=', "Blocked")])
                         return
-            if task.state_approval_mode:
-                task.state_id = self.env['project.task.state'].search([('name', '=', "Pending approval")])
-            else:
-                task.state_id = self.env['project.task.state'].search([('name', '=', "In Progress")])
-            
+            default_state = "Pending approval" if task.state_approval_mode else "In Progress"
+            future_state = default_state if not task.state_pre_block else task.state_pre_block
+            task.state_id = self.env['project.task.state'].search([('name', '=', future_state)])
+
+    @api.onchange('state_approval_mode')
+    def _onchange_state_approval_mode(self):
+        if self.state_id != self.env['project.task.state'].search([('name', '=', "Blocked")]):
+            default_state = "Pending approval" if self.state_approval_mode else "In Progress"
+            self.state_id = self.env['project.task.state'].search([('name', '=', default_state)])
+
     #@api.depends('project_id')
     #def _compute_state(self):
     #    pass

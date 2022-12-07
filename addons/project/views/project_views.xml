@@ -1451,11 +1451,12 @@
                                         <strong class="o_kanban_record_title">
                                         <!--<field name="state_id" groups="base.group_user"/>-->
                                             <field name="state_id" widget="project_task_state" options="{'no_open': True}"/>
-                                            <i title="state approval" t-attf-class="{{record.state_approval_mode.raw_value ? 'fa fa-check' : 'fa fa-arrow-up'}}"/>
+                                            <i title="state approval" t-attf-class="{{record.state_approval_mode.raw_value ? 'fa fa-arrow-up' : 'fa fa-arrow-down'}}"/>
+                                            <br/>
                                             <s t-if="!record.active.raw_value"><field name="name" widget="name_with_subtask_count"/></s>
                                             <t t-else=""><field name="name" widget="name_with_subtask_count"/></t>
                                         </strong>
-                                        <span invisible="context.get('default_project_id', False)"><br/><field name="project_id" widget="project_task_state" options="{'no_open': True}"/></span>
+                                        <span invisible="context.get('default_project_id', False)"><br/><field name="project_id" widget="project_private_task" options="{'no_open': True}"/></span>
                                         <span t-if="record.allow_milestones.raw_value and record.milestone_id.raw_value" t-attf-class="{{record.has_late_and_unreached_milestone.raw_value ? 'text-danger' : ''}}">
                                             <br/>
                                             <field name="milestone_id" options="{'no_open': True}" />
