@@ -13,7 +13,7 @@ class ResPartner(models.Model):
     def _compute_count_active_cards(self):
         count = 0
         for card in self.loyalty_cards_id:
-            if(card.points > 0 and (card.expiration_date == False or card.expiration_date >= fields.Date().context_today(self))):
+            if(card.points > 0 and (not card.expiration_date or card.expiration_date >= fields.Date().context_today(self))):
                 count += 1
         self.active_cards = count
 
