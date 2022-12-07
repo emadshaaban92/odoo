@@ -689,6 +689,7 @@ export class OdooEditor extends EventTarget {
     resetContent(value = '<p><br></p>') {
         this.editable.innerHTML = value;
         this.sanitize();
+        this.idSet(this.editable); // is it ok? why was it not there before?
         this.historyStep(true);
         // The unbreakable protection mechanism detects an anomaly and attempts
         // to trigger a rollback when the content is reset using `innerHTML`.
