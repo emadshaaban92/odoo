@@ -50,10 +50,10 @@ export function throttle(func, delay) {
     const funcName = func.name ? func.name + " (throttle)" : "throttle";
     const pending = () => {
         if (calls.size > 0) {
+            handle = browser.setTimeout(pending, delay);
             const lastCall = [...calls].pop();
             calls.clear();
             func.apply(this, lastCall);
-            handle = browser.setTimeout(pending, delay);
         } else {
             handle = null;
         }
@@ -63,18 +63,17 @@ export function throttle(func, delay) {
             [funcName](...args) {
                 const isNew = handle === null;
                 if (isNew) {
-                    func.apply(this, args);
                     handle = browser.setTimeout(pending, delay);
+                    func.apply(this, args);
                 } else {
-                    // add the call to a Set or Map
                     calls.add(args);
                 }
             },
         }[funcName],
         {
             cancel() {
-                calls.clear();
                 browser.clearTimeout(handle);
+                calls.clear();
                 handle = null;
             },
         }
