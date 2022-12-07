@@ -12,6 +12,7 @@ import { Component } from "@odoo/owl";
 
 export class StateSelectionField extends Component {
     setup() {
+        console.log('StateSelectionField');
         this.colorPrefix = "o_status_";
         this.colors = {
             blocked: "red",
@@ -79,7 +80,7 @@ StateSelectionField.defaultProps = {
 };
 
 StateSelectionField.displayName = _lt("Label Selection");
-StateSelectionField.supportedTypes = ["selection"];
+StateSelectionField.supportedTypes = ["selection","Many2one"];
 
 StateSelectionField.extractProps = ({ attrs }) => {
     return {

@@ -37,7 +37,7 @@
 
     <record id="project_task_state_2" model="project.task.state">
         <field name="sequence">11</field>
-        <field name="name">Blocked</field>
+        <field name="name">Waiting</field>
         <field name="approval_mode">False</field>
         <field name="user_trigger_possible">False</field>
     </record>

@@ -70,7 +70,7 @@ PROJECT_TASK_WRITABLE_FIELDS = {
 
 BLOCKING_STATES = [
     'In Progress', 
-    'Blocked', 
+    'Waiting', 
     'Pending approval', 
     'Changes requested'
 ]
@@ -1398,10 +1398,10 @@ class Task(models.Model):
         #dependent_tasks = self.env['project.task'].search([('depend_ids', 'in', self.ids)])
             for dependent_task in task.depend_on_ids:
                     if dependent_task.state_id in self.env['project.task.state'].search([('name', 'in', BLOCKING_STATES)]):
-                        if task.state_id.name != "Blocked":
+                        if task.state_id.name != "Waiting":
                             task.state_pre_block = task.state_id.name 
                         print("state_pre_block: {}".format(task.state_pre_block))
-                        task.state_id = self.env['project.task.state'].search([('name', '=', "Blocked")])
+                        task.state_id = self.env['project.task.state'].search([('name', '=', "Waiting")])
                         return
             default_state = "Pending approval" if task.state_approval_mode else "In Progress"
             print(default_state)
@@ -1411,7 +1411,7 @@ class Task(models.Model):
 
     @api.onchange('state_approval_mode')
     def _onchange_state_approval_mode(self):
-        if self.state_id != self.env['project.task.state'].search([('name', '=', "Blocked")]):
+        if self.state_id != self.env['project.task.state'].search([('name', '=', "Waiting")]):
             default_state = "Pending approval" if self.state_approval_mode else "In Progress"
             self.state_id = self.env['project.task.state'].search([('name', '=', default_state)])
 
