@@ -190,6 +190,9 @@ function makeDOMHelpers(cleanup) {
      * @param  {...string} classNames
      */
     const addClass = (el, ...classNames) => {
+        if (!el || !classNames.length) {
+            return;
+        }
         cleanup.add(saveAttribute(el, "class"));
         el.classList.add(...classNames);
     };
@@ -204,6 +207,9 @@ function makeDOMHelpers(cleanup) {
      * @param {boolean | Record<string, boolean>} [options]
      */
     const addListener = (el, event, callback, options) => {
+        if (!el || !event || !callback) {
+            return;
+        }
         el.addEventListener(event, callback, options);
         if (/pointer|mouse/.test(event)) {
             // Restore pointer events on elements listening on mouse/pointer events.
@@ -219,6 +225,9 @@ function makeDOMHelpers(cleanup) {
      * @param {Record<string, string | number>} style
      */
     const addStyle = (el, style) => {
+        if (!el || !style) {
+            return;
+        }
         cleanup.add(saveAttribute(el, "style"));
         for (const key in style) {
             const [value, priority] = String(style[key]).split(/\s*!\s*/);
@@ -235,6 +244,9 @@ function makeDOMHelpers(cleanup) {
      * @returns {DOMRect}
      */
     const getRect = (el, options = {}) => {
+        if (!el) {
+            return {};
+        }
         const rect = el.getBoundingClientRect();
         if (options.adjust) {
             const style = getComputedStyle(el);
@@ -258,6 +270,9 @@ function makeDOMHelpers(cleanup) {
      * @param  {...string} classNames
      */
     const removeClass = (el, ...classNames) => {
+        if (!el || !classNames) {
+            return;
+        }
         cleanup.add(saveAttribute(el, "class"));
         el.classList.remove(...classNames);
     };
@@ -388,7 +403,7 @@ export function makeDraggableHook(hookParams) {
                 if (state.dragging) {
                     if (!inErrorState) {
                         execBuildHandler("onDragEnd");
-                        if (!cancelled) {
+                        if (!cancelled && document.body.contains(ctx.currentElement)) {
                             execBuildHandler("onDrop");
                         }
                     }
