@@ -63,6 +63,25 @@ function get_jquery_element_from_selector(selector) {
     }
 }
 
+/**
+ * If `inModal` is not false (e.g. true or undefined),
+ * find `selector` from the top most visible modal.
+ * Otherwise, find `selector` from the whole document.
+ *
+ * @param {string} selector - any valid jquery selector
+ * @param {boolean} inModal
+ * @returns {Element | undefined}
+ */
+ function findTrigger(selector, inModal) {
+    const $visibleModal = $(".modal:visible").last();
+    let $el;
+    if (inModal !== false && $visibleModal.length) {
+        $el = $visibleModal.find(selector);
+    } else {
+        $el = get_jquery_element_from_selector(selector);
+    }
+    return get_first_visible_element($el).get(0);
+}
 
 return {
     get_debugging_key: get_debugging_key,
@@ -72,6 +91,7 @@ return {
     'get_first_visible_element': get_first_visible_element,
     'do_before_unload': do_before_unload,
     'get_jquery_element_from_selector' : get_jquery_element_from_selector,
+    findTrigger,
 };
 
 });

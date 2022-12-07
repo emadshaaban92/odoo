@@ -3,6 +3,9 @@
 import { browser } from "@web/core/browser/browser";
 import { isVisible } from "@web/core/utils/ui";
 
+// TODO-JCB: Don't use legacy imports.
+import { findTrigger } from "web_tour.utils";
+
 export const ACTION_HELPERS = {
     click(el, _step) {
         el.dispatchEvent(new MouseEvent("mouseover"));
@@ -55,7 +58,7 @@ class Macro {
                 }
             }
             if (typeof trigger === "string") {
-                el = document.querySelector(trigger);
+                el = findTrigger(trigger, step.in_modal);
             }
             if (el && isVisible(el)) {
                 this.advanceStep(el, step);

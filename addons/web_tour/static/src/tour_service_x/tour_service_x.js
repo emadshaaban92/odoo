@@ -8,6 +8,7 @@ import { TourPointer } from "../tour_pointer/tour_pointer";
 
 // TODO-JCB: Replace the following import with the non-legacy version.
 import { device } from "web.config";
+import { findTrigger } from "web_tour.utils";
 
 /**
  * TODO-JCB: Don't forget the following:
@@ -38,7 +39,7 @@ function createAutoMacro(
             {
                 action: () => {
                     res.val = false;
-                    stepEl = document.querySelector(step.trigger);
+                    stepEl = findTrigger(step.trigger, step.in_modal);
                     options.pointTo(stepEl);
                 },
             },
@@ -100,35 +101,26 @@ function createManualMacro(macroDescription, options) {
         );
     }
 
-    function hasExtraTrigger(sourceEl, extraTriggerSelector) {
-        if (extraTriggerSelector) {
-            return sourceEl.querySelector(extraTriggerSelector);
-        } else {
-            return true;
-        }
-    }
+    function queryStep(step) {
+        const triggerEl = findTrigger(step.trigger, step.in_modal);
+        const altTriggerEl = findTrigger(step.alt_trigger, step.in_modal);
+        const skipTriggerEl = findTrigger(step.skip_trigger, step.in_modal);
 
-    function hasSkipTrigger(sourceEl, skipTriggerSelector) {
-        if (skipTriggerSelector) {
-            return sourceEl.querySelector(skipTriggerSelector);
-        } else {
-            return false;
-        }
-    }
+        // [extraTriggerOkay] should be true when [step.extra_trigger] is undefined.
+        const extraTriggerOkay = step.extra_trigger
+            ? findTrigger(step.extra_trigger, step.in_modal)
+            : true;
 
-    function getModal(doc) {
-        // TODO-JCB: need to take into account :visible pseudo class.
-        return doc.querySelector(".modal") || doc;
+        return { triggerEl, altTriggerEl, extraTriggerOkay, skipTriggerEl };
     }
 
     /**
      * Based on [step.run] and the trigger.
-     * @param {Element} el
+     * @param {jQuery} $element
      * @param {Runnable} run
      * @returns {string}
      */
-    function getConsumeEventType(el, run) {
-        const $element = $(el);
+    function getConsumeEventType($element, run) {
         if ($element.hasClass("o_field_many2one") || $element.hasClass("o_field_many2manytags")) {
             return "autocompleteselect";
         } else if (
@@ -169,22 +161,21 @@ function createManualMacro(macroDescription, options) {
         return "click";
     }
 
-    function getAnchorEl(el, consumeEvent) {
-        const $anchor = $(el);
-        let $consumeEventAnchors = $anchor;
+    function getAnchorEl($el, consumeEvent) {
+        let $consumeEventAnchors = $el;
         if (consumeEvent === "drag") {
             // jQuery-ui draggable triggers 'drag' events on the .ui-draggable element,
             // but the tip is attached to the .ui-draggable-handle element which may
             // be one of its children (or the element itself)
-            $consumeEventAnchors = $anchor.closest(".ui-draggable");
-        } else if (consumeEvent === "input" && !$anchor.is("textarea, input")) {
-            $consumeEventAnchors = $anchor.closest("[contenteditable='true']");
+            $consumeEventAnchors = $el.closest(".ui-draggable");
+        } else if (consumeEvent === "input" && !$el.is("textarea, input")) {
+            $consumeEventAnchors = $el.closest("[contenteditable='true']");
         } else if (consumeEvent.includes("apply.daterangepicker")) {
-            $consumeEventAnchors = $anchor.parent().children(".o_field_date_range");
+            $consumeEventAnchors = $el.parent().children(".o_field_date_range");
         } else if (consumeEvent === "sort") {
             // when an element is dragged inside a sortable container (with classname
             // 'ui-sortable'), jQuery triggers the 'sort' event on the container
-            $consumeEventAnchors = $anchor.closest(".ui-sortable");
+            $consumeEventAnchors = $el.closest(".ui-sortable");
         }
         return $consumeEventAnchors;
     }
@@ -192,14 +183,14 @@ function createManualMacro(macroDescription, options) {
     function augmentStep(step) {
         let stepEl;
         /**
-         * [consumeEvent] is the event type that [anchorEl] waits for
+         * [consumeEvent] is the event type that [$anchorEl] waits for
          * in order to proceed to the next step.
          */
         let consumeEvent;
         /**
-         * [anchorEl] is the element where the [consumeEvent] be attached.
+         * [$anchorEl] is the element where the [consumeEvent] be attached.
          */
-        let anchorEl;
+        let $anchorEl;
         const res = { val: false };
         if (shouldOmit(step)) {
             return [];
@@ -213,8 +204,9 @@ function createManualMacro(macroDescription, options) {
             },
             {
                 trigger: () => {
-                    // [in_modal] - if true, look for the element in the modal (fallback to the document)
-                    const sourceEl = step.in_modal !== false && getModal(document);
+                    const { triggerEl, altTriggerEl, extraTriggerOkay, skipTriggerEl } = queryStep(
+                        step
+                    );
 
                     // This callback can be called multiple times until it returns true.
                     // We should take into account the fact the element is not in the
@@ -223,26 +215,24 @@ function createManualMacro(macroDescription, options) {
 
                     // [alt_trigger] - alternative to [trigger].
                     // [extra_trigger] - should also be present together with the [trigger].
-                    stepEl =
-                        (hasExtraTrigger(sourceEl, step.extra_trigger) &&
-                            sourceEl.querySelector(step.trigger)) ||
-                        sourceEl.querySelector(step.alt_trigger);
+                    stepEl = extraTriggerOkay && (triggerEl || altTriggerEl);
 
-                    consumeEvent = step.consumeEvent || getConsumeEventType(stepEl);
+                    consumeEvent = step.consumeEvent || getConsumeEventType($(stepEl));
 
-                    // [skip_trigger] - if present, immediately consume the [trigger].
-                    if (stepEl && hasSkipTrigger(sourceEl, step.skip_trigger)) {
+                    // If [skip_trigger] element is present, immediately return [stepEl] for potential
+                    // consumption of this step.
+                    if (stepEl && skipTriggerEl) {
                         return stepEl;
                     }
 
                     if (prevEl) {
-                        anchorEl.off(".anchor");
+                        $anchorEl.off(".anchor");
                     }
 
                     // TODO-JCB: I think we should only add the listener when [res.val] is falsy.
                     if (stepEl) {
-                        anchorEl = getAnchorEl(stepEl, consumeEvent);
-                        anchorEl.on(`${consumeEvent}.anchor`, () => {
+                        $anchorEl = getAnchorEl($(stepEl), consumeEvent);
+                        $anchorEl.on(`${consumeEvent}.anchor`, () => {
                             // TODO-JCB: The following logic comes from _getAnchorAndCreateEvent and it might be important to take it into account.
                             // $consumeEventAnchors.on(consumeEvent + ".anchor", (function (e) {
                             //     if (e.type !== "mousedown" || e.which === 1) { // only left click
@@ -256,10 +246,10 @@ function createManualMacro(macroDescription, options) {
                             // }).bind(this));
 
                             res.val = stepEl;
-                            anchorEl.off(".anchor");
+                            $anchorEl.off(".anchor");
                             stepEl = undefined;
-                            anchorEl = undefined;
                             consumeEvent = undefined;
+                            $anchorEl = undefined;
                             options.advance();
                         });
                     }
