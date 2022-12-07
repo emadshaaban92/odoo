@@ -1,0 +1,67 @@
+id,code_prefix_start,name,chart_template_id/id
+l10n_tn_account_group_10,10,Capital,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_101,101,Capital social,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_1013,1013,"Capital souscrit - appelé, versé",l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_11,11,Réserves et primes liées au capital,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_117,117,Primes liées au capital,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_118,118,Autres réserves,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_12,12,Résultats reportés,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_13,13,Résultat de l'exercice,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_14,14,Autres capitaux propres,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_15,15,Provisions pour risques & charges,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_16,16,Emprunts & dettes assimilées,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_17,17,Comptes de liaison des établissements & succursales,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_18,18,Autres passifs non courants,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_21,21,Immobilisations incorporelles,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_22,22,Immobilisations corporelles,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_23,23,Immobilisations en cours,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_24,24,Immobilisations à statut juridique particulier,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_25,25,Participations & créances liées à des participations,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_26,26,Autres immobilisations financières,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_27,27,Autres actifs non courants,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_28,28,Amortissements des immobilisations,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_29,29,Provisions pour dépréciation des immobilisations,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_31,31,Matières premières & fournitures liées,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_32,32,Autres approvisionnements,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_33,33,En-cours de production de biens,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_34,34,En-cours de production de services,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_35,35,Stocks de produits,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_37,37,Stocks de marchandises,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_39,39,Provisions pour dépréciation des stocks (à ventiler selon la nomenclature de cette classe),l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_40,40,Fournisseurs & comptes rattachés,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_41,41,Clients & comptes rattachés,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_42,42,Personnel et comptes rattachés,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_43,43,Etat et collectivités publiques,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_44,44,Sociétés du groupe & associés,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_45,45,Débiteurs divers et Créditeurs divers,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_46,46,Comptes transitoires ou d'attente,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_47,47,Comptes de régularisation,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_48,48,Provisions courantes pour risques et charges,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_49,49,Provisions pour dépréciation des comptes de tiers,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_50,50,Emprunts et autres dettes financières courants,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_51,51,Prêts et autres créances financières courants,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_52,52,Placements courants,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_53,53,"Banques, établissements financiers et assimilés",l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_54,54,Caisse,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_55,55,Régies d'avances et accréditifs,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_58,58,Virements internes,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_59,59,Provisions pour dépréciation des comptes financiers,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_60,60,Achats (sauf 603),l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_61,61,Services extérieurs,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_62,62,Autres services extérieurs,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_63,63,Charges diverses ordinaires,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_64,64,Charges de personnel,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_65,65,Charges financières,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_66,66,"Impôts, taxes et versements assimilés",l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_67,67,Pertes extraordinaires,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_68,68,Dotations aux amortissements et aux provisions,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_69,69,Impôts sur les bénéfices,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_70,70,"Ventes de produits fabriqués, prestations de services, marchandises",l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_71,71,Production stockée (ou destockage),l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_72,72,Production immobilisée,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_73,73,Produits divers ordinaires,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_74,74,Subventions d'exploitation et d'équilibre,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_75,75,Produits financiers,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_77,77,Gains extraordinaires,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_78,78,Reprises sur amortissements et provisions,l10n_tn.l10n_tn_chart_template
+l10n_tn_account_group_79,79,Transferts de charges,l10n_tn.l10n_tn_chart_template
