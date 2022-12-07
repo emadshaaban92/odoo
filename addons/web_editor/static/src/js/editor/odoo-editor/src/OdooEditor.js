@@ -312,6 +312,7 @@ export class OdooEditor extends EventTarget {
 
         this._collabClientId = this.options.collaborationClientId;
         this._collabClientAvatarUrl = this.options.collaborationClientAvatarUrl;
+        this.collaborativeSynchronizationPromises = {};
 
         // Collaborator selection and caret display.
         this._collabSelectionInfos = new Map();
@@ -1009,6 +1010,7 @@ export class OdooEditor extends EventTarget {
         this._handleCommandHint();
         this.multiselectionRefresh();
         this.observerActive();
+        this._pluginCall('onHistoryStepsChange', [this.editable]);
     }
     historyGetMissingSteps({fromStepId, toStepId}) {
         const fromIndex = this._historySteps.findIndex(x => x.id === fromStepId);
@@ -1481,6 +1483,7 @@ export class OdooEditor extends EventTarget {
         this.historyResetLatestComputedSelection();
         this._handleCommandHint();
         this.multiselectionRefresh();
+        this._pluginCall('onHistoryStepsChange', [this.editable]);
     }
 
     // Multi selection
@@ -3654,6 +3657,84 @@ export class OdooEditor extends EventTarget {
             clientId: this._collabClientId,
             clientAvatarUrl: this._collabClientAvatarUrl,
         });
+    }
+
+    async verifySynchronizationData(notificationPayload) {
+        let targetNode = this._idToNodeMap.get(notificationPayload.oid);
+        let contentNode = targetNode && targetNode.querySelector('.o_knowledge_content');
+        if (targetNode && contentNode && contentNode.oid !== notificationPayload.verificationOid) {
+            if (targetNode.oKnowledgeBehavior && targetNode.oKnowledgeBehavior.root) {
+                // this.observerUnactive(`sync_data_${notificationPayload.oid}`);
+                // // targetNode.oKnowledgeBehavior.destroy();
+                // // delete targetNode.oKnowledgeBehavior;
+                // // targetNode.replaceChildren();
+                // this.observerActive(`sync_data${notificationPayload.oid}`);
+                // $(this.editable).trigger('refresh_behaviors');
+
+                // here since the component is already rendered, we should only do the OID update
+                // + the o_knowledge_content update, directly in the component, and without a step
+                await targetNode.oKnowledgeBehavior.root.component.setSynchronizationData();
+                targetNode.oKnowledgeBehavior.root.component.validateContent();
+            }
+        }
+    }
+
+    async getSynchronizationData(requestPayload) {
+        let targetNode = this._idToNodeMap.get(requestPayload.oid);
+        // node can not exist yet (await collaborative mutation)
+        let contentNode = targetNode && targetNode.querySelector('.o_knowledge_content');
+        // behavior can be not-rendered (await component mount)
+        if (!targetNode || !contentNode) { // previously, there was a || targetNode.oKnowledgeBehavior (check if important, I think it was an error)
+            let resolver;
+            const promise = requestPayload.oid in this.collaborativeSynchronizationPromises ?
+                this.collaborativeSynchronizationPromises[requestPayload.oid] : new Promise((resolve) => {
+                    resolver = resolve;
+                    setTimeout(() => resolve(false), 3000); // should be less than 10seconds (p2p request abort time), 3secs is arbitrary, to rethink later
+                });
+            this.collaborativeSynchronizationPromises[requestPayload.oid] = {
+                promise: promise,
+                resolve: resolver,
+            };
+            const sync = await promise;
+            if (!sync) {
+                return null;
+            }
+            targetNode = this._idToNodeMap.get(requestPayload.oid);
+            contentNode = targetNode && targetNode.querySelector('.o_knowledge_content');
+        }
+        const oidPathFromContent = [];
+        let currentNode = contentNode;
+        while (currentNode !== targetNode) {
+            oidPathFromContent.push(currentNode.oid);
+            currentNode = currentNode.parentElement;
+        }
+        // oidPathFromContent.push(targetNode.oid);
+        const travelFun = function (node) {
+            const curObj = {
+                nodeType: node.nodeType,
+                oid: node.oid,
+            };
+            if (curObj.nodeType === Node.TEXT_NODE) {
+                curObj.textContent = node.textContent;
+            } else if (curObj.nodeType === Node.ELEMENT_NODE) {
+                if (node.firstChild) {
+                    curObj.firstChild = travelFun(node.firstChild);
+                }
+                curObj.tagName = node.tagName;
+                curObj.attributes = Object.fromEntries(node.attributes);
+            } else {
+                return null;
+            }
+            if (node.nextSibling) {
+                curObj.nextSibling = travelFun(node.nextSibling);
+            }
+            return curObj;
+        };
+        let reconstructionNode = contentNode.firstChild && travelFun(contentNode.firstChild);
+        return {
+            oidPathFromContent: oidPathFromContent,
+            reconstructionNode: reconstructionNode,
+        };
     }
 
     clean() {

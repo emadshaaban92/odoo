@@ -518,9 +518,13 @@ const Wysiwyg = Widget.extend({
                     get_missing_steps: (params) => this.odooEditor.historyGetMissingSteps(params.requestPayload),
                     get_history_from_snapshot: () => this.odooEditor.historyGetSnapshotSteps(),
                     get_collaborative_selection: () => this.odooEditor.getCurrentCollaborativeSelection(),
+                    get_synchronization_data: async (params) => await this.odooEditor.getSynchronizationData(params.requestPayload),
                 },
                 onNotification: async ({ fromClientId, notificationName, notificationPayload }) => {
                     switch (notificationName) {
+                        case 'verify_synchronization_data':
+                            await this.odooEditor.verifySynchronizationData(notificationPayload);
+                            break;
                         case 'ptp_remove':
                             this.odooEditor.multiselectionRemove(notificationPayload);
                             break;
