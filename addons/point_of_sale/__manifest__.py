@@ -136,7 +136,9 @@
             'web/static/src/legacy/legacy_setup.js',
         ],
         'point_of_sale.assets_self_order': [
+            'web/static/tests/legacy/legacy_setup.js',
             'point_of_sale/static/src/entry_self_order/main_self_order.js',
+            # 'web/static/src/start.js',
         ],
 
         #########################################################
