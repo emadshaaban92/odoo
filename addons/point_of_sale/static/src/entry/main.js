@@ -32,5 +32,5 @@ function startPosApp() {
     Registries.Model.freeze();
     startWebClient(PosApp);
 }
-
+debugger;
 startPosApp();
