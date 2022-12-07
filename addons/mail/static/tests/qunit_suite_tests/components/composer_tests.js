@@ -193,6 +193,41 @@ QUnit.module("mail", (hooks) => {
             );
         });
 
+        QUnit.only("add an emoji in the middle of some text", async function (assert) {
+            assert.expect(2);
+
+            const pyEnv = await startServer();
+            const mailChanelId1 = pyEnv["mail.channel"].create({ name: "beyblade-room" });
+            const { click, insertText, openDiscuss } = await start({
+                discuss: {
+                    context: { active_id: mailChanelId1 },
+                },
+            });
+            await openDiscuss();
+            await insertText(".o-mail-composer-textarea", "An emoji should be inserted here  <-");
+            assert.strictEqual(
+                target.querySelector(".o-mail-composer-textarea").value,
+                "An emoji should be inserted here  <-",
+                "composer text input should have text only initially"
+            );
+
+            target.querySelector(".o-mail-composer-textarea").setSelectionRange(33, 33);
+            console.log("a" + target.querySelector(".o-mail-composer-textarea").selectionStart);
+
+            await click("i[aria-label='Emojis']");
+            await click(".o-emoji[data-codepoints='🤑']");
+            assert.strictEqual(
+                target.querySelector(".o-mail-composer-textarea").value,
+                "An emoji should be inserted here 🤑 <-",
+                "emoji should be inserted in the text"
+            );
+
+            // assert.strictEqual(
+            //     target.querySelector(".o-mail-composer-textarea").selectionStart,
+            //     35
+            // );
+        });
+
         QUnit.test("add emoji replaces (keyboard) text selection", async function (assert) {
             assert.expect(2);
 
