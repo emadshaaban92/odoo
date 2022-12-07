@@ -50,6 +50,14 @@ export class QuestionPageListRenderer extends ListRenderer {
         return classNames.join(" ");
     }
 
+    getCellClass(column, record) {
+        const classNames = super.getCellClass(column, record).split(" ");
+        if (column.type === "button_group") {
+            classNames.push("text-end");
+        }
+        return classNames.join(" ");
+    }
+
     getSectionColumns(columns) {
         const sectionColumns = [];
 

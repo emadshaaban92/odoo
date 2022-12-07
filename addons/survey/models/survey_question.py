@@ -134,10 +134,10 @@ class SurveyQuestion(models.Model):
 
     # Conditional display
     is_conditional = fields.Boolean(
-        string='Conditional Display', copy=True, help="""If checked, this question will be displayed only
+        string='Conditional Display', help="""If checked, this question will be displayed only
         if the specified conditional answer have been selected in a previous question""")
     triggering_question_id = fields.Many2one(
-        'survey.question', string="Triggering Question", copy=False, compute="_compute_triggering_question_id",
+        'survey.question', string="Triggering Question", compute="_compute_triggering_question_id",
         store=True, readonly=False, help="Question containing the triggering answer to display the current question.",
         domain="[('survey_id', '=', survey_id), \
                  '&', ('question_type', 'in', ['simple_choice', 'multiple_choice']), \
@@ -145,7 +145,7 @@ class SurveyQuestion(models.Model):
                      ('sequence', '<', sequence), \
                      '&', ('sequence', '=', sequence), ('id', '<', id)]")
     triggering_answer_id = fields.Many2one(
-        'survey.question.answer', string="Triggering Answer", copy=False, compute="_compute_triggering_answer_id",
+        'survey.question.answer', string="Triggering Answer", compute="_compute_triggering_answer_id",
         store=True, readonly=False, help="Answer that will trigger the display of the current question.",
         domain="[('question_id', '=', triggering_question_id)]")
 
