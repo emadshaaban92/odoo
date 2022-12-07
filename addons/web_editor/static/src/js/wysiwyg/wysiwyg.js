@@ -483,7 +483,7 @@ const Wysiwyg = Widget.extend({
             let historySyncAtLeastOnce = false;
             let historySyncFinished = false;
 
-            return new PeerToPeer({
+            const ptp = new PeerToPeer({
                 peerConnectionConfig: { iceServers: this._iceServers },
                 currentClientId: this._currentClientId,
                 broadcastAll: (rpcData) => {
@@ -548,6 +548,7 @@ const Wysiwyg = Widget.extend({
                                 historySyncAtLeastOnce = true;
                                 await editorCollaborationOptions.onHistoryNeedSync();
                                 historySyncFinished = true;
+                                this.ptp.resolveCollabSync(this.getFirstClientId() !== this._currentClientId);
                             } else {
                                 const remoteSelection = await this.ptp.requestClient(fromClientId, 'get_collaborative_selection', undefined, { transport: 'rtc' });
                                 if (remoteSelection) {
@@ -577,6 +578,12 @@ const Wysiwyg = Widget.extend({
                     }
                 }
             });
+            ptp.underwentCollabSync = new Promise((resolve) => {
+                ptp.resolveCollabSync = resolve;
+                // will always resolve in html_field onwillDestroy or in
+                // rtc_data_channel_open
+            });
+            return ptp;
         }
 
         this._currentClientId = this._generateClientId();
@@ -634,6 +641,36 @@ const Wysiwyg = Widget.extend({
             resolve();
         });
 
+        this.getFirstClientId = function () {
+            let firstClientId = this._currentClientId;
+            let firstClientStartTime = this._startCollaborationTime;
+            const connectedClientIds = this.ptp.getConnectedClientIds();
+            for (const clientId of connectedClientIds) {
+                const clientInfo = this.ptp.clientsInfos[clientId];
+                // Ensure we already retreived remote client starting time.
+                if (!clientInfo.startTime) {
+                    continue;
+                }
+
+                const isCurrentClientFirst = isClientFirst(
+                    {
+                        startTime: clientInfo.startTime,
+                        id: clientId,
+                    },
+                    {
+                        startTime: firstClientStartTime,
+                        id: firstClientId,
+                    }
+                );
+
+                if (isCurrentClientFirst) {
+                    firstClientStartTime = clientInfo.startTime;
+                    firstClientId = clientId;
+                }
+            }
+            return firstClientId;
+        };
+
         const editorCollaborationOptions = {
             collaborationClientId: this._currentClientId,
             onHistoryStep: (historyStep) => {
@@ -663,33 +700,7 @@ const Wysiwyg = Widget.extend({
             },
             onHistoryNeedSync: async () => {
                 if (!this.ptp) return;
-                let firstClientId = this._currentClientId;
-                let firstClientStartTime = this._startCollaborationTime;
-                const connectedClientIds = this.ptp.getConnectedClientIds();
-                for (const clientId of connectedClientIds) {
-                    const clientInfo = this.ptp.clientsInfos[clientId];
-                    // Ensure we already retreived remote client starting time.
-                    if (!clientInfo.startTime) {
-                        continue;
-                    }
-
-                    const isCurrentClientFirst = isClientFirst(
-                        {
-                            startTime: clientInfo.startTime,
-                            id: clientId,
-                        },
-                        {
-                            startTime: firstClientStartTime,
-                            id: firstClientId,
-                        }
-                    );
-
-                    if (isCurrentClientFirst) {
-                        firstClientStartTime = clientInfo.startTime;
-                        firstClientId = clientId;
-                    }
-                }
-
+                const firstClientId = this.getFirstClientId();
                 if (firstClientId !== this._currentClientId) {
                     const historySteps = await this.ptp.requestClient(firstClientId, 'get_history_from_snapshot', undefined, { transport: 'rtc' });
                     this.odooEditor.historyResetFromSteps(historySteps);
