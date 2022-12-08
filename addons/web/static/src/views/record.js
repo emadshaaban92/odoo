@@ -32,6 +32,11 @@ class _Record extends Component {
     }
 }
 _Record.template = xml`<t t-slot="default" record="model.root"/>`;
+_Record.props = {
+    info: Object,
+    fields: Object,
+    slots: Object,
+};
 
 export class Record extends Component {
     setup() {
