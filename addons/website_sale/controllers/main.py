@@ -1155,6 +1155,8 @@ class WebsiteSale(http.Controller):
                 order.message_partner_ids = [(4, partner_id), (3, request.website.partner_id.id)]
                 if not errors:
                     return request.redirect(kw.get('callback') or '/shop/confirm_order')
+        elif request.httprequest.method == "GET":
+            values.update(kw)
 
         render_values = {
             'website_sale_order': order,
@@ -1344,7 +1346,7 @@ class WebsiteSale(http.Controller):
             return redirection
 
         if order.partner_id.id == request.website.user_id.sudo().partner_id.id:
-            return request.redirect('/shop/address')
+            return request.redirect('/shop/address?%s' % url_encode(post))
 
         redirection = self.checkout_check_address(order)
         if redirection:

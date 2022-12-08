@@ -2,6 +2,8 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from collections import defaultdict
+from werkzeug.urls import url_encode
+
 from odoo import _
 from odoo.http import request, route
 
@@ -69,7 +71,12 @@ class WebsiteEventSaleController(WebsiteEventController):
         if any(info['event_ticket_id'] for info in registrations):
             order_sudo = request.website.sale_get_order()
             if order_sudo.amount_total:
-                return request.redirect("/shop/checkout")
+                url_parameters = url_encode({
+                    'name': post['1-name'],
+                    'email': post['1-email'],
+                    'phone': post.get('1-phone'),
+                })
+                return request.redirect("/shop/checkout?%s" % url_parameters)
             # free tickets -> order with amount = 0: auto-confirm, no checkout
             elif order_sudo:
                 order_sudo.action_confirm()  # tde notsure: email sending ?
