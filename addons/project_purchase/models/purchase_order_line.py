@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-from odoo import models
+from odoo import fields, models
 
 
 class PurchaseOrderLine(models.Model):
     _inherit = 'purchase.order.line'
 
+    task_id = fields.Many2one('project.task', string='Task')
+    
     def _compute_analytic_distribution(self):
         super()._compute_analytic_distribution()
         for line in self:
