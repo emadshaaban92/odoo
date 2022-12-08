@@ -1,17 +1,16 @@
 /** @odoo-module **/
 
-import { onWillRender, onWillStart, toRaw, useEffect, useState } from "@odoo/owl";
-import { shallowEqual } from "./utils/arrays";
-import { throttleForAnimation } from "./utils/timing";
+import { onWillStart, reactive, useComponent, useEffect, useRef } from "@odoo/owl";
+import { useThrottled } from "./utils/timing";
 
 /**
  * @template T
  * @typedef UseVirtualOptions
- * @property {typeof useRef} scrollableRef
- * @property {T[] | () => T[]} items
  * @property {AcceptedPixelValue | (item: T) => AcceptedPixelValue} itemHeight
+ * @property {() => T[]} getItems
  * @property {AcceptedPixelValue} [margin="100%"]
- * @property {number} [initialScrollTop=0]
+ * @property {number} [initialScrollTop]
+ * @property {typeof useRef["name"]} [refName="virtual-zone"]
  */
 
 /**
@@ -22,14 +21,15 @@ import { throttleForAnimation } from "./utils/timing";
  * Converts a number,
  *
  * @param {AcceptedPixelValue} value
+ * @param {number} base
  * @returns {number}
  */
-const toPixels = (value) => {
+const toPixels = (value, base) => {
     if (typeof value === "number") {
         return value;
     }
     if (value.endsWith("%")) {
-        return window.innerHeight * (Number(value.slice(0, -1)) / 100);
+        return base * (Number(value.slice(0, -1)) / 100);
     }
     if (value.endsWith("px")) {
         return Number(value.slice(0, -2));
@@ -41,29 +41,54 @@ const toPixels = (value) => {
  *
  * @template T
  * @param {UseVirtualOptions<T>} param0
- * @returns {ReturnType<useState<T[]>>}
+ * @returns {import("@odoo/owl").Reactive<T[]>}
  */
-export function useVirtual({ itemHeight, items, margin, initialScrollTop, scrollableRef }) {
-    itemHeight = typeof itemHeight === "function" ? itemHeight : (_) => itemHeight;
-    items = typeof items === "function" ? items : () => items;
-    margin = typeof margin === "number" ? margin : margin || "100%";
-    const current = {
-        allItems: items(),
-        scrollTop: initialScrollTop || 0,
-    };
+export function useVirtual({ itemHeight, getItems, margin, initialScrollTop, refName }) {
+    margin = margin || "100%";
+    const zoneRef = useRef(refName || "virtual-zone");
 
-    const virtualItems = useState([]);
-    function compute() {
-        const { allItems, scrollTop } = current;
-        const marginPixels = toPixels(margin);
+    const comp = useComponent();
+    const throttledRender = useThrottled(() => comp.render(), 16 * 4);
+    const displayedItems = reactive([], throttledRender);
+
+    const throttledCompute = useThrottled(_compute, 16);
+    const current = reactive(
+        { items: getItems(), scrollTop: initialScrollTop || 0 },
+        throttledCompute
+    );
+
+    onWillStart(() => throttledCompute());
+    useEffect(
+        (items) => {
+            current.items = items;
+        },
+        () => [getItems()]
+    );
+    useEffect(
+        (el) => {
+            if (el) {
+                const onScroll = (ev) => (current.scrollTop = ev.target.scrollTop);
+                const scrollParent = el.parentElement;
+                scrollParent.addEventListener("scroll", onScroll);
+                return () => scrollParent.removeEventListener("scroll", onScroll);
+            }
+        },
+        () => [zoneRef.el]
+    );
+
+    function _compute() {
+        const { items, scrollTop } = current;
+        const zone = zoneRef.el;
+        const zoneHeight = zone?.parentElement.clientHeight || window.innerHeight;
+        const marginPixels = toPixels(margin, zoneHeight);
 
         const vStart = scrollTop - marginPixels;
-        const vEnd = scrollTop + window.innerHeight + marginPixels;
+        const vEnd = scrollTop + zoneHeight + marginPixels;
 
         let startIndex = 0;
         let endIndex = 0;
         let currentTop = 0;
-        for (const item of allItems) {
+        for (const item of items) {
             if (currentTop < vStart) {
                 startIndex++;
                 endIndex++;
@@ -72,39 +97,13 @@ export function useVirtual({ itemHeight, items, margin, initialScrollTop, scroll
             } else {
                 break;
             }
-            const size = itemHeight(item);
-            currentTop += toPixels(size);
+            const size = typeof itemHeight === "function" ? itemHeight(item) : itemHeight;
+            currentTop += toPixels(size, zoneHeight);
         }
 
-        const prevItems = toRaw(virtualItems);
-        const newItems = allItems.slice(startIndex, endIndex);
-        if (!shallowEqual(prevItems, newItems)) {
-            virtualItems.length = 0;
-            virtualItems.push(...newItems);
-        }
+        const newItems = items.slice(startIndex, endIndex);
+        displayedItems.length = 0;
+        displayedItems.push(...newItems);
     }
-
-    onWillStart(compute);
-    onWillRender(() => {
-        const allItems = items();
-        if (!shallowEqual(current.allItems, allItems)) {
-            current.allItems = allItems;
-            compute();
-        }
-    });
-    const throttledOnScroll = throttleForAnimation((ev) => {
-        current.scrollTop = ev.target.scrollTop;
-        compute();
-    });
-    useEffect(
-        (el) => {
-            if (el) {
-                el.addEventListener("scroll", throttledOnScroll);
-                return () => el.removeEventListener("scroll", throttledOnScroll);
-            }
-        },
-        () => [scrollableRef.el]
-    );
-
-    return virtualItems;
+    return displayedItems;
 }
