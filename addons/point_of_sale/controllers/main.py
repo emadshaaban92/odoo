@@ -13,6 +13,7 @@ _logger = logging.getLogger(__name__)
 class PosController(PortalAccount):
     @http.route('/pos/self-order/<int:id>/', auth='public', website=True)
     def pos_self_order(self, id,config_id = False):
+        # return request.render('point_of_sale.pos_self_order_index')
         # domain = [
         #         ('state', 'in', ['opening_control', 'opened']),
         #         ('user_id', '=', request.session.uid),
