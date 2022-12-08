@@ -57,6 +57,7 @@ class Macro {
                 }
             }
             if (typeof trigger === "string") {
+                // TODO-JCB: This might not be very desirable. It should be possible for the macro to look behind modals.
                 el = findTrigger(trigger, step.in_modal);
             }
             if (el && isVisible(el)) {

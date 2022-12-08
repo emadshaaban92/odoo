@@ -14,6 +14,8 @@ import { findTrigger } from "web_tour.utils";
  * TODO-JCB: Don't forget the following:
  * - It doesn't seem to work in mobile. For the tour from [planning.js],
  *   the pointer continues to point to the "app" icon even after click.
+ * TODO-JCB: Maybe it's better if jQuery is used internally, and methods that return jQuery element should just return normal Elements.
+ * - Maybe partially 'hiding' our reliance to jQuery is a good thing?
  */
 
 /**
@@ -77,7 +79,7 @@ function createAutoMacro(
  */
 function createManualMacro(macroDescription, options) {
     /**
-     * Checks if [key] maps to a non-undefined value in [obj].
+     * Checks if [key] maps to a defined (non-undefined) value in [obj].
      * @param {string} key
      * @param {object} obj
      * @returns
@@ -162,6 +164,15 @@ function createManualMacro(macroDescription, options) {
         return "click";
     }
 
+    /**
+     * Returns the element that will be used in listening to the `consumeEvent`.
+     * It doesn't necessarily mean the given element, e.g. when listening to drag
+     * event, we have to do it to the closest .ui-draggable ancestor.
+     *
+     * @param {jQuery} $el
+     * @param {string} consumeEvent
+     * @returns {jQuery}
+     */
     function getAnchorEl($el, consumeEvent) {
         let $consumeEventAnchors = $el;
         if (consumeEvent === "drag") {
@@ -189,18 +200,23 @@ function createManualMacro(macroDescription, options) {
          */
         let consumeEvent;
         /**
-         * [$anchorEl] is the element where the [consumeEvent] be attached.
+         * [$anchorEl] is the jquery element where the [consumeEvent] be attached.
          */
         let $anchorEl;
-        const res = { val: false };
+        /**
+         * [proceedWith] is the element returned by the last inserted step's trigger.
+         * - NOTE: Not sure though if the element is important or if it can be used for the
+         *   next step.
+         */
+        let proceedWith;
         if (shouldOmit(step)) {
             return [];
         }
         return [
-            { ...step, action: undefined },
+            step,
             {
                 action: () => {
-                    res.val = false;
+                    proceedWith = false;
                 },
             },
             {
@@ -230,7 +246,7 @@ function createManualMacro(macroDescription, options) {
                         $anchorEl.off(".anchor");
                     }
 
-                    // TODO-JCB: I think we should only add the listener when [res.val] is falsy.
+                    // TODO-JCB: I think we should only add the listener when [proceedWith] is falsy.
                     if (stepEl) {
                         $anchorEl = getAnchorEl($(stepEl), consumeEvent);
                         $anchorEl.on(`${consumeEvent}.anchor`, () => {
@@ -246,7 +262,7 @@ function createManualMacro(macroDescription, options) {
                             //     }
                             // }).bind(this));
 
-                            res.val = stepEl;
+                            proceedWith = stepEl;
                             $anchorEl.off(".anchor");
                             stepEl = undefined;
                             consumeEvent = undefined;
@@ -258,10 +274,10 @@ function createManualMacro(macroDescription, options) {
 
                     // Call this everytime so that the pointer is always pointing at the
                     // step's trigger element.
-                    // TODO-JCB: Maybe we only point to the trigger when [res.val] is falsy.
+                    // TODO-JCB: Maybe we only point to the trigger when [proceedWith] is falsy.
                     options.pointerMethods.pointTo(stepEl);
 
-                    return res.val;
+                    return proceedWith;
                 },
             },
         ];
