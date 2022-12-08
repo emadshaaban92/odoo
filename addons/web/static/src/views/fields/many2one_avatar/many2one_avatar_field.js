@@ -9,6 +9,9 @@ export class Many2OneAvatarField extends Component {
     get relation() {
         return this.props.relation || this.props.record.fields[this.props.name].relation;
     }
+    get many2oneProps() {
+        return {...this.props};
+    }
 }
 
 Many2OneAvatarField.template = "web.Many2OneAvatarField";
