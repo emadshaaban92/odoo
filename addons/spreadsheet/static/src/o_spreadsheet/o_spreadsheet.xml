@@ -358,14 +358,15 @@
           class="o-figure"
           t-on-mousedown.stop="(ev) => this.onMouseDown(ev)"
           t-att-style="getFigureStyle()"
-          t-att-class="{active: isSelected, 'o-dragging': dnd.isActive}"
+          t-att-class="{active: isSelected, 'o-dragging': !!state.draggedFigure}"
+          t-att-data-id="props.figure.id"
           t-ref="figure"
           tabindex="0"
           t-on-keydown="(ev) => this.onKeyDown(ev)"
           t-on-keyup.stop="">
           <t
-            t-component="figureRegistry.get(props.figure.tag).Component"
-            t-key="props.figure.id"
+            t-component="figureRegistry.get(this.props.figure.tag).Component"
+            t-key="this.props.figure.id"
             sidePanelIsOpen="props.sidePanelIsOpen"
             onFigureDeleted="props.onFigureDeleted"
             figure="displayedFigure"
@@ -373,6 +374,16 @@
         </div>
       </div>
       <t t-if="isSelected">
+        <div
+          t-if="state.horizontalSnapLine"
+          class="o-figure-snap-border horizontal"
+          t-att-style="horizontalSnapLineStyle"
+        />
+        <div
+          t-if="state.verticalSnapLine"
+          class="o-figure-snap-border vertical"
+          t-att-style="verticalSnapLineStyle"
+        />
         <div
           class="o-anchor o-top"
           t-att-style="this.getAnchorPosition('top')"
@@ -422,9 +433,9 @@
       class="o-chart-container"
       t-ref="chartContainer"
       t-on-contextmenu.prevent.stop="(ev) => !env.isDashboard() and this.onContextMenu(ev)">
-      <div class="o-figure-menu" t-if="!env.isDashboard()">
+      <div class="o-chart-menu" t-if="!env.isDashboard()">
         <div
-          class="o-figure-menu-item"
+          class="o-chart-menu-item"
           t-on-click="showMenu"
           t-ref="menuButton"
           t-on-contextmenu.prevent.stop="showMenu">
@@ -456,30 +467,6 @@
         />
       </t>
     </div>
-  </t>
-
-  <t t-name="o-spreadsheet-ImageFigure" owl="1">
-    <div class="o-figure-menu" t-if="!env.isDashboard()">
-      <div
-        class="o-figure-menu-item"
-        t-on-click="showMenu"
-        t-ref="menuButton"
-        t-on-contextmenu.prevent.stop="showMenu">
-        <t t-call="o-spreadsheet-Icon.LIST"/>
-      </div>
-    </div>
-    <img
-      t-ref="o-image"
-      t-att-src="getImagePath"
-      class="w-100 h-100"
-      t-on-contextmenu.prevent.stop="(ev) => !env.isDashboard() and this.onContextMenu(ev)"
-    />
-    <Menu
-      t-if="menuState.isOpen"
-      position="menuState.position"
-      menuItems="menuState.menuItems"
-      onClose="() => this.menuState.isOpen=false"
-    />
   </t>
 
   <t t-name="o-spreadsheet-FilterIcon" owl="1">
@@ -1379,7 +1366,7 @@
   </t>
 
   <t t-name="o-spreadsheet-LinkDisplay" owl="1">
-    <div class="o-link-tool d-flex align-items-center">
+    <div class="o-link-tool">
       <!-- t-key to prevent owl from re-using the previous img element when the link changes.
     The wrong/previous image would be displayed while the new one loads -->
       <img
