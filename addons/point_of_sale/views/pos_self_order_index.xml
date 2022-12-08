@@ -41,14 +41,18 @@
         <!-- <t t-call="point_of_sale.assets_common"/> -->
         <!-- <t t-call="web.conditional_assets_tests"/> -->
         <!-- <t t-call-assets="point_of_sale.assets_backend_prod_only" /> -->
-        <t t-call-assets="web.assets_common" t-css="false" />
-        <t t-call-assets="web.assets_backend" t-css="false" />
+
+
+
+
+
+        <t t-call-assets="web.assets_common" />
+        <t t-call-assets="web.assets_backend" />
         <t t-call-assets="point_of_sale.assets_self_order" />
     </head>
     <body>
-    <h1 id="salut">POS Self Order Vlad</h1>
+        <h1>Self Order</h1>
     </body>
 </html>
 </template>
-
 </odoo>
