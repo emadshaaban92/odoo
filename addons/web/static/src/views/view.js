@@ -87,7 +87,7 @@ export function getDefaultConfig() {
  *  @property {Object} [context={}]
  *  @property {DomainRepr} [domain]
  *  @property {string[]} [groupBy]
- *  @property {string[]} [orderBy]
+ *  @property {Object[]} [orderBy]
  *
  *  @property {boolean} [useSampleModel]
  *  @property {string} [noContentHelp]

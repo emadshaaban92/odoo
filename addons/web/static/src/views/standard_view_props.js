@@ -31,7 +31,7 @@ export const standardViewProps = {
     groupBy: { type: Array, elements: String },
     limit: { type: Number, optional: true },
     noBreadcrumbs: { type: Boolean, optional: true },
-    orderBy: { type: Array, elements: String },
+    orderBy: { type: Array, elements: Object },
     relatedModels: { type: Object, elements: Object, optional: true },
     resId: { type: [Number, Boolean], optional: true },
     resIds: { type: Array, optional: true },
