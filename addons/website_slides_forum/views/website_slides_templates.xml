@@ -3,7 +3,7 @@
     <template id='course_main' inherit_id="website_slides.course_main">
         <!-- Channel main template: add link to forum -->
         <xpath expr="//li[hasclass('o_wslides_course_header_nav_review')]" position="after">
-            <li class="nav-item" t-if="channel.forum_id">
+            <li class="nav-item" t-if="not is_visible_via_invite and (channel.is_member or not channel.visibility == 'members') and channel.forum_id">
                 <a t-att-href="'/forum/%s' % (slug(channel.forum_id))"
                     t-att-class="'nav-link'" target="new">Forum</a>
             </li>

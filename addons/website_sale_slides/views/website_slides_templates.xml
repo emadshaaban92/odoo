@@ -48,7 +48,7 @@
         <span t-if="channel.enroll == 'payment'">Free Preview</span>
         <span t-else="">Preview</span>
     </xpath>
-    <xpath expr="//t[@t-elif='slide.is_preview and not channel.is_member']/span/span" position="replace">
+    <xpath expr="//t[@t-elif='not is_visible_via_invite and (slide.is_preview and not channel.is_member)']/span/span" position="replace">
         <span t-if="channel.enroll == 'payment'">Free Preview</span>
         <span t-else="">Preview</span>
     </xpath>

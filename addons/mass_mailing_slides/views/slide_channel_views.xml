@@ -10,7 +10,6 @@
                 <button name="action_mass_mailing_attendees" string="Contact Attendees" type="object"
                         class="oe_highlight" attrs="{'invisible': [('members_count', '=', 0)]}"
                         groups="mass_mailing.group_mass_mailing_user">
-                <field name="members_count" invisible="1"/>
                 </button>
             </button>
         </field>

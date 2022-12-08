@@ -513,7 +513,7 @@ class Channel(models.Model):
     @api.depends_context('uid')
     def _compute_can_upload(self):
         for record in self:
-            if record.user_id == self.env.user or self.env.is_superuser():
+            if record.user_id == self.env.user or self.env.user._is_admin():
                 record.can_upload = True
             elif record.upload_group_ids:
                 record.can_upload = bool(record.upload_group_ids & self.env.user.groups_id)
@@ -529,7 +529,7 @@ class Channel(models.Model):
         for record in self:
             if not record.can_upload:
                 record.can_publish = False
-            elif record.user_id == self.env.user or self.env.is_superuser():
+            elif record.user_id == self.env.user or self.env.user._is_admin():
                 record.can_publish = True
             else:
                 record.can_publish = self.env.user.has_group('website_slides.group_website_slides_manager')

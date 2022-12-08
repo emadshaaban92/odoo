@@ -14,16 +14,19 @@
                         </li>
                         <t t-set="breadcrumb_class" t-value="'breadcrumb-item %s' % ('fw-bold' if not slide else '')" />
                         <li t-att-class="'breadcrumb-item %s' % ('fw-bold' if not search_category and not search_tag and not search_slide_category and not slide else '')">
-                            <a t-att-href="'/slides/%s' % slug(channel)"><span t-esc="channel.name"/></a>
+                            <a t-if="is_visible_via_invite" t-att-href="'/slides/%s?%s' % (channel.id, keep_query('invite_hash', 'partner_id'))"><span t-esc="channel.name"/></a>
+                            <a t-else="" t-att-href="'/slides/%s' % slug(channel)"><span t-esc="channel.name"/></a>
                         </li>
                         <li t-att-class="breadcrumb_class" t-att-aria-current="'page' and search_category" t-if="search_category">
-                            <a t-att-href="'/slides/%s/category/%s' % (slug(channel), slug(search_category))"><span t-esc="search_category.name"/></a>
+                            <a t-if="is_visible_via_invite" t-att-href="'/slides/%s/category/%s?%s' % (channel.id, search_category.id, keep_query('invite_hash', 'partner_id'))"><span t-esc="search_category.name"/></a>
+                            <a t-else="" t-att-href="'/slides/%s/category/%s' % (slug(channel), slug(search_category))"><span t-esc="search_category.name"/></a>
                         </li>
                         <li t-att-class="breadcrumb_class" t-att-aria-current="'page' and search_tag" t-if="search_tag">
                             <a t-att-href="'/slides/%s/tag/%s' % (slug(channel), slug(search_tag))"><span t-esc="search_tag.name"/></a>
                         </li>
                         <li t-att-class="breadcrumb_class" t-att-aria-current="'page' and search_uncategorized" t-if="search_uncategorized">
-                            <a t-att-href="'/slides/%s?search_uncategorized=1' % (slug(channel))">Uncategorized</a>
+                            <a t-if="is_visible_via_invite" t-att-href="'/slides/%s?uncategorized=1&amp;%s' % (channel.id, keep_query('invite_hash', 'partner_id'))">Uncategorized</a>
+                            <a t-else="" t-att-href="'/slides/%s?uncategorized=1' % (slug(channel))">Uncategorized</a>
                         </li>
                         <li t-att-class="breadcrumb_class" t-att-aria-current="'page' and search_slide_category" t-if="search_slide_category">
                             <a t-att-href="'/slides/%s?slide_category=%s' % (slug(channel), search_slide_category)"><span t-esc="slide_categories[search_slide_category]"/></a>
@@ -210,7 +213,7 @@
                                     <t t-if="channel.channel_type == 'training'" t-call="website_slides.course_slides_list"/>
                                     <t t-else="" t-call="website_slides.course_slides_cards"/>
                                 </div>
-                                <div t-if="channel.allow_comment" t-att-class="'tab-pane fade %s' % ('show active' if active_tab == 'review' else '')" id="review" role="tabpanel" aria-labelledby="review-tab">
+                                <div t-if="channel.allow_comment or is_visible_via_invite" t-att-class="'tab-pane fade %s' % ('show active' if active_tab == 'review' else '')" id="review" role="tabpanel" aria-labelledby="review-tab">
                                     <t t-call="portal.message_thread">
                                         <t t-set="object" t-value="channel"/>
                                         <t t-set="hash" t-value="message_post_hash"/>
@@ -275,20 +278,24 @@
 
 <template id="course_join">
     <div class="o_wslides_js_course_join flex-grow-1 d-grid">
-        <a t-if="not channel.is_member and (channel.enroll == 'public' or (channel.is_member_invited and channel.enroll == 'invite'))"
+        <a t-if="(is_visible_via_invite and channel.enroll in ['public', 'invite']) or (not channel.is_member and (channel.enroll == 'public' or (channel.is_member_invited and channel.enroll == 'invite')))"
             role="button" class="btn btn-primary btn-block o_wslides_js_course_join_link"
             title="Start Course" aria-label="Start Course Channel"
             href="#"
             t-att-data-channel-id="channel.id"
             t-att-data-channel-enroll="channel.enroll"
-            t-att-data-is-allowed-member="channel.is_member or channel.is_member_invited">
+            t-att-data-invite-hash="invite_hash"
+            t-att-data-is-allowed-member="channel.is_member or channel.is_member_invited"
+            t-att-data-is-partner-without-user="is_partner_without_user"
+            t-att-data-is-visible-via-invite="is_visible_via_invite"
+            t-att-data-partner-id="partner_id">
             <span class="cta-title text_small_caps">
                 <t t-if="channel.channel_type == 'documentation'">Start this Course</t>
                 <t t-else="">Join this Course</t>
             </span>
         </a>
         
-        <div t-if="not channel.is_member and not channel.is_member_invited and channel.enroll == 'invite'" class="text-center">
+        <div t-if="(not is_visible_via_invite and channel.enroll in ['public', 'invite']) and (not channel.is_member and not channel.is_member_invited and channel.enroll == 'invite')" class="text-center">
             <div t-attf-class="alert my-0 bg-100 p-2 #{'o_wslides_js_channel_enroll' if not is_public_user else ''}"
                 t-att-data-channel-id="channel.id">
                 Private Course
@@ -338,7 +345,6 @@
             </div>
         </t>
     </div>
-    <button t-attf-class="btn d-md-none bg-white ms-1 border #{'alert' if channel.is_member else ''} #{'align-self-start' if channel.is_member or channel.enroll == 'invite' else 'align-self-end'}" type="button" data-toggle="collapse" data-target="#o_wslides_sidebar_collapse" aria-expanded="false" aria-controls="o_wslides_sidebar_collapse">More info</button>
 </template>
 
 <template id="course_slides_list" name="Training Course content: list">
@@ -496,7 +502,7 @@
             <t t-set="icon_class" t-value="'py-2 mx-2'"/>
         </t>
         <div class="text-truncate me-auto">
-            <a t-if="slide.is_preview or channel.is_member or channel.can_publish" class="o_wslides_js_slides_list_slide_link" t-attf-href="/slides/slide/#{slug(slide)}">
+            <a t-if="not is_visible_via_invite and (slide.is_preview or channel.is_member or channel.can_publish)" class="o_wslides_js_slides_list_slide_link" t-attf-href="/slides/slide/#{slug(slide)}">
                 <span t-field="slide.name"/>
             </a>
             <span t-else="">
@@ -511,7 +517,7 @@
             <a t-if="channel.can_upload" href="#" name="o_wslides_slide_toggle_is_preview">
                 <span t-att-data-slide-id="slide.id" t-attf-class="o_wslides_js_slide_toggle_is_preview badge #{'text-bg-success' if slide.is_preview else 'text-bg-light badge-hide border'} fw-normal px-2 py-1 m-1"><span>Preview</span></span>
             </a>
-            <t t-elif="slide.is_preview and not channel.is_member">
+            <t t-elif="not is_visible_via_invite and (slide.is_preview and not channel.is_member)">
                 <span class="badge text-bg-success fw-normal px-2 py-1 m-1"><span>Preview</span></span>
             </t>
             <span t-if="slide.is_new_slide and not channel_progress[slide.id].get('completed')" class="badge text-bg-info badge-arrow-right fw-normal px-2 py-1 m-1">
@@ -545,7 +551,7 @@
             <div class="card flex-column flex-lg-row">
                 <t t-set="image_url" t-value="website.image_url(slide_promoted, 'image_512')"/>
 
-                <a t-if="slide_promoted.is_preview or channel.is_member or is_slides_publisher"
+                <a t-if="not is_visible_via_invite and (slide_promoted.is_preview or channel.is_member or is_slides_publisher)"
                    t-attf-href="/slides/slide/#{slug(slide_promoted)}#{query_string}" class="w-100 w-lg-50 flex-shrink-0 rounded">
                     <div t-if="slide_promoted.image_1920" t-field="slide_promoted.image_1920"
                          t-options="{'widget': 'image', 'style': 'height:100%', 'preview_image': 'image_512'}" class="h-100"/>
@@ -558,14 +564,15 @@
                 </div>
 
                 <div class="card-body">
-                    <a t-if="slide_promoted.is_preview or channel.is_member or is_slides_publisher"
+                    <a t-if="not is_visible_via_invite and (slide_promoted.is_preview or channel.is_member or is_slides_publisher)"
                     t-attf-href="/slides/slide/#{slug(slide_promoted)}#{query_string}"
                     class="h4 d-block pb-2 border-bottom" t-att-title="slide_promoted.name" t-field="slide_promoted.name"/>
                     <h4 t-else="" class="text-muted pb-2 border-bottom" t-field="slide_promoted.name"/>
                     <div class="o_wslides_desc_truncate_10 mt-3" t-field="slide_promoted.description"/>
                     <div t-if="slide_promoted.tag_ids" class="mt-2 pt-1">
                         <t t-foreach="slide_promoted.tag_ids" t-as="tag">
-                            <a t-att-href="'/slides/%s/tag/%s' % (slug(slide_promoted.channel_id), slug(tag))" class="badge text-bg-light" t-esc="tag.name"/>
+                            <h4 t-if="is_visible_via_invite" class="badge text-bg-light" t-esc="tag.name"/>
+                            <a t-else="" t-att-href="'/slides/%s/tag/%s' % (slug(slide_promoted.channel_id), slug(tag))" class="badge text-bg-light" t-esc="tag.name"/>
                         </t>
                     </div>
                 </div>
@@ -575,7 +582,7 @@
 </template>
 
 <template id="course_slides_cards" name="Documentation Course content: cards / categories">
-    <div class="o_wslides_lesson_nav mb-4">
+    <div t-if="not is_visible_via_invite" class="o_wslides_lesson_nav mb-4">
         <div class="container">
             <div class="row">
                 <nav class="navbar navbar-expand-lg navbar-light bg-transparent col">
@@ -722,11 +729,11 @@
                 <t t-set="is_empty_editable" t-value="not category['slides'] and channel.can_publish"/>
                 <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3" t-if="category['id'] and query_string != '?search_uncategorized=1'">
                     <h5 t-attf-class="m-0 #{'text-muted' if is_empty_editable else ''}"><t t-esc="category['name']"/></h5>
-                    <a t-if="category['id'] and not is_empty_editable" t-att-href="'/slides/%s/category/%s' % (slug(channel), category['slug_name'])">View all</a>
+                    <a t-if="category['id'] and not is_empty_editable" t-att-href="'/slides/%s/category/%s?%s' % (channel.id, category['id'], keep_query('invite_hash', 'partner_id') if is_visible_via_invite else '')">View all</a>
                 </div>
                 <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3" t-if="not category['id'] and len(category['slides']) > 0">
                     <h5 t-if="len(category_data) > 1" t-attf-class="m-0 #{'text-muted' if is_empty_editable else ''}"><t t-esc="category['name']"/></h5>
-                    <a t-att-href="'/slides/%s?uncategorized=1' % (slug(channel))">View all</a>
+                    <a t-att-href="'/slides/%s?uncategorized=1&amp;%s' % (channel.id, keep_query('invite_hash', 'partner_id') if is_visible_via_invite else '')">View all</a>
                 </div>
                 <div class="row mx-n2">
                     <t t-foreach="category['slides']" t-as="slide">
@@ -750,7 +757,7 @@
 <template id='lesson_card' name="Lesson Card">
     <div class="card w-100 o_wslides_lesson_card mb-4">
         <t t-if="slide.is_new_slide and not channel_progress[slide.id].get('completed')" t-call="website_slides.course_card_information"/>
-        <t t-set="can_access" t-value="slide.is_preview or channel.is_member or channel.can_publish"/>
+        <t t-set="can_access" t-value="not is_visible_via_invite and (slide.is_preview or channel.is_member or channel.can_publish)"/>
         <a t-if="can_access" t-attf-href="/slides/slide/#{slug(slide)}#{query_string}" t-title="slide.name" style="height:150px">
             <div t-if="slide.image_1920" t-field="slide.image_1920" t-options="{'widget': 'image', 'preview_image': 'image_512'}"
                  class="o_wslides_background_image h-100"/>
@@ -767,7 +774,7 @@
             <a t-if="can_access" class="card-title h5 o_wslides_desc_truncate_2" t-attf-href="/slides/slide/#{slug(slide)}#{query_string}" t-esc="slide.name"/>
             <span t-else="" class="card-title h5 o_wslides_desc_truncate_2 text-muted" t-esc="slide.name"/>
             <div class="text-muted o_wslides_desc_truncate_2 mb-2" t-if="slide.is_preview or (not slide.is_published and user.has_group('website_slides.group_website_slides_officer'))">
-                <span t-if="slide.is_preview" class="badge text-bg-info">Preview</span>
+                <span t-if="slide.is_preview and not is_visible_via_invite" class="badge text-bg-info">Preview</span>
                 <span t-if="not slide.is_published and channel.can_publish" class="badge text-bg-danger">Unpublished</span>
             </div>
             <div class="card-text mb-auto">
@@ -775,7 +782,8 @@
             </div>
             <div class="text-muted o_wslides_desc_truncate_2 my-2">
                 <t t-foreach="slide.tag_ids" t-as="tag">
-                    <a t-att-href="'/slides/%s/tag/%s' % (slug(slide.channel_id), slug(tag))" class="badge text-bg-light" t-esc="tag.name"/>
+                    <h4 t-if="is_visible_via_invite" class="badge text-bg-light" t-esc="tag.name"/>
+                    <a t-else="" t-att-href="'/slides/%s/tag/%s' % (slug(slide.channel_id), slug(tag))" class="badge text-bg-light" t-esc="tag.name"/>
                 </t>
             </div>
             <span t-if="channel.is_member and channel_progress[slide.id].get('completed')" class="badge rounded-pill text-bg-success align-self-start"><i class="fa fa-check me-1"/>Completed</span>
@@ -783,7 +791,7 @@
         <div class="card-footer bg-white text-600">
             <div class="d-flex align-items-center small">
                 <span class="fw-bold me-auto" t-field="slide.completion_time" t-options='{"widget": "float_time"}'/>
-                <div class="o_wslides_js_slide_like">
+                <div t-att-class="'o_wslides_js_slide_like' if not is_visible_via_invite else 'o_wslides_js_slide_like_disabled'">
                     <span t-attf-class="d-inline-block text-center o_wslides_js_slide_like_up #{'disabled' if not channel.can_vote else ''}" tabindex="0" data-bs-toggle="popover" t-att-data-slide-id="slide.id" t-att-data-user-vote="slide.user_vote">
                         <i t-attf-class="fa fa-1x #{'fa-thumbs-up' if slide.user_vote == 1 else 'fa-thumbs-o-up'}" role="img" aria-label="Likes" title="Like"></i>
                         <span t-field="slide.likes" t-options="{'format_decimalized_number': True}"/>

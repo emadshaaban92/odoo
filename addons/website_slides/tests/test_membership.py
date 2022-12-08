@@ -9,6 +9,8 @@ from odoo.tests import tagged, users
 from odoo.tests.common import HOST
 from odoo.tools import config
 
+from werkzeug.urls import url_decode
+
 @tagged('post_install', '-at_install')
 class TestMembership(common.SlidesCase):
 
@@ -130,96 +132,107 @@ class TestMembershipCase(HttpCaseWithUserPortal):
             'completion_time': 2.0,
             'sequence': 1,
         })
-        self.partner_nan = self.env['res.partner'].create({
+        self.partner_no_user = self.env['res.partner'].create({
             'country_id': self.env.ref('base.be').id,
-            'email': 'partnerNan@partnerNan.example.com',
-            'mobile': '0416001133',
-            'name': 'Partner Nan',
+            'email': 'partner_no_user@example.com',
+            'name': 'Partner Without User',
         })
+        self.channel_partner_emp, self.channel_partner_no_user = self.env['slide.channel.partner'].create([{
+            'channel_id': self.channel.id,
+            'partner_id': self.user_emp.partner_id.id
+        }, {
+            'channel_id': self.channel.id,
+            'partner_id': self.partner_no_user.id
+        }])
         self.common_base_url = "http://%s:%s" % (HOST, config['http_port'])
 
-    def test_direct_invite_route_members_only_course(self):
-        ''' Invite route redirects properly the (not) logged user in a course with members-only visibility'''
-        self.channel.write({'visibility': 'members'})
-        self.env['res.config.settings'].create({'auth_signup_uninvited': 'b2c'})
+    def test_direct_invite_public_or_members_visibility(self):
+        ''' Invite route redirects properly the (not) logged user in a course with public visibility.
+        As the direct invitation enrolls the partner in the course, we always redirect them to the login / signup,
+        no matter the enroll policy.'''
         # Logged user now has a pending invitation to the course
-        channel_partner_emp = self.env['slide.channel.partner'].create({
-            'channel_id': self.channel.id,
-            'partner_id': self.user_emp.partner_id.id,
-            'member_status': 'invited'
-        })
-        invite_url = channel_partner_emp.invitation_link_with_hash
+        invite_url_emp = self.channel_partner_emp.invitation_link_with_hash
+        invite_url_no_user = self.channel_partner_no_user.invitation_link_with_hash
 
-        # No user logged
-        res = self.url_open(invite_url)
+        # No user logged. Partner has a user. Redirects to login.
+        res = self.url_open(invite_url_emp)
         self.assertEqual(res.status_code, 200)
         self.assertTrue('/login' in res.url, "Should redirect to login page if unlogged.")
-        self.assertTrue(f'&redirect=/slides/{self.channel.id}/invite?' in res.url, "Login should redirect to the invite route.")
+        self.assertTrue('auth_login=user_emp' in res.url, "The login should correspond to the invited partner.")
+        self.assertTrue(f'redirect=/slides/{self.channel.id}' in res.url, "Login should redirect to the course.")
 
-        # Logged user has a pending invitation to the course
-        self.authenticate("user_emp", "user_emp")
-        res = self.url_open(invite_url)
+        # No user logged. Partner has no user. Redirects to a prepared signup. Decode used because of signup prepare.
+        res = self.url_open(invite_url_no_user)
+        decoded_url = url_decode(res.url)
         self.assertEqual(res.status_code, 200)
-        self.assertTrue(f'slides/{slug(self.channel)}' in res.url, "Should redirect to the course page")
+        self.assertTrue('/signup' in res.url, "Should redirect to signup page if unlogged and no user.")
+        self.assertEqual(self.partner_no_user.signup_token, decoded_url['token'], "Signup should correspond to the invited partner.")
+        self.assertEqual(f'/slides/{self.channel.id}', decoded_url['redirect'], "Signup should redirect to the course.")
 
         # Hash is wrong
-        invite_url_false_hash = invite_url + 'abc'
+        invite_url_false_hash = invite_url_emp + 'abc'
         res = self.url_open(invite_url_false_hash)
         self.assertEqual(res.status_code, 200)
         self.assertTrue('/slides?invite_state=hash_fail' in res.url, "A wrong hash should redirect to the main /slides page")
 
+        # Logged user is a member of the course
+        self.authenticate("user_emp", "user_emp")
+        res = self.url_open(invite_url_emp)
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(f'slides/{slug(self.channel)}' in res.url, "Should redirect to the course page")
+
         # Link is for another user
-        self.authenticate("portal", "portal")
-        res = self.url_open(invite_url)
+        res = self.url_open(invite_url_no_user)
         self.assertEqual(res.status_code, 200)
         self.assertTrue('/slides?invite_state=partner_fail' in res.url, "Using an other user's invitation link should redirect to the course page")
 
-        # Invited partner has been removed from channel partners. Link is expired.
-        channel_partner_emp.sudo().unlink()
-        self.authenticate("user_emp", "user_emp")
-        res = self.url_open(invite_url)
+        # Invited partner has been removed from channel partners. Link is expired. As it is a public course, redirects to the course.
+        self.channel_partner_emp.sudo().unlink()
+        res = self.url_open(invite_url_emp)
         self.assertEqual(res.status_code, 200)
-        self.assertTrue('slides?invite_state=expired' in res.url, "Using an expired link should redirect to the main /slides page")
+        self.assertTrue(f'slides/{slug(self.channel)}' in res.url, "Using an expired link should still redirect to the public course page")
 
-    def test_direct_invite_route_public_course(self):
-        ''' Invite route redirects properly the (not) logged user in a course with public visibility'''
-        self.channel.write({'visibility': 'public'})
-        self.env['res.config.settings'].create({'auth_signup_uninvited': 'b2c'})
-
-        # No such channel
-        invite_url = "/slides/-1/invite"
-        res = self.url_open(invite_url)
+        # Members only course. Link is expired. Redirects to the main slides page.
+        self.channel.visibility = 'members'
+        res = self.url_open(invite_url_emp)
         self.assertEqual(res.status_code, 200)
-        self.assertTrue('/slides?invite_state=no_channel' in res.url, "This channel does not exist. Redirect to the main /slides page.")
+        self.assertTrue('/slides?invite_state=expired' in res.url, "Using an expired link should redirect to the main /slides page")
 
-        channel_partner_portal = self.env['slide.channel.partner'].create({
-            'channel_id': self.channel.id,
-            'partner_id': self.user_portal.partner_id.id,
-            'member_status': 'invited'
-        })
-        invite_url = channel_partner_portal.invitation_link_with_hash
+    def test_direct_share_members_visibility(self):
+        ''' When sharing a course with members visibility to a partner, they are 'invited'. They access a the course as if it were public.
+        However, they only access a preview of it. (But none of slides)'''
+        self.channel.write({'visibility': 'members'})
+        # Logged user now has a pending invitation to the course
+        self.channel_partner_emp.member_status = 'invited'
+        invite_url_emp = self.channel_partner_emp.invitation_link_with_hash
 
-        # TODO : tests for auth_signup / auth_login
-        # TODO : discuss auth_signup / auth_login (accept that?) / redirect + ACL's (new or modify) vs simple redirect and fetch_possible on different routes (~appointment)
-        # TODO : discuss publish (invite / share)
-
-        # No logged user but possible to login -> Login page
-        # TODO: write 2 tests without allow_redirect = false to check auth_login and auth_token??
-        # Invited without user but can create an account, auth_signup_token in url
-
-        channel_partner_nan = self.env['slide.channel.partner'].create({
-            'channel_id': self.channel.id,
-            'partner_id': self.partner_nan.id,
-            'member_status': 'invited'
-        })
-        invite_url = channel_partner_nan.invitation_link_with_hash
-
-        # Invited without user and cannot create an account. The invitation link generates and redirects to an account creation link.
-        self.env['res.config.settings'].create({'auth_signup_uninvited': 'b2b'})
-        res = self.url_open(invite_url)
+        # No user logged, but access via valid hash.
+        res = self.url_open(invite_url_emp)
         self.assertEqual(res.status_code, 200)
-        signup_url = self.partner_nan.signup_url
-        self.assertTrue(signup_url in res.url, "Should redirect to the course page")
+        self.assertTrue(f'/slides/{self.channel.id}' in res.url, "Partners being shared the course can access the course page")
+
+        # Error if course not published
+        self.channel.sudo().is_published = False
+        res = self.url_open(invite_url_emp)
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue('/slides?invite_state=no_rights' in res.url)
+
+        # If removed from invited attendees, the hash is not valid.
+        self.channel.sudo().is_published = True
+        self.channel_partner_emp.sudo().unlink()
+        res = self.url_open(invite_url_emp)
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue('/slides?invite_state=expired' in res.url, "Using an expired link should redirect to the main /slides page")
+
+    def test_direct_share_public_visibility(self):
+        ''' Shared link will redirect properly the user to the course with a public visibility'''
+        self.channel_partner_emp.member_status = 'invited'
+        invite_url_emp = self.channel_partner_emp.invitation_link_with_hash
+
+        # No user logged.
+        res = self.url_open(invite_url_emp)
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(f'/slides/{self.channel.id}' in res.url, "Partners being shared the course can access the public course page")
 
     def test_generic_invite_route_members_only_course(self):
         ''' Invite route redirects properly the (not) logged user when using the generic link'''
@@ -251,9 +264,14 @@ class TestMembershipCase(HttpCaseWithUserPortal):
 
     def test_generic_invite_route_public_course(self):
         ''' Invite route redirects properly the (not) logged user when using the generic link'''
-        invite_url = "/slides/%s/invite" % self.channel.id
+        # No such channel
+        invite_url = "/slides/-1/invite"
+        res = self.url_open(invite_url)
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue('/slides?invite_state=no_channel' in res.url, "This channel does not exist. Redirect to the main /slides page.")
 
         # No user logged
+        invite_url = "/slides/%s/invite" % self.channel.id
         res = self.url_open(invite_url)
         self.assertEqual(res.status_code, 200)
         self.assertTrue(f'slides/{slug(self.channel)}' in res.url, "Should redirect to the course page")
