@@ -78,6 +78,13 @@ web_cohort/static/tests/legacy/**/*
 web_gantt/static/src/legacy/**/*
 web_gantt/static/tests/legacy/**/*
 
+# planning
+# whitelist new code
+!planning
+!planning/static
+!planning/static/src
+!planning/static/src/*.js
+
 # web_map
 # whitelist new code
 !web_map
