@@ -36906,14 +36906,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 offsetY: offsetScrollbarY + deltaY,
             });
         }
-        copy(ev) {
-            this.env.model.dispatch("COPY");
-            const content = this.env.model.getters.getClipboardContent();
-            // TODO use env.clipboard
-            // TODO add a test
-            ev.clipboardData.setData("text/plain", content);
-            ev.preventDefault();
-        }
     }
     SpreadsheetDashboard.template = "o-spreadsheet-SpreadsheetDashboard";
     SpreadsheetDashboard.components = {
@@ -42056,8 +42048,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-12-07T09:24:07.747Z';
-    exports.__info__.hash = '31d0590';
+    exports.__info__.date = '2022-12-08T13:25:21.531Z';
+    exports.__info__.hash = '3220f8a';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
