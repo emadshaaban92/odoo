@@ -4660,13 +4660,13 @@
     };
     function interactiveAddFilter(env, sheetId, target) {
         const result = env.model.dispatch("CREATE_FILTER_TABLE", { target, sheetId });
-        if (result.isCancelledBecause(76 /* CommandResult.FilterOverlap */)) {
+        if (result.isCancelledBecause(77 /* CommandResult.FilterOverlap */)) {
             env.raiseError(AddFilterInteractiveContent.filterOverlap);
         }
-        else if (result.isCancelledBecause(78 /* CommandResult.MergeInFilter */)) {
+        else if (result.isCancelledBecause(79 /* CommandResult.MergeInFilter */)) {
             env.raiseError(AddFilterInteractiveContent.mergeInFilter);
         }
-        else if (result.isCancelledBecause(79 /* CommandResult.NonContinuousTargets */)) {
+        else if (result.isCancelledBecause(80 /* CommandResult.NonContinuousTargets */)) {
             env.raiseError(AddFilterInteractiveContent.nonContinuousTargets);
         }
     }
@@ -5724,22 +5724,22 @@
     const CfTerms = {
         Errors: {
             [24 /* CommandResult.InvalidRange */]: _lt("The range is invalid"),
-            [49 /* CommandResult.FirstArgMissing */]: _lt("The argument is missing. Please provide a value"),
-            [50 /* CommandResult.SecondArgMissing */]: _lt("The second argument is missing. Please provide a value"),
-            [51 /* CommandResult.MinNaN */]: _lt("The minpoint must be a number"),
-            [52 /* CommandResult.MidNaN */]: _lt("The midpoint must be a number"),
-            [53 /* CommandResult.MaxNaN */]: _lt("The maxpoint must be a number"),
-            [54 /* CommandResult.ValueUpperInflectionNaN */]: _lt("The first value must be a number"),
-            [55 /* CommandResult.ValueLowerInflectionNaN */]: _lt("The second value must be a number"),
-            [45 /* CommandResult.MinBiggerThanMax */]: _lt("Minimum must be smaller then Maximum"),
-            [48 /* CommandResult.MinBiggerThanMid */]: _lt("Minimum must be smaller then Midpoint"),
-            [47 /* CommandResult.MidBiggerThanMax */]: _lt("Midpoint must be smaller then Maximum"),
-            [46 /* CommandResult.LowerBiggerThanUpper */]: _lt("Lower inflection point must be smaller than upper inflection point"),
-            [56 /* CommandResult.MinInvalidFormula */]: _lt("Invalid Minpoint formula"),
-            [58 /* CommandResult.MaxInvalidFormula */]: _lt("Invalid Maxpoint formula"),
-            [57 /* CommandResult.MidInvalidFormula */]: _lt("Invalid Midpoint formula"),
-            [59 /* CommandResult.ValueUpperInvalidFormula */]: _lt("Invalid upper inflection point formula"),
-            [60 /* CommandResult.ValueLowerInvalidFormula */]: _lt("Invalid lower inflection point formula"),
+            [50 /* CommandResult.FirstArgMissing */]: _lt("The argument is missing. Please provide a value"),
+            [51 /* CommandResult.SecondArgMissing */]: _lt("The second argument is missing. Please provide a value"),
+            [52 /* CommandResult.MinNaN */]: _lt("The minpoint must be a number"),
+            [53 /* CommandResult.MidNaN */]: _lt("The midpoint must be a number"),
+            [54 /* CommandResult.MaxNaN */]: _lt("The maxpoint must be a number"),
+            [55 /* CommandResult.ValueUpperInflectionNaN */]: _lt("The first value must be a number"),
+            [56 /* CommandResult.ValueLowerInflectionNaN */]: _lt("The second value must be a number"),
+            [46 /* CommandResult.MinBiggerThanMax */]: _lt("Minimum must be smaller then Maximum"),
+            [49 /* CommandResult.MinBiggerThanMid */]: _lt("Minimum must be smaller then Midpoint"),
+            [48 /* CommandResult.MidBiggerThanMax */]: _lt("Midpoint must be smaller then Maximum"),
+            [47 /* CommandResult.LowerBiggerThanUpper */]: _lt("Lower inflection point must be smaller than upper inflection point"),
+            [57 /* CommandResult.MinInvalidFormula */]: _lt("Invalid Minpoint formula"),
+            [59 /* CommandResult.MaxInvalidFormula */]: _lt("Invalid Maxpoint formula"),
+            [58 /* CommandResult.MidInvalidFormula */]: _lt("Invalid Midpoint formula"),
+            [60 /* CommandResult.ValueUpperInvalidFormula */]: _lt("Invalid upper inflection point formula"),
+            [61 /* CommandResult.ValueLowerInvalidFormula */]: _lt("Invalid lower inflection point formula"),
             [23 /* CommandResult.EmptyRange */]: _lt("A range needs to be defined"),
             Unexpected: _lt("The rule is invalid for an unknown reason"),
         },
@@ -5767,20 +5767,20 @@
         Errors: {
             Unexpected: _lt("The chart definition is invalid for an unknown reason"),
             // BASIC CHART ERRORS (LINE | BAR | PIE)
-            [30 /* CommandResult.InvalidDataSet */]: _lt("The dataset is invalid"),
-            [31 /* CommandResult.InvalidLabelRange */]: _lt("Labels are invalid"),
+            [31 /* CommandResult.InvalidDataSet */]: _lt("The dataset is invalid"),
+            [32 /* CommandResult.InvalidLabelRange */]: _lt("Labels are invalid"),
             // SCORECARD CHART ERRORS
-            [32 /* CommandResult.InvalidScorecardKeyValue */]: _lt("The key value is invalid"),
-            [33 /* CommandResult.InvalidScorecardBaseline */]: _lt("The baseline value is invalid"),
+            [33 /* CommandResult.InvalidScorecardKeyValue */]: _lt("The key value is invalid"),
+            [34 /* CommandResult.InvalidScorecardBaseline */]: _lt("The baseline value is invalid"),
             // GAUGE CHART ERRORS
-            [34 /* CommandResult.InvalidGaugeDataRange */]: _lt("The data range is invalid"),
-            [35 /* CommandResult.EmptyGaugeRangeMin */]: _lt("A minimum range limit value is needed"),
-            [36 /* CommandResult.GaugeRangeMinNaN */]: _lt("The minimum range limit value must be a number"),
-            [37 /* CommandResult.EmptyGaugeRangeMax */]: _lt("A maximum range limit value is needed"),
-            [38 /* CommandResult.GaugeRangeMaxNaN */]: _lt("The maximum range limit value must be a number"),
-            [39 /* CommandResult.GaugeRangeMinBiggerThanRangeMax */]: _lt("Minimum range limit must be smaller than maximum range limit"),
-            [40 /* CommandResult.GaugeLowerInflectionPointNaN */]: _lt("The lower inflection point value must be a number"),
-            [41 /* CommandResult.GaugeUpperInflectionPointNaN */]: _lt("The upper inflection point value must be a number"),
+            [35 /* CommandResult.InvalidGaugeDataRange */]: _lt("The data range is invalid"),
+            [36 /* CommandResult.EmptyGaugeRangeMin */]: _lt("A minimum range limit value is needed"),
+            [37 /* CommandResult.GaugeRangeMinNaN */]: _lt("The minimum range limit value must be a number"),
+            [38 /* CommandResult.EmptyGaugeRangeMax */]: _lt("A maximum range limit value is needed"),
+            [39 /* CommandResult.GaugeRangeMaxNaN */]: _lt("The maximum range limit value must be a number"),
+            [40 /* CommandResult.GaugeRangeMinBiggerThanRangeMax */]: _lt("Minimum range limit must be smaller than maximum range limit"),
+            [41 /* CommandResult.GaugeLowerInflectionPointNaN */]: _lt("The lower inflection point value must be a number"),
+            [42 /* CommandResult.GaugeUpperInflectionPointNaN */]: _lt("The upper inflection point value must be a number"),
         },
     };
     const NumberFormatTerms = {
@@ -5804,7 +5804,7 @@
         const sheetId = env.model.getters.getActiveSheetId();
         const cmd = dimension === "COL" ? "FREEZE_COLUMNS" : "FREEZE_ROWS";
         const result = env.model.dispatch(cmd, { sheetId, quantity: base });
-        if (result.isCancelledBecause(63 /* CommandResult.MergeOverlap */)) {
+        if (result.isCancelledBecause(64 /* CommandResult.MergeOverlap */)) {
             env.raiseError(MergeErrorMessage);
         }
     }
@@ -8185,7 +8185,7 @@
             baselineDisplay: getBaselineText(baselineCell, keyValueCell === null || keyValueCell === void 0 ? void 0 : keyValueCell.evaluated, chart.baselineMode),
             baselineArrow: getBaselineArrowDirection(baselineCell === null || baselineCell === void 0 ? void 0 : baselineCell.evaluated, keyValueCell === null || keyValueCell === void 0 ? void 0 : keyValueCell.evaluated, chart.baselineMode),
             baselineColor: getBaselineColor(baselineCell === null || baselineCell === void 0 ? void 0 : baselineCell.evaluated, chart.baselineMode, keyValueCell === null || keyValueCell === void 0 ? void 0 : keyValueCell.evaluated, chart.baselineColorUp, chart.baselineColorDown),
-            baselineDescr: chart.baselineDescr ? _t(chart.baselineDescr) : "",
+            baselineDescr: _t(chart.baselineDescr || ""),
             fontColor: chartFontColor(background),
             background,
             baselineStyle: chart.baselineMode !== "percentage" ? baselineCell === null || baselineCell === void 0 ? void 0 : baselineCell.style : undefined,
@@ -20711,7 +20711,15 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         setup() {
             owl.useEffect((selectedFigureId, thisFigureId, el) => {
                 if (selectedFigureId === thisFigureId) {
-                    el === null || el === void 0 ? void 0 : el.focus();
+                    /** Scrolling on a newly inserted figure that overflows outside the viewport
+                     * will break the whole layout.
+                     * NOTE: `preventScroll`does not work on mobile but then again,
+                     * mobile is not really supported ATM.
+                     *
+                     * TODO: When implementing proper mobile, we will need to scroll the viewport
+                     * correctly (and render?) before focusing the element.
+                     */
+                    el === null || el === void 0 ? void 0 : el.focus({ preventScroll: true });
                 }
             }, () => [this.env.model.getters.getSelectedFigureId(), this.props.figure.id, this.figureRef.el]);
         }
@@ -20720,12 +20728,12 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             ev.stopPropagation();
             const initialX = ev.clientX;
             const initialY = ev.clientY;
-            this.dnd.isActive = true;
             this.dnd.x = figure.x;
             this.dnd.y = figure.y;
             this.dnd.width = figure.width;
             this.dnd.height = figure.height;
             const onMouseMove = (ev) => {
+                this.dnd.isActive = true;
                 const deltaX = Math.max(dirX * (ev.clientX - initialX), MIN_FIG_SIZE - figure.width);
                 const deltaY = Math.max(dirY * (ev.clientY - initialY), MIN_FIG_SIZE - figure.height);
                 this.dnd.width = figure.width + deltaX;
@@ -20775,12 +20783,12 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             const { offsetX, offsetY } = this.env.model.getters.getActiveSheetScrollInfo();
             const initialX = ev.clientX - position.left;
             const initialY = ev.clientY - position.top;
-            this.dnd.isActive = true;
             this.dnd.x = figure.x;
             this.dnd.y = figure.y;
             this.dnd.width = figure.width;
             this.dnd.height = figure.height;
             const onMouseMove = (ev) => {
+                this.dnd.isActive = true;
                 const newX = ev.clientX - position.left;
                 let deltaX = newX - initialX;
                 if (newX > offsetCorrectionX && initialX < offsetCorrectionX) {
@@ -37186,7 +37194,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     };
     function interactiveAddMerge(env, sheetId, target) {
         const result = env.model.dispatch("ADD_MERGE", { sheetId, target });
-        if (result.isCancelledBecause(78 /* CommandResult.MergeInFilter */)) {
+        if (result.isCancelledBecause(79 /* CommandResult.MergeInFilter */)) {
             env.raiseError(AddMergeInteractiveContent.MergeInFilter);
         }
         else if (result.isCancelledBecause(3 /* CommandResult.MergeIsDestructive */)) {
@@ -42056,8 +42064,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-12-07T09:24:07.747Z';
-    exports.__info__.hash = '31d0590';
+    exports.__info__.date = '2022-12-08T15:18:25.183Z';
+    exports.__info__.hash = 'c4bccfc';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
