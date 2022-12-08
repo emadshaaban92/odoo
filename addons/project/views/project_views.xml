@@ -930,7 +930,6 @@
                                     <div class="oe_kanban_bottom_right">
                                     <!--domain="[('active', '=', True), ('company_id', '=', company_id)]"-->
                                         <field t-if="record.last_update_status.value &amp;&amp; widget.editable" name="last_update_status" widget="project_state_selection" options="{'color_field': 'last_update_color', 'hide_label': 1}"/>
-                                        <field t-if="record.last_update_status.value &amp;&amp; widget.editable" name="last_update_status" widget="project_state_selection" options="{'color_field': 'last_update_color', 'hide_label': 1}"/>
                                         <span t-if="record.last_update_status.value &amp;&amp; !widget.editable" t-att-class="'o_status_bubble mx-0 o_color_bubble_' + record.last_update_color.value" t-att-title="record.last_update_status.value"></span>
                                         <field name="user_id" widget="many2one_avatar_user" t-if="record.user_id.raw_value"/>
                                     </div>
@@ -1450,10 +1449,13 @@
                                 <div class="o_kanban_record_top">
                                     <div class="o_kanban_record_headings">
                                         <strong class="o_kanban_record_title">
-                                        <!--<field name="state_id" groups="base.group_user"/>-->
+                                        
                                             <field name="state_id" widget="project_task_state_selection" options="{'no_open': True}"/>
-                                            <i title="state approval" t-attf-class="{{record.state_approval_mode.raw_value ? 'fa fa-arrow-up' : 'fa fa-arrow-down'}}"/>
                                             <br/>
+                                            <!--
+                                                <field name="state_id" groups="base.group_user"/>
+                                                <i title="state approval" t-attf-class="{{record.state_approval_mode.raw_value ? 'fa fa-arrow-up' : 'fa fa-arrow-down'}}"/>
+                                            -->
                                             <s t-if="!record.active.raw_value"><field name="name" widget="name_with_subtask_count"/></s>
                                             <t t-else=""><field name="name" widget="name_with_subtask_count"/></t>
                                         </strong>
@@ -1506,7 +1508,7 @@
                                         </b>
                                     </div>
                                     <div class="oe_kanban_bottom_right" t-if="!selection_mode">
-                                        <field name="kanban_state" widget="" groups="base.group_user"/>
+                                        <field name="kanban_state" widget="state_selection" groups="base.group_user"/>
                                         <t t-if="record.user_ids.raw_value"><field name="user_ids" widget="many2many_avatar_user"/></t>
                                     </div>
                                 </div>
