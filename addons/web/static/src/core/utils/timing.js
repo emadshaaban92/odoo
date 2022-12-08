@@ -37,7 +37,7 @@ export function throttleForAnimation(func) {
 /**
  * Returns a function, that, as long as it continues to be invoked, will be
  * triggered every 'delay' milliseconds.
- * NB: it will always trigger the function on the leading edge.
+ * NB: The first call that starts the 'delay' timeout is always called immediately (leading edge).
  *
  * @template {Function} T
  * @param {T} func the function to throttle
@@ -51,9 +51,9 @@ export function throttle(func, delay) {
     const pending = () => {
         if (calls.size > 0) {
             handle = browser.setTimeout(pending, delay);
-            const lastCall = [...calls].pop();
+            const lastCallArgs = [...calls].pop();
             calls.clear();
-            func.apply(this, lastCall);
+            func.apply(this, lastCallArgs);
         } else {
             handle = null;
         }
@@ -150,10 +150,10 @@ export function useDebounced(callback, delay, immediate = false) {
 /**
  * Hook that returns a throttled version of the given function, and cancels
  * the potential pending execution on willUnmount.
- * @see debounce
+ * @see throttle
  * @template {Function} T
  * @param {T} callback
- * @param {number | "animationFrame"} delay
+ * @param {number} delay
  * @returns {T & { cancel: () => void }}
  */
 export function useThrottled(callback, delay) {
