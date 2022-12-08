@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-from odoo import fields, models, _lt
+from odoo import api, fields, models, _, _lt
 from odoo.osv import expression
 
 
@@ -98,3 +98,57 @@ class Project(models.Model):
                 'sequence': 45,
             }])
         return buttons
+
+
+class MrpProduction(models.Model):
+    _inherit = 'mrp.production'
+
+    task_id = fields.Many2one('project.task', string='Task')
+class ProjectTask(models.Model):
+    _inherit = "project.task"
+
+    manufacturing_orders_count = fields.Integer('# Manufacturing Orders', compute='_compute_manufacturing_orders_count', groups='mrp.group_mrp_user')
+
+
+    def _compute_manufacturing_orders_count(self):
+        manufacturing_orders_data = self.env['mrp.production'].read_group([
+            ('task_id', 'in', self.ids),
+        ], ['task_id'], ['task_id'])
+        manufacturing_orders_per_task = {}
+        for order in manufacturing_orders_data:
+            manufacturing_orders_per_task[order['task_id'][0]] = order['task_id_count']
+        for task in self:
+            task.manufacturing_orders_count = manufacturing_orders_per_task.get(task.id, 0)
+
+    @api.model
+    def action_create_manufacturing_order_from_task(self):
+        self.ensure_one()
+        return {
+                'type': 'ir.actions.act_window',
+                'res_model': 'mrp.production',
+                'view_mode': 'form',
+                'views': [[self.env.ref('mrp.mrp_production_form_view').id, 'form']],
+                'target': 'main',
+                'context': {'default_task_id': self.id, 'default_analytic_account_id': self.analytic_account_id.id},
+            }
+
+    def action_open_task_manufacturing_orders(self):
+        self.ensure_one()
+        query = self.env['mrp.production']._search([])
+        query_string, query_param = query.select('id')
+        self._cr.execute(query_string, query_param)
+        manufacturing_order_ids = [mol.get('order_id') for mol in self._cr.dictfetchall()]
+        action_window = {
+            'name': _('Manufacturing Orders'),
+            'type': 'ir.actions.act_window',
+            'res_model': 'mrp.production',
+            'views': [[False, 'tree'], [False, 'form']],
+            'domain': [('task_id', '=', self.id)],
+            'context': {
+                'create': False,
+            }
+        }
+        if len(manufacturing_order_ids) == 1:
+            action_window['views'] = [[False, 'form']]
+            action_window['res_id'] = manufacturing_order_ids
+        return action_window
