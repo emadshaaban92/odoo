@@ -474,7 +474,14 @@ export function makeDraggableHook(hookParams) {
                     diff.y = [maxHeight - eRect.y - eRect.height, 1];
                 }
 
-                if ((diff.x && diff.x[0]) || (diff.y && diff.y[0])) {
+                if (diff.x && !diff.x[0]) {
+                    delete diff.x;
+                }
+                if (diff.y && !diff.y[0]) {
+                    delete diff.y;
+                }
+
+                if (diff.x || diff.y) {
                     const diffToScroll = ([delta, sign]) =>
                         (1 - clamp(delta, 0, threshold) / threshold) * correctedSpeed * sign;
                     const scrollParams = {};
@@ -525,12 +532,21 @@ export function makeDraggableHook(hookParams) {
                     return;
                 }
 
+                // Initial target is cloned and hidden.
+                // This is done so that the initial element can be removed without
+                // the drag sequence being affected.
+                const target = ev.target.closest(ctx.elementSelector);
                 ctx.currentContainer = ctx.ref.el;
-                ctx.currentElement = ev.target.closest(ctx.elementSelector);
+                ctx.currentElement = target.cloneNode(true);
+                target.parentElement.appendChild(ctx.currentElement);
+
+                dom.addStyle(target, { display: "none" });
 
                 Object.assign(ctx.offset, ctx.mouse);
 
                 cleanup.add(() => {
+                    ctx.currentElement.remove();
+
                     ctx.currentContainer = null;
                     ctx.currentContainerRect = null;
                     ctx.currentElement = null;
