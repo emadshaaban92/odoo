@@ -1,6 +1,9 @@
 odoo.define('crm_iap_mine.generate_leads_steps', function (require) {
 "use strict";
 
+// TODO-JCB: Don't load temporarily.
+return;
+
 var tour = require('web_tour.tour');
 const {Markup} = require('web.utils');
 var core = require('web.core');

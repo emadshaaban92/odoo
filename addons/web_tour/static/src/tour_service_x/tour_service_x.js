@@ -9,6 +9,7 @@ import { TourPointer } from "../tour_pointer/tour_pointer";
 // TODO-JCB: Replace the following import with the non-legacy version.
 import { device } from "web.config";
 import { findTrigger } from "web_tour.utils";
+import RunningTourActionHelper from "web_tour.RunningTourActionHelper";
 
 /**
  * TODO-JCB: Don't forget the following:
@@ -19,65 +20,12 @@ import { findTrigger } from "web_tour.utils";
  */
 
 /**
- * Returns an augmented version of a simple tour that automatically
- * points to a step's trigger, perform the action and advances to the
- * next step after a given [interval]. It calls [pointTo] based
- * on the calculated location of the trigger's element.
- * @param {Object} macroDescription
- * TODO-JCB: Update this type.
- * @param {{ interval: number; pointTo: (el) => void, advance: () => void }} options
- * @returns {Object}
- */
-function createAutoMacro(
-    macroDescription,
-    options = { interval: 500, pointTo: (_el) => {}, advance: () => {} }
-) {
-    function augmentStep(step) {
-        // TODO-JCB: Take into account the possibility of multiple step elements because of the alt_trigger.
-        let stepEl;
-        let timeout;
-        const res = { val: false };
-        return [
-            { ...step, action: undefined },
-            {
-                action: () => {
-                    res.val = false;
-                    stepEl = findTrigger(step.trigger, step.in_modal);
-                    options.pointerMethods.pointTo(stepEl);
-                },
-            },
-            step,
-            {
-                trigger: () => {
-                    if (!timeout) {
-                        timeout = browser.setTimeout(() => {
-                            res.val = stepEl;
-                            timeout = undefined;
-                            options.advance();
-                        }, options.interval);
-                    }
-                    return res.val;
-                },
-            },
-        ];
-    }
-
-    return {
-        ...macroDescription,
-        steps: macroDescription.steps.reduce(
-            (newSteps, step) => [...newSteps, ...augmentStep(step)],
-            []
-        ),
-    };
-}
-
-/**
  * TODO-JCB: Make sure to include "edition" and "isMobile" in the type of [options].
  * @param {*} macroDescription
  * @param {*} options
  * @returns
  */
-function createManualMacro(macroDescription, options) {
+function augmentMacro(macroDescription, options) {
     /**
      * Checks if [key] maps to a defined (non-undefined) value in [obj].
      * @param {string} key
@@ -93,14 +41,14 @@ function createManualMacro(macroDescription, options) {
      * @param {TourStep} step
      * @returns {boolean}
      */
-    function shouldOmit(step) {
+    function shouldOmit(step, mode) {
         const correctEdition = isDefined("edition", step) ? step.edition === options.edition : true;
         const correctDevice = isDefined("mobile", step) ? step.mobile === options.isMobile : true;
         return (
             !correctEdition ||
             !correctDevice ||
             // TODO-JCB: Confirm if [step.auto = true] means omitting a step in a manual tour.
-            step.auto
+            (mode === "manual" && step.auto)
         );
     }
 
@@ -208,19 +156,34 @@ function createManualMacro(macroDescription, options) {
          * - NOTE: Not sure though if the element is important or if it can be used for the
          *   next step.
          */
-        let proceedWith;
-        if (shouldOmit(step)) {
+        let proceedWith = false;
+        /**
+         * This is used to schedule the `step.run`.
+         */
+        let autoRunning = false;
+        if (shouldOmit(step, options.mode)) {
             return [];
         }
         return [
             step,
             {
                 action: () => {
+                    console.log(step.trigger);
                     proceedWith = false;
+                    clearTimeout(autoRunning);
+                    autoRunning = false;
                 },
             },
             {
                 trigger: () => {
+                    // Short circuit. No need to do the whole procedure when `proceedWith` is not falsy.
+                    // Important to clear it before returning the value.
+                    if (proceedWith) {
+                        const temp = proceedWith;
+                        proceedWith = false;
+                        return temp;
+                    }
+
                     const { triggerEl, altTriggerEl, extraTriggerOkay, skipTriggerEl } = queryStep(
                         step
                     );
@@ -234,7 +197,7 @@ function createManualMacro(macroDescription, options) {
                     // [extra_trigger] - should also be present together with the [trigger].
                     stepEl = extraTriggerOkay && (triggerEl || altTriggerEl);
 
-                    consumeEvent = step.consumeEvent || getConsumeEventType($(stepEl));
+                    consumeEvent = step.consumeEvent || getConsumeEventType($(stepEl), step.run);
 
                     // If [skip_trigger] element is present, immediately return [stepEl] for potential
                     // consumption of this step.
@@ -243,41 +206,117 @@ function createManualMacro(macroDescription, options) {
                     }
 
                     if (prevEl) {
-                        $anchorEl.off(".anchor");
+                        // Stop waiting.
+                        if (options.mode == "manual") {
+                            $anchorEl.off(".anchor");
+                        } else if (options.mode == "auto") {
+                            clearTimeout(autoRunning);
+                            autoRunning = false;
+                        } else {
+                            throw new Error(`mode = '${options.mode}' is not supported.`);
+                        }
                     }
 
-                    // TODO-JCB: I think we should only add the listener when [proceedWith] is falsy.
                     if (stepEl) {
                         $anchorEl = getAnchorEl($(stepEl), consumeEvent);
-                        $anchorEl.on(`${consumeEvent}.anchor`, () => {
-                            // TODO-JCB: The following logic comes from _getAnchorAndCreateEvent and it might be important to take it into account.
-                            // $consumeEventAnchors.on(consumeEvent + ".anchor", (function (e) {
-                            //     if (e.type !== "mousedown" || e.which === 1) { // only left click
-                            //         if (this.info.consumeVisibleOnly && !this.isShown()) {
-                            //             // Do not consume non-displayed tips.
-                            //             return;
-                            //         }
-                            //         this.trigger("tip_consumed");
-                            //         this._unbind_anchor_events();
-                            //     }
-                            // }).bind(this));
+                        // Start waiting for action, or automatically perform `step.run`.
+                        // Set `proceedWith` to a non-falsy value as a signal to proceed to the next step.
+                        if (options.mode == "manual") {
+                            options.pointerMethods.show();
+                            $anchorEl.on(`${consumeEvent}.anchor`, () => {
+                                // TODO-JCB: The following logic comes from _getAnchorAndCreateEvent and it might be important to take it into account.
+                                // $consumeEventAnchors.on(consumeEvent + ".anchor", (function (e) {
+                                //     if (e.type !== "mousedown" || e.which === 1) { // only left click
+                                //         if (this.info.consumeVisibleOnly && !this.isShown()) {
+                                //             // Do not consume non-displayed tips.
+                                //             return;
+                                //         }
+                                //         this.trigger("tip_consumed");
+                                //         this._unbind_anchor_events();
+                                //     }
+                                // }).bind(this));
 
-                            proceedWith = stepEl;
-                            $anchorEl.off(".anchor");
-                            stepEl = undefined;
-                            consumeEvent = undefined;
-                            $anchorEl = undefined;
-                            options.pointerMethods.hide();
-                            options.advance();
-                        });
+                                proceedWith = stepEl;
+
+                                // stop waiting
+                                $anchorEl.off(".anchor");
+
+                                // clear the state variables
+                                stepEl = undefined;
+                                consumeEvent = undefined;
+                                $anchorEl = undefined;
+
+                                // hide the pointer if necessary.
+                                options.pointerMethods.hide();
+
+                                // finally, advance to the next step.
+                                options.advance();
+                            });
+                        } else if (options.mode == "auto") {
+                            if (options.showPointer) {
+                                options.pointerMethods.show();
+                            }
+
+                            // perform step.run
+                            // if result is promise, wait for promise to resolve.
+                            // if called already, make sure to not call again.
+                            // NOTE: Tried with promise but it doesn't work. At some point, the click is done
+                            // but the UI doesn't react. (micro task vs macro task, IDK.)
+                            autoRunning = browser.setTimeout(async () => {
+                                const actionHelper = new RunningTourActionHelper({
+                                    consume_event: consumeEvent,
+                                    $anchor: $anchorEl,
+                                });
+                                if (typeof step.run === "function") {
+                                    try {
+                                        // `this.$anchor` is expected in many `step.run`.
+                                        await step.run.call({ $anchor: $anchorEl }, actionHelper);
+                                    } catch (e) {
+                                        // console.error(`Tour ${tour_name} failed at step ${self._describeTip(tip)}: ${e.message}`);
+                                        throw e;
+                                    }
+                                } else if (step.run !== undefined) {
+                                    const m = step.run.match(
+                                        /^([a-zA-Z0-9_]+) *(?:\(? *(.+?) *\)?)?$/
+                                    );
+                                    try {
+                                        actionHelper[m[1]](m[2]);
+                                    } catch (e) {
+                                        // console.error(`Tour ${tour_name} failed at step ${self._describeTip(tip)}: ${e.message}`);
+                                        throw e;
+                                    }
+                                } else {
+                                    if (
+                                        step.trigger ===
+                                        ".o_kanban_record:not(.o_updating) .o_ActivityButtonView"
+                                    ) {
+                                        console.log(step);
+                                    }
+                                    actionHelper.auto();
+                                }
+
+                                proceedWith = stepEl;
+
+                                // clear the state variables
+                                autoRunning = false;
+                                stepEl = undefined;
+                                consumeEvent = undefined;
+                                $anchorEl = undefined;
+
+                                // hide the pointer if necessary.
+                                options.pointerMethods.hide();
+
+                                // finally, advance to the next step.
+                                options.advance();
+                            }, 0);
+                        } else {
+                            throw new Error(`mode = '${options.mode}' is not supported.`);
+                        }
                     }
 
                     // Call this everytime so that the pointer is always pointing at the
                     // step's trigger element.
-                    // TODO-JCB: Maybe we only point to the trigger when [proceedWith] is falsy.
                     options.pointerMethods.pointTo(stepEl);
-
-                    return proceedWith;
                 },
             },
         ];
@@ -290,6 +329,7 @@ function createManualMacro(macroDescription, options) {
             .concat([
                 {
                     action: () => {
+                        console.log("Tour done!");
                         options.pointerMethods.hide();
                     },
                 },
@@ -332,6 +372,10 @@ function createPointerState({ x, y, isVisible, position, text }) {
         state.isVisible = false;
     }
 
+    function show() {
+        state.isVisible = true;
+    }
+
     /**
      * Update [state] to refer to the given [el].
      * If [el] is undefined, hide the pointer.
@@ -343,7 +387,7 @@ function createPointerState({ x, y, isVisible, position, text }) {
             const rect = el.getBoundingClientRect();
             const top = rect.top - size.width;
             const left = rect.left + rect.width / 2 - size.height / 2;
-            Object.assign(state, { x: left, y: top, isVisible: true });
+            Object.assign(state, { x: left, y: top });
         } else {
             hide();
         }
@@ -354,6 +398,7 @@ function createPointerState({ x, y, isVisible, position, text }) {
         {
             pointTo,
             hide,
+            show,
             setSizeGetter,
         },
     ];
@@ -416,7 +461,9 @@ export const tourService = {
          * @param {string} _tourName
          * @param {{ kind: "manual" } | { kind: "auto", interval: number }} mode
          */
-        function run(params = { tourName: "", mode: { kind: "auto", interval: 0 } }) {
+        function run(
+            params = { tourName: "", mode: { kind: "auto", interval: 0, showPointer: false } }
+        ) {
             const { tourName: _tourName, mode } = params;
             const tourDesc = registry.category("tours").get(params.tourName);
 
@@ -425,25 +472,20 @@ export const tourService = {
                 delete step.content;
             }
 
-            if (mode.kind == "auto") {
-                macroEngine.activate(
-                    createAutoMacro(tourDesc, {
-                        advance: () => macroEngine.advanceMacros(),
-                        interval: tourDesc.interval || mode.interval,
-                        pointerMethods: pointer.methods,
-                    })
-                );
-            } else if (mode.kind == "manual") {
-                // The pointer points to the trigger and waits for the user to do the action.
-                macroEngine.activate(
-                    createManualMacro(Object.assign(tourDesc, { interval: mode.interval }), {
-                        advance: () => macroEngine.advanceMacros(),
-                        pointerMethods,
-                        edition,
-                        isMobile,
-                    })
-                );
-            }
+            const augmentedMacro = augmentMacro(
+                Object.assign(tourDesc, { interval: mode.kind === "manual" ? 0 : mode.interval }),
+                {
+                    advance: () => macroEngine.advanceMacros(),
+                    pointerMethods,
+                    edition,
+                    isMobile,
+                    mode: mode.kind,
+                    showPointer: mode.showPointer,
+                }
+            );
+
+            // The pointer points to the trigger and waits for the user to do the action.
+            macroEngine.activate(augmentedMacro);
         }
 
         registry.category("main_components").add("TourPointer", {

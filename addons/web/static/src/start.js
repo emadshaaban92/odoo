@@ -76,7 +76,7 @@ export async function startWebClient(Webclient) {
     }
     // TODO-JCB: Implement tours management.
     env.services.tour_service_x.run({
-        tourName: "planning_tour",
-        mode: { kind: "manual", interval: 0 },
+        tourName: "crm_tour",
+        mode: { kind: "auto", interval: 0, showPointer: true },
     });
 }
