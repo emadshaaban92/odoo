@@ -31,6 +31,8 @@ class LoyaltyProgram(models.Model):
     communication_plan_ids = fields.One2many('loyalty.mail', 'program_id', copy=True,
          compute='_compute_from_program_type', readonly=False, store=True)
 
+    pricelist_ids = fields.Many2many('product.pricelist', string='Pricelist')
+
     # These fields are used for the simplified view of gift_card and ewallet
     mail_template_id = fields.Many2one('mail.template', compute='_compute_mail_template_id', inverse='_inverse_mail_template_id', string="Email template", readonly=False)
     trigger_product_ids = fields.Many2many(related='rule_ids.product_ids', readonly=False)

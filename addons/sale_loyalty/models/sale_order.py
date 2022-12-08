@@ -915,6 +915,8 @@ class SaleOrder(models.Model):
             return {'error': _('The program is not available for this order.')}
         elif program in self._get_applied_programs():
             return {'error': _('This program is already applied to this order.')}
+        elif self.pricelist_id not in program.pricelist_ids and len(program.pricelist_ids) != 0:
+            return {'error': _('This code is invalid.'), 'not_found': True}
         # Check for applicability from the program's triggers/rules.
         # This step should also compute the amount of points to give for that program on that order.
         status = self._program_check_compute_points(program)[program]
