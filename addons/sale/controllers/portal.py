@@ -207,7 +207,7 @@ class CustomerPortal(portal.CustomerPortal):
             'tokens': tokens,
             'fees_by_provider': fees_by_provider,
             'show_tokenize_input': PaymentPortal._compute_show_tokenize_input_mapping(
-                providers_sudo, logged_in=logged_in, sale_order_id=order_sudo.id
+                providers_sudo, sale_order_id=order_sudo.id
             ),
             'amount': order_sudo.amount_total,
             'currency': order_sudo.pricelist_id.currency_id,

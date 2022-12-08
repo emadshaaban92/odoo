@@ -154,13 +154,12 @@ class PaymentPortal(portal.CustomerPortal):
         return request.render(self._get_payment_page_template_xmlid(**kwargs), rendering_context)
 
     @staticmethod
-    def _compute_show_tokenize_input_mapping(providers_sudo, logged_in=False, **kwargs):
+    def _compute_show_tokenize_input_mapping(providers_sudo, **kwargs):
         """ Determine for each provider whether the tokenization input should be shown or not.
 
         :param recordset providers_sudo: The providers for which to determine whether the
                                          tokenization input should be shown or not, as a sudoed
                                          `payment.provider` recordset.
-        :param bool logged_in: Whether the user is logged in or not.
         :param dict kwargs: The optional data passed to the helper methods.
         :return: The mapping of the computed value for each provider id.
         :rtype: dict
@@ -168,8 +167,7 @@ class PaymentPortal(portal.CustomerPortal):
         show_tokenize_input_mapping = {}
         for provider_sudo in providers_sudo:
             show_tokenize_input = provider_sudo.allow_tokenization \
-                                  and not provider_sudo._is_tokenization_required(**kwargs) \
-                                  and logged_in
+                                  and not provider_sudo._is_tokenization_required(**kwargs)
             show_tokenize_input_mapping[provider_sudo.id] = show_tokenize_input
         return show_tokenize_input_mapping
 
