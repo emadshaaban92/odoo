@@ -538,7 +538,7 @@ export function makeDraggableHook(hookParams) {
                 const target = ev.target.closest(ctx.elementSelector);
                 ctx.currentContainer = ctx.ref.el;
                 ctx.currentElement = target.cloneNode(true);
-                target.parentElement.appendChild(ctx.currentElement);
+                target.before(ctx.currentElement);
 
                 dom.addStyle(target, { display: "none" });
 
