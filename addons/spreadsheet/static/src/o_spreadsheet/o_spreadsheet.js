@@ -3556,6 +3556,12 @@
         CellValueType["error"] = "error";
     })(CellValueType || (CellValueType = {}));
 
+    var ClipboardContentType;
+    (function (ClipboardContentType) {
+        ClipboardContentType["PLAIN"] = "text/plain";
+        ClipboardContentType["HTML"] = "text/html";
+    })(ClipboardContentType || (ClipboardContentType = {}));
+
     function isSheetDependent(cmd) {
         return "sheetId" in cmd;
     }
@@ -4226,12 +4232,16 @@
         if (style.textColor) {
             attributes["color"] = style.textColor;
         }
+        if (style.fillColor) {
+            attributes["background"] = style.fillColor;
+        }
         return attributes;
     }
-    function cssPropertiesToCss(attributes) {
+    function cssPropertiesToCss(attributes, newLine = true) {
+        const separator = newLine ? "\n" : "";
         const str = Object.entries(attributes)
             .map(([attName, attValue]) => `${attName}: ${attValue};`)
-            .join("\n");
+            .join(separator);
         return "\n" + str + "\n";
     }
 
@@ -7576,17 +7586,6 @@
             style,
         });
     }
-    async function readOsClipboard(env) {
-        try {
-            return await env.clipboard.readText();
-        }
-        catch (e) {
-            // Permission is required to read the clipboard.
-            console.warn("The OS clipboard could not be read.");
-            console.error(e);
-            return undefined;
-        }
-    }
     //------------------------------------------------------------------------------
     // Simple actions
     //------------------------------------------------------------------------------
@@ -7594,40 +7593,35 @@
     const REDO_ACTION = (env) => env.model.dispatch("REQUEST_REDO");
     const COPY_ACTION = async (env) => {
         env.model.dispatch("COPY");
-        await env.clipboard.writeText(env.model.getters.getClipboardContent());
+        await env.clipboard.writeContent(env.model.getters.getClipboardContent());
     };
     const CUT_ACTION = async (env) => {
         interactiveCut(env);
-        await env.clipboard.writeText(env.model.getters.getClipboardContent());
+        await env.clipboard.writeContent(env.model.getters.getClipboardContent());
     };
-    const PASTE_ACTION = async (env) => {
-        const spreadsheetClipboard = env.model.getters.getClipboardContent();
-        const osClipboard = await readOsClipboard(env);
-        const target = env.model.getters.getSelectedZones();
-        if (osClipboard && osClipboard !== spreadsheetClipboard) {
-            interactivePasteFromOS(env, target, osClipboard);
+    const PASTE_ACTION = async (env) => paste(env);
+    const PASTE_VALUE_ACTION = async (env) => paste(env, "onlyValue");
+    async function paste(env, pasteOption) {
+        const spreadsheetClipboard = env.model.getters.getClipboardTextContent();
+        const osClipboard = await env.clipboard.readText();
+        if (osClipboard.status === "ok") {
+            const target = env.model.getters.getSelectedZones();
+            if (osClipboard && osClipboard.content !== spreadsheetClipboard) {
+                interactivePasteFromOS(env, target, osClipboard.content);
+            }
+            else {
+                interactivePaste(env, target, pasteOption);
+            }
         }
-        else {
-            interactivePaste(env, target);
+        else if (osClipboard.status === "notImplemented") {
+            env.raiseError(_lt("Pasting from the context menu is not supported in this browser. Use keyboard shortcuts ctrl+c / ctrl+v instead."));
+            return;
         }
-    };
-    const PASTE_VALUE_ACTION = async (env) => {
-        const spreadsheetClipboard = env.model.getters.getClipboardContent();
-        const osClipboard = await readOsClipboard(env);
-        const target = env.model.getters.getSelectedZones();
-        if (osClipboard && osClipboard !== spreadsheetClipboard) {
-            env.model.dispatch("PASTE_FROM_OS_CLIPBOARD", {
-                target,
-                text: osClipboard,
-            });
+        else if (osClipboard.status === "permissionDenied") {
+            env.raiseError(_lt("Access to the clipboard denied by the browser. Please enable clipboard permission for this page in your browser settings."));
+            return;
         }
-        else {
-            env.model.dispatch("PASTE", {
-                target: env.model.getters.getSelectedZones(),
-                pasteOption: "onlyValue",
-            });
-        }
-    };
+    }
     const PASTE_FORMAT_ACTION = (env) => interactivePaste(env, env.model.getters.getSelectedZones(), "onlyFormat");
     const DELETE_CONTENT_ACTION = (env) => env.model.dispatch("DELETE_CONTENT", {
         sheetId: env.model.getters.getActiveSheetId(),
@@ -11260,6 +11254,7 @@
         /** Return an CSS style string corresponding to the given arguments */
         getTextStyle(args) {
             const cssAttributes = cellTextStyleToCss(args.cellStyle);
+            delete cssAttributes.background;
             cssAttributes["font-size"] = `${args.fontSize}px`;
             cssAttributes["display"] = "inline-block";
             if (!cssAttributes["color"] && args.color) {
@@ -11363,7 +11358,7 @@
                 action: async () => {
                     this.env.model.dispatch("SELECT_FIGURE", { id: this.props.figure.id });
                     this.env.model.dispatch("COPY");
-                    await this.env.clipboard.writeText(this.env.model.getters.getClipboardContent());
+                    await this.env.clipboard.clearClipboard();
                 },
             });
             registry.add("cut", {
@@ -11372,7 +11367,7 @@
                 action: async () => {
                     this.env.model.dispatch("SELECT_FIGURE", { id: this.props.figure.id });
                     this.env.model.dispatch("CUT");
-                    await this.env.clipboard.writeText(this.env.model.getters.getClipboardContent());
+                    await this.env.clipboard.clearClipboard();
                 },
             });
             registry.add("delete", {
@@ -23155,6 +23150,11 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             if (!this.gridEl.contains(document.activeElement)) {
                 return;
             }
+            const clipboardData = ev.clipboardData;
+            if (!clipboardData) {
+                this.displayWarningCopyPasteNotSupported();
+                return;
+            }
             /* If we are currently editing a cell, let the default behavior */
             if (this.env.model.getters.getEditionMode() !== "inactive") {
                 return;
@@ -23166,7 +23166,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 this.env.model.dispatch("COPY");
             }
             const content = this.env.model.getters.getClipboardContent();
-            ev.clipboardData.setData("text/plain", content);
+            for (const type in content) {
+                clipboardData.setData(type, content[type]);
+            }
             ev.preventDefault();
         }
         paste(ev) {
@@ -23174,10 +23176,14 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 return;
             }
             const clipboardData = ev.clipboardData;
-            if (clipboardData.types.indexOf("text/plain") > -1) {
-                const content = clipboardData.getData("text/plain");
+            if (!clipboardData) {
+                this.displayWarningCopyPasteNotSupported();
+                return;
+            }
+            if (clipboardData.types.indexOf(ClipboardContentType.PLAIN) > -1) {
+                const content = clipboardData.getData(ClipboardContentType.PLAIN);
                 const target = this.env.model.getters.getSelectedZones();
-                const clipBoardString = this.env.model.getters.getClipboardContent();
+                const clipBoardString = this.env.model.getters.getClipboardTextContent();
                 if (clipBoardString === content) {
                     // the paste actually comes from o-spreadsheet itself
                     interactivePaste(this.env, target);
@@ -23186,6 +23192,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     interactivePasteFromOS(this.env, target, content);
                 }
             }
+        }
+        displayWarningCopyPasteNotSupported() {
+            this.env.raiseError(_lt("Copy/Paste is not supported in this browser."));
         }
         closeMenu() {
             this.menuState.isOpen = false;
@@ -29184,7 +29193,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 action: async () => {
                     this.env.model.dispatch("SELECT_FIGURE", { id: this.figureId });
                     this.env.model.dispatch("COPY");
-                    await this.env.clipboard.writeText(this.env.model.getters.getClipboardContent());
+                    await this.env.clipboard.clearClipboard();
                 },
             });
             registry.add("cut", {
@@ -29194,7 +29203,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 action: async () => {
                     this.env.model.dispatch("SELECT_FIGURE", { id: this.figureId });
                     this.env.model.dispatch("CUT");
-                    await this.env.clipboard.writeText(this.env.model.getters.getClipboardContent());
+                    await this.env.clipboard.clearClipboard();
                 },
             });
             registry.add("reset_size", {
@@ -36324,6 +36333,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     const position = { col, row, sheetId };
                     cellsInRow.push({
                         cell: getters.getCell(position),
+                        style: getters.getCellComputedStyle(position),
                         evaluatedCell: getters.getEvaluatedCell(position),
                         border: getters.getCellBorder(position) || undefined,
                         position,
@@ -36674,6 +36684,12 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             }
         }
         getClipboardContent() {
+            return {
+                [ClipboardContentType.PLAIN]: this.getPlainTextContent(),
+                [ClipboardContentType.HTML]: this.getHTMLContent(),
+            };
+        }
+        getPlainTextContent() {
             return (this.cells
                 .map((cells) => {
                 return cells
@@ -36681,6 +36697,22 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     .join("\t");
             })
                 .join("\n") || "\t");
+        }
+        getHTMLContent() {
+            if (this.cells.length == 1 && this.cells[0].length == 1) {
+                return this.getters.getCellText(this.cells[0][0].position);
+            }
+            let htmlTable = '<table border="1" style="border-collapse:collapse">';
+            for (const row of this.cells) {
+                htmlTable += "<tr>";
+                for (const cell of row) {
+                    const cssStyle = cssPropertiesToCss(cellTextStyleToCss(cell.style), false);
+                    htmlTable += `<td style="${cssStyle}">` + this.getters.getCellText(cell.position) + "</td>";
+                }
+                htmlTable += "</tr>";
+            }
+            htmlTable += "</table>";
+            return htmlTable;
         }
         isColRowDirtyingClipboard(position, dimension) {
             if (!this.zones)
@@ -36772,7 +36804,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             this.dispatch("SELECT_FIGURE", { id: newId });
         }
         getClipboardContent() {
-            return "\t";
+            return { [ClipboardContentType.PLAIN]: "\t" };
         }
         isColRowDirtyingClipboard(position, dimension) {
             return false;
@@ -36862,7 +36894,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             this.selection.selectZone({ cell: { col: activeCol, row: activeRow }, zone });
         }
         getClipboardContent() {
-            return this.values.map((values) => values.join("\t")).join("\n");
+            return {
+                [ClipboardContentType.PLAIN]: this.values.map((values) => values.join("\t")).join("\n"),
+            };
         }
         getPasteZone(target) {
             const height = this.values.length;
@@ -37016,7 +37050,11 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
          */
         getClipboardContent() {
             var _a;
-            return ((_a = this.state) === null || _a === void 0 ? void 0 : _a.getClipboardContent()) || "\t";
+            return ((_a = this.state) === null || _a === void 0 ? void 0 : _a.getClipboardContent()) || { [ClipboardContentType.PLAIN]: "\t" };
+        }
+        getClipboardTextContent() {
+            var _a;
+            return ((_a = this.state) === null || _a === void 0 ? void 0 : _a.getClipboardContent()[ClipboardContentType.PLAIN]) || "\t";
         }
         isCutOperation() {
             return this.state ? this.state.operation === "CUT" : false;
@@ -37094,7 +37132,12 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         }
     }
     ClipboardPlugin.layers = [2 /* LAYERS.Clipboard */];
-    ClipboardPlugin.getters = ["getClipboardContent", "isCutOperation", "isPaintingFormat"];
+    ClipboardPlugin.getters = [
+        "getClipboardContent",
+        "getClipboardTextContent",
+        "isCutOperation",
+        "isPaintingFormat",
+    ];
 
     const selectionStatisticFunctions = [
         {
@@ -38135,11 +38178,12 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             });
         }
         copy(ev) {
+            // TODO : remove copy in dashboard in future task
             this.env.model.dispatch("COPY");
             const content = this.env.model.getters.getClipboardContent();
-            // TODO use env.clipboard
-            // TODO add a test
-            ev.clipboardData.setData("text/plain", content);
+            for (const MIMEtype in content) {
+                ev.clipboardData.setData(MIMEtype, content[MIMEtype]);
+            }
             ev.preventDefault();
         }
     }
@@ -38909,6 +38953,63 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         onComposerContentFocused: Function,
     };
 
+    class ClipboardWrapper {
+        // Can be undefined because navigator.clipboard doesn't exist in old browsers
+        constructor(clipboard) {
+            this.clipboard = clipboard;
+        }
+        async writeContent(clipboardContent) {
+            var _a;
+            try {
+                (_a = this.clipboard) === null || _a === void 0 ? void 0 : _a.write(this.getClipboardItems(clipboardContent));
+            }
+            catch (e) { }
+        }
+        async writeText(text) {
+            var _a;
+            try {
+                (_a = this.clipboard) === null || _a === void 0 ? void 0 : _a.writeText(text);
+            }
+            catch (e) { }
+        }
+        async readText() {
+            let permissionResult = undefined;
+            try {
+                //@ts-ignore - clipboard-read is not implemented in all browsers
+                permissionResult = await navigator.permissions.query({ name: "clipboard-read" });
+            }
+            catch (e) { }
+            try {
+                const clipboardContent = await this.clipboard.readText();
+                return { status: "ok", content: clipboardContent };
+            }
+            catch (e) {
+                const status = (permissionResult === null || permissionResult === void 0 ? void 0 : permissionResult.state) === "denied" ? "permissionDenied" : "notImplemented";
+                return { status };
+            }
+        }
+        async clearClipboard() {
+            var _a;
+            try {
+                (_a = this.clipboard) === null || _a === void 0 ? void 0 : _a.write([]);
+            }
+            catch (e) { }
+        }
+        getClipboardItems(content) {
+            return [
+                new ClipboardItem({
+                    [ClipboardContentType.PLAIN]: this.getBlob(content, ClipboardContentType.PLAIN),
+                    [ClipboardContentType.HTML]: this.getBlob(content, ClipboardContentType.HTML),
+                }),
+            ];
+        }
+        getBlob(clipboardContent, type) {
+            return new Blob([clipboardContent[type] || ""], {
+                type,
+            });
+        }
+    }
+
     css /* scss */ `
   .o-spreadsheet {
     position: relative;
@@ -39012,7 +39113,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 openSidePanel: this.openSidePanel.bind(this),
                 toggleSidePanel: this.toggleSidePanel.bind(this),
                 _t: Spreadsheet._t,
-                clipboard: navigator.clipboard,
+                clipboard: this.env.clipboard || new ClipboardWrapper(navigator.clipboard),
             });
             owl.useExternalListener(window, "resize", () => this.render(true));
             owl.useExternalListener(window, "beforeunload", this.unbindModelEvents.bind(this));
@@ -42988,8 +43089,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-12-07T09:37:54.145Z';
-    exports.__info__.hash = '300da46';
+    exports.__info__.date = '2022-12-08T12:47:28.558Z';
+    exports.__info__.hash = '2f5f5cf';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
