@@ -4,18 +4,33 @@
 from odoo import api, fields, models
 
 class ResPartner(models.Model):
+    _name = 'res.partner'
     _inherit = 'res.partner'
 
-    loyalty_cards_id = fields.One2many('loyalty.card', 'partner_id')
-    active_cards = fields.Integer('Active cards', compute='_compute_count_active_cards')
+    loyalty_card_count = fields.Integer(compute='_compute_count_active_cards', string="Active loyalty cards")
 
-    @api.depends('loyalty_cards_id')
     def _compute_count_active_cards(self):
-        count = 0
-        for card in self.loyalty_cards_id:
-            if(card.points > 0 and (not card.expiration_date or card.expiration_date >= fields.Date().context_today(self))):
-                count += 1
-        self.active_cards = count
+        # retrieve all children partners and prefetch 'parent_id' on them
+        all_partners = self.with_context(active_test=False).search([('id', 'child_of', self.ids)])
+        all_partners.read(['parent_id'])
+
+        loyalty_groups = self.env['loyalty.card']._read_group(
+            domain=[('partner_id', 'in', all_partners.ids),
+                    ('points', '>', '0'),
+                    '|',
+                    ('expiration_date', '>=', fields.Date().context_today(self).strftime('%Y-%m-%d 00:00:00')),
+                    ('expiration_date', '=', False)],
+            fields=['partner_id'], groupby=['partner_id']
+        )
+        partners = self.browse()
+        for group in loyalty_groups:
+            partner = self.browse(group['partner_id'][0])
+            while partner:
+                if partner in self:
+                    partner.loyalty_card_count += group['partner_id_count']
+                    partners |= partner
+                partner = partner.parent_id
+        (self - partners).loyalty_card_count = 0
 
     def action_view_loyalty_cards(self):
         action = self.env['ir.actions.act_window']._for_xml_id('loyalty.loyalty_card_action')
