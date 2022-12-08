@@ -102,6 +102,11 @@ class Event(models.Model):
             registration;
         """
         current_visitor = self.env['website.visitor']._get_visitor_from_request(force_create=False)
+        events = self._get_visitor_events(current_visitor)
+        for event in self:
+            event.is_participating = event in events
+
+    def _get_visitor_events(self, current_visitor):
         if self.env.user._is_public() and not current_visitor:
             events = self.env['event.event']
         elif self.env.user._is_public():
@@ -125,9 +130,7 @@ class Event(models.Model):
                     ['&', ('event_id', 'in', self.ids), ('state', '!=', 'cancel')]
                 ])
             ).event_id
-
-        for event in self:
-            event.is_participating = event in events
+        return events
 
     @api.depends('event_type_id')
     def _compute_website_menu(self):
