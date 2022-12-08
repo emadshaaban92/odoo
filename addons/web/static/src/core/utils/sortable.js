@@ -86,7 +86,7 @@ export const useSortable = makeDraggableHook({
     },
 
     // Runtime steps
-    onDragStart({ ctx, helpers }) {
+    onDragStart({ ctx, addListener, addStyle, callHandler }) {
         /**
          * Element "mouseenter" event handler.
          * @param {MouseEvent} ev
@@ -105,7 +105,7 @@ export const useSortable = makeDraggableHook({
                     element.after(ctx.ghostElement);
                 }
             }
-            helpers.execHandler("onElementEnter", { element });
+            callHandler("onElementEnter", { element });
         };
 
         /**
@@ -114,7 +114,7 @@ export const useSortable = makeDraggableHook({
          */
         const onElementMouseleave = (ev) => {
             const element = ev.currentTarget;
-            helpers.execHandler("onElementLeave", { element });
+            callHandler("onElementLeave", { element });
         };
 
         /**
@@ -124,7 +124,7 @@ export const useSortable = makeDraggableHook({
         const onGroupMouseenter = (ev) => {
             const group = ev.currentTarget;
             group.appendChild(ctx.ghostElement);
-            helpers.execHandler("onGroupEnter", { group });
+            callHandler("onGroupEnter", { group });
         };
 
         /**
@@ -133,13 +133,13 @@ export const useSortable = makeDraggableHook({
          */
         const onGroupMouseleave = (ev) => {
             const group = ev.currentTarget;
-            helpers.execHandler("onGroupLeave", { group });
+            callHandler("onGroupLeave", { group });
         };
 
         const { width, height } = ctx.currentElementRect;
 
         // Adjusts size for the ghost element
-        helpers.addStyle(ctx.ghostElement, {
+        addStyle(ctx.ghostElement, {
             visibility: "hidden",
             display: "block",
             width: `${width}px`,
@@ -150,16 +150,16 @@ export const useSortable = makeDraggableHook({
         // their parents and a 'groupSelector' has been provided.
         if (ctx.connectGroups && ctx.groupSelector) {
             for (const siblingGroup of ctx.ref.el.querySelectorAll(ctx.groupSelector)) {
-                helpers.addListener(siblingGroup, "mouseenter", onGroupMouseenter);
-                helpers.addListener(siblingGroup, "mouseleave", onGroupMouseleave);
+                addListener(siblingGroup, "mouseenter", onGroupMouseenter);
+                addListener(siblingGroup, "mouseleave", onGroupMouseleave);
             }
         }
 
         // Binds handlers on eligible elements
         for (const siblingEl of ctx.ref.el.querySelectorAll(ctx.elementSelector)) {
             if (siblingEl !== ctx.currentElement && siblingEl !== ctx.ghostElement) {
-                helpers.addListener(siblingEl, "mouseenter", onElementMouseenter);
-                helpers.addListener(siblingEl, "mouseleave", onElementMouseleave);
+                addListener(siblingEl, "mouseenter", onElementMouseenter);
+                addListener(siblingEl, "mouseleave", onElementMouseleave);
             }
         }
 
@@ -167,28 +167,28 @@ export const useSortable = makeDraggableHook({
         ctx.currentElement.after(ctx.ghostElement);
 
         // Calls "onDragStart" handler
-        helpers.execHandler("onDragStart", {
+        return {
             element: ctx.currentElement,
             group: ctx.currentGroup,
-        });
+        };
     },
-    onDragEnd({ ctx, helpers }) {
-        helpers.execHandler("onDragEnd", { element: ctx.currentElement, group: ctx.currentGroup });
+    onDragEnd({ ctx }) {
+        return { element: ctx.currentElement, group: ctx.currentGroup };
     },
-    onDrop({ ctx, helpers }) {
+    onDrop({ ctx }) {
         const previous = ctx.ghostElement.previousElementSibling;
         const next = ctx.ghostElement.nextElementSibling;
         if (previous !== ctx.currentElement && next !== ctx.currentElement) {
-            helpers.execHandler("onDrop", {
+            return {
                 element: ctx.currentElement,
                 group: ctx.currentGroup,
                 previous,
                 next,
                 parent: ctx.groupSelector && ctx.ghostElement.closest(ctx.groupSelector),
-            });
+            };
         }
     },
-    onWillStartDrag({ ctx, helpers }) {
+    onWillStartDrag({ ctx, addCleanup }) {
         if (ctx.groupSelector) {
             ctx.currentGroup = ctx.currentElement.closest(ctx.groupSelector);
             if (!ctx.connectGroups) {
@@ -197,7 +197,7 @@ export const useSortable = makeDraggableHook({
         }
 
         ctx.ghostElement = ctx.currentElement.cloneNode(false);
-        helpers.addCleanup(() => {
+        addCleanup(() => {
             ctx.ghostElement.remove();
             ctx.ghostElement = null;
         });

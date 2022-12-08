@@ -42,15 +42,15 @@ import { debounce, setRecurringAnimationFrame } from "@web/core/utils/timing";
  * @property {Record<string, string[]>} [acceptedParams]
  * @property {Record<string, any>} [defaultParams]
  *
- * Build handlers
+ * Build hooks
  * @property {(params: DraggableBuilderHookParams) => any} onComputeParams
  *
- * Runtime handlers
- * @property {(params: DraggableBuilderHookParams) => any} onWillStartDrag
+ * Runtime hooks
  * @property {(params: DraggableBuilderHookParams) => any} onDragStart
  * @property {(params: DraggableBuilderHookParams) => any} onDrag
  * @property {(params: DraggableBuilderHookParams) => any} onDragEnd
  * @property {(params: DraggableBuilderHookParams) => any} onDrop
+ * @property {(params: DraggableBuilderHookParams) => any} onWillStartDrag
  */
 
 /**
@@ -72,8 +72,10 @@ import { debounce, setRecurringAnimationFrame } from "@web/core/utils/timing";
  */
 
 /**
- * @typedef {DOMHelpers} DraggableBuilderHookParams
- * @property {DraggableHookRunningContext} ctx
+ * @typedef {DOMHelpers & {
+ *  ctx: DraggableHookRunningContext,
+ *  callHandler(handlerName: string, arg: Record<any, any>): void,
+ * }} DraggableBuilderHookParams
  */
 
 const DEFAULT_ACCEPTED_PARAMS = {
@@ -349,6 +351,39 @@ export function makeDraggableHook(hookParams) {
     return {
         [hookName](params) {
             /**
+             * Executes a handler from the `hookParams`.
+             * @param {string} hookHandlerName
+             * @param {Record<any, any>} arg
+             */
+            const callBuildHandler = (hookHandlerName, arg) => {
+                if (typeof hookParams[hookHandlerName] !== "function") {
+                    return;
+                }
+                const returnValue = hookParams[hookHandlerName]({ ctx, ...helpers, ...arg });
+                if (returnValue) {
+                    callHandler(hookHandlerName, returnValue);
+                }
+            };
+
+            /**
+             * Safely executes a handler from the `params`, so that the drag sequence can
+             * be interrupted if an error occurs.
+             * @param {string} handlerName
+             * @param {Record<any, any>} arg
+             */
+            const callHandler = (handlerName, arg) => {
+                if (typeof params[handlerName] !== "function") {
+                    return;
+                }
+                try {
+                    params[handlerName]({ ...dom, ...ctx.mouse, ...arg });
+                } catch (err) {
+                    dragEnd(true, true);
+                    throw err;
+                }
+            };
+
+            /**
              * Main entry function to start a drag sequence.
              */
             const dragStart = () => {
@@ -387,7 +422,7 @@ export function makeDraggableHook(hookParams) {
 
                 dom.addClass(ctx.currentElement, DRAGGED_CLASS);
 
-                execBuildHandler("onDragStart");
+                callBuildHandler("onDragStart");
             };
 
             /**
@@ -402,42 +437,14 @@ export function makeDraggableHook(hookParams) {
             const dragEnd = (cancelled, inErrorState) => {
                 if (state.dragging) {
                     if (!inErrorState) {
-                        execBuildHandler("onDragEnd");
+                        callBuildHandler("onDragEnd");
                         if (!cancelled && document.body.contains(ctx.currentElement)) {
-                            execBuildHandler("onDrop");
+                            callBuildHandler("onDrop");
                         }
                     }
                 }
 
                 cleanup.cleanup();
-            };
-
-            /**
-             * Executes a handler from the `hookParams`.
-             * @param {string} fnName
-             * @param {Record<any, any>} arg
-             */
-            const execBuildHandler = (fnName, arg) => {
-                if (typeof hookParams[fnName] === "function") {
-                    hookParams[fnName]({ ctx, helpers, ...arg });
-                }
-            };
-
-            /**
-             * Safely executes a handler from the `params`, so that the drag sequence can
-             * be interrupted if an error occurs.
-             * @param {string} callbackName
-             * @param {Record<any, any>} arg
-             */
-            const execHandler = (callbackName, arg) => {
-                if (typeof params[callbackName] === "function") {
-                    try {
-                        params[callbackName]({ ...dom, ...ctx.mouse, ...arg });
-                    } catch (err) {
-                        dragEnd(true, true);
-                        throw err;
-                    }
-                }
             };
 
             /**
@@ -467,7 +474,7 @@ export function makeDraggableHook(hookParams) {
                     diff.y = [maxHeight - eRect.y - eRect.height, 1];
                 }
 
-                if (diff.x || diff.y) {
+                if ((diff.x && diff.x[0]) || (diff.y && diff.y[0])) {
                     const diffToScroll = ([delta, sign]) =>
                         (1 - clamp(delta, 0, threshold) / threshold) * correctedSpeed * sign;
                     const scrollParams = {};
@@ -531,7 +538,7 @@ export function makeDraggableHook(hookParams) {
                     ctx.scrollParent = null;
                 });
 
-                execBuildHandler("onWillStartDrag");
+                callBuildHandler("onWillStartDrag");
             };
 
             /**
@@ -546,7 +553,7 @@ export function makeDraggableHook(hookParams) {
                 }
                 if (state.dragging) {
                     updateElementPosition();
-                    execBuildHandler("onDrag");
+                    callBuildHandler("onDrag");
                 } else {
                     dragStart();
                 }
@@ -609,14 +616,14 @@ export function makeDraggableHook(hookParams) {
 
             // Initialize helpers
             const cleanup = makeCleanupManager(() => (state.dragging = false));
-            const effectCleanup = makeCleanupManager(() => dragEnd(true));
+            const effectCleanup = makeCleanupManager();
             const dom = makeDOMHelpers(cleanup);
 
             const helpers = {
                 ...dom,
                 addCleanup: cleanup.add,
                 addEffectCleanup: effectCleanup.add,
-                execHandler,
+                callHandler,
             };
 
             // Component infos
@@ -680,7 +687,7 @@ export function makeDraggableHook(hookParams) {
 
                     Object.assign(ctx.edgeScrolling, actualParams.edgeScrolling);
 
-                    execBuildHandler("onComputeParams", { params: actualParams });
+                    callBuildHandler("onComputeParams", { params: actualParams });
 
                     /**
                      * Stops any drag sequence and calls effect cleanup functions when
