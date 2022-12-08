@@ -1,6 +1,6 @@
 /** @odoo-module **/
 
-import { Component, xml } from "@odoo/owl";
+import { Component, onMounted, xml } from "@odoo/owl";
 
 export class TourPointer extends Component {
     static template = xml`
@@ -23,7 +23,15 @@ export class TourPointer extends Component {
                 text: { type: String, optional: true },
             },
         },
+        setSizeGetter: { type: Function },
     };
+    setup() {
+        // TODO-JCB: size should be dynamically computed from this component's element size.
+        this.size = { width: 20, height: 20 };
+        onMounted(() => {
+            this.props.setSizeGetter(() => this.size);
+        });
+    }
     get style() {
         return `top: ${this.props.pointerState.y}px; left: ${this.props.pointerState.x}px;`;
     }

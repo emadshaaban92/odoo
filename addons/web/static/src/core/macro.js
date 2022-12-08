@@ -39,7 +39,6 @@ class Macro {
         this.onStep = descr.onStep || (() => {});
         this.onError = descr.onError;
         this.onTimeout = descr.onTimeout;
-        this.onComplete = descr.onComplete || (() => {});
         this.setTimer();
     }
 
@@ -79,7 +78,6 @@ class Macro {
         }
         this.currentIndex++;
         if (this.currentIndex === this.steps.length) {
-            this.safeCall(this.onComplete);
             this.isComplete = true;
             browser.clearTimeout(this.timeout);
         } else {

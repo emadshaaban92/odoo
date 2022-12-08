@@ -22,6 +22,7 @@ import { findTrigger } from "web_tour.utils";
  * next step after a given [interval]. It calls [pointTo] based
  * on the calculated location of the trigger's element.
  * @param {Object} macroDescription
+ * TODO-JCB: Update this type.
  * @param {{ interval: number; pointTo: (el) => void, advance: () => void }} options
  * @returns {Object}
  */
@@ -40,7 +41,7 @@ function createAutoMacro(
                 action: () => {
                     res.val = false;
                     stepEl = findTrigger(step.trigger, step.in_modal);
-                    options.pointTo(stepEl);
+                    options.pointerMethods.pointTo(stepEl);
                 },
             },
             step,
@@ -250,6 +251,7 @@ function createManualMacro(macroDescription, options) {
                             stepEl = undefined;
                             consumeEvent = undefined;
                             $anchorEl = undefined;
+                            options.pointerMethods.hide();
                             options.advance();
                         });
                     }
@@ -257,7 +259,7 @@ function createManualMacro(macroDescription, options) {
                     // Call this everytime so that the pointer is always pointing at the
                     // step's trigger element.
                     // TODO-JCB: Maybe we only point to the trigger when [res.val] is falsy.
-                    options.pointTo(stepEl);
+                    options.pointerMethods.pointTo(stepEl);
 
                     return res.val;
                 },
@@ -267,11 +269,78 @@ function createManualMacro(macroDescription, options) {
 
     return {
         ...macroDescription,
-        steps: macroDescription.steps.reduce(
-            (newSteps, step) => [...newSteps, ...augmentStep(step)],
-            []
-        ),
+        steps: macroDescription.steps
+            .reduce((newSteps, step) => [...newSteps, ...augmentStep(step)], [])
+            .concat([
+                {
+                    action: () => {
+                        options.pointerMethods.hide();
+                    },
+                },
+            ]),
     };
+}
+
+/**
+ * @param {*} param0
+ * @returns {[state: { x, y, isVisible, position, text }, methods: { pointTo, hide, setSizeGetter }]}
+ */
+function createPointerState({ x, y, isVisible, position, text }) {
+    const state = reactive({ x, y, isVisible, position, text });
+
+    /**
+     * In order for pointer state to be useful, `sizeGetter` needs to
+     * be bound to a method that returns the size of the pointer.
+     * @see setSizeGetter
+     */
+    let sizeGetter;
+
+    /**
+     * Call this in the component containing the pointer element.
+     * The pointer element should provide a method that returns the size
+     * of the pointer
+     * @param {() => { width: number, height: number }} f
+     */
+    function setSizeGetter(f) {
+        sizeGetter = f;
+    }
+
+    function getSize() {
+        if (!sizeGetter) {
+            throw new Error("Unable to get size of the pointer.");
+        }
+        return sizeGetter();
+    }
+
+    function hide() {
+        state.isVisible = false;
+    }
+
+    /**
+     * Update [state] to refer to the given [el].
+     * If [el] is undefined, hide the pointer.
+     * @param {Element | undefined} el
+     */
+    function pointTo(el) {
+        if (el) {
+            const size = getSize();
+            const rect = el.getBoundingClientRect();
+            const top = rect.top - size.width;
+            const left = rect.left + rect.width / 2 - size.height / 2;
+            Object.assign(state, { x: left, y: top, isVisible: true });
+        } else {
+            hide();
+        }
+    }
+
+    return [
+        state,
+        {
+            pointTo,
+            hide,
+            setSizeGetter,
+        },
+    ];
 }
 
 /**
@@ -319,49 +388,13 @@ export const tourService = {
         const edition = odoo.info.isEnterprise ? "enterprise" : "community";
         const isMobile = device.isMobile;
 
-        const pointerState = reactive({
+        const [pointerState, pointerMethods] = createPointerState({
             x: 0,
             y: 0,
             isVisible: false,
             position: "top",
             text: "",
         });
-
-        function activate(macroDescription) {
-            const originalOnComplete = macroDescription.onComplete;
-            macroDescription.onComplete = (...args) => {
-                browser.setTimeout(() => {
-                    pointerState.isVisible = false;
-                }, macroDescription.interval || 0);
-                if (originalOnComplete) {
-                    originalOnComplete(...args);
-                }
-            };
-            macroEngine.activate(macroDescription);
-        }
-
-        // TODO-JCB: Should be computed from the pointer component.
-        const pointerSize = { width: 20, height: 20 };
-
-        /**
-         * Update [pointerState] to refer to the given [el].
-         * If [el] is undefined, hide the pointer.
-         * @param {Element | undefined} el
-         */
-        function pointTo(el) {
-            if (el) {
-                const rect = el.getBoundingClientRect();
-                const top = rect.top - pointerSize.width;
-                const left = rect.left + rect.width / 2 - pointerSize.height / 2;
-                Object.assign(pointerState, { x: left, y: top, isVisible: true });
-            } else {
-                Object.assign(pointerState, { isVisible: false });
-            }
-        }
-
-        function advanceMacros() {
-            return macroEngine.advanceMacros();
-        }
 
         /**
          * @param {string} _tourName
@@ -377,19 +410,19 @@ export const tourService = {
             }
 
             if (mode.kind == "auto") {
-                activate(
+                macroEngine.activate(
                     createAutoMacro(tourDesc, {
-                        advance: advanceMacros,
+                        advance: () => macroEngine.advanceMacros(),
                         interval: tourDesc.interval || mode.interval,
-                        pointTo,
+                        pointerMethods: pointer.methods,
                     })
                 );
             } else if (mode.kind == "manual") {
                 // The pointer points to the trigger and waits for the user to do the action.
-                activate(
+                macroEngine.activate(
                     createManualMacro(Object.assign(tourDesc, { interval: mode.interval }), {
-                        advance: advanceMacros,
-                        pointTo,
+                        advance: () => macroEngine.advanceMacros(),
+                        pointerMethods,
                         edition,
                         isMobile,
                     })
@@ -399,7 +432,7 @@ export const tourService = {
 
         registry.category("main_components").add("TourPointer", {
             Component: TourPointer,
-            props: { pointerState },
+            props: { pointerState, setSizeGetter: pointerMethods.setSizeGetter },
         });
 
         return { run };
