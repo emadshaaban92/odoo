@@ -75,7 +75,7 @@
   </t>
 
   <t t-name="o-spreadsheet-ColorPicker" owl="1">
-    <div class="o-color-picker" t-att-class="props.dropdownDirection || 'right'" t-on-click.stop="">
+    <div class="o-color-picker" t-att-class="props.dropdownDirection || 'right'">
       <div class="o-color-picker-section-name">Standard</div>
       <div class="colors-grid">
         <div
@@ -183,6 +183,7 @@
         t-on-keyup="onKeyup"
         t-on-click.stop="onClick"
         t-on-blur="onBlur"
+        t-on-paste.stop=""
       />
 
       <div
@@ -571,8 +572,6 @@
       t-on-click="focus"
       t-on-keydown="onKeydown"
       t-on-wheel="onMouseWheel"
-      t-on-focus="onFocus"
-      t-on-blur="onBlur"
       t-ref="grid">
       <GridOverlay
         onCellClicked.bind="onCellClicked"
@@ -585,21 +584,25 @@
         sidePanelIsOpen="props.sidePanelIsOpen"
         onFigureDeleted.bind="focus"
       />
-      <HeadersOverlay
-        t-if="!env.isDashboard()"
-        onOpenContextMenu="(type, x, y) => this.toggleContextMenu(type, x, y)"
-      />
+      <HeadersOverlay onOpenContextMenu="(type, x, y) => this.toggleContextMenu(type, x, y)"/>
 
-      <t t-if="env.model.getters.getEditionMode() !== 'inactive' and !env.isDashboard()">
+      <t t-if="env.model.getters.getEditionMode() !== 'inactive'">
         <GridComposer
           onComposerUnmounted="() => this.focus()"
           onComposerContentFocused="props.onComposerContentFocused"
           focus="props.focusComposer"
         />
       </t>
+      <t else="1">
+        <input
+          class="position-absolute"
+          style="z-index:-1000;"
+          t-on-input="onInput"
+          t-ref="hiddenInput"
+        />
+      </t>
       <canvas t-ref="canvas"/>
       <t
-        t-if="!env.isDashboard()"
         t-foreach="env.model.getters.getClientsToDisplay()"
         t-as="client"
         t-key="getClientPositionKey(client)">
@@ -618,11 +621,10 @@
         onMouseWheel.bind="onMouseWheel"
         onClosePopover.bind="onClosePopover"
       />
-      <t
-        t-if="env.model.getters.getEditionMode() === 'inactive' and isAutoFillActive() and !env.isDashboard()">
+      <t t-if="env.model.getters.getEditionMode() === 'inactive' and isAutoFillActive()">
         <Autofill position="getAutofillPosition()"/>
       </t>
-      <t t-if="env.model.getters.getEditionMode() !== 'inactive' and !env.isDashboard()">
+      <t t-if="env.model.getters.getEditionMode() !== 'inactive'">
         <t t-foreach="env.model.getters.getHighlights()" t-as="highlight" t-key="highlight_index">
           <t t-if="highlight.sheetId === env.model.getters.getActiveSheetId()">
             <Highlight zone="highlight.zone" color="highlight.color"/>
@@ -1360,7 +1362,7 @@
   </t>
 
   <t t-name="o-spreadsheet-LinkDisplay" owl="1">
-    <div class="o-link-tool">
+    <div class="o-link-tool d-flex align-items-center">
       <t t-set="link" t-value="cell.link"/>
       <!-- t-key to prevent owl from re-using the previous img element when the link changes.
     The wrong/previous image would be displayed while the new one loads -->
@@ -1385,10 +1387,18 @@
         t-att-title="cell.urlRepresentation">
         <t t-esc="cell.urlRepresentation"/>
       </a>
-      <span class="o-link-icon o-unlink" t-on-click="unlink" title="Remove link">
+      <span
+        t-if="!env.model.getters.isReadonly()"
+        class="o-link-icon o-unlink"
+        t-on-click="unlink"
+        title="Remove link">
         <t t-call="o-spreadsheet-Icon.UNLINK"/>
       </span>
-      <span class="o-link-icon o-edit-link" t-on-click="edit" title="Edit link">
+      <span
+        t-if="!env.model.getters.isReadonly()"
+        class="o-link-icon o-edit-link"
+        t-on-click="edit"
+        title="Edit link">
         <t t-call="o-spreadsheet-Icon.EDIT"/>
       </span>
     </div>
@@ -2887,7 +2897,10 @@
   </t>
 
   <t t-name="o-spreadsheet-Spreadsheet" owl="1">
-    <div class="o-spreadsheet" t-on-keydown="onKeydown" t-att-style="getStyle()">
+    <div
+      class="o-spreadsheet"
+      t-on-keydown="(ev) => !env.isDashboard() and this.onKeydown(ev)"
+      t-att-style="getStyle()">
       <t t-if="env.isDashboard()">
         <SpreadsheetDashboard/>
       </t>
@@ -2983,7 +2996,7 @@
           <div
             class="o-tool"
             title="Format as percent"
-            t-on-click="(ev) => this.toggleFormat('percent', ev)">
+            t-on-click="(ev) => this.toogleFormat('percent', ev)">
             %
           </div>
           <div
@@ -2998,58 +3011,48 @@
             t-on-click="(ev) => this.setDecimal(+1, ev)">
             .00
           </div>
-          <div class="o-dropdown">
-            <div
-              class="o-tool o-dropdown-button o-text-icon"
-              title="More formats"
-              t-on-click="(ev) => this.toggleDropdownTool('formatTool', ev)">
+          <div
+            class="o-tool o-dropdown"
+            title="More formats"
+            t-on-click="(ev) => this.toggleDropdownTool('formatTool', ev)">
+            <div class="o-text-icon">
               123
               <t t-call="o-spreadsheet-Icon.TRIANGLE_DOWN"/>
             </div>
             <div
               class="o-dropdown-content o-text-options  o-format-tool "
               t-if="state.activeTool === 'formatTool'"
-              t-on-click.stop="">
+              t-on-click="setFormat">
               <t t-foreach="commonFormats" t-as="commonFormat" t-key="commonFormat.name">
                 <div
-                  class="o-dropdown-item"
                   t-att-data-format="commonFormat.name"
-                  t-on-click="() => this.setFormat(commonFormat.name)"
                   t-att-class="{active: currentFormatName === commonFormat.name}">
                   <t t-esc="commonFormat.text"/>
                   <span class="float-end text-muted" t-esc="commonFormat.description"/>
                 </div>
               </t>
               <t t-foreach="customFormats" t-as="customFormat" t-key="customFormat.name">
-                <div
-                  t-att-data-custom="customFormat.name"
-                  class="o-dropdown-item"
-                  t-on-click="() => this.setFormat(customFormat.name, true)">
+                <div t-att-data-custom="customFormat.name">
                   <t t-esc="customFormat.text"/>
                 </div>
               </t>
             </div>
           </div>
           <div class="o-divider"/>
-          <div class="o-dropdown">
-            <div
-              class="o-tool o-dropdown-button o-text-icon"
-              title="Font Size"
-              t-on-click="(ev) => this.toggleDropdownTool('fontSizeTool', ev)">
+          <div
+            class="o-tool o-dropdown"
+            title="Font Size"
+            t-on-click="(ev) => this.toggleDropdownTool('fontSizeTool', ev)">
+            <div class="o-text-icon">
               <t t-esc="style.fontSize || DEFAULT_FONT_SIZE"/>
               <t t-call="o-spreadsheet-Icon.TRIANGLE_DOWN"/>
             </div>
             <div
               class="o-dropdown-content o-text-options "
               t-if="state.activeTool === 'fontSizeTool'"
-              t-on-click.stop="">
+              t-on-click="setSize">
               <t t-foreach="fontSizes" t-as="font" t-key="font_index">
-                <div
-                  t-esc="font.pt"
-                  t-att-data-size="font.pt"
-                  class="o-dropdown-item"
-                  t-on-click="() => this.setSize(font.pt)"
-                />
+                <div t-esc="font.pt" t-att-data-size="font.pt"/>
               </t>
             </div>
           </div>
@@ -3058,32 +3061,30 @@
             class="o-tool"
             title="Bold"
             t-att-class="{active:style.bold}"
-            t-on-click="(ev) => this.toggleStyle('bold', ev)">
+            t-on-click="(ev) => this.toogleStyle('bold', ev)">
             <t t-call="o-spreadsheet-Icon.BOLD"/>
           </div>
           <div
             class="o-tool"
             title="Italic"
             t-att-class="{active:style.italic}"
-            t-on-click="(ev) => this.toggleStyle('italic', ev)">
+            t-on-click="(ev) => this.toogleStyle('italic', ev)">
             <t t-call="o-spreadsheet-Icon.ITALIC"/>
           </div>
           <div
             class="o-tool"
             title="Strikethrough"
             t-att-class="{active:style.strikethrough}"
-            t-on-click="(ev) => this.toggleStyle('strikethrough', ev)">
+            t-on-click="(ev) => this.toogleStyle('strikethrough', ev)">
             <t t-call="o-spreadsheet-Icon.STRIKE"/>
           </div>
-          <div class="o-dropdown">
-            <div
-              class="o-tool o-dropdown-button o-with-color"
-              title="Text Color"
-              t-on-click="(ev) => this.toggleDropdownTool('textColorTool', ev)">
-              <span t-attf-style="border-color:{{textColor}}">
-                <t t-call="o-spreadsheet-Icon.TEXT_COLOR"/>
-              </span>
-            </div>
+          <div
+            class="o-tool o-dropdown o-with-color"
+            title="Text Color"
+            t-on-click="(ev) => this.toggleDropdownTool('textColorTool', ev)">
+            <span t-attf-style="border-color:{{textColor}}">
+              <t t-call="o-spreadsheet-Icon.TEXT_COLOR"/>
+            </span>
             <ColorPicker
               t-if="state.activeTool === 'textColorTool'"
               onColorPicked="(color) => this.setColor('textColor', color)"
@@ -3092,15 +3093,13 @@
             />
           </div>
           <div class="o-divider"/>
-          <div class="o-dropdown ">
-            <div
-              class="o-tool o-dropdown-button o-with-color"
-              title="Fill Color"
-              t-on-click="(ev) => this.toggleDropdownTool('fillColorTool', ev)">
-              <span t-attf-style="border-color:{{fillColor}}">
-                <t t-call="o-spreadsheet-Icon.FILL_COLOR"/>
-              </span>
-            </div>
+          <div
+            class="o-tool  o-dropdown o-with-color"
+            title="Fill Color"
+            t-on-click="(ev) => this.toggleDropdownTool('fillColorTool', ev)">
+            <span t-attf-style="border-color:{{fillColor}}">
+              <t t-call="o-spreadsheet-Icon.FILL_COLOR"/>
+            </span>
             <ColorPicker
               t-if="state.activeTool === 'fillColorTool'"
               onColorPicked="(color) => this.setColor('fillColor', color)"
@@ -3108,50 +3107,47 @@
               t-key="fillColor"
             />
           </div>
-          <div class="o-dropdown">
-            <div
-              class="o-tool o-dropdown-button"
-              title="Borders"
-              t-on-click="(ev) => this.toggleDropdownTool('borderTool', ev)">
-              <span>
-                <t t-call="o-spreadsheet-Icon.BORDERS"/>
-              </span>
-            </div>
+          <div
+            class="o-tool o-dropdown"
+            title="Borders"
+            t-on-click="(ev) => this.toggleDropdownTool('borderTool', ev)">
+            <span>
+              <t t-call="o-spreadsheet-Icon.BORDERS"/>
+            </span>
             <div
               class="o-dropdown-content o-border-dropdown"
-              t-if="state.activeTool === 'borderTool'"
-              t-on-click.stop="">
+              t-if="state.activeTool === 'borderTool'">
               <div class="o-dropdown-line">
-                <span class="o-line-item" t-on-click="(ev) => this.setBorder('all')">
+                <span class="o-line-item" t-on-click="(ev) => this.setBorder('all', ev)">
                   <t t-call="o-spreadsheet-Icon.BORDERS"/>
                 </span>
-                <span class="o-line-item" t-on-click="(ev) => this.setBorder('hv')">
+                <span class="o-line-item" t-on-click="(ev) => this.setBorder('hv', ev)">
                   <t t-call="o-spreadsheet-Icon.BORDER_HV"/>
                 </span>
-                <span class="o-line-item" t-on-click="(ev) => this.setBorder('h')">
+                <span class="o-line-item" t-on-click="(ev) => this.setBorder('h', ev)">
                   <t t-call="o-spreadsheet-Icon.BORDER_H"/>
                 </span>
-                <span class="o-line-item" t-on-click="(ev) => this.setBorder('v')">
+                <span class="o-line-item" t-on-click="(ev) => this.setBorder('v', ev)">
                   <t t-call="o-spreadsheet-Icon.BORDER_V"/>
                 </span>
-                <span class="o-line-item" t-on-click="(ev) => this.setBorder('external')">
+                <span class="o-line-item" t-on-click="(ev) => this.setBorder('external', ev)">
                   <t t-call="o-spreadsheet-Icon.BORDER_EXTERNAL"/>
                 </span>
               </div>
               <div class="o-dropdown-line">
-                <span class="o-line-item" t-on-click="(ev) => this.setBorder('left')">
+                <span class="o-line-item" t-on-click="(ev) => this.setBorder('left', ev)">
                   <t t-call="o-spreadsheet-Icon.BORDER_LEFT"/>
                 </span>
-                <span class="o-line-item" t-on-click="(ev) => this.setBorder('top')">
+                <span class="o-line-item" t-on-click="(ev) => this.setBorder('top', ev)">
                   <t t-call="o-spreadsheet-Icon.BORDER_TOP"/>
                 </span>
-                <span class="o-line-item" t-on-click="(ev) => this.setBorder('right')">
+                <span class="o-line-item" t-on-click="(ev) => this.setBorder('right', ev)">
                   <t t-call="o-spreadsheet-Icon.BORDER_RIGHT"/>
                 </span>
-                <span class="o-line-item" t-on-click="(ev) => this.setBorder('bottom')">
+                <span class="o-line-item" t-on-click="(ev) => this.setBorder('bottom', ev)">
                   <t t-call="o-spreadsheet-Icon.BORDER_BOTTOM"/>
                 </span>
-                <span class="o-line-item" t-on-click="(ev) => this.setBorder('clear')">
+                <span class="o-line-item" t-on-click="(ev) => this.setBorder('clear', ev)">
                   <t t-call="o-spreadsheet-Icon.BORDER_CLEAR"/>
                 </span>
               </div>
@@ -3165,41 +3161,30 @@
             <t t-call="o-spreadsheet-Icon.MERGE_CELL"/>
           </div>
           <div class="o-divider"/>
-          <div class="o-dropdown">
-            <div
-              class="o-tool o-dropdown-button"
-              title="Horizontal align"
-              t-on-click="(ev) => this.toggleDropdownTool('alignTool', ev)">
-              <span>
-                <t t-if="style.align === 'right'">
-                  <t t-call="o-spreadsheet-Icon.ALIGN_RIGHT"/>
-                </t>
-                <t t-elif="style.align === 'center'">
-                  <t t-call="o-spreadsheet-Icon.ALIGN_CENTER"/>
-                </t>
-                <t t-else="">
-                  <t t-call="o-spreadsheet-Icon.ALIGN_LEFT"/>
-                </t>
-                <t t-call="o-spreadsheet-Icon.TRIANGLE_DOWN"/>
-              </span>
-            </div>
-            <div
-              t-if="state.activeTool === 'alignTool'"
-              class="o-dropdown-content"
-              t-on-click.stop="">
-              <div
-                class="o-dropdown-item o-dropdown-align-item"
-                t-on-click="(ev) => this.toggleAlign('left', ev)">
+          <div
+            class="o-tool o-dropdown"
+            title="Horizontal align"
+            t-on-click="(ev) => this.toggleDropdownTool('alignTool', ev)">
+            <span>
+              <t t-if="style.align === 'right'">
+                <t t-call="o-spreadsheet-Icon.ALIGN_RIGHT"/>
+              </t>
+              <t t-elif="style.align === 'center'">
+                <t t-call="o-spreadsheet-Icon.ALIGN_CENTER"/>
+              </t>
+              <t t-else="">
+                <t t-call="o-spreadsheet-Icon.ALIGN_LEFT"/>
+              </t>
+              <t t-call="o-spreadsheet-Icon.TRIANGLE_DOWN"/>
+            </span>
+            <div t-if="state.activeTool === 'alignTool'" class="o-dropdown-content">
+              <div class="o-dropdown-item" t-on-click="(ev) => this.toggleAlign('left', ev)">
                 <t t-call="o-spreadsheet-Icon.ALIGN_LEFT"/>
               </div>
-              <div
-                class="o-dropdown-item o-dropdown-align-item"
-                t-on-click="(ev) => this.toggleAlign('center', ev)">
+              <div class="o-dropdown-item" t-on-click="(ev) => this.toggleAlign('center', ev)">
                 <t t-call="o-spreadsheet-Icon.ALIGN_CENTER"/>
               </div>
-              <div
-                class="o-dropdown-item o-dropdown-align-item"
-                t-on-click="(ev) => this.toggleAlign('right', ev)">
+              <div class="o-dropdown-item" t-on-click="(ev) => this.toggleAlign('right', ev)">
                 <t t-call="o-spreadsheet-Icon.ALIGN_RIGHT"/>
               </div>
             </div>
