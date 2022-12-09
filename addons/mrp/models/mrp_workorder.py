@@ -873,10 +873,8 @@ class MrpWorkorder(models.Model):
                 raise UserError(_('Some workorders require another workorder to be completed first'))
 
             if wo.duration == 0.0:
-                print("no time spent on it yet")
                 wo.duration = wo.duration_expected
                 wo.duration_percent = 100
                 wo.state = 'done'
             else:
-                print("time already spend in it")
                 wo.state = 'done'
