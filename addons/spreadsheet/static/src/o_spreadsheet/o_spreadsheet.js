@@ -34268,6 +34268,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 case 0 /* LAYERS.Background */:
                     this.boxes = this.getGridBoxes();
                     this.drawBackground(renderingContext);
+                    this.drawOverflowingCellBackground(renderingContext);
                     this.drawCellBackground(renderingContext);
                     this.drawBorders(renderingContext);
                     this.drawTexts(renderingContext);
@@ -34285,58 +34286,27 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         drawBackground(renderingContext) {
             const { ctx, thinLineWidth } = renderingContext;
             const { width, height } = this.getters.getSheetViewDimensionWithHeaders();
-            const sheetId = this.getters.getActiveSheetId();
             // white background
             ctx.fillStyle = "#ffffff";
             ctx.fillRect(0, 0, width + CANVAS_SHIFT, height + CANVAS_SHIFT);
-            // background grid
-            const visibleCols = this.getters.getSheetViewVisibleCols();
-            const left = visibleCols[0];
-            const right = visibleCols[visibleCols.length - 1];
-            const visibleRows = this.getters.getSheetViewVisibleRows();
-            const top = visibleRows[0];
-            const bottom = visibleRows[visibleRows.length - 1];
-            if (!this.getters.getGridLinesVisibility(sheetId) || this.getters.isDashboard()) {
-                return;
-            }
-            ctx.lineWidth = 2 * thinLineWidth;
-            ctx.strokeStyle = CELL_BORDER_COLOR;
-            ctx.beginPath();
-            // vertical lines
-            for (const i of visibleCols) {
-                const zone = { top, bottom, left: i, right: i };
-                const { x, width: colWidth, height: colHeight } = this.getters.getVisibleRect(zone);
-                ctx.moveTo(x + colWidth, 0);
-                ctx.lineTo(x + colWidth, Math.min(height, colHeight + (this.getters.isDashboard() ? 0 : HEADER_HEIGHT)));
-            }
-            // horizontal lines
-            for (const i of visibleRows) {
-                const zone = { left, right, top: i, bottom: i };
-                const { y, width: rowWidth, height: rowHeight } = this.getters.getVisibleRect(zone);
-                ctx.moveTo(0, y + rowHeight);
-                ctx.lineTo(Math.min(width, rowWidth + (this.getters.isDashboard() ? 0 : HEADER_WIDTH)), y + rowHeight);
-            }
-            ctx.stroke();
-        }
-        drawCellBackground(renderingContext) {
-            const { ctx, thinLineWidth } = renderingContext;
             const areGridLinesVisible = !this.getters.isDashboard() &&
                 this.getters.getGridLinesVisibility(this.getters.getActiveSheetId());
-            ctx.lineWidth = areGridLinesVisible ? 0.3 * thinLineWidth : thinLineWidth;
             const inset = areGridLinesVisible ? 0.1 * thinLineWidth : 0;
-            ctx.strokeStyle = "#111";
-            for (let box of this.boxes) {
-                // fill color
+            if (areGridLinesVisible) {
+                for (const box of this.boxes) {
+                    ctx.strokeStyle = CELL_BORDER_COLOR;
+                    ctx.lineWidth = thinLineWidth;
+                    ctx.strokeRect(box.x + inset, box.y + inset, box.width - 2 * inset, box.height - 2 * inset);
+                }
+            }
+        }
+        drawCellBackground(renderingContext) {
+            const { ctx } = renderingContext;
+            for (const box of this.boxes) {
                 let style = box.style;
-                if ((style.fillColor && style.fillColor !== "#ffffff") || box.isMerge) {
+                if (style.fillColor && style.fillColor !== "#ffffff") {
                     ctx.fillStyle = style.fillColor || "#ffffff";
-                    if (areGridLinesVisible) {
-                        ctx.fillRect(box.x, box.y, box.width, box.height);
-                        ctx.strokeRect(box.x + inset, box.y + inset, box.width - 2 * inset, box.height - 2 * inset);
-                    }
-                    else {
-                        ctx.fillRect(box.x - thinLineWidth, box.y - thinLineWidth, box.width + 2 * thinLineWidth, box.height + 2 * thinLineWidth);
-                    }
+                    ctx.fillRect(box.x, box.y, box.width, box.height);
                 }
                 if (box.error) {
                     ctx.fillStyle = "red";
@@ -34345,6 +34315,34 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     ctx.lineTo(box.x + box.width, box.y);
                     ctx.lineTo(box.x + box.width, box.y + 5);
                     ctx.fill();
+                }
+            }
+        }
+        drawOverflowingCellBackground(renderingContext) {
+            var _a, _b, _c, _d;
+            const { ctx, thinLineWidth } = renderingContext;
+            for (const box of this.boxes) {
+                if (box.content && box.isOverflow) {
+                    const align = box.content.align || "left";
+                    let x;
+                    let width;
+                    const y = box.y + thinLineWidth / 2;
+                    const height = box.height - thinLineWidth;
+                    if (align === "left") {
+                        x = box.x + thinLineWidth / 2;
+                        width = (((_a = box.clipRect) === null || _a === void 0 ? void 0 : _a.width) || box.content.width) - 2 * thinLineWidth;
+                    }
+                    else if (align === "right") {
+                        x = box.x + box.width - thinLineWidth / 2;
+                        width = -(((_b = box.clipRect) === null || _b === void 0 ? void 0 : _b.width) || box.content.width) + 2 * thinLineWidth;
+                    }
+                    else {
+                        x =
+                            (((_c = box.clipRect) === null || _c === void 0 ? void 0 : _c.x) || box.x + box.width / 2 - box.content.width / 2) + thinLineWidth / 2;
+                        width = (((_d = box.clipRect) === null || _d === void 0 ? void 0 : _d.width) || box.content.width) - 2 * thinLineWidth;
+                    }
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fillRect(x, y, width, height);
                 }
             }
         }
@@ -34726,7 +34724,11 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 box.error = cell.error.message;
             }
             /** ClipRect */
-            const isOverflowing = contentWidth > width || fontSizePX > height;
+            const isOverflowingY = height < fontSizePX * multiLineText.length;
+            if (isOverflowingY) {
+                box.clipRect = { x: box.x, y: box.y, width, height };
+            }
+            const isOverflowingX = contentWidth > width;
             if (cfIcon || box.isFilterHeader) {
                 box.clipRect = {
                     x: box.x + iconBoxWidth,
@@ -34735,7 +34737,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     height,
                 };
             }
-            else if (isOverflowing && wrapping === "overflow") {
+            else if (isOverflowingX && wrapping === "overflow") {
                 let nextColIndex, previousColIndex;
                 const isCellInMerge = this.getters.isInMerge(position);
                 if (isCellInMerge) {
@@ -34746,12 +34748,13 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 else {
                     nextColIndex = this.findNextEmptyCol(col, right, row);
                     previousColIndex = this.findPreviousEmptyCol(col, left, row);
+                    box.isOverflow = true;
                 }
                 switch (align) {
                     case "left": {
                         const emptyZoneOnTheLeft = positionToZone({ col: nextColIndex, row });
                         const { x, y, width, height } = this.getters.getVisibleRect(union(zone, emptyZoneOnTheLeft));
-                        if (width < contentWidth || fontSizePX > height) {
+                        if (width < contentWidth) {
                             box.clipRect = { x, y, width, height };
                         }
                         break;
@@ -34759,7 +34762,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     case "right": {
                         const emptyZoneOnTheRight = positionToZone({ col: previousColIndex, row });
                         const { x, y, width, height } = this.getters.getVisibleRect(union(zone, emptyZoneOnTheRight));
-                        if (width < contentWidth || fontSizePX > height) {
+                        if (width < contentWidth) {
                             box.clipRect = { x, y, width, height };
                         }
                         break;
@@ -34771,10 +34774,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                             left: previousColIndex,
                         };
                         const { x, y, width, height } = this.getters.getVisibleRect(emptyZone);
-                        if (width < contentWidth ||
-                            previousColIndex === col ||
-                            nextColIndex === col ||
-                            fontSizePX > height) {
+                        if (width < contentWidth || previousColIndex === col || nextColIndex === col) {
                             box.clipRect = { x, y, width, height };
                         }
                         break;
@@ -42988,8 +42988,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-12-07T09:37:54.145Z';
-    exports.__info__.hash = '300da46';
+    exports.__info__.date = '2022-12-09T11:03:33.305Z';
+    exports.__info__.hash = 'd2a9b77';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
