@@ -19,201 +19,293 @@ import RunningTourActionHelper from "web_tour.RunningTourActionHelper";
  */
 
 /**
- * TODO-JCB: Make sure to include "edition" and "isMobile" in the type of [options].
+ * Checks if [key] maps to a defined (non-undefined) value in [obj].
+ * @param {string} key
+ * @param {object} obj
+ * @returns
+ */
+function isDefined(key, obj) {
+    return key in obj || obj[key] !== undefined;
+}
+
+/**
+ * Based on [step.run] and the trigger.
+ * @param {jQuery} $element
+ * @param {Runnable} run
+ * @returns {string}
+ */
+function getConsumeEventType($element, run) {
+    if ($element.hasClass("o_field_many2one") || $element.hasClass("o_field_many2manytags")) {
+        return "autocompleteselect";
+    } else if (
+        $element.is("textarea") ||
+        $element.filter("input").is(function () {
+            const type = $(this).attr("type");
+            return !type || !!type.match(/^(email|number|password|search|tel|text|url)$/);
+        })
+    ) {
+        // FieldDateRange triggers a special event when using the widget
+        if ($element.hasClass("o_field_date_range")) {
+            return "apply.daterangepicker input";
+        }
+        if (
+            config.device.isMobile &&
+            $element.closest(".o_field_widget").is(".o_field_many2one, .o_field_many2many")
+        ) {
+            return "click";
+        }
+        return "input";
+    } else if ($element.hasClass("ui-draggable-handle")) {
+        return "drag";
+    } else if (typeof run === "string" && run.indexOf("drag_and_drop") === 0) {
+        // this is a heuristic: the element has to be dragged and dropped but it
+        // doesn't have class 'ui-draggable-handle', so we check if it has an
+        // ui-sortable parent, and if so, we conclude that its event type is 'sort'
+        if ($element.closest(".ui-sortable").length) {
+            return "sort";
+        }
+        if (
+            (run.indexOf("drag_and_drop_native") === 0 &&
+                $element.hasClass("o_record_draggable")) ||
+            $element.closest(".o_record_draggable").length
+        ) {
+            return "mousedown";
+        }
+    }
+    return "click";
+}
+
+/**
+ * Returns the element that will be used in listening to the `consumeEvent`.
+ * It doesn't necessarily mean the given element, e.g. when listening to drag
+ * event, we have to do it to the closest .ui-draggable ancestor.
+ *
+ * @param {jQuery} $el
+ * @param {string} consumeEvent
+ * @returns {jQuery}
+ */
+function getAnchorEl($el, consumeEvent) {
+    let $consumeEventAnchors = $el;
+    if (consumeEvent === "drag") {
+        // jQuery-ui draggable triggers 'drag' events on the .ui-draggable element,
+        // but the tip is attached to the .ui-draggable-handle element which may
+        // be one of its children (or the element itself)
+        $consumeEventAnchors = $el.closest(".ui-draggable");
+    } else if (consumeEvent === "input" && !$el.is("textarea, input")) {
+        $consumeEventAnchors = $el.closest("[contenteditable='true']");
+    } else if (consumeEvent.includes("apply.daterangepicker")) {
+        $consumeEventAnchors = $el.parent().children(".o_field_date_range");
+    } else if (consumeEvent === "sort") {
+        // when an element is dragged inside a sortable container (with classname
+        // 'ui-sortable'), jQuery triggers the 'sort' event on the container
+        $consumeEventAnchors = $el.closest(".ui-sortable");
+    }
+    return $consumeEventAnchors;
+}
+
+/**
+ * Returns true if the [step] should not be included in a tour.
+ * @param {TourStep} step
+ * @param {{ mode: "manual" | "auto", edition: boolean, isMobile: boolean }} options
+ * @returns {boolean}
+ */
+function shouldOmit(step, options) {
+    const correctEdition = isDefined("edition", step) ? step.edition === options.edition : true;
+    const correctDevice = isDefined("mobile", step) ? step.mobile === options.isMobile : true;
+    return (
+        !correctEdition ||
+        !correctDevice ||
+        // TODO-JCB: Confirm if [step.auto = true] means omitting a step in a manual tour.
+        (options.mode === "manual" && step.auto)
+    );
+}
+
+function queryStep(step) {
+    const triggerEl = findTrigger(step.trigger, step.in_modal);
+    const altTriggerEl = findTrigger(step.alt_trigger, step.in_modal);
+    const skipTriggerEl = findTrigger(step.skip_trigger, step.in_modal);
+
+    // [extraTriggerOkay] should be true when [step.extra_trigger] is undefined.
+    const extraTriggerOkay = step.extra_trigger
+        ? findTrigger(step.extra_trigger, step.in_modal)
+        : true;
+
+    return { triggerEl, altTriggerEl, extraTriggerOkay, skipTriggerEl };
+}
+
+/**
+ * Augments `step` for a tour for 'auto' (run) mode.
+ * @param {*} step
+ * @param {*} options
+ * @returns
+ */
+function augmentStepAuto(step, options) {
+    if (shouldOmit(step, options)) {
+        return [];
+    }
+
+    let skipAction = false;
+    return [
+        {
+            ...step,
+            ...{
+                action: () => {
+                    console.log(step.trigger);
+                    skipAction = false;
+                },
+            },
+        },
+        {
+            trigger: () => {
+                const { triggerEl, altTriggerEl, extraTriggerOkay, skipTriggerEl } = queryStep(
+                    step
+                );
+
+                // [alt_trigger] - alternative to [trigger].
+                // [extra_trigger] - should also be present together with the [trigger].
+                const stepEl = extraTriggerOkay && (triggerEl || altTriggerEl);
+
+                // If [skip_trigger] element is present, immediately return [stepEl] for potential
+                // consumption of this step.
+                if (stepEl && skipTriggerEl) {
+                    skipAction = true;
+                }
+                options.pointerMethods.pointTo(stepEl);
+                return stepEl;
+            },
+            action: (stepEl) => {
+                if (skipAction) return;
+
+                const consumeEvent = step.consumeEvent || getConsumeEventType($(stepEl), step.run);
+                const $anchorEl = getAnchorEl($(stepEl), consumeEvent);
+
+                // IMPROVEMENT: Delegate the following routine to the `ACTION_HELPERS` in the macro module.
+                const actionHelper = new RunningTourActionHelper({
+                    consume_event: consumeEvent,
+                    $anchor: $anchorEl,
+                });
+                if (typeof step.run === "function") {
+                    try {
+                        // `this.$anchor` is expected in many `step.run`.
+                        step.run.call({ $anchor: $anchorEl }, actionHelper);
+                    } catch (e) {
+                        // console.error(`Tour ${tour_name} failed at step ${self._describeTip(tip)}: ${e.message}`);
+                        throw e;
+                    }
+                } else if (step.run !== undefined) {
+                    const m = step.run.match(/^([a-zA-Z0-9_]+) *(?:\(? *(.+?) *\)?)?$/);
+                    try {
+                        actionHelper[m[1]](m[2]);
+                    } catch (e) {
+                        // console.error(`Tour ${tour_name} failed at step ${self._describeTip(tip)}: ${e.message}`);
+                        throw e;
+                    }
+                } else {
+                    actionHelper.auto();
+                }
+            },
+        },
+    ];
+}
+
+/**
+ * Augments `step` of a tour for 'manual' (run) mode.
+ * @param {*} step
+ * @param {*} options
+ * @returns
+ */
+function augmentStepManual(step, options) {
+    if (shouldOmit(step, options)) {
+        return [];
+    }
+
+    let proceedWith, stepEl, prevEl, consumeEvent, $anchorEl;
+    return [
+        {
+            ...step,
+            ...{
+                action: () => {
+                    console.log(step.trigger);
+                    options.pointerMethods.show();
+                },
+            },
+        },
+        {
+            trigger: () => {
+                if (proceedWith) return proceedWith;
+
+                const { triggerEl, altTriggerEl, extraTriggerOkay, skipTriggerEl } = queryStep(
+                    step
+                );
+                // This callback can be called multiple times until it returns true.
+                // We should take into account the fact the element is not in the
+                // dom. [pointTo] takes into account whether [stepEl] is null or not.
+                prevEl = stepEl;
+                // [alt_trigger] - alternative to [trigger].
+                // [extra_trigger] - should also be present together with the [trigger].
+                stepEl = extraTriggerOkay && (triggerEl || altTriggerEl);
+                consumeEvent = step.consumeEvent || getConsumeEventType($(stepEl), step.run);
+                // If [skip_trigger] element is present, immediately return [stepEl] for potential
+                // consumption of this step.
+                if (stepEl && skipTriggerEl) {
+                    return stepEl;
+                }
+
+                if (prevEl) {
+                    $anchorEl.off(".anchor");
+                }
+                if (stepEl) {
+                    $anchorEl = getAnchorEl($(stepEl), consumeEvent);
+                    // Start waiting for action, or automatically perform `step.run`.
+                    // Set `proceedWith` to a non-falsy value as a signal to proceed to the next step.
+                    options.pointerMethods.show();
+                    $anchorEl.on(`${consumeEvent}.anchor`, async () => {
+                        // TODO-JCB: The following logic comes from _getAnchorAndCreateEvent and it might be important to take it into account.
+                        // $consumeEventAnchors.on(consumeEvent + ".anchor", (function (e) {
+                        //     if (e.type !== "mousedown" || e.which === 1) { // only left click
+                        //         if (this.info.consumeVisibleOnly && !this.isShown()) {
+                        //             // Do not consume non-displayed tips.
+                        //             return;
+                        //         }
+                        //         this.trigger("tip_consumed");
+                        //         this._unbind_anchor_events();
+                        //     }
+                        // }).bind(this));
+
+                        // stop waiting
+                        $anchorEl.off(".anchor");
+
+                        proceedWith = stepEl;
+                        // clear the state variables
+                        stepEl = undefined;
+                        consumeEvent = undefined;
+                        $anchorEl = undefined;
+
+                        // hide the pointer if necessary.
+                        options.pointerMethods.hide();
+
+                        // Finally, advance to the next step.
+                        // The following will call this `trigger` function which returns the `proceedWith`.
+                        options.advance();
+                    });
+                }
+                options.pointerMethods.pointTo(stepEl);
+            },
+        },
+    ];
+}
+
+/**
+ * TODO-JCB: Make sure to include "edition", "mode" and "isMobile" in the type of [options].
  * @param {*} macroDescription
  * @param {*} options
  * @returns
  */
-function augmentMacro(macroDescription, options) {
-    /**
-     * Checks if [key] maps to a defined (non-undefined) value in [obj].
-     * @param {string} key
-     * @param {object} obj
-     * @returns
-     */
-    function isDefined(key, obj) {
-        return key in obj || obj[key] !== undefined;
-    }
-
-    /**
-     * Returns true if the [step] should not be included in the manual tour.
-     * @param {TourStep} step
-     * @returns {boolean}
-     */
-    function shouldOmit(step, mode) {
-        const correctEdition = isDefined("edition", step) ? step.edition === options.edition : true;
-        const correctDevice = isDefined("mobile", step) ? step.mobile === options.isMobile : true;
-        return (
-            !correctEdition ||
-            !correctDevice ||
-            // TODO-JCB: Confirm if [step.auto = true] means omitting a step in a manual tour.
-            (mode === "manual" && step.auto)
-        );
-    }
-
-    function queryStep(step) {
-        const triggerEl = findTrigger(step.trigger, step.in_modal);
-        const altTriggerEl = findTrigger(step.alt_trigger, step.in_modal);
-        const skipTriggerEl = findTrigger(step.skip_trigger, step.in_modal);
-
-        // [extraTriggerOkay] should be true when [step.extra_trigger] is undefined.
-        const extraTriggerOkay = step.extra_trigger
-            ? findTrigger(step.extra_trigger, step.in_modal)
-            : true;
-
-        return { triggerEl, altTriggerEl, extraTriggerOkay, skipTriggerEl };
-    }
-
-    /**
-     * Based on [step.run] and the trigger.
-     * @param {jQuery} $element
-     * @param {Runnable} run
-     * @returns {string}
-     */
-    function getConsumeEventType($element, run) {
-        if ($element.hasClass("o_field_many2one") || $element.hasClass("o_field_many2manytags")) {
-            return "autocompleteselect";
-        } else if (
-            $element.is("textarea") ||
-            $element.filter("input").is(function () {
-                const type = $(this).attr("type");
-                return !type || !!type.match(/^(email|number|password|search|tel|text|url)$/);
-            })
-        ) {
-            // FieldDateRange triggers a special event when using the widget
-            if ($element.hasClass("o_field_date_range")) {
-                return "apply.daterangepicker input";
-            }
-            if (
-                config.device.isMobile &&
-                $element.closest(".o_field_widget").is(".o_field_many2one, .o_field_many2many")
-            ) {
-                return "click";
-            }
-            return "input";
-        } else if ($element.hasClass("ui-draggable-handle")) {
-            return "drag";
-        } else if (typeof run === "string" && run.indexOf("drag_and_drop") === 0) {
-            // this is a heuristic: the element has to be dragged and dropped but it
-            // doesn't have class 'ui-draggable-handle', so we check if it has an
-            // ui-sortable parent, and if so, we conclude that its event type is 'sort'
-            if ($element.closest(".ui-sortable").length) {
-                return "sort";
-            }
-            if (
-                (run.indexOf("drag_and_drop_native") === 0 &&
-                    $element.hasClass("o_record_draggable")) ||
-                $element.closest(".o_record_draggable").length
-            ) {
-                return "mousedown";
-            }
-        }
-        return "click";
-    }
-
-    /**
-     * Returns the element that will be used in listening to the `consumeEvent`.
-     * It doesn't necessarily mean the given element, e.g. when listening to drag
-     * event, we have to do it to the closest .ui-draggable ancestor.
-     *
-     * @param {jQuery} $el
-     * @param {string} consumeEvent
-     * @returns {jQuery}
-     */
-    function getAnchorEl($el, consumeEvent) {
-        let $consumeEventAnchors = $el;
-        if (consumeEvent === "drag") {
-            // jQuery-ui draggable triggers 'drag' events on the .ui-draggable element,
-            // but the tip is attached to the .ui-draggable-handle element which may
-            // be one of its children (or the element itself)
-            $consumeEventAnchors = $el.closest(".ui-draggable");
-        } else if (consumeEvent === "input" && !$el.is("textarea, input")) {
-            $consumeEventAnchors = $el.closest("[contenteditable='true']");
-        } else if (consumeEvent.includes("apply.daterangepicker")) {
-            $consumeEventAnchors = $el.parent().children(".o_field_date_range");
-        } else if (consumeEvent === "sort") {
-            // when an element is dragged inside a sortable container (with classname
-            // 'ui-sortable'), jQuery triggers the 'sort' event on the container
-            $consumeEventAnchors = $el.closest(".ui-sortable");
-        }
-        return $consumeEventAnchors;
-    }
-
-    function augmentStep(step) {
-        let skipAction = false;
-        if (shouldOmit(step, options.mode)) {
-            return [];
-        }
-        const steps = [
-            {
-                ...step,
-                ...{
-                    action: () => {
-                        console.log(step.trigger);
-                        skipAction = false;
-                        if (options.mode === "manual") {
-                            options.pointerMethods.show();
-                        }
-                    },
-                },
-            },
-            {
-                trigger: () => {
-                    const { triggerEl, altTriggerEl, extraTriggerOkay, skipTriggerEl } = queryStep(
-                        step
-                    );
-
-                    // [alt_trigger] - alternative to [trigger].
-                    // [extra_trigger] - should also be present together with the [trigger].
-                    const stepEl = extraTriggerOkay && (triggerEl || altTriggerEl);
-
-                    // If [skip_trigger] element is present, immediately return [stepEl] for potential
-                    // consumption of this step.
-                    if (stepEl && skipTriggerEl) {
-                        skipAction = true;
-                    }
-                    options.pointerMethods.pointTo(stepEl);
-                    return stepEl;
-                },
-                action: (stepEl) => {
-                    if (skipAction || options.mode == "manual") return;
-
-                    const consumeEvent =
-                        step.consumeEvent || getConsumeEventType($(stepEl), step.run);
-                    const $anchorEl = getAnchorEl($(stepEl), consumeEvent);
-                    const actionHelper = new RunningTourActionHelper({
-                        consume_event: consumeEvent,
-                        $anchor: $anchorEl,
-                    });
-                    if (typeof step.run === "function") {
-                        try {
-                            // `this.$anchor` is expected in many `step.run`.
-                            step.run.call({ $anchor: $anchorEl }, actionHelper);
-                        } catch (e) {
-                            // console.error(`Tour ${tour_name} failed at step ${self._describeTip(tip)}: ${e.message}`);
-                            throw e;
-                        }
-                    } else if (step.run !== undefined) {
-                        const m = step.run.match(/^([a-zA-Z0-9_]+) *(?:\(? *(.+?) *\)?)?$/);
-                        try {
-                            actionHelper[m[1]](m[2]);
-                        } catch (e) {
-                            // console.error(`Tour ${tour_name} failed at step ${self._describeTip(tip)}: ${e.message}`);
-                            throw e;
-                        }
-                    } else {
-                        actionHelper.auto();
-                    }
-                },
-            },
-        ];
-        return steps;
-    }
-
+function augmentMacro(macroDescription, augmenter, options) {
     return {
         ...macroDescription,
         steps: macroDescription.steps
-            .reduce((newSteps, step) => [...newSteps, ...augmentStep(step)], [])
+            .reduce((newSteps, step) => [...newSteps, ...augmenter(step, options)], [])
             .concat([
                 {
                     action: () => {
@@ -362,6 +454,7 @@ export const tourService = {
 
             const augmentedMacro = augmentMacro(
                 Object.assign(tourDesc, { interval: mode.kind === "manual" ? 0 : mode.interval }),
+                mode.kind === "manual" ? augmentStepManual : augmentStepAuto,
                 {
                     advance: () => macroEngine.advanceMacros(),
                     pointerMethods,
