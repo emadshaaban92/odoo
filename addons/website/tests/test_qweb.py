@@ -13,7 +13,7 @@ from odoo.tests.common import TransactionCase
 
 class TestQweb(TransactionCaseWithUserDemo):
     def _load(self, module, *args):
-        tools.convert_file(self.cr, 'website',
+        tools.convert_file(self.env, 'website',
                            get_module_resource(module, *args),
                            {}, 'init', False, 'test')
 
