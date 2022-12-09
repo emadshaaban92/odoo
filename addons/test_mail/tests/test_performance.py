@@ -879,7 +879,7 @@ class TestMailComplexPerformance(BaseMailPerformance):
         _partners, test_records, test_template = self._create_test_records_for_batch()
 
         with self.assertQueryCount(__system__=4, employee=4):
-            composer = self.env['mail.compose.message'].with_context({
+            _composer = self.env['mail.compose.message'].with_context({
                 'default_composition_mode': 'mass_mail',
                 'default_model': test_records._name,
                 'default_res_ids': test_records.ids,
