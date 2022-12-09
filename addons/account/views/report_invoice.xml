@@ -202,6 +202,9 @@
                             </div>
                         </div>
                     </div>
+                    <p t-if="o.company_id.display_invoice_amount_total_words">
+                        Arranged the present invoice in the amount of : <span class="fw-bold" t-field="o.amount_total_words"/>
+                    </p>
                     <p t-if="o.move_type in ('out_invoice', 'in_refund') and o.payment_reference" name="payment_communication" class="mt-4">
                         Please use the following communication for your payment : <b><span t-field="o.payment_reference"/></b>
                     </p>

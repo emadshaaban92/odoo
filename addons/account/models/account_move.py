@@ -444,6 +444,10 @@ class AccountMove(models.Model):
         copy=False,
         tracking=True,
     )
+    amount_total_words = fields.Char(
+        string="Amount total in words",
+        compute="_compute_amount_total_words",
+    )
 
     # === Reverse feature fields === #
     reversed_entry_id = fields.Many2one(
@@ -1421,6 +1425,11 @@ class AccountMove(models.Model):
                 record.move_type in ('out_invoice', 'out_receipt')
                 and record.company_id.qr_code
             )
+
+    @api.depends('amount_total', 'currency_id')
+    def _compute_amount_total_words(self):
+        for record in self:
+            record.amount_total_words = record.currency_id.amount_to_text(record.amount_total)
 
     # -------------------------------------------------------------------------
     # INVERSE METHODS
