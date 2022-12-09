@@ -14,6 +14,7 @@ export class ProjectTaskStateSelectionMany2One extends StateSelectionField {
             Approved: "check-square",
             Rejected: "times-circle",
             "Changes requested": "repeat",
+            Waiting: "hourglass-o",
         };
         //console.log(this.props.record.preloadedData);
         super.setup();
@@ -53,6 +54,12 @@ export class ProjectTaskStateSelectionMany2One extends StateSelectionField {
         console.log(this.icons);
         console.log(this.icons[value[1]]);
         return this.icons[value[1]] ? this.iconPrefix + this.icons[value[1]] : "";
+    }
+
+    toggleState() {
+        console.log(this.props);
+        const toggleVal = this.props.value[1] == "Done" ? [1, "In Progress"] : [2, "Done"];
+        this.props.update(toggleVal);
     }
 }
 
