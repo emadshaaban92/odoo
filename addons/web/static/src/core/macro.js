@@ -83,12 +83,7 @@ class Macro {
             browser.clearTimeout(this.timeout);
         } else {
             this.setTimer();
-            // NOTE: We need to schedule the call to advance because we need to take into
-            // account the rerendering.
-            // E.g.
-            // - step 1 - click an element, it's clicked and when we immediately do step 2
-            // - step 2 - click an item in a modal -- the modal will appear later or not.
-            browser.setTimeout(() => this.advance(), this.interval);
+            this.advance();
         }
     }
 

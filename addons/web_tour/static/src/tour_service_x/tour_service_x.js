@@ -140,22 +140,7 @@ function augmentMacro(macroDescription, options) {
     }
 
     function augmentStep(step) {
-        let stepEl;
-        /**
-         * [consumeEvent] is the event type that [$anchorEl] waits for
-         * in order to proceed to the next step.
-         */
-        let consumeEvent;
-        /**
-         * [$anchorEl] is the jquery element where the [consumeEvent] be attached.
-         */
-        let $anchorEl;
-        /**
-         * [proceedWith] is the element returned by the last inserted step's trigger.
-         * - NOTE: Not sure though if the element is important or if it can be used for the
-         *   next step.
-         */
-        let proceedWith = false;
+        let skipAction = false;
         if (shouldOmit(step, options.mode)) {
             return [];
         }
@@ -165,145 +150,60 @@ function augmentMacro(macroDescription, options) {
                 ...{
                     action: () => {
                         console.log(step.trigger);
-                        proceedWith = false;
+                        skipAction = false;
+                        if (options.mode === "manual") {
+                            options.pointerMethods.show();
+                        }
                     },
                 },
             },
             {
                 trigger: () => {
-                    // Short circuit. No need to do the whole procedure when `proceedWith` is not falsy.
-                    // Important to clear it before returning the value.
-                    if (proceedWith) {
-                        return proceedWith;
-                    }
-
                     const { triggerEl, altTriggerEl, extraTriggerOkay, skipTriggerEl } = queryStep(
                         step
                     );
 
-                    // This callback can be called multiple times until it returns true.
-                    // We should take into account the fact the element is not in the
-                    // dom. [pointTo] takes into account whether [stepEl] is null or not.
-                    let prevEl = stepEl;
-
                     // [alt_trigger] - alternative to [trigger].
                     // [extra_trigger] - should also be present together with the [trigger].
-                    stepEl = extraTriggerOkay && (triggerEl || altTriggerEl);
-
-                    consumeEvent = step.consumeEvent || getConsumeEventType($(stepEl), step.run);
+                    const stepEl = extraTriggerOkay && (triggerEl || altTriggerEl);
 
                     // If [skip_trigger] element is present, immediately return [stepEl] for potential
                     // consumption of this step.
                     if (stepEl && skipTriggerEl) {
-                        return stepEl;
+                        skipAction = true;
                     }
-
-                    if (prevEl) {
-                        $anchorEl.off(".anchor");
-                    }
-
-                    if (stepEl) {
-                        $anchorEl = getAnchorEl($(stepEl), consumeEvent);
-                        // Start waiting for action, or automatically perform `step.run`.
-                        // Set `proceedWith` to a non-falsy value as a signal to proceed to the next step.
-                        options.pointerMethods.show();
-                        $anchorEl.on(`${consumeEvent}.anchor`, async () => {
-                            // TODO-JCB: The following logic comes from _getAnchorAndCreateEvent and it might be important to take it into account.
-                            // $consumeEventAnchors.on(consumeEvent + ".anchor", (function (e) {
-                            //     if (e.type !== "mousedown" || e.which === 1) { // only left click
-                            //         if (this.info.consumeVisibleOnly && !this.isShown()) {
-                            //             // Do not consume non-displayed tips.
-                            //             return;
-                            //         }
-                            //         this.trigger("tip_consumed");
-                            //         this._unbind_anchor_events();
-                            //     }
-                            // }).bind(this));
-
-                            proceedWith = stepEl;
-
-                            // stop waiting
-                            $anchorEl.off(".anchor");
-
-                            // clear the state variables
-                            stepEl = undefined;
-                            consumeEvent = undefined;
-                            $anchorEl = undefined;
-
-                            // hide the pointer if necessary.
-                            options.pointerMethods.hide();
-
-                            // finally, advance to the next step.
-                            options.advance();
-                        });
-
-                        if (options.mode == "auto") {
-                            if (options.showPointer) {
-                                options.pointerMethods.show();
-                            }
-
-                            // perform step.run
-                            // if result is promise, wait for promise to resolve.
-                            // if called already, make sure to not call again.
-                            // NOTE: Tried with promise but it doesn't work. At some point, the click is done
-                            // but the UI doesn't react. (micro task vs macro task, IDK.)
-                            const actionHelper = new RunningTourActionHelper({
-                                consume_event: consumeEvent,
-                                $anchor: $anchorEl,
-                            });
-                            if (typeof step.run === "function" || step.run !== undefined) {
-                                if (typeof step.run === "function") {
-                                    try {
-                                        // `this.$anchor` is expected in many `step.run`.
-                                        step.run.call({ $anchor: $anchorEl }, actionHelper);
-                                    } catch (e) {
-                                        // console.error(`Tour ${tour_name} failed at step ${self._describeTip(tip)}: ${e.message}`);
-                                        throw e;
-                                    }
-                                } else if (step.run !== undefined) {
-                                    const m = step.run.match(
-                                        /^([a-zA-Z0-9_]+) *(?:\(? *(.+?) *\)?)?$/
-                                    );
-                                    try {
-                                        actionHelper[m[1]](m[2]);
-                                    } catch (e) {
-                                        // console.error(`Tour ${tour_name} failed at step ${self._describeTip(tip)}: ${e.message}`);
-                                        throw e;
-                                    }
-                                }
-                                if ($anchorEl === undefined) {
-                                    return stepEl;
-                                }
-                                // stop waiting
-                                $anchorEl.off(".anchor");
-
-                                proceedWith = stepEl;
-
-                                // clear the state variables
-                                stepEl = undefined;
-                                consumeEvent = undefined;
-                                $anchorEl = undefined;
-
-                                // hide the pointer if necessary.
-                                options.pointerMethods.hide();
-
-                                // finally, advance to the next step.
-                                return proceedWith;
-                            } else {
-                                if (
-                                    step.trigger ===
-                                    ".o_kanban_record:not(.o_updating) .o_ActivityButtonView"
-                                ) {
-                                    console.log(step);
-                                }
-                                actionHelper.auto();
-                            }
-                        }
-                    }
-
-                    // Call this everytime so that the pointer is always pointing at the
-                    // step's trigger element.
                     options.pointerMethods.pointTo(stepEl);
+                    return stepEl;
+                },
+                action: (stepEl) => {
+                    if (skipAction || options.mode == "manual") return;
+
+                    const consumeEvent =
+                        step.consumeEvent || getConsumeEventType($(stepEl), step.run);
+                    const $anchorEl = getAnchorEl($(stepEl), consumeEvent);
+                    const actionHelper = new RunningTourActionHelper({
+                        consume_event: consumeEvent,
+                        $anchor: $anchorEl,
+                    });
+                    if (typeof step.run === "function") {
+                        try {
+                            // `this.$anchor` is expected in many `step.run`.
+                            step.run.call({ $anchor: $anchorEl }, actionHelper);
+                        } catch (e) {
+                            // console.error(`Tour ${tour_name} failed at step ${self._describeTip(tip)}: ${e.message}`);
+                            throw e;
+                        }
+                    } else if (step.run !== undefined) {
+                        const m = step.run.match(/^([a-zA-Z0-9_]+) *(?:\(? *(.+?) *\)?)?$/);
+                        try {
+                            actionHelper[m[1]](m[2]);
+                        } catch (e) {
+                            // console.error(`Tour ${tour_name} failed at step ${self._describeTip(tip)}: ${e.message}`);
+                            throw e;
+                        }
+                    } else {
+                        actionHelper.auto();
+                    }
                 },
             },
         ];
