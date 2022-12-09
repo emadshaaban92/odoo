@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="NavBar" owl="1">
+    <nav class="navbar navbar-dark bg-primary">
+        <span class="material-symbols-outlined">
+            arrow_back
+        </span>
+        <span class="navbar-brand h1"><t t-esc="props.restaurantName"></t></span>
+        <h1 class="text-white"><t t-esc="'T' + props.tableNumber"/></h1>
+    </nav>
+    </t>
+</templates>

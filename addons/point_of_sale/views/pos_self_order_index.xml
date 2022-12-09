@@ -20,7 +20,8 @@
         <link rel="apple-touch-icon" sizes="76x76"   href="/point_of_sale/static/src/img/touch-icon-ipad.png"/>
         <link rel="apple-touch-icon" sizes="120x120" href="/point_of_sale/static/src/img/touch-icon-iphone-retina.png"/>
         <link rel="apple-touch-icon" sizes="152x152" href="/point_of_sale/static/src/img/touch-icon-ipad-retina.png"/>
-
+        <!-- left arrow icon -->
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
         <style> body { background: #222; } </style>
 
         <link rel="shortcut icon" href="/point_of_sale/static/src/img/favicon.ico" type="image/x-icon"/>
@@ -30,7 +31,7 @@
                 'csrf_token': request.csrf_token(None),
                 '__session_info__': session_info,
                 'login_number': login_number,
-                'pos_session_id': pos_session_id,
+                'pos_session_id': pos_session_id,http://www.w3.org/2000/svg is an XML namespace, first defined in the Scalable Vector Graphics (SVG
                 'debug': debug,
             })"/>;
             // Prevent the menu_service to load anything. In an ideal world, POS assets would only contain

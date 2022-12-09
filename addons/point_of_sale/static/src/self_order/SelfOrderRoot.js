@@ -7,6 +7,7 @@ import { _t } from "@web/core/l10n/translation";
 import { LandingPageOutline } from "./LandingPage/LandingPageOutline/LandingPageOutline.js";
 import { LandingPageStart } from "./LandingPage/LandingPageStart/LandingPageStart.js";
 import { LandingPageEnd } from "./LandingPage/LandingPageEnd/LandingPageEnd.js";
+import { ProductView } from "./ProductView/ProductView.js";
 class SelfOrderRoot extends Component {
     setup() {
         onRendered(() => {
@@ -18,7 +19,8 @@ class SelfOrderRoot extends Component {
     tableNumber = 12;
     //TODO: Add a method to get the message from the response of the server
     message = "Your order is being processed";
-    static components = { LandingPageOutline, LandingPageStart, LandingPageEnd };  
+    restaurantName = "Brasserie de Perwez";
+    static components = { LandingPageOutline, LandingPageStart, LandingPageEnd, ProductView };  
 }
 SelfOrderRoot.template = "SelfOrderRoot";
 export async function createPublicRoot() {
