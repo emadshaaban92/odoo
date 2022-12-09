@@ -1092,7 +1092,7 @@
                         <button name="action_assign_to_me" string="Assign to Me" type="object" class="oe_highlight" attrs="{'invisible' : &quot;['|', ('user_ids', 'in', uid), ('user_ids', '!=', [])]&quot;}" data-hotkey="q"/>
                         <button name="action_assign_to_me" string="Assign to Me" type="object" attrs="{'invisible': &quot;['|', ('user_ids', 'in', uid), ('user_ids', '=', [])]&quot;}" data-hotkey="q"/>
                         <field name="stage_id" widget="statusbar" options="{'clickable': '1', 'fold_field': 'fold'}" attrs="{'invisible': [('project_id', '=', False), ('stage_id', '=', False)]}"/>
-                        <field name="personal_stage_type_id" widget="statusbar" options="{'clickable': '1', 'fold_field': 'fold'}" attrs="{'invisible': [('project_id', '!=', False)]}" domain="[('user_id', '=', uid)]" string="Personal Stage"/>
+                        <field name="personal_stage_type_id" widget="statusbar" options="{'clickable': '1', 'fold_field': 'fold'}" attrs="{'invisible': [('project_id', '!=', False)]}" domain="[('user_id', '=', uid), ('todo_stage', '=', False)]" string="Personal Stage"/>
                     </header>
                     <div class="alert alert-info oe_edit_only mb-0" role="status" attrs="{'invisible': ['|', ('recurring_task', '=', False), ('recurrence_id', '=', False)]}" groups="project.group_project_recurring_tasks">
                         <p>Edit recurring task</p>
@@ -1642,6 +1642,7 @@
         <record id="view_task_kanban_inherit_my_task" model="ir.ui.view">
             <field name="name">project.task.kanban.inherit.my.task</field>
             <field name="model">project.task</field>
+            <!--<field name="priority">200</field>-->
             <field name="inherit_id" ref="view_task_kanban"/>
             <field name="mode">primary</field>
             <field name="arch" type="xml">
@@ -1691,7 +1692,8 @@
             <field name="name">My Tasks</field>
             <field name="res_model">project.task</field>
             <field name="view_mode">kanban,tree,form,calendar,pivot,graph,activity</field>
-            <field name="context">{'search_default_my_tasks': 1, 'search_default_open_tasks': 1, 'all_task': 0, 'default_user_ids': [(4, uid)]}</field>
+            <field name="domain">[('is_todo', '=', False)]</field>
+            <field name="context">{'search_default_my_tasks': 1, 'search_default_open_tasks': 1, 'all_task': 0, 'default_user_ids': [(4, uid)], 'default_is_todo': False, 'default_todo_stage': False}</field> <!-- NOTE: Key all_task is probably useless : check if I can remove it --><!-- TODO; maybe is_todo and todo_stage can be put to false by default -->
             <field name="search_view_id" ref="view_task_search_form_extended"/>
             <field name="help" type="html">
                 <p class="o_view_nocontent_smiling_face">
@@ -1738,7 +1740,8 @@
             <field name="name">All Tasks</field>
             <field name="res_model">project.task</field>
             <field name="view_mode">tree,kanban,form,calendar,pivot,graph,activity</field>
-            <field name="context">{'search_default_open_tasks': 1, 'default_user_ids': [(4, uid)]}</field>
+            <field name="domain">[('is_todo', '=', False)]</field>
+            <field name="context">{'search_default_open_tasks': 1, 'default_user_ids': [(4, uid)], 'default_is_todo': False, 'default_todo_stage': False}</field><!--TODO: todostage true could be removed ? (False= default value)-->
             <field name="search_view_id" ref="view_task_search_form_extended"/>
             <field name="help" type="html">
                 <p class="o_view_nocontent_smiling_face">
@@ -1775,7 +1778,7 @@
             <field name="model_id" ref="project.model_project_task"/>
             <field name="state">code</field>
             <field name="code">
-                model._ensure_personal_stages(); action = env["ir.actions.actions"]._for_xml_id("project.action_view_my_task")
+                model._ensure_project_personal_stages(); action = env["ir.actions.actions"]._for_xml_id("project.action_view_my_task")
             </field>
         </record>
 
@@ -1787,7 +1790,7 @@
 
         <record id="project_task_action_from_partner" model="ir.actions.act_window">
             <field name="name">Tasks</field>
-            <field name="res_model">project.task</field>
+            <field name="res_model">project.task</field><!-- TO DO: UPDATE DOMAIN ???-->
             <field name="view_mode">kanban,tree,form</field>
             <field name="search_view_id" ref="view_task_search_form_extended"/>
         </record>
@@ -1796,7 +1799,7 @@
             <field name="name">Overpassed Tasks</field>
             <field name="res_model">project.task</field>
             <field name="view_mode">tree,form,calendar,graph,kanban</field>
-            <field name="domain">[('is_closed', '=', False), ('date_deadline','&lt;',time.strftime('%Y-%m-%d')), ('display_project_id', '!=', False)]</field>
+            <field name="domain">[('is_closed', '=', False), ('date_deadline','&lt;',time.strftime('%Y-%m-%d')), ('display_project_id', '!=', False)]</field> <!-- TO UPDATE-->
             <field name="filter" eval="True"/>
             <field name="search_view_id" ref="view_task_search_form_extended"/>
         </record>
