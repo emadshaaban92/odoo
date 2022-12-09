@@ -3,7 +3,6 @@
 import { reactive } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { MacroEngine } from "@web/core/macro";
-import { browser } from "@web/core/browser/browser";
 import { TourPointer } from "../tour_pointer/tour_pointer";
 
 // TODO-JCB: Replace the following import with the non-legacy version.
@@ -157,21 +156,17 @@ function augmentMacro(macroDescription, options) {
          *   next step.
          */
         let proceedWith = false;
-        /**
-         * This is used to schedule the `step.run`.
-         */
-        let autoRunning = false;
         if (shouldOmit(step, options.mode)) {
             return [];
         }
-        return [
-            step,
+        const steps = [
             {
-                action: () => {
-                    console.log(step.trigger);
-                    proceedWith = false;
-                    clearTimeout(autoRunning);
-                    autoRunning = false;
+                ...step,
+                ...{
+                    action: () => {
+                        console.log(step.trigger);
+                        proceedWith = false;
+                    },
                 },
             },
             {
@@ -179,9 +174,7 @@ function augmentMacro(macroDescription, options) {
                     // Short circuit. No need to do the whole procedure when `proceedWith` is not falsy.
                     // Important to clear it before returning the value.
                     if (proceedWith) {
-                        const temp = proceedWith;
-                        proceedWith = false;
-                        return temp;
+                        return proceedWith;
                     }
 
                     const { triggerEl, altTriggerEl, extraTriggerOkay, skipTriggerEl } = queryStep(
@@ -206,53 +199,45 @@ function augmentMacro(macroDescription, options) {
                     }
 
                     if (prevEl) {
-                        // Stop waiting.
-                        if (options.mode == "manual") {
-                            $anchorEl.off(".anchor");
-                        } else if (options.mode == "auto") {
-                            clearTimeout(autoRunning);
-                            autoRunning = false;
-                        } else {
-                            throw new Error(`mode = '${options.mode}' is not supported.`);
-                        }
+                        $anchorEl.off(".anchor");
                     }
 
                     if (stepEl) {
                         $anchorEl = getAnchorEl($(stepEl), consumeEvent);
                         // Start waiting for action, or automatically perform `step.run`.
                         // Set `proceedWith` to a non-falsy value as a signal to proceed to the next step.
-                        if (options.mode == "manual") {
-                            options.pointerMethods.show();
-                            $anchorEl.on(`${consumeEvent}.anchor`, () => {
-                                // TODO-JCB: The following logic comes from _getAnchorAndCreateEvent and it might be important to take it into account.
-                                // $consumeEventAnchors.on(consumeEvent + ".anchor", (function (e) {
-                                //     if (e.type !== "mousedown" || e.which === 1) { // only left click
-                                //         if (this.info.consumeVisibleOnly && !this.isShown()) {
-                                //             // Do not consume non-displayed tips.
-                                //             return;
-                                //         }
-                                //         this.trigger("tip_consumed");
-                                //         this._unbind_anchor_events();
-                                //     }
-                                // }).bind(this));
+                        options.pointerMethods.show();
+                        $anchorEl.on(`${consumeEvent}.anchor`, async () => {
+                            // TODO-JCB: The following logic comes from _getAnchorAndCreateEvent and it might be important to take it into account.
+                            // $consumeEventAnchors.on(consumeEvent + ".anchor", (function (e) {
+                            //     if (e.type !== "mousedown" || e.which === 1) { // only left click
+                            //         if (this.info.consumeVisibleOnly && !this.isShown()) {
+                            //             // Do not consume non-displayed tips.
+                            //             return;
+                            //         }
+                            //         this.trigger("tip_consumed");
+                            //         this._unbind_anchor_events();
+                            //     }
+                            // }).bind(this));
 
-                                proceedWith = stepEl;
+                            proceedWith = stepEl;
 
-                                // stop waiting
-                                $anchorEl.off(".anchor");
+                            // stop waiting
+                            $anchorEl.off(".anchor");
 
-                                // clear the state variables
-                                stepEl = undefined;
-                                consumeEvent = undefined;
-                                $anchorEl = undefined;
+                            // clear the state variables
+                            stepEl = undefined;
+                            consumeEvent = undefined;
+                            $anchorEl = undefined;
 
-                                // hide the pointer if necessary.
-                                options.pointerMethods.hide();
+                            // hide the pointer if necessary.
+                            options.pointerMethods.hide();
 
-                                // finally, advance to the next step.
-                                options.advance();
-                            });
-                        } else if (options.mode == "auto") {
+                            // finally, advance to the next step.
+                            options.advance();
+                        });
+
+                        if (options.mode == "auto") {
                             if (options.showPointer) {
                                 options.pointerMethods.show();
                             }
@@ -262,15 +247,15 @@ function augmentMacro(macroDescription, options) {
                             // if called already, make sure to not call again.
                             // NOTE: Tried with promise but it doesn't work. At some point, the click is done
                             // but the UI doesn't react. (micro task vs macro task, IDK.)
-                            autoRunning = browser.setTimeout(async () => {
-                                const actionHelper = new RunningTourActionHelper({
-                                    consume_event: consumeEvent,
-                                    $anchor: $anchorEl,
-                                });
+                            const actionHelper = new RunningTourActionHelper({
+                                consume_event: consumeEvent,
+                                $anchor: $anchorEl,
+                            });
+                            if (typeof step.run === "function" || step.run !== undefined) {
                                 if (typeof step.run === "function") {
                                     try {
                                         // `this.$anchor` is expected in many `step.run`.
-                                        await step.run.call({ $anchor: $anchorEl }, actionHelper);
+                                        step.run.call({ $anchor: $anchorEl }, actionHelper);
                                     } catch (e) {
                                         // console.error(`Tour ${tour_name} failed at step ${self._describeTip(tip)}: ${e.message}`);
                                         throw e;
@@ -285,20 +270,16 @@ function augmentMacro(macroDescription, options) {
                                         // console.error(`Tour ${tour_name} failed at step ${self._describeTip(tip)}: ${e.message}`);
                                         throw e;
                                     }
-                                } else {
-                                    if (
-                                        step.trigger ===
-                                        ".o_kanban_record:not(.o_updating) .o_ActivityButtonView"
-                                    ) {
-                                        console.log(step);
-                                    }
-                                    actionHelper.auto();
                                 }
+                                if ($anchorEl === undefined) {
+                                    return stepEl;
+                                }
+                                // stop waiting
+                                $anchorEl.off(".anchor");
 
                                 proceedWith = stepEl;
 
                                 // clear the state variables
-                                autoRunning = false;
                                 stepEl = undefined;
                                 consumeEvent = undefined;
                                 $anchorEl = undefined;
@@ -307,10 +288,16 @@ function augmentMacro(macroDescription, options) {
                                 options.pointerMethods.hide();
 
                                 // finally, advance to the next step.
-                                options.advance();
-                            }, 0);
-                        } else {
-                            throw new Error(`mode = '${options.mode}' is not supported.`);
+                                return proceedWith;
+                            } else {
+                                if (
+                                    step.trigger ===
+                                    ".o_kanban_record:not(.o_updating) .o_ActivityButtonView"
+                                ) {
+                                    console.log(step);
+                                }
+                                actionHelper.auto();
+                            }
                         }
                     }
 
@@ -320,6 +307,7 @@ function augmentMacro(macroDescription, options) {
                 },
             },
         ];
+        return steps;
     }
 
     return {
