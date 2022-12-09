@@ -2,6 +2,7 @@
 
 const { Component, mount, xml, onRendered, whenReady, App} = owl;
 import { _t } from "@web/core/l10n/translation";
+
 export class NavBar extends Component {
     setup() {
         onRendered(() => {

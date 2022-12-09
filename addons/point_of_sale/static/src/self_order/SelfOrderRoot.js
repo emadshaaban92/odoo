@@ -7,12 +7,12 @@ import { _t } from "@web/core/l10n/translation";
 import { LandingPageOutline } from "./LandingPage/LandingPageOutline/LandingPageOutline.js";
 import { LandingPageStart } from "./LandingPage/LandingPageStart/LandingPageStart.js";
 import { LandingPageEnd } from "./LandingPage/LandingPageEnd/LandingPageEnd.js";
-import { ProductView } from "./ProductView/ProductView.js";
+import { NavBar } from "./NavBar/NavBar.js";
+import { ProductMainView } from "./ProductMainView/ProductMainView.js";
 class SelfOrderRoot extends Component {
     setup() {
         onRendered(() => {
                 console.log('Rendered:', this.constructor.name);
-                console.log(this.vlad);
         });
     }
     //TODO: Add a method to get the table number from the response of the server
@@ -20,7 +20,7 @@ class SelfOrderRoot extends Component {
     //TODO: Add a method to get the message from the response of the server
     message = "Your order is being processed";
     restaurantName = "Brasserie de Perwez";
-    static components = { LandingPageOutline, LandingPageStart, LandingPageEnd, ProductView };  
+    static components = { LandingPageOutline, LandingPageStart, LandingPageEnd, ProductMainView, NavBar };  
 }
 SelfOrderRoot.template = "SelfOrderRoot";
 export async function createPublicRoot() {

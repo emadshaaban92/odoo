@@ -1,12 +1,9 @@
 /** @odoo-module */
 
 const { Component, mount, xml, onRendered, whenReady, App} = owl;
-// import { setLoadXmlDefaultApp, loadJS, templates } from '@web/core/assets';
-import {  templates } from '@web/core/assets';
-import { MainComponentsContainer } from "@web/core/main_components_container";
 import { _t } from "@web/core/l10n/translation";
-import { NavBar } from '../NavBar/NavBar';
-export class ProductView extends Component {
+import { NavBar } from '../NavBar/NavBar.js';
+export class ProductMainView extends Component {
     setup() {
         onRendered(() => {
                 console.log('Rendered:', this.constructor.name);
@@ -38,8 +35,8 @@ export class ProductView extends Component {
             image: "https://www.coca-cola.be/content/dam/journey/be/nl/private/brands/coca-cola-zero-sugar/coca-cola-zero-sugar.png",
         },
     ];
-
-  static components = { NavBar };  
+    // product = productList[0];
+    static components = { NavBar };  
 }
-ProductView.template = 'ProductView'
-export default { ProductView };
+ProductMainView.template = 'ProductMainView'
+export default { ProductMainView };
