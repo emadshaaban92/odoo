@@ -9,6 +9,8 @@ import { TourPointer } from "../tour_pointer/tour_pointer";
 import { device } from "web.config";
 import { findTrigger } from "web_tour.utils";
 import RunningTourActionHelper from "web_tour.RunningTourActionHelper";
+// TODO-JCB: Find `config.device.isMobile` from non-legacy module.
+import config from "web.config";
 
 /**
  * TODO-JCB: Don't forget the following:
@@ -16,6 +18,8 @@ import RunningTourActionHelper from "web_tour.RunningTourActionHelper";
  *   the pointer continues to point to the "app" icon even after click.
  * TODO-JCB: Maybe it's better if jQuery is used internally, and methods that return jQuery element should just return normal Elements.
  * - Maybe partially 'hiding' our reliance to jQuery is a good thing?
+ * TODO-JCB: Should be able to recover the last performed step after page reload.
+ * TODO-JCB: Make sure all the comments are correct.
  */
 
 /**
@@ -25,7 +29,7 @@ import RunningTourActionHelper from "web_tour.RunningTourActionHelper";
  * @returns
  */
 function isDefined(key, obj) {
-    return key in obj || obj[key] !== undefined;
+    return key in obj && obj[key] !== undefined;
 }
 
 /**
@@ -104,7 +108,7 @@ function getAnchorEl($el, consumeEvent) {
 }
 
 /**
- * Returns true if the [step] should not be included in a tour.
+ * Returns true if `step` should *not* be included in a tour.
  * @param {TourStep} step
  * @param {{ mode: "manual" | "auto", edition: boolean, isMobile: boolean }} options
  * @returns {boolean}
@@ -115,7 +119,7 @@ function shouldOmit(step, options) {
     return (
         !correctEdition ||
         !correctDevice ||
-        // TODO-JCB: Confirm if [step.auto = true] means omitting a step in a manual tour.
+        // `step.auto = true` means omitting a step in a manual tour.
         (options.mode === "manual" && step.auto)
     );
 }
@@ -125,7 +129,7 @@ function queryStep(step) {
     const altTriggerEl = findTrigger(step.alt_trigger, step.in_modal);
     const skipTriggerEl = findTrigger(step.skip_trigger, step.in_modal);
 
-    // [extraTriggerOkay] should be true when [step.extra_trigger] is undefined.
+    // `extraTriggerOkay` should be true when `step.extra_trigger` is undefined.
     const extraTriggerOkay = step.extra_trigger
         ? findTrigger(step.extra_trigger, step.in_modal)
         : true;
@@ -179,7 +183,7 @@ function augmentStepAuto(step, options) {
                 const consumeEvent = step.consumeEvent || getConsumeEventType($(stepEl), step.run);
                 const $anchorEl = getAnchorEl($(stepEl), consumeEvent);
 
-                // IMPROVEMENT: Delegate the following routine to the `ACTION_HELPERS` in the macro module.
+                // TODO: Delegate the following routine to the `ACTION_HELPERS` in the macro module.
                 const actionHelper = new RunningTourActionHelper({
                     consume_event: consumeEvent,
                     $anchor: $anchorEl,
@@ -210,6 +214,8 @@ function augmentStepAuto(step, options) {
 
 /**
  * Augments `step` of a tour for 'manual' (run) mode.
+ * TODO-JCB: Describe the trick here. How does the macro engine able to wait for the user's action?
+ * TODO-JCB: Improve the code.
  * @param {*} step
  * @param {*} options
  * @returns
