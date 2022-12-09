@@ -319,34 +319,11 @@ function augmentMacro(macroDescription, augmenter, options) {
 
 /**
  * @param {*} param0
- * @returns {[state: { x, y, isVisible, position, text }, methods: { pointTo, hide, setSizeGetter }]}
+ * @returns {[state: { x, y, isVisible, position, text }, methods: { pointTo, hide, show }]}
  */
 function createPointerState({ x, y, isVisible, position, text }) {
     const state = reactive({ x, y, isVisible, position, text });
-
-    /**
-     * In order for pointer state to be useful, `sizeGetter` needs to
-     * be bound to a method that returns the size of the pointer.
-     * @see setSizeGetter
-     */
-    let sizeGetter;
-
-    /**
-     * Call this in the component containing the pointer element.
-     * The pointer element should provide a method that returns the size
-     * of the pointer
-     * @param {() => { width: number, height: number }} f
-     */
-    function setSizeGetter(f) {
-        sizeGetter = f;
-    }
-
-    function getSize() {
-        if (!sizeGetter) {
-            throw new Error("Unable to get size of the pointer.");
-        }
-        return sizeGetter();
-    }
+    const pointerSize = { width: 20, height: 20 };
 
     function hide() {
         state.isVisible = false;
@@ -363,25 +340,16 @@ function createPointerState({ x, y, isVisible, position, text }) {
      */
     function pointTo(el) {
         if (el) {
-            const size = getSize();
             const rect = el.getBoundingClientRect();
-            const top = rect.top - size.width;
-            const left = rect.left + rect.width / 2 - size.height / 2;
+            const top = rect.top - pointerSize.width;
+            const left = rect.left + rect.width / 2 - pointerSize.height / 2;
             Object.assign(state, { x: left, y: top });
         } else {
             hide();
         }
     }
 
-    return [
-        state,
-        {
-            pointTo,
-            hide,
-            show,
-            setSizeGetter,
-        },
-    ];
+    return [state, { pointTo, hide, show }];
 }
 
 /**
@@ -471,7 +439,7 @@ export const tourService = {
 
         registry.category("main_components").add("TourPointer", {
             Component: TourPointer,
-            props: { pointerState, setSizeGetter: pointerMethods.setSizeGetter },
+            props: { pointerState },
         });
 
         return { run };
