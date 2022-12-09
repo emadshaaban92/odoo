@@ -2,7 +2,8 @@
 <templates id="template" xml:space="preserve">
 
     <t t-name="SelfOrderRoot" owl="1">
-    <LandingPage/>
+    <!-- <LandingPageStart tableNumber="tableNumber"/> -->
+    <LandingPageEnd tableNumber="tableNumber" message="message"/>
     </t>
 </templates>
 

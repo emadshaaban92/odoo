@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+
+    <t t-name="LandingPageEnd" owl="1">
+    <LandingPageOutline tableNumber="props.tableNumber">
+        <t t-set-slot="main_group">
+            <div class="alert alert-success" role="alert">
+                <t t-esc="props.message"></t>
+            </div>
+            <button type="button" class="my-2 btn btn-outline-primary btn-lg">My Orders</button>
+        </t>
+    </LandingPageOutline>
+    </t>
+</templates>

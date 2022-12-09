@@ -4,7 +4,9 @@ const { Component, mount, xml, onRendered, whenReady, App} = owl;
 import { makeEnv, startServices } from "@web/env";
 import { setLoadXmlDefaultApp, loadJS, templates } from '@web/core/assets';
 import { _t } from "@web/core/l10n/translation";
-import { LandingPage } from "./LandingPage/LandingPage.js";
+import { LandingPageOutline } from "./LandingPage/LandingPageOutline/LandingPageOutline.js";
+import { LandingPageStart } from "./LandingPage/LandingPageStart/LandingPageStart.js";
+import { LandingPageEnd } from "./LandingPage/LandingPageEnd/LandingPageEnd.js";
 class SelfOrderRoot extends Component {
     setup() {
         onRendered(() => {
@@ -12,7 +14,11 @@ class SelfOrderRoot extends Component {
                 console.log(this.vlad);
         });
     }
-  static components = { LandingPage };  
+    //TODO: Add a method to get the table number from the response of the server
+    tableNumber = 12;
+    //TODO: Add a method to get the message from the response of the server
+    message = "Your order is being processed";
+    static components = { LandingPageOutline, LandingPageStart, LandingPageEnd };  
 }
 SelfOrderRoot.template = "SelfOrderRoot";
 export async function createPublicRoot() {
