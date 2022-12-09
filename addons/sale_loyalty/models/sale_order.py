@@ -569,6 +569,8 @@ class SaleOrder(models.Model):
         global_discount_reward = self._get_applied_global_discount()
         for coupon in all_coupons:
             points = self._get_real_points_for_coupon(coupon)
+            if self.pricelist_id not in coupon.program_id.pricelist_ids and len(coupon.program_id.pricelist_ids) != 0:
+                continue
             for reward in coupon.program_id.reward_ids:
                 if reward.is_global_discount and global_discount_reward and global_discount_reward.discount >= reward.discount:
                     continue
