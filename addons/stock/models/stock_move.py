@@ -1991,6 +1991,7 @@ class StockMove(models.Model):
         moves_to_reserve = self.env['stock.move'].search(expression.AND([static_domain, expression.OR(domains)]),
                                                          order='reservation_date, priority desc, date asc, id asc')
         moves_to_reserve._action_assign()
+<<<<<<< HEAD
 
     def _rollup_move_dests(self, seen):
         for dst in self.move_dest_ids:
@@ -2106,3 +2107,13 @@ class StockMove(models.Model):
                     result[out] = (-remaining, False)
 
         return result
+||||||| parent of 214b74cd249 (temp)
+=======
+
+    def _get_orig_reserved_availability(self):
+        self.ensure_one()
+        reserved = self.reserved_availability if self.show_reserved_availability else 0.0
+        if not reserved and self.move_orig_ids:
+            reserved = sum([m._get_orig_reserved_availability() for m in self.move_orig_ids])
+        return reserved
+>>>>>>> 214b74cd249 (temp)
