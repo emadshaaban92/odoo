@@ -14,10 +14,6 @@ export class LandingPageOutline extends Component {
                 console.log('Rendered:', this.constructor.name);
         });
     }
-    // TODO: Add a method to get the table number from the response of the server
-    getTableNumber() {
-        return 12;
-    }
 }
 LandingPageOutline.template = 'LandingPageOutline'
 export default { LandingPageOutline };

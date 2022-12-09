@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates id="template" xml:space="preserve">
-    <t t-name="ProductView" owl="1">
+    <t t-name="ProductMainView" owl="1">
     <NavBar restaurantName="props.restaurantName" tableNumber="props.tableNumber"/>
     </t>
 </templates>
