@@ -31,7 +31,8 @@ class LoyaltyProgram(models.Model):
     communication_plan_ids = fields.One2many('loyalty.mail', 'program_id', copy=True,
          compute='_compute_from_program_type', readonly=False, store=True)
 
-    pricelist_ids = fields.Many2many('product.pricelist', string='Pricelist', domain=lambda self: [("currency_id", "=", self.currency_id.id)])
+    valid_pricelist_ids = fields.One2many('product.pricelist', 'valid_loyalty_program_ids', compute="_compute_valid_pricelists")
+    pricelist_ids = fields.Many2many('product.pricelist', string='Pricelist')
 
     # These fields are used for the simplified view of gift_card and ewallet
     mail_template_id = fields.Many2one('mail.template', compute='_compute_mail_template_id', inverse='_inverse_mail_template_id', string="Email template", readonly=False)
@@ -102,6 +103,12 @@ class LoyaltyProgram(models.Model):
         if any(not program.reward_ids for program in self):
             raise ValidationError(_('A program must have at least one reward.'))
 
+    @api.constrains('currency_id', 'pricelist_ids')
+    def _constrains_same_currency(self):
+        for pricelist in self.pricelist_ids:
+            if pricelist.currency_id != self.currency_id:
+                raise ValidationError(_('The currency of the pricelists selected must be the same as the currency of the program'))
+
     def _compute_total_order_count(self):
         self.total_order_count = 0
 
@@ -110,6 +117,11 @@ class LoyaltyProgram(models.Model):
         program_items_name = self._program_items_name()
         for program in self:
             program.coupon_count_display = "%i %s" % (program.coupon_count or 0, program_items_name[program.program_type] or '')
+
+    @api.depends("currency_id")
+    def _compute_valid_pricelists(self):
+        for program in self:
+            program.valid_pricelist_ids = self.env["product.pricelist"].search([('currency_id','=', program.currency_id.id)]).ids
 
     @api.depends("communication_plan_ids.mail_template_id")
     def _compute_mail_template_id(self):
