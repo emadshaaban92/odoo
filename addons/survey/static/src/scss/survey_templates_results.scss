@@ -73,6 +73,10 @@
             border-radius: 2em 0 0 2em;
         }
     }
+    .o_image_preview{
+        max-width: 32px;
+        max-height: 32px;
+    }
     .o_survey_answer i {
         padding:3px;
         cursor:pointer;

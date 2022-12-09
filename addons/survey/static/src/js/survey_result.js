@@ -3,6 +3,7 @@ odoo.define('survey.result', function (require) {
 
 var _t = require('web.core')._t;
 const { loadJS } = require('@web/core/assets');
+const { SurveyImageZoomer } = require("@survey/js/survey_image_zoomer");
 var publicWidget = require('web.public.widget');
 
 // The given colors are the same as those used by D3
@@ -416,6 +417,7 @@ publicWidget.registry.SurveyResultWidget = publicWidget.Widget.extend({
         'click a.filter-failed': '_onFilterFailedClick',
         'click a.filter-passed': '_onFilterPassedClick',
         'click a.filter-passed-and-failed': '_onFilterPassedAndFailedClick',
+        'click div.o_image_preview img': '_onChoiceImgClick',
     },
 
     //--------------------------------------------------------------------------
@@ -557,6 +559,22 @@ publicWidget.registry.SurveyResultWidget = publicWidget.Widget.extend({
     },
 
     /**
+     * Called when an image on an answer in multi-answers question is clicked.
+     * Starts a widget opening a dialog to display the now zoomable image.
+     * this.imgZoomer is the zoomer widget linked to the survey form, if any.
+     *
+     * @private
+     * @param {Event} ev
+     */
+    _onChoiceImgClick: function (ev) {
+        ev.preventDefault();
+        this.imgZoomer = new SurveyImageZoomer({
+            sourceImage: $(ev.currentTarget).attr('src')
+        });
+        this.imgZoomer.appendTo(document.body);
+    },
+
+    /**
      * Returns the modified pathname string for filters after adding or removing an
      * answer filter (from click event). Filters are formatted as `"rowX,ansX", where
      * the row is used for matrix-type questions and set to 0 otherwise.
@@ -587,7 +605,8 @@ publicWidget.registry.SurveyResultWidget = publicWidget.Widget.extend({
 return {
     resultWidget: publicWidget.registry.SurveyResultWidget,
     chartWidget: publicWidget.registry.SurveyResultChart,
-    paginationWidget: publicWidget.registry.SurveyResultPagination
+    paginationWidget: publicWidget.registry.SurveyResultPagination,
+    SurveyImageZoomer: publicWidget.registry.SurveyImageZoomer
 };
 
 });
