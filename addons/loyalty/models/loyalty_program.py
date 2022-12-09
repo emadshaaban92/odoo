@@ -121,7 +121,7 @@ class LoyaltyProgram(models.Model):
     @api.depends("currency_id")
     def _compute_valid_pricelists(self):
         for program in self:
-            program.valid_pricelist_ids = self.env["product.pricelist"].search([('currency_id','=', program.currency_id.id)]).ids
+            program.valid_pricelist_ids = self.env["product.pricelist"].search([('currency_id', '=', program.currency_id.id)]).ids
 
     @api.depends("communication_plan_ids.mail_template_id")
     def _compute_mail_template_id(self):
