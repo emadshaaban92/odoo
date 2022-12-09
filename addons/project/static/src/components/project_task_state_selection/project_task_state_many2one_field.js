@@ -5,6 +5,8 @@ import { StateSelectionField } from "@web/views/fields/state_selection/state_sel
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 
+const { EventBus , useBus } = owl;
+
 export class ProjectTaskStateSelectionMany2One extends StateSelectionField {
     setup() {
         this.orm = useService("orm");
@@ -16,7 +18,16 @@ export class ProjectTaskStateSelectionMany2One extends StateSelectionField {
             "Changes requested": "repeat",
             Waiting: "hourglass-o",
         };
-        //console.log(this.props.record.preloadedData);
+        //this.serv = useService("statisticsServiceMod");
+        console.log("this.props.record.preloadedData");
+        setInterval(() => {
+            console.log(this.props.record.data.name);
+            console.log(this.props.value);
+            this.props.record.model.notify();
+            //this.props.record.update();
+            this.render();
+        }, 10000);
+
         super.setup();
         //const obj_sam = reactive(this.props.record.data.state_approval_mode)
     }
@@ -43,6 +54,7 @@ export class ProjectTaskStateSelectionMany2One extends StateSelectionField {
         //console.log(option);
         //console.log("onSelected");
         this.props.update(option);
+        this.props.record.model.notify();
     }
 
     onExternalButtonCLick0() {
@@ -50,16 +62,27 @@ export class ProjectTaskStateSelectionMany2One extends StateSelectionField {
     }
 
     stateIcon(value) {
-        console.log(value);
-        console.log(this.icons);
-        console.log(this.icons[value[1]]);
+        //console.log(value);
+        //console.log(this.icons[value[1]]);
         return this.icons[value[1]] ? this.iconPrefix + this.icons[value[1]] : "";
     }
 
     toggleState() {
-        console.log(this.props);
+        //console.log(this.props);
         const toggleVal = this.props.value[1] == "Done" ? [1, "In Progress"] : [2, "Done"];
         this.props.update(toggleVal);
+        return;
+    }
+
+    /**
+     * @param {MouseEvent} ev
+     */
+    onGlobalClick(ev) {
+        console.log("global click");
+        if (ev.target.closest(".button")) {
+            return;
+        }
+        return super.onGlobalClick(ev);
     }
 }
 
