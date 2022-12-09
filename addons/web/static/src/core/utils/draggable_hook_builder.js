@@ -18,6 +18,7 @@ import { debounce, setRecurringAnimationFrame } from "@web/core/utils/timing";
  * @property {(el: HTMLElement, style: Record<string, string | number>) => void} addStyle
  * @property {(el: HTMLElement, options?: { adjust?: boolean }) => DOMRect} getRect
  * @property {(el: HTMLElement, ...classNames: string[]) => void} removeClass
+ * @property {(el: HTMLElement, properties: string[]) => void} removeStyle
  */
 
 /**
@@ -227,7 +228,7 @@ function makeDOMHelpers(cleanup) {
      * @param {Record<string, string | number>} style
      */
     const addStyle = (el, style) => {
-        if (!el || !style) {
+        if (!el || !style || !Object.keys(style).length) {
             return;
         }
         cleanup.add(saveAttribute(el, "style"));
@@ -279,7 +280,23 @@ function makeDOMHelpers(cleanup) {
         el.classList.remove(...classNames);
     };
 
-    return { addClass, addListener, addStyle, getRect, removeClass };
+    /**
+     * Adds style to an element to be cleaned up after the next drag sequence has
+     * stopped.
+     * @param {HTMLElement} el
+     * @param {string[]} properties
+     */
+    const removeStyle = (el, properties) => {
+        if (!el || !properties?.length) {
+            return;
+        }
+        cleanup.add(saveAttribute(el, "style"));
+        for (const key of properties) {
+            el.style.removeProperty(camelToKebab(key));
+        }
+    };
+
+    return { addClass, addListener, addStyle, getRect, removeClass, removeStyle };
 }
 
 /**
@@ -388,6 +405,14 @@ export function makeDraggableHook(hookParams) {
              */
             const dragStart = () => {
                 state.dragging = true;
+
+                // Swaps the initial currentElement by its clone
+                const initialElement = ctx.currentElement;
+                ctx.currentElement = initialElement.cloneNode(true);
+                initialElement.before(ctx.currentElement);
+
+                dom.addStyle(initialElement, { display: "none !important" });
+                cleanup.add(() => ctx.currentElement.remove());
 
                 // Compute scrollable parent
                 ctx.scrollParent = getScrollParent(ctx.currentContainer);
@@ -535,18 +560,12 @@ export function makeDraggableHook(hookParams) {
                 // Initial target is cloned and hidden.
                 // This is done so that the initial element can be removed without
                 // the drag sequence being affected.
-                const target = ev.target.closest(ctx.elementSelector);
+                ctx.currentElement = ev.target.closest(ctx.elementSelector);
                 ctx.currentContainer = ctx.ref.el;
-                ctx.currentElement = target.cloneNode(true);
-                target.before(ctx.currentElement);
-
-                dom.addStyle(target, { display: "none" });
 
                 Object.assign(ctx.offset, ctx.mouse);
 
                 cleanup.add(() => {
-                    ctx.currentElement.remove();
-
                     ctx.currentContainer = null;
                     ctx.currentContainerRect = null;
                     ctx.currentElement = null;
