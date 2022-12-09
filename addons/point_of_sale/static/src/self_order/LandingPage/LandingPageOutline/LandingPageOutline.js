@@ -8,7 +8,7 @@ import { makeEnv, startServices } from "@web/env";
 import { MainComponentsContainer } from "@web/core/main_components_container";
 import { _t } from "@web/core/l10n/translation";
 
-export class LandingPage extends Component {
+export class LandingPageOutline extends Component {
     setup() {
         onRendered(() => {
                 console.log('Rendered:', this.constructor.name);
@@ -19,5 +19,5 @@ export class LandingPage extends Component {
         return 12;
     }
 }
-LandingPage.template = 'LandingPage'
-export default { LandingPage };
+LandingPageOutline.template = 'LandingPageOutline'
+export default { LandingPageOutline };
