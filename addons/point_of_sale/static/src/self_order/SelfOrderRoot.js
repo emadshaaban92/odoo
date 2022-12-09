@@ -9,17 +9,16 @@ class SelfOrderRoot extends Component {
     setup() {
         onRendered(() => {
                 console.log('Rendered:', this.constructor.name);
+                console.log(this.vlad);
         });
     }
-  static template = xml`<h1>Hello Owl</h1>
-  <LandingPage/>`;
   static components = { LandingPage };  
 }
+SelfOrderRoot.template = "SelfOrderRoot";
 export async function createPublicRoot() {
     await whenReady();
     const wowlEnv = makeEnv();
     await startServices(wowlEnv);
-    // const app = new App(RootWidget, {
     const app = new App(SelfOrderRoot, {
         templates,
         env: wowlEnv,
