@@ -51,7 +51,6 @@
         <t t-call-assets="point_of_sale.assets_self_order" />
     </head>
     <body>
-        <h1>Self Order</h1>
     </body>
 </html>
 </template>

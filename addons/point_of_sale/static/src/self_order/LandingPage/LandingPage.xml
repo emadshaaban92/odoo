@@ -2,6 +2,26 @@
 <templates id="template" xml:space="preserve">
 
     <t t-name="LandingPage" owl="1">
-    <h1>Self Order Landing Page</h1>
+        <div class="d-flex flex-column vh-100 justify-content-between align-items-center">
+            <div class="m-5 h-25">
+                <div class="m-3">
+                    <img src="/logo?company=#{pos.company.id}" alt="..." class="rounded"/>
+                </div>
+                <h2 class="text-center">Table: <span t-esc="getTableNumber()"/></h2>
+            </div>
+        <div class="d-flex flex-column w-75 justify-content-around">
+            <h3 class="">Your name:</h3>
+            <h6 class="text-muted">Preferably the one from your reservation</h6>
+            <input type="text" class="my-2 form-control" placeholder="Ex: John Doe" />
+            <button type="button" class="my-2 btn btn-primary btn-lg">View Menu</button>
+            <t t-if="1">
+                <button type="button" class="my-2 btn btn-outline-primary btn-lg">Custom Link 1</button>
+                <button type="button" class="my-2 btn btn-outline-primary btn-lg">Custom Link 2</button>
+            </t>
+
+        </div>
+        
+        <h2>Powerd By Odoo</h2>
+        </div>
     </t>
 </templates>

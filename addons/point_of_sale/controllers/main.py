@@ -47,6 +47,7 @@ class PosController(PortalAccount):
         #     'pos_session_id': pos_session.id,
         # }
         # response = request.render('point_of_sale.pos_self_order_index', context)
+        # TODO : learn how to pass data to frontend via headers
         response = request.render('point_of_sale.pos_self_order_index')
         response.headers['Cache-Control'] = 'no-store'
         return response
