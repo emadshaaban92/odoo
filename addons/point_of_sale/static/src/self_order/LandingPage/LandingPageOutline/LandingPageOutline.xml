@@ -11,7 +11,7 @@
             </div>
         <div class="d-flex flex-column w-75 justify-content-around">
             <t t-slot="main_group"/>
-            <button type="button" class="my-2 btn btn-primary btn-lg">View Menu</button>
+            <button type="button" t-on-click="() => props.state.selfOrderCurrentScreen = 1" class="my-2 btn btn-primary btn-lg">View Menu</button>
             <t t-if="1">
                 <button type="button" class="my-2 btn btn-outline-primary btn-lg">Custom Link 1</button>
                 <button type="button" class="my-2 btn btn-outline-primary btn-lg">Custom Link 2</button>
