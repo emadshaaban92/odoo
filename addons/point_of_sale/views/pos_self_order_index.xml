@@ -22,6 +22,8 @@
         <link rel="apple-touch-icon" sizes="152x152" href="/point_of_sale/static/src/img/touch-icon-ipad-retina.png"/>
         <!-- left arrow icon -->
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
+        <link rel="stylesheet" type="text/css" href="/point_of_sale/static/src/self_order/pos_self_order_styles.css"/>
+
         <style> body { background: #222; } </style>
 
         <link rel="shortcut icon" href="/point_of_sale/static/src/img/favicon.ico" type="image/x-icon"/>
