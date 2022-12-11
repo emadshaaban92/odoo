@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="ProductList" owl="1">
+        <NavBar restaurantName="props.restaurantName" tableNumber="props.tableNumber"/>
+        <t t-foreach="props.productList" t-as="product" t-key="product">
+            <div class="card" style="width: 18rem;">
+                <!-- <img class="card-img-left" src="https://www.travelswithmissy.com/wp-content/uploads/2021/09/engin-akyurt-3ORoQEJY9LA-unsplash-scaled.jpg" alt="Card image cap"/> -->
+                <img class="card-img-left" t-att-src="product.image"  alt="Card image cap"/>
+                <div class="card-body">
+                    <p class="card-title"><t t-esc="product.name"/></p>
+                    <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                </div>
+            </div>
+        </t>
+    </t>
+</templates>
+
