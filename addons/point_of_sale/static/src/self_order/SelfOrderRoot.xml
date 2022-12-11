@@ -2,7 +2,8 @@
 <templates id="template" xml:space="preserve">
 
     <t t-name="SelfOrderRoot" owl="1">
-        <ProductMainView restaurantName="restaurantName" tableNumber="tableNumber"/>
+        <ProductList restaurantName="restaurantName" tableNumber="tableNumber" productList="productList"/>
+        <!-- <ProductMainView restaurantName="restaurantName" tableNumber="tableNumber"/> -->
         <!-- <ProductMainView /> -->
         <!-- <LandingPageStart tableNumber="tableNumber"/> -->
         <!-- <LandingPageEnd tableNumber="tableNumber" message="message"/> -->
