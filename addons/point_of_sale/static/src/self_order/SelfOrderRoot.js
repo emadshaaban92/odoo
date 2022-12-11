@@ -1,6 +1,6 @@
 /** @odoo-module */
 
-const { Component, mount, xml, onRendered, whenReady, App} = owl;
+const { Component, mount, xml, onRendered, whenReady, App, useState} = owl;
 import { makeEnv, startServices } from "@web/env";
 import { setLoadXmlDefaultApp, loadJS, templates } from '@web/core/assets';
 import { _t } from "@web/core/l10n/translation";
@@ -15,7 +15,10 @@ class SelfOrderRoot extends Component {
         onRendered(() => {
                 console.log('Rendered:', this.constructor.name);
         });
+        this.state = useState({ selfOrderCurrentScreen: 0 });
+
     }
+
     productList = [
         {
             name: "Coca-Cola",
