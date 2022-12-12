@@ -3,7 +3,7 @@
 
     <t t-name="LandingPageStart" owl="1">
     <!-- <LandingPageOutline tableNumber="props.tableNumber" selfOrderCurrentScreen="props.state.selfOrderCurrentScreen"> -->
-    <LandingPageOutline tableNumber="props.tableNumber" state="props.state">
+    <LandingPageOutline tableNumber="props.tableNumber" viewMenu="props.viewMenu">
         <t t-set-slot="main_group">
             <h3 class="">Your name:</h3>
             <h6 class="text-muted">Preferably the one from your reservation</h6>

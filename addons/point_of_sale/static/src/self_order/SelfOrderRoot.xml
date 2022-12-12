@@ -2,18 +2,19 @@
 <templates id="template" xml:space="preserve">
 
     <t t-name="SelfOrderRoot" owl="1">
-            <t t-if="state.selfOrderCurrentScreen == 0">
+            <t t-if="state.currentScreen == 0">
                 <!-- <LandingPageStart tableNumber="tableNumber" currentScreen="state.selfOrderCurrentScreen"/> -->
-                <LandingPageStart tableNumber="tableNumber" state="this.state"/>
+                <!-- <LandingPageStart tableNumber="tableNumber" state="this.state"/> -->
+                <LandingPageStart tableNumber="tableNumber" viewMenu="viewMenu"/>
             </t>
-            <t t-elif="state.selfOrderCurrentScreen == 1">
+            <t t-elif="state.currentScreen == 1">
                 <!-- <ProductList restaurantName="restaurantName" tableNumber="tableNumber" productList="productList"/> -->
-                <ProductList restaurantName="restaurantName" tableNumber="tableNumber" productList="productList"/>
+                <ProductList restaurantName="restaurantName" tableNumber="tableNumber" productList="productList" viewProduct="viewProduct"/>
             </t>
-            <t t-elif="state.selfOrderCurrentScreen == 2">
-                <ProductMainView restaurantName="restaurantName" tableNumber="tableNumber"/>
+            <t t-elif="state.currentScreen == 2">
+                <ProductMainView restaurantName="restaurantName" tableNumber="tableNumber" product="productList[this.state.currentProduct]" viewMenu="viewMenu"/>
             </t>
-            <t t-elif="state.selfOrderCurrentScreen == 3">
+            <t t-elif="state.currentScreen == 3">
                 <LandingPageEnd tableNumber="tableNumber" message="message"/>
             </t>
     </t>
