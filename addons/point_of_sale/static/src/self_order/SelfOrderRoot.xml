@@ -34,6 +34,9 @@
             <!-- Landing Page at the end -->
             <!-- We go here after having ordered -->
             <t t-elif="state.currentScreen == 3">
+                <CartView/>
+            </t>
+            <t t-elif="state.currentScreen == 4">
                 <LandingPageEnd tableNumber="tableNumber" message="message"/>
             </t>
     </t>

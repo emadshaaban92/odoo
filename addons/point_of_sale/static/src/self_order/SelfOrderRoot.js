@@ -10,6 +10,7 @@ import { LandingPageEnd } from "./LandingPage/LandingPageEnd/LandingPageEnd.js";
 import { NavBar } from "./NavBar/NavBar.js";
 import { ProductMainView } from "./ProductMainView/ProductMainView.js";
 import { ProductList } from "./ProductList/ProductList.js";
+import { CartView } from "./CartView/CartView.js";
 class SelfOrderRoot extends Component {
     setup() {
         onRendered(() => {
@@ -126,6 +127,9 @@ class SelfOrderRoot extends Component {
         this.state.currentScreen = 2;
         this.state.currentProduct = id;
     }
+    viewCart = () => {
+        this.state.currentScreen = 3;
+    }
     addToCart = (id, quantity) => {
         this.state.cart.push({id: id, quantity: quantity});
         this.state.currentScreen = 1;
@@ -143,7 +147,7 @@ class SelfOrderRoot extends Component {
     // TODO: Find the currency type of the posConfig
     // TODO: replace the euro sign string from the rest of the app with this variable
     currencyType = "€";
-    static components = { LandingPageOutline, LandingPageStart, LandingPageEnd, ProductMainView, NavBar, ProductList };  
+    static components = { LandingPageOutline, LandingPageStart, LandingPageEnd, ProductMainView, NavBar, ProductList, CartView };  
 }
 SelfOrderRoot.template = "SelfOrderRoot";
 export async function createPublicRoot() {
