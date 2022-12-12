@@ -27,12 +27,14 @@
         <field name="sequence">10</field>
         <field name="name">In Progress</field>
         <field name="approval_mode">False</field>
+        <field name="key">1</field>
     </record>
 
     <record id="project_task_state_1" model="project.task.state">
         <field name="sequence">11</field>
         <field name="name">Done</field>
         <field name="approval_mode">False</field>
+        <field name="key">2</field>
     </record>
 
     <record id="project_task_state_2" model="project.task.state">
@@ -40,29 +42,34 @@
         <field name="name">Waiting</field>
         <field name="approval_mode">False</field>
         <field name="user_trigger_possible">False</field>
+        <field name="key">3</field>
     </record>
 
     <record id="project_task_state_apr_0" model="project.task.state">
         <field name="sequence">11</field>
         <field name="name">Pending approval</field>
         <field name="approval_mode">True</field>
+        <field name="key">4</field>
     </record>
 
     <record id="project_task_state_apr_1" model="project.task.state">
         <field name="sequence">12</field>
         <field name="name">Approved</field>
         <field name="approval_mode">True</field>
+        <field name="key">5</field>
     </record>
 
     <record id="project_task_state_apr_2" model="project.task.state">
         <field name="sequence">14</field>
         <field name="name">Rejected</field>
         <field name="approval_mode">True</field>
+        <field name="key">6</field>
     </record>
     
     <record id="project_task_state_apr_3" model="project.task.state">
         <field name="sequence">13</field>
         <field name="name">Changes requested</field>
         <field name="approval_mode">True</field>
+        <field name="key">7</field>
     </record>
 </odoo>

@@ -31,9 +31,13 @@
                 <span t-if="showLabel" class="o_status_label ms-1" t-esc="label"/>
                         -->
             </xpath>
+                        
+
             <xpath expr="//DropdownItem" position="attributes">
                 <attribute name='onSelected'>() => this.onSelectedDD(option)</attribute>
             </xpath>
+                        
+
             <xpath expr="//DropdownItem/div[@class='d-flex align-items-center']" position="replace">
                 <div class="d-flex align-items-center">
                     <span t-attf-class=" fa {{ stateIcon(option)}} "/>

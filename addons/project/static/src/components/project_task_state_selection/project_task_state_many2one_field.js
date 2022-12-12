@@ -20,13 +20,17 @@ export class ProjectTaskStateSelectionMany2One extends StateSelectionField {
         };
         //this.serv = useService("statisticsServiceMod");
         console.log("this.props.record.preloadedData");
+        /*
         setInterval(() => {
+            
+            this.props.record.model.notify();
+            //this.props.load();
             console.log(this.props.record.data.name);
             console.log(this.props.value);
-            this.props.record.model.notify();
             //this.props.record.update();
             this.render();
         }, 10000);
+        */
 
         super.setup();
         //const obj_sam = reactive(this.props.record.data.state_approval_mode)
@@ -68,7 +72,11 @@ export class ProjectTaskStateSelectionMany2One extends StateSelectionField {
     }
 
     toggleState() {
-        //console.log(this.props);
+
+        //const toggleVal = this.props.value[0] == 2 ? 1 : 2;         // those are the id for the 'In Progress' and 'Done' states
+        //const toggleState = this.props.record.preloadedData["state_id"].records.find((record) => record.key == toggleVal)
+        // This would be a better way to do it but the props.update() only takes a [key, label] value as update because we're in a StateSelection Field
+
         const toggleVal = this.props.value[1] == "Done" ? [1, "In Progress"] : [2, "Done"];
         this.props.update(toggleVal);
         return;
@@ -91,7 +99,7 @@ ProjectTaskStateSelectionMany2One.template = "project.ProjectTaskStateMany2OneFi
 registry.category("fields").add("project_task_state_selection", ProjectTaskStateSelectionMany2One);
 
 export function preloadState(orm, record, fieldName) {
-    return orm.webSearchRead("project.task.state", [], ["name", "sequence", "approval_mode"]);
+    return orm.webSearchRead("project.task.state", [], ["name", "key", "approval_mode"]);
 }
 
 registry.category("preloadedData").add("project_task_state_selection", {

@@ -13,4 +13,6 @@ class ProjectTaskState(models.Model):
     name = fields.Char(required=True, translate=True)
     approval_mode = fields.Boolean(default=False)
     user_trigger_possible = fields.Boolean(default=True)
+
+    key = fields.Integer()
     
