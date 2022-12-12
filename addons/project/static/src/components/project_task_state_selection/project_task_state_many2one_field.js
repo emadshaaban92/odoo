@@ -12,11 +12,22 @@ export class ProjectTaskStateSelectionMany2One extends StateSelectionField {
         this.orm = useService("orm");
         this.iconPrefix = "fa-";
         this.icons = {
+            "In Progress": "check-circle-o",
+            Done: "check-circle",
             "Pending approval": "user",
             Approved: "check-square",
             Rejected: "times-circle",
             "Changes requested": "repeat",
             Waiting: "hourglass-o",
+        };
+        this.colorIcons = {
+            "In Progress": "",
+            Done: "text-success",
+            "Pending approval": "",
+            Approved: "text-success",
+            Rejected: "text-danger",
+            "Changes requested": "text-warning",
+            Waiting: "",
         };
         //this.serv = useService("statisticsServiceMod");
         console.log("this.props.record.preloadedData");
@@ -39,8 +50,8 @@ export class ProjectTaskStateSelectionMany2One extends StateSelectionField {
     get options() {
         //console.log(this.props.record.preloadedData['state_id'].records);
         return this.props.record.preloadedData["state_id"].records.map(
-            ({ id, name, approval_mode }) => {
-                return [id, name, approval_mode];
+            ({ key, name, approval_mode }) => {
+                return [key, name, approval_mode];
             }
         );
         //return this.stateSelection.map
@@ -54,10 +65,11 @@ export class ProjectTaskStateSelectionMany2One extends StateSelectionField {
         return this.options.filter((o) => o[2] !== false);
     }
 
-    onSelectedDD(option) {
+    async onSelectedDD(option) {
         //console.log(option);
         //console.log("onSelected");
-        this.props.update(option);
+        await this.props.update(option);
+        await this.props.record.model.root.load();
         this.props.record.model.notify();
     }
 
@@ -71,15 +83,19 @@ export class ProjectTaskStateSelectionMany2One extends StateSelectionField {
         return this.icons[value[1]] ? this.iconPrefix + this.icons[value[1]] : "";
     }
 
-    toggleState() {
+    stateColor(value) {
+        return this.colorIcons[value[1]] || "";
+    }
 
+    async toggleState() {
         //const toggleVal = this.props.value[0] == 2 ? 1 : 2;         // those are the id for the 'In Progress' and 'Done' states
         //const toggleState = this.props.record.preloadedData["state_id"].records.find((record) => record.key == toggleVal)
         // This would be a better way to do it but the props.update() only takes a [key, label] value as update because we're in a StateSelection Field
 
         const toggleVal = this.props.value[1] == "Done" ? [1, "In Progress"] : [2, "Done"];
-        this.props.update(toggleVal);
-        return;
+        await this.props.update(toggleVal);
+        await this.props.record.model.root.load();
+        this.props.record.model.notify();
     }
 
     /**
