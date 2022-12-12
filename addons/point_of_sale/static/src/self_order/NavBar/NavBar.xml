@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates id="template" xml:space="preserve">
     <t t-name="NavBar" owl="1">
-    <nav class="navbar navbar-dark bg-primary">
+    <nav class="sticky-top navbar navbar-dark bg-primary">
     <!-- TODO make arrow icon white  -->
     <t t-if="props.viewMenu">
         <span t-on-click = "() => props.viewMenu()" 

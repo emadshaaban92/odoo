@@ -49,7 +49,71 @@ class SelfOrderRoot extends Component {
             description: "Coca-Cola Zero Sugar is a sugar-free cola-flavored soft drink produced by The Coca-Cola Company. It is a variant of Coca-Cola, with an intense sweetener blend of aspartame, acesulfame potassium, and sucralose. Coca-Cola Zero Sugar was introduced in 2006 in the United States, and in 2007 in the United Kingdom.",
             image: "https://images2.minutemediacdn.com/image/fetch/w_2000,h_2000,c_fit/https%3A%2F%2Ffoodsided.com%2Ffiles%2F2021%2F05%2FWendys-Daves-Triple.jpg",
         },
+        {   
+            id: 4,
+            name: "Burger",
+            price: 5,
+            description: "A hamburger, beefburger, burger or hamburg is a sandwich consisting of one or more cooked patties of ground meat, usually beef, placed inside a sliced bread roll or bun. The patty may be pan fried, barbecued, or flame broiled. Hamburgers are often served with cheese, lettuce, tomato, onion, pickles, bacon, or chiles.",
+            image: "https://images2.minutemediacdn.com/image/fetch/w_2000,h_2000,c_fit/https%3A%2F%2Ffoodsided.com%2Ffiles%2F2021%2F05%2FWendys-Daves-Triple.jpg", 
+        },
+        {
+            id: 5,
+            name: "Fries",
+            price: 3,
+            description: "French fries, or simply fries, chips, finger chips, or French-fried potatoes, are batonnet or allumette-cut deep-fried potatoes. The potatoes are peeled and then sliced into uniform sticks about 12 to 25 mm (0.5 to 1 in) thick, depending on the variety and size of potato. They are then deep-fried in oil at 180 to 190 °C (356 to 374 °F) until golden brown.",
+            image: "https://images2.minutemediacdn.com/image/fetch/w_2000,h_2000,c_fit/https%3A%2F%2Ffoodsided.com%2Ffiles%2F2021%2F05%2FWendys-Daves-Triple.jpg",
+        },
+        {
+            id: 6,
+            name: "Chicken Nuggets",
+            price: 4,
+            description: "Chicken nuggets are chicken pieces made from chicken breast fillets or chicken thigh meat, formed into a small patty, breaded, and deep-fried. Chicken nuggets are a popular fast food item in the United States, Canada, the United Kingdom, Australia, New Zealand, and other countries.",
+            image: "https://images2.minutemediacdn.com/image/fetch/w_2000,h_2000,c_fit/https%3A%2F%2Ffoodsided.com%2Ffiles%2F2021%2F05%2FWendys-Daves-Triple.jpg",
+        },
+        {
+            id: 7,
+            name: "Chicken Burger",
+            price: 5,
+            description: "A hamburger, beefburger, burger or hamburg is a sandwich consisting of one or more cooked patties of ground meat, usually beef, placed inside a sliced bread roll or bun. The patty may be pan fried, barbecued, or flame broiled. Hamburgers are often served with cheese, lettuce, tomato, onion, pickles, bacon, or chiles.",
+            image: "https://images2.minutemediacdn.com/image/fetch/w_2000,h_2000,c_fit/https%3A%2F%2Ffoodsided.com%2Ffiles%2F2021%2F05%2FWendys-Daves-Triple.jpg", 
+        },
+        {
+            id: 8,
+            name: "Chicken Fries",
+            price: 3,
+            description: "French fries, or simply fries, chips, finger chips, or French-fried potatoes, are batonnet or allumette-cut deep-fried potatoes. The potatoes are peeled and then sliced into uniform sticks about 12 to 25 mm (0.5 to 1 in) thick, depending on the variety and size of potato. They are then deep-fried in oil at 180 to 190 °C (356 to 374 °F) until golden brown.",
+            image: "https://images2.minutemediacdn.com/image/fetch/w_2000,h_2000,c_fit/https%3A%2F%2Ffoodsided.com%2Ffiles%2F2021%2F05%2FWendys-Daves-Triple.jpg",
+        },
+        {
+            id: 9,
+            name: "Chicken Nuggets",
+            price: 4,
+            description: "Chicken nuggets are chicken pieces made from chicken breast fillets or chicken thigh meat, formed into a small patty, breaded, and deep-fried. Chicken nuggets are a popular fast food item in the United States, Canada, the United Kingdom, Australia, New Zealand, and other countries.",
+            image: "https://images2.minutemediacdn.com/image/fetch/w_2000,h_2000,c_fit/https%3A%2F%2Ffoodsided.com%2Ffiles%2F2021%2F05%2FWendys-Daves-Triple.jpg",
+        },
+        {
+            id: 10,
+            name: "Burger",
+            price: 5,
+            description: "A hamburger, beefburger, burger or hamburg is a sandwich consisting of one or more cooked patties of ground meat, usually beef, placed inside a sliced bread roll or bun. The patty may be pan fried, barbecued, or flame broiled. Hamburgers are often served with cheese, lettuce, tomato, onion, pickles, bacon, or chiles.",
+            image: "https://images2.minutemediacdn.com/image/fetch/w_2000,h_2000,c_fit/https%3A%2F%2Ffoodsided.com%2Ffiles%2F2021%2F05%2FWendys-Daves-Triple.jpg", 
+        },
+        {
+            id: 11,
+            name: "Fries",
+            price: 3,
+            description: "French fries, or simply fries, chips, finger chips, or French-fried potatoes, are batonnet or allumette-cut deep-fried potatoes. The potatoes are peeled and then sliced into uniform sticks about 12 to 25 mm (0.5 to 1 in) thick, depending on the variety and size of potato. They are then deep-fried in oil at 180 to 190 °C (356 to 374 °F) until golden brown.",
+            image: "https://images2.minutemediacdn.com/image/fetch/w_2000,h_2000,c_fit/https%3A%2F%2Ffoodsided.com%2Ffiles%2F2021%2F05%2FWendys-Daves-Triple.jpg",
+        },
+        {
+            id: 12,
+            name: "Chicken Nuggets",
+            price: 4,
+            description: "Chicken nuggets are chicken pieces made from chicken breast fillets or chicken thigh meat, formed into a small patty, breaded, and deep-fried. Chicken nuggets are a popular fast food item in the United States, Canada, the United Kingdom, Australia, New Zealand, and other countries.",
+            image: "https://images2.minutemediacdn.com/image/fetch/w_2000,h_2000,c_fit/https%3A%2F%2Ffoodsided.com%2Ffiles%2F2021%2F05%2FWendys-Daves-Triple.jpg",
+        }
     ];
+
     //TODO: Add a method to get the table number from the response of the server
     tableNumber = 12;
     //TODO: Add a method to get the message from the response of the server
@@ -66,6 +130,19 @@ class SelfOrderRoot extends Component {
         this.state.cart.push({id: id, quantity: quantity});
         this.state.currentScreen = 1;
     }
+    getTotalCartQuantity = () =>{
+        return this.state.cart.reduce((sum, cartItem) => {
+            return sum +  cartItem.quantity;
+        },0);
+    }
+    getTotalCartCost = () => {
+        return this.state.cart.reduce((sum, cartItem) => {
+            return sum +  this.productList[cartItem.id].price * cartItem.quantity;
+        },0);
+    }
+    // TODO: Find the currency type of the posConfig
+    // TODO: replace the euro sign string from the rest of the app with this variable
+    currencyType = "€";
     static components = { LandingPageOutline, LandingPageStart, LandingPageEnd, ProductMainView, NavBar, ProductList };  
 }
 SelfOrderRoot.template = "SelfOrderRoot";

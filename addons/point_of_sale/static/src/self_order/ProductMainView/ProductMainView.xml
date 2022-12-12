@@ -19,8 +19,8 @@
             <!-- quantity select and add to cart button -->
             <div>
                 <IncrementCounter setValue="setQuantity" value="state.quantity"/>
-                <!-- <button t-on-click="() => props.addToCart(props.product.id, state.quantity)"
-                        class="fixed-bottom btn btn-primary btn-lg btn-block w-100">Add to Cart</button> -->
+               <button t-on-click="() => props.addToCart(props.product.id, state.quantity)"
+                        class="fixed-bottom btn btn-primary btn-lg btn-block w-100">Add to Cart</button>
             </div>
     </t>
 </templates>
