@@ -87,6 +87,11 @@
         border-color: #DEE2E6;
         font-weight: bold;
     }
+    table.o_indexed_table {
+        td:first-child {
+            width: 7%;
+        }
+    }
 }
 
 .o_survey_no_answers::before {

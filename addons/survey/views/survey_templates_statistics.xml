@@ -63,6 +63,8 @@
         <t t-set="comment_lines" t-value="question_data['comment_line_ids']"/>
         <t t-set="graph_data" t-value="question_data['graph_data']"/>
         <t t-set="table_data" t-value="question_data['table_data']"/>
+        <t t-set="single_table_line_height" t-value="35"/>
+        <t t-set="three_table_lines_height" t-value="83"/>
 
         <div class="o_survey_results_question pb-5 border-bottom">
         <div class="row mb-3">
@@ -192,8 +194,11 @@
     </template>
 
     <template id="question_result_text" name="Question: text result (text_box, char_box)">
-        <div t-att-id="'survey_page_question_%d' % question.id">
-            <table class="table table-hover table-sm" t-att-id="'survey_table_question_%d' % question.id">
+        <t t-set="non_skipped_records" t-value="list(filter(lambda record: not record.skipped, table_data))"/>
+        <t t-set="first_page_records_count" t-value="len(non_skipped_records) if len(non_skipped_records) &lt; page_record_limit else page_record_limit"/>
+        <t t-set="cell_height" t-value="single_table_line_height if question.question_type == 'char_box' else three_table_lines_height"/>
+        <div t-attf-style="height: calc((#{cell_height}px * #{first_page_records_count}) + #{single_table_line_height}px + 16px);" class="overflow-auto">
+            <table class="table table-hover table-sm o_indexed_table" t-att-id="'survey_table_question_%d' % question.id">
                 <thead>
                     <tr>
                         <th>#</th>
@@ -319,8 +324,10 @@
                 </table>
             </div>
             <div role="tabpanel" class="tab-pane" t-att-id="'survey_data_question_%d' % question.id">
-                <div t-att-id="'survey_page_question_%d' % question.id">
-                    <table class="table table-hover table-sm" t-att-id="'survey_table_question_%d' % question.id">
+                <t t-set="non_skipped_records" t-value="list(filter(lambda record: not record.skipped, table_data))"/>
+                <t t-set="first_page_records_count" t-value="len(non_skipped_records) if len(non_skipped_records) &lt; page_record_limit else page_record_limit"/>
+                <div t-attf-style="height: calc((#{single_table_line_height}px * #{first_page_records_count + 1}) + 16px);" class="overflow-auto">
+                    <table class="table table-hover table-sm o_indexed_table" t-att-id="'survey_table_question_%d' % question.id">
                         <thead>
                             <tr>
                                 <th>#</th>
@@ -511,7 +518,7 @@
     </template>
 
     <template id="question_result_comments" name="Question: comments">
-        <table class="table table-hover table-sm" t-att-id="'survey_table_question_%d' % question.id">
+        <table class="table table-hover table-sm o_indexed_table" t-att-id="'survey_table_question_%d' % question.id">
             <thead>
                 <tr>
                     <th>#</th>
@@ -537,9 +544,11 @@
     </template>
 
     <template id="question_table_pagination" name="Survey: statistics table pagination">
-        <ul t-att-id="'pagination_%d' % question.id" class="pagination" t-att-data-question_id="question.id" t-att-data-record_limit="page_record_limit">
-            <t t-if="len(table_data) > page_record_limit">
-                <t t-set="total" t-value="ceil(len(table_data) / page_record_limit) + 1"/>
+        <ul t-att-id="'pagination_%d' % question.id" class="pagination mt-4" t-att-data-question_id="question.id"
+            t-att-data-record_limit="page_record_limit">
+            <t t-set="responded" t-value="len(question_data['answer_input_done_ids'])"/>
+            <t t-if="responded > page_record_limit">
+                <t t-set="total" t-value="ceil(responded / page_record_limit) + 1"/>
                 <li t-foreach="range(1, total)" t-as="num"
                     t-att-class="'page-item o_survey_js_results_pagination %s' % ('active' if num == 1 else '')">
                     <a href="#" class="page-link" t-esc="num"></a>
