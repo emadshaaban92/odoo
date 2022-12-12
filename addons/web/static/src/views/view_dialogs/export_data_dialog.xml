@@ -50,7 +50,7 @@
                                         expandedContent.bind="expandedContent"
                                         isFieldExpanded.bind="isFieldExpanded"
                                         exportList="state.exportList"
-                                        isFieldExpandable="isFieldExpandable"
+                                        isFieldExpandable.bind="isFieldExpandable"
                                         isDebug="isDebug"
                                         onClick.bind="onToggleExpandField"
                                         onAdd.bind="onAddItemExportList"

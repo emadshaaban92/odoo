@@ -133,6 +133,7 @@ export class ExportDataDialog extends Component {
         if (this.searchRef.el && this.searchRef.el.value) {
             return this.state.search.length && Object.values(this.state.search);
         }
+        console.log(Object.values(this.knownFields).filter((e) => e.children));
         return Object.values(this.knownFields);
     }
 
@@ -178,8 +179,8 @@ export class ExportDataDialog extends Component {
         return this.expandedFields[id] && !this.expandedFields[id].hidden;
     }
 
-    isFieldExpandable({ field_type, name }) {
-        return ["one2many", "many2one"].includes(field_type) && name.split("/").length < 3;
+    isFieldExpandable({ name }) {
+        return this.knownFields[name].children && name.split("/").length < 3;
     }
 
     async loadExportList(value) {
@@ -353,7 +354,7 @@ export class ExportDataDialog extends Component {
             );
         } else {
             this.state.exportList = Object.values(this.knownFields).filter(
-                ({ name }) => name && this.props.root.activeFields[name]
+                ({ name, exportable }) => exportable && name && this.props.root.activeFields[name]
             );
         }
     }
