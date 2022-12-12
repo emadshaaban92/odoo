@@ -147,7 +147,8 @@ class SelfOrderRoot extends Component {
     // TODO: Find the currency type of the posConfig
     // TODO: replace the euro sign string from the rest of the app with this variable
     currencyType = "€";
-    static components = { LandingPageOutline, LandingPageStart, LandingPageEnd, ProductMainView, NavBar, ProductList, CartView };  
+    static components = { LandingPageOutline, LandingPageStart, LandingPageEnd,
+                         ProductMainView, NavBar, ProductList, CartView };  
 }
 SelfOrderRoot.template = "SelfOrderRoot";
 export async function createPublicRoot() {
