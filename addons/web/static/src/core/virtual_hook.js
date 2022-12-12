@@ -46,7 +46,7 @@ const toPixels = (value) => {
 export function useVirtual({ itemHeight, items, margin, initialScrollTop, scrollableRef }) {
     itemHeight = typeof itemHeight === "function" ? itemHeight : (_) => itemHeight;
     items = typeof items === "function" ? items : () => items;
-    margin = typeof margin === "number" ? margin : margin || "100%";
+    margin = 0; //typeof margin === "number" ? margin : margin || "100%";
     const current = {
         allItems: items(),
         scrollTop: initialScrollTop || 0,
@@ -58,22 +58,23 @@ export function useVirtual({ itemHeight, items, margin, initialScrollTop, scroll
         const marginPixels = toPixels(margin);
 
         const vStart = scrollTop - marginPixels;
-        const vEnd = scrollTop + window.innerHeight + marginPixels;
+        const vEnd =
+            scrollTop + (scrollableRef.el?.clientHeight || window.innerHeight) + marginPixels;
 
         let startIndex = 0;
         let endIndex = 0;
         let currentTop = 0;
         for (const item of allItems) {
-            if (currentTop < vStart) {
+            const size = toPixels(itemHeight(item));
+            if (currentTop + size < vStart) {
                 startIndex++;
                 endIndex++;
-            } else if (currentTop <= vEnd) {
+            } else if (currentTop - size <= vEnd) {
                 endIndex++;
             } else {
                 break;
             }
-            const size = itemHeight(item);
-            currentTop += toPixels(size);
+            currentTop += size;
         }
 
         const prevItems = toRaw(virtualItems);
