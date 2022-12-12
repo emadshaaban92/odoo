@@ -1,10 +1,7 @@
 <templates>
     <t t-name="sale_product_configurator.dialog" owl="1">
         <Dialog size="size" title="title">
-            <t t-call="sale_product_configurator.product_selected">
-                <t t-set="product" t-value="this.data.product"/>
-                <t t-set="product_price" t-value="this.data.product_price"/>
-            </t>
+            <Product product="this.data.product" product_price="this.data.product_price"/>
             <t t-set-slot="footer" owl="1">
                 <!-- the o_sale_product_configurator_edit class is used for tours. -->
                 <button class="btn btn-primary o_sale_product_configurator_edit"

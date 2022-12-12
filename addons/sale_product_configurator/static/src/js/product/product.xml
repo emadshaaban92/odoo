@@ -1,6 +1,6 @@
-<templates>
-    <!-- modal: full table, currenclty selected products at top -->
-    <t t-name='sale_product_configurator.product_selected' owl='1'>
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-name="sale_product_configurator.product" owl="1">
         <table class='table table-striped table-sm'>
             <thead>
                 <tr>
@@ -13,13 +13,13 @@
             <tbody>
                 <tr>
                     <td class='o_product_configurator_img'>
-                        <img t-att-src="'/web/image/product.product/'+product.id+'/image_128'"
+                        <img t-att-src="'/web/image/product.product/'+this.props.product.id+'/image_128'"
                              alt='Product Image'/>
                     </td>
                     <td class='o_product_configurator_product_name'>
-                        <strong t-esc='product.display_name'/>
+                        <strong t-esc='this.props.product.display_name'/>
                         <div class='text-muted small'>
-                            <div t-esc='product.description_sale'/>
+                            <div t-esc='this.props.product.description_sale'/>
                         </div>
                     </td>
                     <td class='text-center o_product_configurator_qty'>
@@ -44,16 +44,16 @@
                         </div>
                     </td>
                     <td class="text-center o_product_configurator_price" name="price">
-                        <span style="white-space: nowrap;" t-out="product_price"/>
+                        <span style="white-space: nowrap;" t-out="this.props.product_price"/>
                     </td>
                 </tr>
                 <tr class="o_total_row">
                     <td colspan="4" class="text-end">
                         <strong>Total: </strong>
-                        <span class="fw-bold" style="white-space: nowrap;" t-out="product_price"/>
+                        <span class="fw-bold" style="white-space: nowrap;" t-out="this.props.product_price"/>
                     </td>
                 </tr>
             </tbody>
         </table>
-    </template>
+    </t>
 </templates>

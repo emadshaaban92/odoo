@@ -3,7 +3,7 @@
 import { patch } from "@web/core/utils/patch";
 import { useService } from "@web/core/utils/hooks";
 import { SaleOrderLineProductField } from '@sale/js/sale_product_field';
-import { ProductConfiguratorDialog } from "@sale_product_configurator/js/product_configurator_dialog";
+import { ProductConfiguratorDialog } from "./product_configurator_dialog/product_configurator_dialog";
 import {
     selectOrCreateProduct,
     getSelectedVariantValues,
