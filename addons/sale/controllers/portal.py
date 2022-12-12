@@ -7,6 +7,7 @@ from odoo import fields, http, SUPERUSER_ID, _
 from odoo.exceptions import AccessError, MissingError, ValidationError
 from odoo.fields import Command
 from odoo.http import request
+from odoo.osv import expression
 
 from odoo.addons.payment.controllers import portal as payment_portal
 from odoo.addons.payment import utils as payment_utils
@@ -168,54 +169,64 @@ class CustomerPortal(portal.CustomerPortal):
 
         return request.render('sale.sale_order_portal_template', values)
 
-    def _get_payment_values(self, order_sudo):
+    def _get_payment_values(self, order_sudo, tokens_included='partner_only', **kwargs):
         """ Return the payment-specific QWeb context values.
 
         :param recordset order_sudo: The sales order being paid, as a `sale.order` record.
+        :param str tokens_included: String to state if the returned payment value dict includes
+                                    tokens info from the partner ('partner_only'), the partner and
+                                    its children ('partner_child') or no token info (None).
+        :param dict kwargs: Locally unused data passed to `_get_compatible_providers`.
         :return: The payment-specific values.
         :rtype: dict
         """
-        logged_in = not request.env.user._is_public()
-        providers_sudo = request.env['payment.provider'].sudo()._get_compatible_providers(
-            order_sudo.company_id.id,
-            order_sudo.partner_id.id,
-            order_sudo.amount_total,
-            currency_id=order_sudo.currency_id.id,
-            sale_order_id=order_sudo.id,
-        )  # In sudo mode to read the fields of providers and partner (if not logged in)
-        tokens = request.env['payment.token'].search([
-            ('provider_id', 'in', providers_sudo.ids),
-            ('partner_id', '=', order_sudo.partner_id.id)
-        ]) if logged_in else request.env['payment.token']
+        partner = order_sudo.partner_id
+        company = order_sudo.company_id
+        amount = order_sudo.amount_total
+        currency = order_sudo.currency_id
         # Make sure that the partner's company matches the order's company.
         company_mismatch = not payment_portal.PaymentPortal._can_partner_pay_in_company(
-            order_sudo.partner_id, order_sudo.company_id
+            partner, company
         )
+        portal_page_values = {'company_mismatch': company_mismatch, 'expected_company': company}
+        providers_sudo = request.env['payment.provider'].sudo()._get_compatible_providers(
+            company.id,
+            partner.id,
+            amount,
+            currency_id=currency.id,
+            sale_order_id=order_sudo.id,
+            **kwargs
+        )  # In sudo mode to read the fields of providers and partner (if not logged in)
         fees_by_provider = {
             provider: provider._compute_fees(
-                order_sudo.amount_total,
-                order_sudo.currency_id,
-                order_sudo.partner_id.country_id,
+                amount, currency, partner.country_id
             ) for provider in providers_sudo.filtered('fees_active')
-        }
-        portal_page_values = {
-            'company_mismatch': company_mismatch,
-            'expected_company': order_sudo.company_id,
         }
         payment_form_values = {
             'providers': providers_sudo,
-            'tokens': tokens,
             'fees_by_provider': fees_by_provider,
-            'show_tokenize_input': PaymentPortal._compute_show_tokenize_input_mapping(
-                providers_sudo, logged_in=logged_in, sale_order_id=order_sudo.id
-            ),
-            'amount': order_sudo.amount_total,
-            'currency': order_sudo.pricelist_id.currency_id,
-            'partner_id': order_sudo.partner_id.id,
-            'access_token': order_sudo.access_token,
+            'amount': amount,
+            'currency': currency,
+            'partner_id': partner.id,
+            'access_token': order_sudo._portal_ensure_token(),
             'transaction_route': order_sudo.get_portal_url(suffix='/transaction'),
             'landing_route': order_sudo.get_portal_url(),
         }
+        if tokens_included:
+            logged_in = not request.env.user._is_public()
+            show_tokenize_input = PaymentPortal._compute_show_tokenize_input_mapping(
+                providers_sudo, logged_in=logged_in, sale_order_id=order_sudo.id
+            )
+            children_domain = [('partner_id', 'child_of', partner.commercial_partner_id.id)]
+            partner_only_domain = [('partner_id', '=', partner.id)]
+            partner_domain = children_domain if 'child' in tokens_included else partner_only_domain
+            tokens = request.env['payment.token'].search(
+                expression.AND([partner_domain, [('provider_id', 'in', providers_sudo.ids)]])
+            ) if logged_in else request.env['payment.token']
+            payment_form_values.update({
+                'show_tokenize_input': show_tokenize_input,
+                'tokens': tokens,
+            })
         return {**portal_page_values, **payment_form_values}
 
     @http.route(['/my/orders/<int:order_id>/accept'], type='json', auth="public", website=True)

@@ -250,7 +250,7 @@ class WebsiteSaleDelivery(WebsiteSale):
         return ret
 
     def _get_express_shop_payment_values(self, order, **kwargs):
-        values = super(WebsiteSaleDelivery, self)._get_express_shop_payment_values(order, **kwargs)
+        values = super()._get_express_shop_payment_values(order, **kwargs)
         values['shipping_address_update_route'] = self._express_checkout_shipping_route
         return values
 
