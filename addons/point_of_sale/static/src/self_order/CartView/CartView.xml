@@ -7,19 +7,21 @@
             <!-- NavBar is an Owl component -->
             <NavBar restaurantName="props.restaurantName" tableNumber="props.tableNumber" viewMenu="props.viewMenu"/>
             <!-- Looping through all the cart items  -->
-            <t t-foreach="props.cartItems" t-as="cartItem" t-key="cartItem.id">
+            <t t-foreach="props.cartItems" t-as="cartItem" t-key="cartItem">
+                <!-- create a reference to the product -->
+                <t t-set="product" t-value="props.productList[cartItem.id]"/>
                 <div 
                     class="mt-2 bg-white d-flex w-100 align-items-center shadow-sm  m-1">
-                    <img class="w-25 img-fluid" t-att-src="productList[cartItem.id].image"  alt="Product image"/>
+                    <img class="w-25 img-fluid" t-att-src="product.image"  alt="Product image"/>
                     <div class="mt-4 mx-4">
                         <p class="fw-bold"><t t-esc="product.name"/></p>
-                        <p class="fst-italic">Price / Unit<t t-esc="product.price + '€'" /></p>
-                        <p class="fst-italic">Total Price:<t t-esc="cartItem.quantity *  productList[cartItem.id].price+ '€'" /></p>
+                        <p class="fst-italic">Price / Unit<t t-esc="product.price + '€'" /></p> 
+                        <p class="fst-italic text-right">Total Price:<t t-esc="cartItem.quantity *  product.price+ '€'" /></p>
                     </div>
                 </div>
             </t>
             <!-- Pay Button -->
-            <button t-on-click="() => props.addToCart(props.product.id, state.quantity)"
+            <button t-on-click="() => props.cartView()"
                     class=" fixed-bottom btn btn-primary btn-lg btn-block w-100">
                     <div class="d-flex align-items-center justify-content-between mx-2 ">
                     <h1>

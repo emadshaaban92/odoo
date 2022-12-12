@@ -19,6 +19,7 @@
                 getTotalCartQuantity="getTotalCartQuantity"
                 getTotalCartCost="getTotalCartCost"
                 currencyType="currencyType"
+                viewCart="viewCart"
                 />
             </t>
             <!-- Product Main View -->
@@ -31,8 +32,6 @@
                     viewMenu="viewMenu" 
                     addToCart="addToCart"/>
             </t>
-            <!-- Landing Page at the end -->
-            <!-- We go here after having ordered -->
             <t t-elif="state.currentScreen == 3">
                 <CartView 
                 restaurantName="restaurantName" 
@@ -42,9 +41,12 @@
                 getTotalCartCost="getTotalCartCost"
                 currencyType="currencyType"
                 cartItems="this.state.cart"
+                viewMenu="viewMenu"
                 
                 />
             </t>
+            <!-- Landing Page at the end -->
+            <!-- We go here after having ordered -->
             <t t-elif="state.currentScreen == 4">
                 <LandingPageEnd tableNumber="tableNumber" message="message"/>
             </t>

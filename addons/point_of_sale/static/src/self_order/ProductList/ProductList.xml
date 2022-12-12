@@ -19,7 +19,7 @@
                 </div>
             </t>
             <!-- Go to Cart Button -->
-            <button t-on-click="() => props.addToCart(props.product.id, state.quantity)"
+            <button t-on-click="() => props.viewCart()"
                     class=" fixed-bottom btn btn-primary btn-lg btn-block w-100">
                     <div class="d-flex align-items-center justify-content-between mx-2 ">
                     <h1>
