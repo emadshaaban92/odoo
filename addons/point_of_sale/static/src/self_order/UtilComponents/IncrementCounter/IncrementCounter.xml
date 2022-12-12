@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="IncrementCounter" owl="1">
+        <div class="text-center">
+            <div class="btn-group" role="group" aria-label="Basic example">
+            <button type="button"
+                    t-on-click = "() => props.setValue(props.value - 1)" 
+                    class="btn btn-outline-secondary"> - </button>
+            <div class="m-2">
+                <t t-esc="props.value"/>
+            </div>
+            <button type="button" 
+                    t-on-click = "() => props.setValue(props.value + 1)" 
+                    class="btn btn-outline-secondary"> + </button>
+            </div>
+        </div>
+    </t>
+</templates>
+
