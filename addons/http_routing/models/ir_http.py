@@ -104,8 +104,9 @@ _UNSLUG_RE = re.compile(r'(?:(\w{1,2}|\w[A-Za-z0-9-_]+?\w)-)?(-?\d+)(?=$|/)')
 
 
 def unslug(s):
-    """Extract slug and id from a string.
+    """ Extract slug and id from a string.
         Always return un 2-tuple (str|None, int|None)
+        Note that any query string or anchor will prevent the unslug
     """
     m = _UNSLUG_RE.match(s)
     if not m:
@@ -114,7 +115,9 @@ def unslug(s):
 
 
 def unslug_url(s):
-    """ From /blog/my-super-blog-1" to "blog/1" """
+    """ From /blog/my-super-blog-1" to "blog/1"
+        Note that any query string or anchor will prevent the unslug
+    """
     parts = s.split('/')
     if parts:
         unslug_val = unslug(parts[-1])
