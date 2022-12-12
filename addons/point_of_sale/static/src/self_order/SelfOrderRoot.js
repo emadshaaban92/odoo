@@ -15,7 +15,7 @@ class SelfOrderRoot extends Component {
         onRendered(() => {
                 console.log('Rendered:', this.constructor.name);
         });
-        this.state = useState({ currentScreen: 0, currentProduct: 0 });
+        this.state = useState({ currentScreen: 0, currentProduct: 0, cart: [] });
 
     }
 
@@ -61,6 +61,10 @@ class SelfOrderRoot extends Component {
     viewProduct = (id) => {
         this.state.currentScreen = 2;
         this.state.currentProduct = id;
+    }
+    addToCart = (id, quantity) => {
+        this.state.cart.push({id: id, quantity: quantity});
+        this.state.currentScreen = 1;
     }
     static components = { LandingPageOutline, LandingPageStart, LandingPageEnd, ProductMainView, NavBar, ProductList };  
 }
