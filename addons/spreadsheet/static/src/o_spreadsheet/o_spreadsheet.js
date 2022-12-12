@@ -5939,6 +5939,27 @@
             })),
         };
     }
+    function aggregateDataForLabels(labels, datasets) {
+        const parseNumber = (value) => (typeof value === "number" ? value : 0);
+        const labelMap = {};
+        for (let indexOfLabel = 0; indexOfLabel < labels.length; ++indexOfLabel) {
+            const label = labels[indexOfLabel];
+            if (!labelMap[label]) {
+                labelMap[label] = datasets.map((dataset) => parseNumber(dataset.data[indexOfLabel]));
+                continue;
+            }
+            for (let indexOfDataset = 0; indexOfDataset < datasets.length; ++indexOfDataset) {
+                labelMap[label][indexOfDataset] += parseNumber(datasets[indexOfDataset].data[indexOfLabel]);
+            }
+        }
+        return {
+            labels: Object.keys(labelMap),
+            dataSetsValues: datasets.map((dataset, indexOfDataset) => ({
+                ...dataset,
+                data: Object.values(labelMap).map((dataOfLabel) => dataOfLabel[indexOfDataset]),
+            })),
+        };
+    }
     function truncateLabel(label) {
         if (!label) {
             return "";
@@ -6086,6 +6107,7 @@
             this.verticalAxisPosition = definition.verticalAxisPosition;
             this.legendPosition = definition.legendPosition;
             this.stacked = definition.stacked;
+            this.aggregated = definition.aggregated;
         }
         static transformDefinition(definition, executed) {
             return transformChartDefinitionWithDataSetsWithZone(definition, executed);
@@ -6099,6 +6121,7 @@
                 dataSets: context.range ? context.range : [],
                 dataSetsHaveTitle: false,
                 stacked: false,
+                aggregated: false,
                 legendPosition: "top",
                 title: context.title || "",
                 type: "bar",
@@ -6142,6 +6165,7 @@
                     : undefined,
                 title: this.title,
                 stacked: this.stacked,
+                aggregated: this.aggregated,
             };
         }
         getDefinitionForExcel() {
@@ -6216,6 +6240,9 @@
         let labels = labelValues.formattedValues;
         let dataSetsValues = getChartDatasetValues(getters, chart.dataSets);
         ({ labels, dataSetsValues } = filterEmptyDataPoints(labels, dataSetsValues));
+        if (chart.aggregated) {
+            ({ labels, dataSetsValues } = aggregateDataForLabels(labels, dataSetsValues));
+        }
         const config = getBarConfiguration(chart, labels);
         const colors = new ChartColors();
         for (let { label, data } of dataSetsValues) {
@@ -6375,6 +6402,7 @@
             this.legendPosition = definition.legendPosition;
             this.labelsAsText = definition.labelsAsText;
             this.stacked = definition.stacked;
+            this.aggregated = definition.aggregated;
         }
         static validateChartDefinition(validator, definition) {
             return validator.checkValidations(definition, checkDataset, checkLabelRange);
@@ -6394,6 +6422,7 @@
                 verticalAxisPosition: "left",
                 labelRange: context.auxiliaryRange || undefined,
                 stacked: false,
+                aggregated: false,
             };
         }
         getDefinition() {
@@ -6413,6 +6442,7 @@
                 title: this.title,
                 labelsAsText: this.labelsAsText,
                 stacked: this.stacked,
+                aggregated: this.aggregated,
             };
         }
         getContextCreation() {
@@ -6578,6 +6608,9 @@
         if (axisType === "time") {
             ({ labels, dataSetsValues } = fixEmptyLabelsForDateCharts(labels, dataSetsValues));
         }
+        if (chart.aggregated) {
+            ({ labels, dataSetsValues } = aggregateDataForLabels(labels, dataSetsValues));
+        }
         const config = getLineConfiguration(chart, labels);
         const labelFormat = getLabelFormat(getters, chart.labelRange);
         if (axisType === "time") {
@@ -6742,6 +6775,7 @@
                 dataSets,
                 labelsAsText: false,
                 stacked: false,
+                aggregated: false,
                 labelRange: labelRangeXc,
                 type: "line",
                 background: BACKGROUND_CHART_COLOR,
@@ -6757,6 +6791,7 @@
             type: "bar",
             background: BACKGROUND_CHART_COLOR,
             stacked: false,
+            aggregated: false,
             dataSetsHaveTitle,
             verticalAxisPosition: "left",
             legendPosition: newLegendPos,
@@ -7055,6 +7090,7 @@
             this.labelRange = createRange(getters, sheetId, definition.labelRange);
             this.background = definition.background;
             this.legendPosition = definition.legendPosition;
+            this.aggregated = definition.aggregated;
         }
         static transformDefinition(definition, executed) {
             return transformChartDefinitionWithDataSetsWithZone(definition, executed);
@@ -7071,6 +7107,7 @@
                 title: context.title || "",
                 type: "pie",
                 labelRange: context.auxiliaryRange || undefined,
+                aggregated: false,
             };
         }
         getDefinition() {
@@ -7097,6 +7134,7 @@
                     ? this.getters.getRangeString(labelRange, targetSheetId || this.sheetId)
                     : undefined,
                 title: this.title,
+                aggregated: this.aggregated,
             };
         }
         copyForSheetId(sheetId) {
@@ -7169,6 +7207,9 @@
         let labels = labelValues.formattedValues;
         let dataSetsValues = getChartDatasetValues(getters, chart.dataSets);
         ({ labels, dataSetsValues } = filterEmptyDataPoints(labels, dataSetsValues));
+        if (chart.aggregated) {
+            ({ labels, dataSetsValues } = aggregateDataForLabels(labels, dataSetsValues));
+        }
         const config = getPieConfiguration(chart, labels);
         const colors = new ChartColors();
         for (let { label, data } of dataSetsValues) {
@@ -9299,6 +9340,11 @@
                 labelRange: this.labelRange,
             });
         }
+        onUpdateAggregated(ev) {
+            this.props.updateChart({
+                aggregated: ev.target.checked,
+            });
+        }
     }
     LineBarPieConfigPanel.template = "o-spreadsheet-LineBarPieConfigPanel";
     LineBarPieConfigPanel.components = { SelectionInput };
@@ -9312,6 +9358,11 @@
         onUpdateStacked(ev) {
             this.props.updateChart({
                 stacked: ev.target.checked,
+            });
+        }
+        onUpdateAggregated(ev) {
+            this.props.updateChart({
+                aggregated: ev.target.checked,
             });
         }
     }
@@ -9781,6 +9832,11 @@
         onUpdateStacked(ev) {
             this.props.updateChart({
                 stacked: ev.target.checked,
+            });
+        }
+        onUpdateAggregated(ev) {
+            this.props.updateChart({
+                aggregated: ev.target.checked,
             });
         }
     }
@@ -11382,9 +11438,6 @@
                         sheetId: this.env.model.getters.getActiveSheetId(),
                         id: this.props.figure.id,
                     });
-                    if (this.props.sidePanelIsOpen) {
-                        this.env.toggleSidePanel("ChartPanel");
-                    }
                     this.props.onFigureDeleted();
                 },
             });
@@ -11426,7 +11479,6 @@
     ChartFigure.components = { Menu };
     ChartFigure.props = {
         figure: Object,
-        sidePanelIsOpen: Boolean,
         onFigureDeleted: Function,
     };
 
@@ -21469,9 +21521,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             if (!selectResult.isSuccessful) {
                 return;
             }
-            if (this.props.sidePanelIsOpen) {
-                this.env.openSidePanel("ChartPanel");
-            }
             const position = gridOverlayPosition();
             const { x: offsetCorrectionX, y: offsetCorrectionY } = this.env.model.getters.getMainViewportCoordinates();
             const { offsetX, offsetY } = this.env.model.getters.getActiveSheetScrollInfo();
@@ -21551,12 +21600,10 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     FigureComponent.template = "o-spreadsheet-FigureComponent";
     FigureComponent.components = {};
     FigureComponent.defaultProps = {
-        sidePanelIsOpen: false,
         onFigureDeleted: function () { },
     };
     FigureComponent.props = {
         figure: Object,
-        sidePanelIsOpen: { type: Boolean, optional: true },
         onFigureDeleted: { type: Function, optional: true },
     };
 
@@ -21580,7 +21627,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     FiguresContainer.template = "o-spreadsheet-FiguresContainer";
     FiguresContainer.components = { FigureComponent };
     FiguresContainer.props = {
-        sidePanelIsOpen: Boolean,
         onFigureDeleted: Function,
     };
     figureRegistry.add("chart", { Component: ChartFigure, SidePanelComponent: "ChartPanel" });
@@ -21761,7 +21807,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         onCellRightClicked: () => { },
         onGridResized: () => { },
         onFigureDeleted: () => { },
-        sidePanelIsOpen: false,
     };
     GridOverlay.props = {
         onCellHovered: { type: Function, optional: true },
@@ -21772,7 +21817,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         onFigureDeleted: { type: Function, optional: true },
         onGridMoved: Function,
         gridOverlayDimensions: String,
-        sidePanelIsOpen: { type: Boolean, optional: true },
     };
 
     class GridPopover extends owl.Component {
@@ -24600,6 +24644,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             verticalAxisPosition: chartData.verticalAxisPosition,
             legendPosition: chartData.legendPosition,
             stacked: chartData.stacked || false,
+            aggregated: chartData.aggregated || false,
             labelsAsText: false,
         };
     }
@@ -27934,7 +27979,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 for (let figure of sheetFigures) {
                     if (figure && figure.tag === "chart") {
                         const figureData = (_a = this.charts[figure.id]) === null || _a === void 0 ? void 0 : _a.getDefinitionForExcel();
-                        if (figureData) {
+                        // Excel does not support aggregating labels directly
+                        // GSheets does not export the chart if it aggregates the labels
+                        if (figureData && !figureData.aggregated) {
                             figures.push({
                                 ...figure,
                                 data: figureData,
@@ -41183,6 +41230,11 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         //
         // overlap and gapWitdh seems to be by default at -20 and 20 in chart.js.
         // See https://www.chartjs.org/docs/latest/charts/bar.html and https://www.chartjs.org/docs/latest/charts/bar.html#barpercentage-vs-categorypercentage
+        // Excel does not support aggregating labels
+        // GSheets does not export the chart if it aggregates the labels
+        if (chart.aggregated) {
+            return escapeXml ``;
+        }
         const colors = new ChartColors();
         const dataSetsNodes = [];
         for (const [dsIndex, dataset] of Object.entries(chart.dataSets)) {
@@ -41225,6 +41277,11 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
   `;
     }
     function addLineChart(chart) {
+        // Excel does not support aggregating labels
+        // GSheets does not export the chart if it aggregates the labels
+        if (chart.aggregated) {
+            return escapeXml ``;
+        }
         const colors = new ChartColors();
         const dataSetsNodes = [];
         for (const [dsIndex, dataset] of Object.entries(chart.dataSets)) {
@@ -43000,8 +43057,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-12-09T15:01:03.892Z';
-    exports.__info__.hash = '1419e57';
+    exports.__info__.date = '2022-12-12T15:29:26.518Z';
+    exports.__info__.hash = 'fecac46';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map

@@ -277,7 +277,12 @@
   </t>
 
   <t t-name="o-spreadsheet-SpreadsheetDashboard" owl="1">
-    <div class="o-grid o-two-columns" tabindex="-1" t-on-wheel="onMouseWheel" t-on-copy="copy">
+    <div
+      class="o-grid o-two-columns"
+      tabindex="-1"
+      t-on-wheel="onMouseWheel"
+      t-on-copy="copy"
+      t-on-click="onClosePopover">
       <div class="mx-auto h-100 position-relative" t-ref="grid" t-att-style="gridContainer">
         <GridOverlay
           onCellHovered.bind="onCellHovered"
@@ -366,7 +371,6 @@
           <t
             t-component="figureRegistry.get(props.figure.tag).Component"
             t-key="props.figure.id"
-            sidePanelIsOpen="props.sidePanelIsOpen"
             onFigureDeleted="props.onFigureDeleted"
             figure="displayedFigure"
           />
@@ -449,11 +453,7 @@
   <t t-name="o-spreadsheet-FiguresContainer" owl="1">
     <div>
       <t t-foreach="getVisibleFigures()" t-as="figure" t-key="figure.id">
-        <FigureComponent
-          sidePanelIsOpen="this.props.sidePanelIsOpen"
-          onFigureDeleted="this.props.onFigureDeleted"
-          figure="figure"
-        />
+        <FigureComponent onFigureDeleted="this.props.onFigureDeleted" figure="figure"/>
       </t>
     </div>
   </t>
@@ -483,7 +483,7 @@
   </t>
 
   <t t-name="o-spreadsheet-FilterIcon" owl="1">
-    <div class="o-filter-icon" t-att-style="style" t-on-click="props.onClick">
+    <div class="o-filter-icon" t-att-style="style" t-on-click.stop="props.onClick">
       <t t-if="props.isActive" t-call="o-spreadsheet-Icon.FILTER_ICON_ACTIVE"/>
       <t t-else="" t-call="o-spreadsheet-Icon.FILTER_ICON"/>
     </div>
@@ -599,7 +599,6 @@
         onGridResized.bind="onGridResized"
         onGridMoved.bind="moveCanvas"
         gridOverlayDimensions="gridOverlayDimensions"
-        sidePanelIsOpen="props.sidePanelIsOpen"
         onFigureDeleted.bind="focus"
       />
       <HeadersOverlay onOpenContextMenu="(type, x, y) => this.toggleContextMenu(type, x, y)"/>
@@ -670,13 +669,7 @@
       t-on-mousedown="onMouseDown"
       t-on-dblclick="onDoubleClick"
       t-on-contextmenu="onContextMenu">
-      <!-- TODO remove sidePanelIsOpen props. It is wrong.
-      If you have a CF sidepanel open, selecting a figure should
-      not open the figure side panel -->
-      <FiguresContainer
-        sidePanelIsOpen="props.sidePanelIsOpen"
-        onFigureDeleted="props.onFigureDeleted"
-      />
+      <FiguresContainer onFigureDeleted="props.onFigureDeleted"/>
     </div>
   </t>
 
@@ -1588,6 +1581,18 @@
             Stacked barchart
           </label>
         </div>
+        <div class="o-checkbox">
+          <label>
+            <input
+              type="checkbox"
+              name="aggregated"
+              t-att-checked="props.definition.aggregated"
+              t-on-change="onUpdateAggregated"
+              class="align-middle"
+            />
+            Aggregate labels
+          </label>
+        </div>
       </div>
       <div class="o-section o-data-series">
         <div class="o-section-title">Data Series</div>
@@ -1871,6 +1876,22 @@
 
   <t t-name="o-spreadsheet-LineBarPieConfigPanel" owl="1">
     <div>
+      <div>
+        <div class="o-section pt-0">
+          <div class="o-checkbox">
+            <label>
+              <input
+                type="checkbox"
+                name="aggregated"
+                t-att-checked="props.definition.aggregated"
+                t-on-change="onUpdateAggregated"
+                class="align-middle"
+              />
+              Aggregate labels
+            </label>
+          </div>
+        </div>
+      </div>
       <div class="o-section o-data-series">
         <div class="o-section-title">Data Series</div>
         <SelectionInput
@@ -1966,6 +1987,18 @@
               class="align-middle"
             />
             Stacked linechart
+          </label>
+        </div>
+        <div class="o-checkbox">
+          <label>
+            <input
+              type="checkbox"
+              name="aggregated"
+              t-att-checked="props.definition.aggregated"
+              t-on-change="onUpdateAggregated"
+              class="align-middle"
+            />
+            Aggregate labels
           </label>
         </div>
       </div>
