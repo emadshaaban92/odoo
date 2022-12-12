@@ -2,6 +2,7 @@
 
 from lxml import etree
 
+from odoo import Command
 from odoo.tests.common import TransactionCase
 from odoo.exceptions import UserError
 
@@ -156,3 +157,46 @@ class TestProjectBase(TestProjectCommon):
             arch = Task.get_view(self.env.ref('project.view_task_search_form').id)['arch']
             tree = etree.fromstring(arch)
             self.assertEqual(bool(tree.xpath('//filter[@name="message_needaction"]')), filter_visible_expected)
+
+    def test_change_project_company(self):
+        """ When changing the company of a project, the company of the analytic account should be changed too. Only if:
+            - the project has no partner or the company of the partner is not set,
+            - the analytic account belongs to no other project,
+            - the analytic account has no analytic line.
+        """
+        company_1 = self.env.company
+        company_2 = self.env['res.company'].create({'name': 'Company 2'})
+        # Can change the company of a project if the company of the partner is not set
+        self.project_pigs.company_id = company_2
+
+        self.project_pigs.partner_id.company_id = company_2
+        with self.assertRaises(UserError):
+            # Cannot change the company of a project if the company of the partner is different
+            self.project_pigs.company_id = company_1
+
+        self.project_pigs.partner_id = False
+        self.project_pigs.company_id = company_1
+        analytic_account = self.env['account.analytic.account'].create({
+            'name': 'Analytic Account',
+            'company_id': company_1.id,
+            'plan_id': self.env.ref("analytic.analytic_plan_projects").id,
+        })
+        self.project_pigs.analytic_account_id = analytic_account
+        self.project_pigs.company_id = company_2
+        self.assertEqual(self.project_pigs.analytic_account_id.company_id, company_2)
+
+
+        self.project_pigs.company_id = company_1
+        self.project_goats.partner_id = False
+        self.project_goats.analytic_account_id = analytic_account
+        with self.assertRaises(UserError):
+            # Cannot change the company of a project if the analytic account belongs to another company
+            self.project_pigs.company_id = company_2
+
+        self.project_goats.analytic_account_id = False
+        analytic_account.line_ids = [Command.create({
+            'name': 'Analytic Line',
+        })]
+        with self.assertRaises(UserError):
+            # Cannot change the company of a project if the analytic account has lines
+            self.project_pigs.company_id = company_2

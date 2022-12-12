@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from odoo.tests import tagged, HttpCase
+from odoo.tests import tagged, HttpCase, users
+from odoo.addons.mail.tests.common import mail_new_test_user
 
 from .test_project_base import TestProjectCommon
 
@@ -12,6 +13,13 @@ class TestPersonalStages(TestProjectCommon):
         super().setUpClass()
         cls.user_stages = cls.env['project.task.type'].search([('user_id', '=', cls.user_projectuser.id)])
         cls.manager_stages = cls.env['project.task.type'].search([('user_id', '=', cls.user_projectmanager.id)])
+        cls.user_projectuser_copy = mail_new_test_user(
+            cls.env, login='user_projectuser_copy',
+            name=f"{cls.user_projectuser.name} (Copy)", email=cls.user_projectuser.email,
+            company_id=cls.user_projectuser.company_id.id,
+            notification_type=cls.user_projectuser.notification_type,
+            groups='project.group_project_user,project.group_project_manager',
+        )
 
     def test_personal_stage_base(self):
         # Project User is assigned to task_1 he should be able to see a personal stage
@@ -111,6 +119,41 @@ class TestPersonalStages(TestProjectCommon):
         self.task_1.with_user(user_with_stages)._ensure_personal_stages()
         stages = ProjectTaskTypeSudo.search([('user_id', '=', user_with_stages.id)])
         self.assertEqual(stages, personal_stage, "As this user already had a personal stage, none should be added")
+
+    @users('user_projectuser_copy')
+    def test_move_to_folded_personal_stage(self):
+        Stage = self.env['project.task.type']
+        stages = self.project_goats.type_ids
+        stages += Stage.create({
+            'name': 'Fold',
+            'fold': True,
+            'project_ids': self.project_goats.ids,
+        })
+
+        personal_stages = Stage
+        for stage in stages:
+            personal_stages |= stage.copy({
+                'user_id': self.user_projectuser_copy.id,
+                'project_ids': False,
+            })
+
+        task = self.env['project.task'].create({
+            'name': 'Task Ifo?',
+            'stage_id': stages[0].id,
+            'project_id': self.project_goats.id,
+        })
+
+        self.assertEqual(task.personal_stage_type_id, personal_stages[0])
+
+        task.stage_id = stages[1]
+        task._compute_personal_stage_type_id()
+        self.assertEqual(task.personal_stage_type_id, personal_stages[0],
+            "The task shouldn't have been moved to a folded personal stage since the new stage isn't folded")
+
+        task.stage_id = stages[2]
+        task._compute_personal_stage_type_id()
+        self.assertEqual(task.personal_stage_type_id, personal_stages[2],
+            "The task should have been moved to a folded personal stage since the new stage is folded")
 
 @tagged('-at_install', 'post_install')
 class TestPersonalStageTour(HttpCase, TestProjectCommon):

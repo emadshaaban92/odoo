@@ -301,7 +301,7 @@ class Project(models.Model):
     active = fields.Boolean(default=True,
         help="If the active field is set to False, it will allow you to hide the project without removing it.")
     sequence = fields.Integer(default=10)
-    partner_id = fields.Many2one('res.partner', string='Customer', auto_join=True, tracking=True, domain="['|', ('company_id', '=', False), ('company_id', '=', company_id)]")
+    partner_id = fields.Many2one('res.partner', string='Customer', auto_join=True, tracking=True, check_company=True, domain="['|', ('company_id', '=', False), ('company_id', '=', company_id)]")
     partner_email = fields.Char(
         compute='_compute_partner_email', inverse='_inverse_partner_email',
         string='Email', readonly=False, store=True, copy=False)
@@ -653,7 +653,46 @@ class Project(models.Model):
         if vals.get('privacy_visibility'):
             self._change_privacy_visibility(vals['privacy_visibility'])
 
+        project_per_aa = {}
+        if 'company_id' in vals:
+            # We look for related analytic accounts with:
+            # another company and no partner (as it will raise another company error)
+            analytic_account_ids = [vals['analytic_account_id']] if 'analytic_account_id' in vals\
+                              else self.analytic_account_id.filtered(lambda account: account.company_id.id != vals['company_id'] and not account.partner_id).ids
+            if analytic_account_ids:
+                # no aal
+                unchangeable_aal_groups = self.env['account.analytic.line']._read_group(
+                    domain=[('account_id', 'in', analytic_account_ids)],
+                    fields=['account_id'],
+                    groupby=['account_id'],
+                )
+                unchangeable_aa_ids = [aal_group['account_id'][0] for aal_group in unchangeable_aal_groups]
+                changeable_aa_ids = list(set(analytic_account_ids) - set(unchangeable_aa_ids))
+                if changeable_aa_ids:
+                    # 1! project
+                    project_groups = self._read_group(
+                        domain=[('analytic_account_id', 'in', changeable_aa_ids)],
+                        fields=['ids:array_agg(id)'],
+                        groupby=['analytic_account_id'],
+                    )
+                    if project_groups:
+                        project_per_aa = {
+                            project_group['analytic_account_id'][0]: project_group['ids'][0]
+                            for project_group in project_groups if len(project_group['ids']) == 1
+                        }
+                        # We set the aa of their project to False, to avoid error,
+                        self.browse(project_per_aa.values()).analytic_account_id = False
+                        # change their company**
+                        account = self.env['account.analytic.account'].browse(project_per_aa.keys())
+                        account.plan_id.company_id = False
+                        account.root_plan_id.company_id = False
+                        account.company_id = self.env['res.company'].browse(vals['company_id'])
+
         res = super(Project, self).write(vals) if vals else True
+
+        # **and set them back on the project
+        for aa, project in project_per_aa.items():
+            self.browse(project).analytic_account_id = self.env['account.analytic.account'].browse(aa)
 
         if 'allow_recurring_tasks' in vals and not vals.get('allow_recurring_tasks'):
             self.env['project.task'].search([('project_id', 'in', self.ids), ('recurring_task', '=', True)]).write({'recurring_task': False})
@@ -2051,6 +2090,8 @@ class Task(models.Model):
         if 'stage_id' in vals:
             if not 'project_id' in vals and self.filtered(lambda t: not t.project_id):
                 raise UserError(_('You can only set a personal stage on a private task.'))
+            if self.env['project.task.type'].browse(vals['stage_id']).fold:
+                self.move_to_folded_personal_stage()
 
             vals.update(self.update_date_end(vals['stage_id']))
             vals['date_last_stage_update'] = now
@@ -2120,6 +2161,29 @@ class Task(models.Model):
 
         self._task_message_auto_subscribe_notify({task: task.user_ids - old_user_ids[task] - self.env.user for task in self})
         return result
+
+    def move_to_folded_personal_stage(self):
+        PersonnalStage = self.env['project.task.stage.personal'].sudo()
+        personal_stage_ids_per_user_id = PersonnalStage._read_group(
+            domain=[('task_id', 'in', self.ids)],
+            fields=['user_id', 'personal_stage_ids:array_agg(id)'],
+            groupby=['user_id']
+        )
+        personal_stage_ids_per_user_id = {
+            user['user_id'][0]: user['personal_stage_ids']
+            for user in personal_stage_ids_per_user_id
+        }
+        type_ids_per_user_id = self.env['project.task.type'].sudo()._read_group(
+            domain=[('user_id', 'in', list(personal_stage_ids_per_user_id)), ('fold', '=', True)],
+            fields=['user_id', 'type_ids:array_agg(id)'],
+            groupby=['user_id']
+        )
+        for user in type_ids_per_user_id:
+            user_id = user['user_id'][0]
+            type_id = user['type_ids'][0]
+            PersonnalStage.browse(
+                personal_stage_ids_per_user_id[user_id]
+            ).write({'stage_id': type_id})
 
     def update_date_end(self, stage_id):
         project_task_type = self.env['project.task.type'].browse(stage_id)
@@ -2604,7 +2668,8 @@ class Task(models.Model):
     def _send_task_rating_mail(self, force_send=False):
         for task in self:
             rating_template = task.stage_id.rating_template_id
-            if rating_template:
+            partner = task.partner_id
+            if rating_template and partner and partner != self.env.user.partner_id:
                 task.rating_send_request(rating_template, lang=task.partner_id.lang, force_send=force_send)
 
     def _rating_get_partner(self):
