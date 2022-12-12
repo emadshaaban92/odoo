@@ -3,10 +3,13 @@
     <t t-name="NavBar" owl="1">
     <nav class="navbar navbar-dark bg-primary">
     <!-- TODO make arrow icon white  -->
-        <span class="material-symbols-outlined">
+    <t t-if="props.viewMenu">
+        <span t-on-click = "() => props.viewMenu()" 
+              class="material-symbols-outlined">
             arrow_back
         </span>
-        <span class="navbar-brand h1"><t t-esc="props.restaurantName"/></span>
+    </t>
+        <span class="navbar-brand h1 text-center"><t t-esc="props.restaurantName"/></span>
         <h1 class="text-white"><t t-esc="'T' + props.tableNumber"/></h1>
     </nav>
     </t>
