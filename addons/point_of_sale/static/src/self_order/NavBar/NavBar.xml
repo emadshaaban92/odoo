@@ -2,12 +2,19 @@
 <templates id="template" xml:space="preserve">
     <t t-name="NavBar" owl="1">
     <nav class="sticky-top navbar navbar-dark bg-primary">
-    <!-- TODO make arrow icon white  -->
+    <!-- we only show the back arrow if the viewMenu function is passed as a prop -->
+    <!-- this means that the component that called the NavBar intended for the button -->
+    <!-- to be visible and to call this function when pressed -->
+    <!-- to be clear: the back button only calls the function provided by the parent as a prop -->
+    <!-- the logic of changin the shown page is done in the parent -->
     <t t-if="props.viewMenu">
-        <span t-on-click = "() => props.viewMenu()" 
-              class="material-symbols-outlined">
-            arrow_back
-        </span>
+    <!-- back arrow : takes us to the menu (ProductList) -->
+        <svg t-on-click = "() => props.viewMenu()"
+            xmlns="http://www.w3.org/2000/svg" 
+            width="32" height="32" fill="currentColor" 
+            class="bi bi-arrow-left text-white" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
+        </svg>
     </t>
         <span class="navbar-brand h1 text-center"><t t-esc="props.restaurantName"/></span>
         <h1 class="text-white"><t t-esc="'T' + props.tableNumber"/></h1>
