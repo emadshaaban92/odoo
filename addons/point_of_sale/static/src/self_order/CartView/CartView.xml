@@ -17,10 +17,8 @@
                         <p class="fw-bold"><t t-esc="product.name"/></p>
                         <div class="d-flex justify-content-between w-100">
                             <t t-esc="cartItem.quantity + ' x ' + product.price+ '€'" />
-                            <p class="fst-italic text-right"><t t-esc="cartItem.quantity *  product.price+ '€'" /></p>
+                            <p class="fst-italic fw-bold text-right"><t t-esc="cartItem.quantity *  product.price+ '€'" /></p>
                         </div>
-                        <!-- <p class="fst-italic">Price / Unit<t t-esc="product.price + '€'" /></p> 
-                        <p class="fst-italic text-right">Total Price:<t t-esc="cartItem.quantity *  product.price+ '€'" /></p> -->
                     </div>
                 </div>
             </t>
