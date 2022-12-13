@@ -53,8 +53,6 @@ $o-tip-size-delay-in: $o-tip-duration-in - $o-tip-size-duration-in;
 .o_tooltip {
     /*rtl:begin:ignore*/
     position: absolute !important;
-    top: 50% !important;
-    left: 50% !important;
     /*rtl:end:ignore*/
     z-index: $zindex-tooltip !important; // See comment on 'o_tooltip_parent' class
     opacity: 0 !important;

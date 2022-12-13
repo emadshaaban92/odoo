@@ -174,7 +174,6 @@ function augmentStepAuto(step, options) {
                 if (stepEl && skipTriggerEl) {
                     skipAction = true;
                 }
-                options.pointerMethods.pointTo(stepEl);
                 return stepEl;
             },
             action: (stepEl) => {
@@ -193,6 +192,7 @@ function augmentStepAuto(step, options) {
                         // `this.$anchor` is expected in many `step.run`.
                         step.run.call({ $anchor: $anchorEl }, actionHelper);
                     } catch (e) {
+                        // TODO-JCB: What to do with the following console.error?
                         // console.error(`Tour ${tour_name} failed at step ${self._describeTip(tip)}: ${e.message}`);
                         throw e;
                     }
@@ -201,6 +201,7 @@ function augmentStepAuto(step, options) {
                     try {
                         actionHelper[m[1]](m[2]);
                     } catch (e) {
+                        // TODO-JCB: What to do with the following console.error?
                         // console.error(`Tour ${tour_name} failed at step ${self._describeTip(tip)}: ${e.message}`);
                         throw e;
                     }
@@ -232,7 +233,6 @@ function augmentStepManual(step, options) {
             ...{
                 action: () => {
                     console.log(step.trigger);
-                    options.pointerMethods.show();
                 },
             },
         },
@@ -282,20 +282,21 @@ function augmentStepManual(step, options) {
                         $anchorEl.off(".anchor");
 
                         proceedWith = stepEl;
-                        // clear the state variables
-                        stepEl = undefined;
-                        consumeEvent = undefined;
-                        $anchorEl = undefined;
-
-                        // hide the pointer if necessary.
-                        options.pointerMethods.hide();
 
                         // Finally, advance to the next step.
                         // The following will call this `trigger` function which returns the `proceedWith`.
                         options.advance();
                     });
                 }
-                options.pointerMethods.pointTo(stepEl);
+                options.pointerMethods.pointTo($anchorEl[0] || stepEl);
+            },
+            action: () => {
+                // Clean up
+                proceedWith = undefined;
+                stepEl = undefined;
+                consumeEvent = undefined;
+                $anchorEl = undefined;
+                options.pointerMethods.hide();
             },
         },
     ];
@@ -325,10 +326,10 @@ function augmentMacro(macroDescription, augmenter, options) {
 
 /**
  * @param {*} param0
- * @returns {[state: { x, y, isVisible, position, text }, methods: { pointTo, hide, show }]}
+ * @returns {[state: { x, y, isVisible, position, content, mode, viewPortState, fixed }, methods: { pointTo, hide, show }]}
  */
-function createPointerState({ x, y, isVisible, position, text }) {
-    const state = reactive({ x, y, isVisible, position, text });
+function createPointerState({ x, y, isVisible, position, content, mode, viewPortState, fixed }) {
+    const state = reactive({ x, y, isVisible, position, content, mode, viewPortState, fixed });
     const pointerSize = { width: 20, height: 20 };
 
     function hide() {
@@ -404,11 +405,14 @@ export const tourService = {
         const isMobile = device.isMobile;
 
         const [pointerState, pointerMethods] = createPointerState({
+            content: "",
+            position: "top",
             x: 0,
             y: 0,
             isVisible: false,
-            position: "top",
-            text: "",
+            mode: "bubble",
+            viewPortState: "in",
+            fixed: false,
         });
 
         /**
