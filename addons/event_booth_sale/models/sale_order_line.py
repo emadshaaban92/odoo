@@ -93,10 +93,8 @@ class SaleOrderLine(models.Model):
     def _get_display_price(self):
         if self.event_booth_pending_ids and self.event_id:
             company = self.event_id.company_id or self.env.company
-            currency = company.currency_id
-            total_price = sum([booth.price for booth in self.event_booth_pending_ids])
-            return currency._convert(
-                total_price, self.order_id.currency_id,
-                self.order_id.company_id or self.env.company.id,
-                self.order_id.date_order or fields.Date.today())
+            return self._convert_to_sol_currency(
+                sum(self.event_booth_pending_ids.mapped('price')),
+                company.currency_id,
+            )
         return super()._get_display_price()
