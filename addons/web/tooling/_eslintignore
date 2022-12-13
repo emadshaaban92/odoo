@@ -84,6 +84,8 @@ web_gantt/static/tests/legacy/**/*
 !planning/static
 !planning/static/src
 !planning/static/src/*.js
+!planning/static/tests
+!planning/static/tests/planning_gantt_tests.js
 
 # web_map
 # whitelist new code
