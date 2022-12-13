@@ -567,6 +567,8 @@ var SnippetEditor = Widget.extend({
         // FIXME should not this call _destroyEditor ?
         activateSnippetProm.then(() => this.destroy());
         $parent.trigger('content_changed');
+        this.options.wysiwyg.options.onWysiwygChange && this.options.wysiwyg.options.onWysiwygChange();
+        this.options.wysiwyg.pendingBlur = true;
 
         // TODO Page content changed, some elements may need to be adapted
         // according to it. While waiting for a better way to handle that this
@@ -738,6 +740,8 @@ var SnippetEditor = Widget.extend({
         this.trigger_up('snippet_cloned', {$target: $clone, $origin: this.$target});
 
         $clone.trigger('content_changed');
+        this.options.wysiwyg.options.onWysiwygChange && this.options.wysiwyg.options.onWysiwygChange();
+        this.options.wysiwyg.pendingBlur = true;
     },
 
     //--------------------------------------------------------------------------
@@ -1420,6 +1424,8 @@ var SnippetEditor = Widget.extend({
             : this._dropSiblings.prev === this.$target.prev()[0] && this._dropSiblings.next === this.$target.next()[0];
         if (!samePositionAsStart) {
             this.options.wysiwyg.odooEditor.historyStep();
+            this.options.wysiwyg.options.onWysiwygChange && this.options.wysiwyg.options.onWysiwygChange();
+            this.options.wysiwyg.pendingBlur = true;
         }
 
         this.dragState.restore();
@@ -3252,6 +3258,8 @@ var SnippetsMenu = Widget.extend({
                             self._disableUndroppableSnippets();
                             self.options.wysiwyg.odooEditor.unbreakableStepUnactive();
                             self.options.wysiwyg.odooEditor.historyStep();
+                            self.options.wysiwyg.options.onWysiwygChange && self.options.wysiwyg.options.onWysiwygChange();
+                            self.options.wysiwyg.pendingBlur = true;
                             self.$el.find('.oe_snippet_thumbnail').removeClass('o_we_already_dragging');
                         });
                     } else {

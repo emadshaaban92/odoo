@@ -56,6 +56,7 @@ export class MassMailingHtmlField extends HtmlField {
         return {
             ...super.wysiwygOptions,
             onIframeUpdated: () => this.onIframeUpdated(),
+            onWysiwygChange: () => this.commitChanges({ shouldInline: false }),
             snippets: 'mass_mailing.email_designer_snippets',
             resizable: false,
             defaultDataForLinkTools: { isNewWindow: true },
@@ -87,8 +88,8 @@ export class MassMailingHtmlField extends HtmlField {
         popover.style.left = leftPosition + 'px';
     }
 
-    async commitChanges() {
-        if (this.props.readonly || !this.isRendered) {
+    async commitChanges({ shouldInline = true } = {}) {
+        if (this.props.readonly || !this.isRendered || !shouldInline) {
             return super.commitChanges();
         }
 

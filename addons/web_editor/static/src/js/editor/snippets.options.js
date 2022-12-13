@@ -4005,6 +4005,10 @@ const SnippetOptionWidget = Widget.extend({
         if (previewMode === 'reset' || previewMode === false) {
             this.options.wysiwyg.odooEditor.automaticStepActive('preview_option');
         }
+        if (previewMode === false) {
+            this.options.wysiwyg.options.onWysiwygChange && this.options.wysiwyg.options.onWysiwygChange();
+            this.options.wysiwyg.pendingBlur = true;
+        }
 
         // We trigger the event on elements targeted by apply-to if any as
         // this.$target could not be in an editable element while the elements

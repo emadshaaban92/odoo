@@ -2422,18 +2422,18 @@ const Wysiwyg = Widget.extend({
         if (e.target.closest('.oe-toolbar')) {
             this._onToolbar = true;
         } else {
-            if (this._pendingBlur && !e.target.closest('.o_wysiwyg_wrapper')) {
+            if (this.pendingBlur && !e.target.closest('.o_wysiwyg_wrapper')) {
                 // todo: to remove when removing the legacy field_html
                 this.trigger_up('wysiwyg_blur');
                 this.options.onWysiwygBlur && this.options.onWysiwygBlur();
-                this._pendingBlur = false;
+                this.pendingBlur = false;
             }
             this._onToolbar = false;
         }
     },
     _onBlur: function () {
         if (this._onToolbar) {
-            this._pendingBlur = true;
+            this.pendingBlur = true;
         } else {
             // todo: to remove when removing the legacy field_html
             this.trigger_up('wysiwyg_blur');
