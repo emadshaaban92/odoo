@@ -1,6 +1,7 @@
 /** @odoo-module **/
 
 import { onWillUnmount, reactive, useEffect, useEnv, useExternalListener } from "@odoo/owl";
+import { getActiveHotkey } from "@web/core/hotkeys/hotkey_service";
 import { clamp } from "@web/core/utils/numbers";
 import { camelToKebab } from "@web/core/utils/strings";
 import { debounce, setRecurringAnimationFrame } from "@web/core/utils/timing";
@@ -111,7 +112,6 @@ const elCache = {};
  * @param {Event} ev
  */
 function cancelEvent(ev) {
-    ev.stopPropagation();
     ev.stopImmediatePropagation();
     ev.preventDefault();
 }
@@ -528,12 +528,18 @@ export function makeDraggableHook(hookParams) {
                 if (!ctx.enabled || !state.dragging) {
                     return;
                 }
-                switch (ev.key) {
-                    case "Escape":
-                    case "Tab": {
+                switch (getActiveHotkey(ev)) {
+                    case "alt":
+                    case "alt+control":
+                    case "alt+control+shift":
+                    case "alt+shift":
+                    case "control":
+                    case "control+shift":
+                    case "shift":
                         cancelEvent(ev);
+                        break;
+                    default:
                         dragEnd(true);
-                    }
                 }
             };
 
