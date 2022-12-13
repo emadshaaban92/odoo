@@ -10,6 +10,9 @@ This module allows to generate a project/task from sales orders.
 """,
     'category': 'Hidden',
     'depends': ['sale_management', 'project'],
+    'demo': [
+        'data/project_demo.xml',
+    ],
     'data': [
         'security/ir.model.access.csv',
         'security/sale_project_security.xml',

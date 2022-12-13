@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+<!-- Project Template -->
+        <record id="so_template_project" model="project.project">
+            <field name="name">Sales Order</field>
+            <field name="active">False</field>
+            <field name="type_ids" eval="[Command.link(ref('project.project_stage_0')), Command.link(ref('project.project_stage_1')), Command.link(ref('project.project_stage_2'))]"/>
+            <field name="description">This project is used as a template for projects created from sales orders.</field>
+        </record>
+
+        <record id="product_service_deliver_manual" model="product.product">
+            <field name="name">Furniture Delivery (Manual)</field>
+            <field name="categ_id" ref="product.product_category_3"/>
+            <field name="list_price">200</field>
+            <field name="standard_price">150.00</field>
+            <field name="type">service</field>
+            <field name="uom_id" ref="uom.product_uom_unit"/>
+            <field name="uom_po_id" ref="uom.product_uom_unit"/>
+            <field name="service_policy">delivered_manual</field>
+            <field name="service_tracking">task_in_project</field>
+            <field name="project_template_id" ref="so_template_project"/>
+        </record>
+<!-- Manual timesheet based -->
+
+        <record id="sale_order_4" model="sale.order">
+            <field name="partner_id" ref="base.res_partner_2"/>
+            <field name="client_order_ref">MANUAL</field>
+            <field name="user_id" ref="base.user_admin"/>
+            <field name="tag_ids" eval="[Command.link(ref('sales_team.categ_oppor6'))]"/>
+        </record>
+
+        <record id="sale_line_41" model="sale.order.line">
+            <field name="order_id" ref="sale_project.sale_order_4"/>
+            <field name="sequence" eval="2"/>
+            <field name="product_id" ref="product_service_deliver_manual"/>
+            <field name="product_uom_qty">15</field>
+        </record>
+
+        <record id="sale_line_42" model="sale.order.line">
+            <field name="order_id" ref="sale_project.sale_order_4"/>
+            <field name="sequence" eval="2"/>
+            <field name="product_id" ref="product.product_product_11_product_template"/>
+            <field name="product_uom_qty">15</field>
+            <field name="qty_delivered">10</field>
+        </record>
+
+        <record id="sale_line_43" model="sale.order.line">
+            <field name="order_id" ref="sale_project.sale_order_4"/>
+            <field name="sequence" eval="2"/>
+            <field name="product_id" ref="product_service_deliver_manual"/>
+            <field name="product_uom_qty">15</field>
+            <field name="qty_delivered">10</field>
+        </record>
+
+        <function model="sale.order" name="action_confirm" eval="[[ref('sale_order_4')]]"/>
+    </data>
+</odoo>
