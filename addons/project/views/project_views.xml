@@ -410,6 +410,15 @@
             </field>
         </record>
 
+        <record id="project_task_act_window_app" model="ir.actions.act_window">
+            <field name="name">TEST</field>
+            <field name="res_model">project.task</field>
+            <field name="view_mode">form</field>
+            <field name="target">new</field>
+            <field name="binding_model_id" ref="project.model_project_task_state"/>
+            <field name="binding_view_types">form </field>
+        </record>
+
         <record id="action_send_mail_project_task" model="ir.actions.act_window">
             <field name="name">Send Email</field>
             <field name="res_model">mail.compose.message</field>
@@ -444,6 +453,8 @@
             <field name="state">code</field>
             <field name="code">action = records.unlink_wizard(stage_view=True)</field>
         </record>
+
+        
 
         <!-- Project -->
         <record id="edit_project" model="ir.ui.view">
@@ -1090,10 +1101,14 @@
                     <field name="parent_id" invisible="1"/>
                     <field name="company_id" invisible="1"/>
                     <header>
-                        <button name="action_approve_state" string="Approve" type="object" class="" attrs="{'invisible' : &quot;[('state_approval_mode', '=', False)]&quot;}" icon="fa-check"/>
-                        <button name="action_request_changes_state" string="Request changes" type="object" class="" attrs="{'invisible' : &quot;[('state_approval_mode', '=', False)]&quot;}" icon="fa-pencil"/>
-                        <button name="action_reject_state" string="Reject" type="object" class="" attrs="{'invisible' : &quot;[('state_approval_mode', '=', False)]&quot;}" icon="fa-close"/>
-                        <button name="action_mark_as_done" string="Mark as done" type="object" class="" attrs="{'invisible' : &quot;[('state_approval_mode', '=', True)]&quot;}" icon="fa-check"/>
+                        <button name="action_toggle_approve_state" string="Approve" type="object" class="" attrs="{'invisible' : &quot;['|', ('state_approval_mode', '=', False), ('state_key','=',5)]&quot;}" icon="fa-check"/>
+                        <button name="action_toggle_approve_state" string="Approved" type="object" class="oe_highlight" attrs="{'invisible' : &quot;['|', ('state_approval_mode', '=', False), ('state_key','!=',5)]&quot;}" icon="fa-check"/>
+                        <button name="action_toggle_request_changes_state" string="Request changes" type="object" class="" attrs="{'invisible' : &quot;['|', ('state_approval_mode', '=', False), ('state_key','=',7)]&quot;}" icon="fa-repeat"/>
+                        <button name="action_toggle_request_changes_state" string="Change requested" type="object" class="oe_highlight" attrs="{'invisible' : &quot;['|', ('state_approval_mode', '=', False), ('state_key','!=',7)]&quot;}" icon="fa-repeat"/>
+                        <button name="action_toggle_reject_state" string="Reject" type="object" class="" attrs="{'invisible' : &quot;['|', ('state_approval_mode', '=', False), ('state_key','=',6)]&quot;}" icon="fa-close"/>
+                        <button name="action_toggle_reject_state" string="Rejected" type="object" class="oe_highlight" attrs="{'invisible' : &quot;['|', ('state_approval_mode', '=', False), ('state_key','!=',6)]&quot;}" icon="fa-close"/>
+                        <button name="action_toggle_mark_as_done" string="Mark as done" type="object" class="" attrs="{'invisible' : &quot;['|', ('state_approval_mode', '=', True), ('state_key','=',2)]&quot;}" icon="fa-check"/>
+                        <button name="action_toggle_mark_as_done" string="Done" type="object" class="oe_highlight" attrs="{'invisible' : &quot;['|', ('state_approval_mode', '=', True), ('state_key','!=',2)]&quot;}" icon="fa-check"/>
                         <button name="action_assign_to_me" string="Assign to Me" type="object" class="oe_highlight" attrs="{'invisible' : &quot;['|', ('user_ids', 'in', uid), ('user_ids', '!=', [])]&quot;}" data-hotkey="q"/>
                         <button name="action_assign_to_me" string="Assign to Me" type="object" attrs="{'invisible': &quot;['|', ('user_ids', 'in', uid), ('user_ids', '=', [])]&quot;}" data-hotkey="q"/>
                         <field name="stage_id" widget="statusbar" options="{'clickable': '1', 'fold_field': 'fold'}" attrs="{'invisible': [('project_id', '=', False), ('stage_id', '=', False)]}"/>
@@ -1164,6 +1179,9 @@
                             <field name="kanban_state" widget="state_selection" class=""/>
                         </h1>
                         <h2>
+                            statekey:
+                            <field name="state_key"/>
+
                             State: 
                             <field name="state_id" class="" string="State: " domain="[('approval_mode', '=', state_approval_mode), ('user_trigger_possible', '=', True)]"/>
                             Approval Mode
@@ -1531,6 +1549,7 @@
                     <field name="is_closed" invisible="1" />
                     <field name="sequence" invisible="1" readonly="1"/>
                     <field name="allow_milestones" invisible="1"/>
+                    <field name="state_approval_mode" invisible="1"/>
                     <field name="id" optional="hide"/>
                     <field name="priority" widget="priority" optional="show" nolabel="1"/>
                     <field name="child_text" invisible="1"/>
@@ -1558,7 +1577,7 @@
                     <field name="legend_done" invisible="1"/>
                     <field name="legend_blocked" invisible="1"/>
                     <field name="kanban_state" widget="state_selection" optional="show" options="{'hide_label': True}" nolabel="1" required="0"/>
-                    <field name="state_id" optional="show" readonly="not context.get('default_project_id')" widget="project_task_state_selection"/>
+                    <field name="state_id" widget="project_task_state_selection" optional="show" readonly="not context.get('default_project_id')" options="{'hide_label': True}" nolabel="1" />
                     <field name="stage_id" invisible="context.get('set_visible',False)" optional="show" readonly="not context.get('default_project_id')"/>
                     <field name="recurrence_id" invisible="1" />
                 </tree>

@@ -1130,6 +1130,7 @@ class Task(models.Model):
      tracking=True, change_default=True, recursive=True)
     state_approval_mode = fields.Boolean(default=False, store=True)
     state_pre_block = fields.Char(string='Remember state before task block', store=True, copy=False)
+    state_key = fields.Integer(related='state_id.key', readonly=True)
     
     kanban_state = fields.Selection([
         ('normal', 'In Progress'),
@@ -2520,17 +2521,24 @@ class Task(models.Model):
                     ('is_closed', '=', False)]).write({'partner_id': new_partner.id})
         return super(Task, self)._message_post_after_hook(message, msg_vals)
 
-    def action_approve_state(self):
-        self.write({'state_id': self.env['project.task.state'].search([('name', '=', "Approved")])})
+    def action_toggle_approve_state(self):
+        new_key = 5 if self.state_id.key != 5 else 4
+        self.write({'state_id': self.env['project.task.state'].search([('key', '=', new_key)])})
 
-    def action_request_changes_state(self):
-        self.write({'state_id': self.env['project.task.state'].search([('name', '=', "Changes requested")])})
 
-    def action_reject_state(self):
-        self.write({'state_id': self.env['project.task.state'].search([('name', '=', "Rejected")])})
+    def action_toggle_request_changes_state(self):
+        new_key = 7 if self.state_id.key != 7 else 4
+        self.write({'state_id': self.env['project.task.state'].search([('key', '=', new_key)])})
 
-    def action_mark_as_done(self):
-        self.write({'state_id': self.env['project.task.state'].search([('name', '=', "Done")])})
+    def action_toggle_reject_state(self):
+        new_key = 6 if self.state_id.key != 6 else 4
+        self.write({'state_id': self.env['project.task.state'].search([('key', '=', new_key)])})
+
+    def action_toggle_mark_as_done(self):
+        # state_id.key 
+        print(self.state_id)
+        new_key = 2 if self.state_id.key != 2 else 1
+        self.write({'state_id': self.env['project.task.state'].search([('key', '=', new_key)])})
 
     def action_assign_to_me(self):
         self.write({'user_ids': [(4, self.env.user.id)]})
