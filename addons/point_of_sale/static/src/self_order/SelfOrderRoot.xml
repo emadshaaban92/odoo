@@ -2,7 +2,6 @@
 <templates id="template" xml:space="preserve">
 
     <t t-name="SelfOrderRoot" owl="1">
-            <t t-esc="menu.menu"/>
             <!-- Landing Page at the start -->
             <!-- This is the first page the users sees when they go on the website -->
             <t t-if="state.currentScreen == 0">
