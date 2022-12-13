@@ -1131,6 +1131,7 @@ class Task(models.Model):
     state_approval_mode = fields.Boolean(default=False, store=True)
     state_pre_block = fields.Char(string='Remember state before task block', store=True, copy=False)
     state_key = fields.Integer(related='state_id.key', readonly=True)
+    state_forced = fields.Boolean(default=False)
     
     kanban_state = fields.Selection([
         ('normal', 'In Progress'),
@@ -1412,9 +1413,9 @@ class Task(models.Model):
 
     @api.onchange('state_approval_mode')
     def _onchange_state_approval_mode(self):
-        if self.state_id != self.env['project.task.state'].search([('name', '=', "Waiting")]):
-            default_state = "Pending approval" if self.state_approval_mode else "In Progress"
-            self.state_id = self.env['project.task.state'].search([('name', '=', default_state)])
+        if self.state_id != self.env['project.task.state'].search([('key', '=', 3)]):   #waiting state
+            default_key = 4 if self.state_approval_mode else 1      # 4-> Pending approval, 1-> In Progress
+            self.state_id = self.env['project.task.state'].search([('key', '=', default_key)])
 
     #@api.depends('project_id')
     #def _compute_state(self):
@@ -2520,6 +2521,15 @@ class Task(models.Model):
                     ('email_from', '=', new_partner.email),
                     ('is_closed', '=', False)]).write({'partner_id': new_partner.id})
         return super(Task, self)._message_post_after_hook(message, msg_vals)
+
+    def action_toggle_approval_mode(self):
+        for task in self.browse(self.env.context['active_ids']):
+            #task.state_approval_mode = not task.state_approval_mode
+            task.write({'state_approval_mode': not task.state_approval_mode})
+            if task.state_id != task.env['project.task.state'].search([('key', '=', 3)]):   #waiting state
+                default_key = 4 if task.state_approval_mode else 1      # 4-> Pending approval, 1-> In Progress
+                task.state_id = task.env['project.task.state'].search([('key', '=', default_key)])
+
 
     def action_toggle_approve_state(self):
         new_key = 5 if self.state_id.key != 5 else 4

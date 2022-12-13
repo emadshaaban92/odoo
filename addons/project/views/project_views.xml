@@ -1100,6 +1100,9 @@
                     <field name="allow_milestones" invisible="1" />
                     <field name="parent_id" invisible="1"/>
                     <field name="company_id" invisible="1"/>
+                    <field name="state_approval_mode" invisible="1"/>
+                    <field name="state_key" invisible="1"/>
+                    <field name="state_id" invisible="1"/>
                     <header>
                         <button name="action_toggle_approve_state" string="Approve" type="object" class="" attrs="{'invisible' : &quot;['|', ('state_approval_mode', '=', False), ('state_key','=',5)]&quot;}" icon="fa-check"/>
                         <button name="action_toggle_approve_state" string="Approved" type="object" class="oe_highlight" attrs="{'invisible' : &quot;['|', ('state_approval_mode', '=', False), ('state_key','!=',5)]&quot;}" icon="fa-check"/>
@@ -1178,6 +1181,8 @@
                             </div>
                             <field name="kanban_state" widget="state_selection" class=""/>
                         </h1>
+                        <!--
+                            Debuging field gor state_id
                         <h2>
                             statekey:
                             <field name="state_key"/>
@@ -1186,7 +1191,7 @@
                             <field name="state_id" class="" string="State: " domain="[('approval_mode', '=', state_approval_mode), ('user_trigger_possible', '=', True)]"/>
                             Approval Mode
                             <field name="state_approval_mode" class="" string="Approval mode"/>
-                        </h2>
+                        </h2>-->
                         
                     </div>
                     <group>
@@ -1850,6 +1855,18 @@
             <field name="view_mode">tree,form,calendar,graph,kanban</field>
             <field name="domain">[('project_id', '=', active_id)]</field>
             <field name="context">{'project_id':active_id}</field>
+        </record>
+
+        
+        <record id="action_toggle_approval_mode" model="ir.actions.server">
+            <field name="name">Mark as approval</field>
+            <field name="model_id" ref="model_project_task"/>
+            <field name="binding_model_id" ref="project.model_project_task"/>
+            <field name="binding_view_types">form</field>
+            <field name="state">code</field>
+            <field name="code">
+                action = model.action_toggle_approval_mode()
+            </field>
         </record>
 
         <record id="action_view_task_from_milestone" model="ir.actions.act_window">
