@@ -245,7 +245,7 @@ function augmentStepManual(step, options) {
                 );
                 // This callback can be called multiple times until it returns true.
                 // We should take into account the fact the element is not in the
-                // dom. [pointTo] takes into account whether [stepEl] is null or not.
+                // dom. [updateOnStep] takes into account whether [stepEl] is null or not.
                 prevEl = stepEl;
                 // [alt_trigger] - alternative to [trigger].
                 // [extra_trigger] - should also be present together with the [trigger].
@@ -264,7 +264,7 @@ function augmentStepManual(step, options) {
                     $anchorEl = getAnchorEl($(stepEl), consumeEvent);
                     // Start waiting for action, or automatically perform `step.run`.
                     // Set `proceedWith` to a non-falsy value as a signal to proceed to the next step.
-                    options.pointerMethods.show();
+                    options.pointerMethods.setState({ isVisible: true });
                     $anchorEl.on(`${consumeEvent}.anchor`, async () => {
                         // TODO-JCB: The following logic comes from _getAnchorAndCreateEvent and it might be important to take it into account.
                         // $consumeEventAnchors.on(consumeEvent + ".anchor", (function (e) {
@@ -287,8 +287,14 @@ function augmentStepManual(step, options) {
                         // The following will call this `trigger` function which returns the `proceedWith`.
                         options.advance();
                     });
+                    $anchorEl.on("mouseenter.anchor", () => {
+                        options.pointerMethods.setState({ mode: "info" });
+                    });
+                    $anchorEl.on("mouseleave.anchor", () => {
+                        options.pointerMethods.setState({ mode: "bubble" });
+                    });
                 }
-                options.pointerMethods.pointTo($anchorEl[0] || stepEl);
+                options.pointerMethods.updateOnStep(step, stepEl && $anchorEl[0]);
             },
             action: () => {
                 // Clean up
@@ -296,7 +302,7 @@ function augmentStepManual(step, options) {
                 stepEl = undefined;
                 consumeEvent = undefined;
                 $anchorEl = undefined;
-                options.pointerMethods.hide();
+                options.pointerMethods.setState({ isVisible: false, mode: "bubble" });
             },
         },
     ];
@@ -317,7 +323,7 @@ function augmentMacro(macroDescription, augmenter, options) {
                 {
                     action: () => {
                         console.log("Tour done!");
-                        options.pointerMethods.hide();
+                        options.pointerMethods.setState({ isVisible: false });
                     },
                 },
             ]),
@@ -326,37 +332,28 @@ function augmentMacro(macroDescription, augmenter, options) {
 
 /**
  * @param {*} param0
- * @returns {[state: { x, y, isVisible, position, content, mode, viewPortState, fixed }, methods: { pointTo, hide, show }]}
+ * @returns {[state: { x, y, isVisible, position, content, mode, viewPortState, fixed }, methods: { updateOnStep, setState }]}
  */
 function createPointerState({ x, y, isVisible, position, content, mode, viewPortState, fixed }) {
     const state = reactive({ x, y, isVisible, position, content, mode, viewPortState, fixed });
     const pointerSize = { width: 20, height: 20 };
 
-    function hide() {
-        state.isVisible = false;
-    }
-
-    function show() {
-        state.isVisible = true;
-    }
-
-    /**
-     * Update [state] to refer to the given [el].
-     * If [el] is undefined, hide the pointer.
-     * @param {Element | undefined} el
-     */
-    function pointTo(el) {
+    function updateOnStep(step, el) {
         if (el) {
             const rect = el.getBoundingClientRect();
             const top = rect.top - pointerSize.width;
             const left = rect.left + rect.width / 2 - pointerSize.height / 2;
-            Object.assign(state, { x: left, y: top });
+            Object.assign(state, { x: left, y: top, content: step.content || "" });
         } else {
-            hide();
+            setState({ isVisible: false });
         }
     }
 
-    return [state, { pointTo, hide, show }];
+    function setState(obj) {
+        Object.assign(state, obj);
+    }
+
+    return [state, { updateOnStep, setState }];
 }
 
 /**
@@ -425,11 +422,6 @@ export const tourService = {
             const { tourName: _tourName, mode } = params;
             const tourDesc = registry.category("tours").get(params.tourName);
 
-            // Modify the steps to be compatible to Macro system.
-            for (const step of tourDesc.steps) {
-                delete step.content;
-            }
-
             const augmentedMacro = augmentMacro(
                 Object.assign(tourDesc, { interval: mode.kind === "manual" ? 0 : mode.interval }),
                 mode.kind === "manual" ? augmentStepManual : augmentStepAuto,
@@ -449,7 +441,11 @@ export const tourService = {
 
         registry.category("main_components").add("TourPointer", {
             Component: TourPointer,
-            props: { pointerState },
+            props: {
+                pointerState,
+                onMouseEnter: () => pointerMethods.setState({ mode: "info" }),
+                onMouseLeave: () => pointerMethods.setState({ mode: "bubble" }),
+            },
         });
 
         return { run };

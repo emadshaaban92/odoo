@@ -1,12 +1,12 @@
 /** @odoo-module **/
 
-import { Component, xml } from "@odoo/owl";
+import { Component, markup, xml } from "@odoo/owl";
 
 export class TourPointer extends Component {
     static template = xml`
-        <div class="o_tooltip" t-att-class="extraClasses" t-att-style="style">
+        <div class="o_tooltip" t-att-class="extraClasses" t-att-style="style" t-on-mouseenter="props.onMouseEnter" t-on-mouseleave="props.onMouseLeave">
             <div class="o_tooltip_content">
-                <t t-out="props.pointerState.content"/>
+                <t t-out="contentMarkup"/>
             </div>
         </div>
     `;
@@ -42,6 +42,8 @@ export class TourPointer extends Component {
                 fixed: Boolean,
             },
         },
+        onMouseEnter: Function,
+        onMouseLeave: Function,
     };
     setup() {
         // If anchor is not inside the screen, the pointer should point where to scroll.
@@ -51,7 +53,7 @@ export class TourPointer extends Component {
     get extraClasses() {
         return {
             // TODO-JCB: Can this be static?
-            o_animated: true,
+            [this.props.pointerState.mode === "bubble" ? "o_animated" : "active"]: true,
 
             // TODO-JCB: Should be removed.
             o_tooltip_visible: this.props.pointerState.isVisible,
@@ -59,6 +61,9 @@ export class TourPointer extends Component {
             [this.props.pointerState.position]: true,
             o_tooltip_fixed: this.props.pointerState.fixed,
         };
+    }
+    get contentMarkup() {
+        return markup(this.props.pointerState.content);
     }
     get style() {
         return `top: ${this.props.pointerState.y}px; left: ${this.props.pointerState.x}px;`;
