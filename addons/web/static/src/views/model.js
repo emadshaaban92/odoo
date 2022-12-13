@@ -112,6 +112,7 @@ export function useModel(ModelClass, params, options = {}) {
             ? globalState.useSampleModel
             : component.props.useSampleModel
     );
+    model.isSampleModelActive = false;
     model.useSampleModel = !options.ignoreUseSampleModel ? useSampleModel : false;
     const orm = model.orm;
     let sampleORM = globalState.sampleORM;
@@ -128,6 +129,7 @@ export function useModel(ModelClass, params, options = {}) {
                 sampleORM.setGroups(model.getGroups());
                 // Load data with sampleORM then restore real ORM.
                 model.orm = sampleORM;
+                model.isSampleModelActive = true;
                 await model.load(searchParams);
                 model.orm = orm;
             } else {

@@ -4,6 +4,10 @@ import { parseDate, serializeDate, serializeDateTime } from "@web/core/l10n/date
 import { ORM } from "@web/core/orm_service";
 import { registry } from "@web/core/registry";
 import { groupBy as arrayGroupBy, sortBy as arraySortBy } from "@web/core/utils/arrays";
+import {localization} from "@web/core/l10n/localization";
+
+const { DateTime } = luxon;
+
 
 class UnimplementedRouteError extends Error {}
 
@@ -450,7 +454,11 @@ export class SampleServer {
         const measures = [];
         for (const measureSpec of params.fields || Object.keys(fields)) {
             const matches = measureSpec.match(MEASURE_SPEC_REGEX);
-            const { fieldName, aggregateFunction, measure } = (matches && matches.groups) || {};
+            let { fieldName, aggregateFunction, measure } = (matches && matches.groups) || {};
+            if (!aggregateFunction && measureSpec in fields && fields[measureSpec].group_operator) {
+                aggregateFunction = fields[measureSpec].group_operator;
+                measure = measureSpec;
+            }
             if (!fieldName && !measure) {
                 continue; // this is for _count measure
             }
@@ -466,6 +474,9 @@ export class SampleServer {
         }
 
         let result = [];
+
+        const firstDayOfWeek = localization.weekStart;
+
         for (const id in groups) {
             const records = groups[id];
             const group = { __domain: [] };
@@ -476,8 +487,27 @@ export class SampleServer {
             group[countKey] = records.length;
             const firstElem = records[0];
             for (const gb of normalizedGroupBys) {
-                const { alias, fieldName } = gb;
+                const { alias, fieldName, interval, type } = gb;
                 group[alias] = this._formatValue(firstElem[fieldName], gb);
+                if (["date", "datetime"].includes(type)) {
+                    const dateValue = new DateTime.fromISO(firstElem[fieldName]);
+                    let from, to;
+                    if (interval !== "week") {
+                        from = dateValue.startOf(interval);
+                        to = dateValue.endOf(interval);
+                    } else {
+                        // Luxon's default is monday to monday week so we need to change its behavior.
+                        const targetWeekday =  dateValue.weekday < firstDayOfWeek ? firstDayOfWeek - 7 : firstDayOfWeek;
+                        to = dateValue.set({ weekday: targetWeekday }).startOf("day");
+                        from = dateValue.set({ weekday: targetWeekday }).plus({ weeks: 1, days: -1 }).endOf("day");
+                    }
+                    group['__range'] = {
+                        [alias]: {
+                            from: serializeDate(from),
+                            to: serializeDate(to),
+                        }
+                    }
+                }
             }
             Object.assign(group, this._aggregateFields(measures, records));
             result.push(group);
