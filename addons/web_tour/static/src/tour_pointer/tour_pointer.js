@@ -52,8 +52,8 @@ export class TourPointer extends Component {
     }
     get extraClasses() {
         return {
-            // TODO-JCB: Can this be static?
-            [this.props.pointerState.mode === "bubble" ? "o_animated" : "active"]: true,
+            // [this.props.pointerState.mode === "bubble" ? "o_animated" : "active"]: true,
+            o_animated: true, // TODO-JCB: Temporarily disable mode toggling. Remove this and uncomment line above.
 
             // TODO-JCB: Should be removed.
             o_tooltip_visible: this.props.pointerState.isVisible,

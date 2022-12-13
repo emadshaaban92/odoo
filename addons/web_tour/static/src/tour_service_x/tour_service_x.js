@@ -336,14 +336,37 @@ function augmentMacro(macroDescription, augmenter, options) {
  */
 function createPointerState({ x, y, isVisible, position, content, mode, viewPortState, fixed }) {
     const state = reactive({ x, y, isVisible, position, content, mode, viewPortState, fixed });
-    const pointerSize = { width: 20, height: 20 };
+    const pointerSize = { width: 28, height: 28 };
 
-    function updateOnStep(step, el) {
-        if (el) {
-            const rect = el.getBoundingClientRect();
-            const top = rect.top - pointerSize.width;
-            const left = rect.left + rect.width / 2 - pointerSize.height / 2;
-            Object.assign(state, { x: left, y: top, content: step.content || "" });
+    // TODO-JCB: Take into account the rtl config.
+    function computeLocation(el, position = "right") {
+        let top, left;
+        const rect = el.getBoundingClientRect();
+        if (position == "top") {
+            top = rect.top - pointerSize.height;
+            left = rect.left + rect.width / 2 - pointerSize.width / 2;
+        } else if (position == "bottom") {
+            top = rect.top + rect.height
+            left = rect.left + rect.width / 2 - pointerSize.width / 2;
+        } else if (position == "left") {
+            top = rect.top + rect.height / 2 - pointerSize.height / 2;
+            left = rect.left;
+        } else if (position == "right") {
+            top = rect.top + rect.height / 2 - pointerSize.height / 2;
+            left = rect.left + rect.width;
+        }
+        return [top, left];
+    }
+
+    function updateOnStep(step, anchorEl) {
+        if (anchorEl) {
+            const [top, left] = computeLocation(anchorEl, step.position);
+            Object.assign(state, {
+                x: left,
+                y: top,
+                content: step.content || "",
+                position: step.position,
+            });
         } else {
             setState({ isVisible: false });
         }
