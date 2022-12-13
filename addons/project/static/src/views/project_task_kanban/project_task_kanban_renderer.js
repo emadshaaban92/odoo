@@ -1,10 +1,11 @@
 /** @odoo-module */
 
+import { registry } from "@web/core/registry";
 import { useService } from '@web/core/utils/hooks';
 import { KanbanRenderer } from '@web/views/kanban/kanban_renderer';
 import { FormViewDialog } from "@web/views/view_dialogs/form_view_dialog";
 
-const { onWillStart } = owl;
+const { onWillStart, onWillUpdateProps } = owl;
 
 export class ProjectTaskKanbanRenderer extends KanbanRenderer {
     setup() {
@@ -13,7 +14,19 @@ export class ProjectTaskKanbanRenderer extends KanbanRenderer {
         this.action = useService('action');
 
         this.isProjectManager = false;
+        this.exampleData = this._exampleData(this.props);
         onWillStart(this.onWillStart);
+        onWillUpdateProps((nextProps) => {
+            this.exampleData = this._exampleData(nextProps);
+        });
+    }
+
+    _exampleData(props) {
+        if (props.list.groupBy[0] === "personal_stage_type_ids") {
+            return null;
+        } else {
+            return registry.category("kanban_examples").get(this.props.archInfo.examples, null);
+        }
     }
 
     get canMoveRecords() {

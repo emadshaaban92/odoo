@@ -272,6 +272,12 @@ class Project(models.Model):
         # Since project stages are order by sequence first, this should fetch the one with the lowest sequence number.
         return self.env['project.project.stage'].search([], limit=1)
 
+    @api.model
+    def _search_is_favorite(self, operator, value):
+        if operator not in ['=', '!='] or not isinstance(value, bool):
+            raise NotImplementedError(_('Operation not supported'))
+        return [('favorite_user_ids', 'in' if (operator == '=') == value else 'not in', self.env.uid)]
+
     def _compute_is_favorite(self):
         for project in self:
             project.is_favorite = self.env.user in project.favorite_user_ids
@@ -298,6 +304,52 @@ class Project(models.Model):
     name = fields.Char("Name", index='trigram', required=True, tracking=True, translate=True, default_export_compatible=True,
         help="Name of your project. It can be anything you want e.g. the name of a customer or a service.")
     description = fields.Html(help="Description to provide more information and context about this project")
+
+    @api.model
+    def search(self, args, offset=0, limit=None, order=None, count=False):
+        """ Copy/paste from knowledge_article.search().
+            Allows to order by is_favorite even though this field is compute not stored.
+        """
+        if count or not order or 'is_favorite' not in order:
+            return super(Project, self).search(args, offset=offset, limit=limit, order=order, count=count)
+        order_items = [order_item.strip().lower() for order_item in (order or self._order).split(',')]
+        favorite_desc = any('is_favorite desc' in item for item in order_items)
+
+        # Search projects that are favorite of the current user.
+        new_domain = expression.AND([[('is_favorite', '=', True)], args])
+        new_order = ', '.join(item for item in order_items if 'is_favorite' not in item)
+        project_ids = super().search(new_domain, offset=0, limit=None, order=new_order, count=count).ids
+
+        # keep only requested window (offset + limit, or offset+)
+        project_ids_keep = project_ids[offset:(offset + limit)] if limit else project_ids[offset:]
+        # keep list of already skipped project ids to exclude them from future search
+        project_ids_skip = project_ids[:(offset + limit)] if limit else project_ids
+
+        # do not go further if limit is achieved
+        if limit and len(project_ids_keep) >= limit:
+            return self.browse(project_ids_keep)
+
+        # Fill with remaining projects. If a limit is given, simply remove count of
+        # already fetched. Otherwise keep none. If an offset is set we have to
+        # reduce it by already fetch results hereabove. Order is updated to exclude
+        # is_favorite when calling super() .
+        new_limit = (limit - len(project_ids_keep)) if limit else None
+        if offset:
+            project_offset = max((offset - len(project_ids), 0))
+        else:
+            project_offset = 0
+
+        other_project_res = super(Project, self).search(
+            expression.AND([[('id', 'not in', project_ids_skip)], args]),
+            offset=project_offset, limit=new_limit, order=new_order, count=count
+        )
+        if favorite_desc:
+            return self.browse(project_ids_keep) + other_project_res
+        else:
+            return other_project_res + self.browse(project_ids_keep)
+
+    name = fields.Char("Name", index='trigram', required=True, tracking=True, translate=True, default_export_compatible=True)
+    description = fields.Html()
     active = fields.Boolean(default=True,
         help="If the active field is set to False, it will allow you to hide the project without removing it.")
     sequence = fields.Integer(default=10)
@@ -324,7 +376,7 @@ class Project(models.Model):
         default=_get_default_favorite_user_ids,
         string='Members')
     is_favorite = fields.Boolean(compute='_compute_is_favorite', inverse='_inverse_is_favorite', compute_sudo=True,
-        string='Show Project on Dashboard')
+        search='_search_is_favorite', string='Show Project on Dashboard')
     label_tasks = fields.Char(string='Use Tasks as', default='Tasks', translate=True,
         help="Name used to refer to the tasks of your project e.g. tasks, tickets, sprints, etc...")
     tasks = fields.One2many('project.task', 'project_id', string="Task Activities")
