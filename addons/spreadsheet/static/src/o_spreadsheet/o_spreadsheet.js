@@ -3653,6 +3653,7 @@
         "SET_FORMATTING",
         "CLEAR_FORMATTING",
         "SET_BORDER",
+        "SET_DECIMAL",
         /** CHART */
         "CREATE_CHART",
         "UPDATE_CHART",
@@ -8520,7 +8521,7 @@
         },
         action: (env) => env.model.dispatch("MOVE_SHEET", {
             sheetId: env.model.getters.getActiveSheetId(),
-            direction: "right",
+            delta: 1,
         }),
     })
         .add("move_left", {
@@ -8532,7 +8533,7 @@
         },
         action: (env) => env.model.dispatch("MOVE_SHEET", {
             sheetId: env.model.getters.getActiveSheetId(),
-            direction: "left",
+            delta: -1,
         }),
     })
         .add("hide_sheet", {
@@ -26728,8 +26729,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
      */
     function repairInitialMessages(data, initialMessages) {
         initialMessages = fixTranslatedSheetIds(data, initialMessages);
-        initialMessages = dropCommands(initialMessages, "SORT_CELLS");
-        initialMessages = dropCommands(initialMessages, "SET_DECIMAL");
+        initialMessages = dropSortCommands(data, initialMessages);
         return initialMessages;
     }
     /**
@@ -26767,13 +26767,14 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         }
         return messages;
     }
-    function dropCommands(initialMessages, commandType) {
+    function dropSortCommands(data, initialMessages) {
         const messages = [];
         for (const message of initialMessages) {
             if (message.type === "REMOTE_REVISION") {
                 messages.push({
                     ...message,
-                    commands: message.commands.filter((command) => command.type !== commandType),
+                    // @ts-ignore
+                    commands: message.commands.filter((command) => command.type !== "SORT_CELLS"),
                 });
             }
             else {
@@ -30174,22 +30175,13 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     return this.checkValidations(cmd, this.checkSheetName, this.checkSheetPosition);
                 }
                 case "MOVE_SHEET":
-                    const currentIndex = this.orderedSheetIds.indexOf(cmd.sheetId);
-                    if (cmd.direction === "left") {
-                        const leftSheets = this.orderedSheetIds
-                            .slice(0, currentIndex)
-                            .map((id) => !this.isSheetVisible(id));
-                        return leftSheets.every((isHidden) => isHidden)
-                            ? 13 /* CommandResult.WrongSheetMove */
-                            : 0 /* CommandResult.Success */;
+                    try {
+                        const currentIndex = this.orderedSheetIds.findIndex((id) => id === cmd.sheetId);
+                        this.findIndexOfTargetSheet(currentIndex, cmd.delta);
+                        return 0 /* CommandResult.Success */;
                     }
-                    else {
-                        const rightSheets = this.orderedSheetIds
-                            .slice(currentIndex + 1)
-                            .map((id) => !this.isSheetVisible(id));
-                        return rightSheets.every((isHidden) => isHidden)
-                            ? 13 /* CommandResult.WrongSheetMove */
-                            : 0 /* CommandResult.Success */;
+                    catch (e) {
+                        return 13 /* CommandResult.WrongSheetMove */;
                     }
                 case "RENAME_SHEET":
                     return this.isRenameAllowed(cmd);
@@ -30232,7 +30224,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     this.history.update("sheetIdsMapName", sheet.name, sheet.id);
                     break;
                 case "MOVE_SHEET":
-                    this.moveSheet(cmd.sheetId, cmd.direction);
+                    this.moveSheet(cmd.sheetId, cmd.delta);
                     break;
                 case "RENAME_SHEET":
                     this.renameSheet(this.sheets[cmd.sheetId], cmd.name);
@@ -30577,37 +30569,35 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             this.history.update("sheets", Object.assign({}, sheets, { [sheet.id]: sheet }));
             return sheet;
         }
-        moveSheet(sheetId, direction) {
+        moveSheet(sheetId, delta) {
             const orderedSheetIds = this.orderedSheetIds.slice();
             const currentIndex = orderedSheetIds.findIndex((id) => id === sheetId);
             const sheet = orderedSheetIds.splice(currentIndex, 1);
-            let index = direction === "left"
-                ? this.findIndexOfPreviousVisibleSheet(currentIndex - 1, orderedSheetIds)
-                : this.findIndexOfNextVisibleSheet(currentIndex + 1, orderedSheetIds);
-            if (index === undefined) {
-                index = orderedSheetIds.length;
-            }
+            let index = this.findIndexOfTargetSheet(currentIndex, delta);
             orderedSheetIds.splice(index, 0, sheet[0]);
             this.history.update("orderedSheetIds", orderedSheetIds);
         }
-        findIndexOfPreviousVisibleSheet(current, orderedSheetIds) {
-            while (current >= 0 && !this.isSheetVisible(orderedSheetIds[current])) {
-                current--;
+        findIndexOfTargetSheet(currentIndex, deltaIndex) {
+            while (deltaIndex != 0 && 0 <= currentIndex && currentIndex <= this.orderedSheetIds.length) {
+                if (deltaIndex > 0) {
+                    currentIndex++;
+                    if (this.isSheetVisible(this.orderedSheetIds[currentIndex])) {
+                        deltaIndex--;
+                    }
+                }
+                else if (deltaIndex < 0) {
+                    currentIndex--;
+                    if (this.isSheetVisible(this.orderedSheetIds[currentIndex])) {
+                        deltaIndex++;
+                    }
+                }
             }
-            if (current === -1) {
-                throw new Error("There is no previous visible sheet");
+            if (deltaIndex === 0) {
+                return currentIndex;
             }
-            return current;
-        }
-        findIndexOfNextVisibleSheet(current, orderedSheetIds) {
-            while (current < orderedSheetIds.length && !this.isSheetVisible(orderedSheetIds[current])) {
-                current++;
+            else {
+                throw new Error("There is not enough visible sheets");
             }
-            if (current === orderedSheetIds.length - 1 &&
-                !this.isSheetVisible(orderedSheetIds[current - 1])) {
-                return undefined;
-            }
-            return current;
         }
         checkSheetName(cmd) {
             const { orderedSheetIds, sheets } = this;
@@ -34318,7 +34308,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             }
         }
         drawOverflowingCellBackground(renderingContext) {
-            var _a, _b;
+            var _a, _b, _c, _d;
             const { ctx, thinLineWidth } = renderingContext;
             for (const box of this.boxes) {
                 if (box.content && box.isOverflow) {
@@ -34327,19 +34317,18 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     let width;
                     const y = box.y + thinLineWidth / 2;
                     const height = box.height - thinLineWidth;
-                    const clipWidth = Math.min(((_a = box.clipRect) === null || _a === void 0 ? void 0 : _a.width) || Infinity, box.content.width);
                     if (align === "left") {
                         x = box.x + thinLineWidth / 2;
-                        width = clipWidth - 2 * thinLineWidth;
+                        width = (((_a = box.clipRect) === null || _a === void 0 ? void 0 : _a.width) || box.content.width) - 2 * thinLineWidth;
                     }
                     else if (align === "right") {
                         x = box.x + box.width - thinLineWidth / 2;
-                        width = -clipWidth + 2 * thinLineWidth;
+                        width = -(((_b = box.clipRect) === null || _b === void 0 ? void 0 : _b.width) || box.content.width) + 2 * thinLineWidth;
                     }
                     else {
                         x =
-                            (((_b = box.clipRect) === null || _b === void 0 ? void 0 : _b.x) || box.x + box.width / 2 - box.content.width / 2) + thinLineWidth / 2;
-                        width = clipWidth - 2 * thinLineWidth;
+                            (((_c = box.clipRect) === null || _c === void 0 ? void 0 : _c.x) || box.x + box.width / 2 - box.content.width / 2) + thinLineWidth / 2;
+                        width = (((_d = box.clipRect) === null || _d === void 0 ? void 0 : _d.width) || box.content.width) - 2 * thinLineWidth;
                     }
                     ctx.fillStyle = "#ffffff";
                     ctx.fillRect(x, y, width, height);
@@ -35313,7 +35302,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             this.clientId = "local";
             this.pendingMessages = [];
             this.waitingAck = false;
-            this.isReplayingInitialRevisions = false;
             this.processedRevisions = new Set();
             this.uuidGenerator = new UuidGenerator();
             this.debouncedMove = debounce(this._move.bind(this), DEBOUNCE_TIME);
@@ -35373,7 +35361,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             this.transportService.onNewMessage(this.clientId, this.onMessageReceived.bind(this));
         }
         loadInitialMessages(messages) {
-            this.isReplayingInitialRevisions = true;
             this.on("unexpected-revision-id", this, ({ revisionId }) => {
                 throw new Error(`The spreadsheet could not be loaded. Revision ${revisionId} is corrupted.`);
             });
@@ -35381,7 +35368,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 this.onMessageReceived(message);
             }
             this.off("unexpected-revision-id", this);
-            this.isReplayingInitialRevisions = false;
         }
         /**
          * Notify the server that the user client left the collaborative session
@@ -35569,10 +35555,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     clientId: revision.clientId,
                     commands: revision.commands,
                 };
-            }
-            if (this.isReplayingInitialRevisions) {
-                throw new Error(`Trying to send a new revision while replaying initial revision. This can lead to endless dispatches every time the spreadsheet is open.
-      ${JSON.stringify(message)}`);
             }
             this.transportService.sendMessage({
                 ...message,
@@ -37810,9 +37792,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         }
     }
 
-    // -----------------------------------------------------------------------------
-    // SpreadSheet
-    // -----------------------------------------------------------------------------
     css /* scss */ `
   .o-spreadsheet-bottom-bar {
     background-color: ${BACKGROUND_GRAY_COLOR};
@@ -37847,6 +37826,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
       align-items: center;
       max-width: 80%;
       overflow: hidden;
+      padding-left: 1px;
     }
 
     .o-sheet {
@@ -37857,10 +37837,28 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
       line-height: ${BOTTOMBAR_HEIGHT}px;
       user-select: none;
       white-space: nowrap;
+      background-color: ${BACKGROUND_GRAY_COLOR};
+
       border-left: 1px solid #c1c1c1;
 
       &:last-child {
         border-right: 1px solid #c1c1c1;
+      }
+
+      &.dragging {
+        left: 0px;
+        border-right: 1px solid #c1c1c1;
+        margin-right: -1px;
+
+        position: relative;
+        transition: left 0.5s;
+        cursor: move;
+      }
+
+      &.dragged {
+        transition: left 0s;
+        background-color: rgba(0, 0, 0, 0.08);
+        z-index: 1000;
       }
 
       &.active {
@@ -37908,11 +37906,31 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             super(...arguments);
             this.bottomBarRef = owl.useRef("bottomBar");
             this.menuState = owl.useState({ isOpen: false, position: null, menuItems: [] });
+            this.sheetState = owl.useState({
+                sheetList: this.getVisibleSheets(),
+                dnd: undefined,
+            });
             this.selectedStatisticFn = "";
         }
         setup() {
             owl.onMounted(() => this.focusSheet());
-            owl.onPatched(() => this.focusSheet());
+            owl.onPatched(() => {
+                if (!this.sheetState.dnd)
+                    document.body.style.cursor = "";
+                this.focusSheet();
+            });
+            owl.onWillUpdateProps(() => {
+                const visibleSheets = this.getVisibleSheets();
+                // Cancel sheet dragging when there is a change in the sheets
+                if (this.sheetState.dnd && !deepEquals(this.sheetState.sheetList, visibleSheets)) {
+                    this.stopDragging();
+                }
+                this.sheetState.sheetList = visibleSheets;
+            });
+        }
+        isDragged(sheetId) {
+            var _a;
+            return ((_a = this.sheetState.dnd) === null || _a === void 0 ? void 0 : _a.draggedSheetId) === sheetId;
         }
         focusSheet() {
             const div = this.bottomBarRef.el.querySelector(`[data-id="${this.env.model.getters.getActiveSheetId()}"]`);
@@ -37929,9 +37947,13 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             this.env.model.dispatch("ACTIVATE_SHEET", { sheetIdFrom: activeSheetId, sheetIdTo: sheetId });
         }
         getVisibleSheets() {
-            return this.env.model.getters
-                .getVisibleSheetIds()
-                .map((sheetId) => this.env.model.getters.getSheet(sheetId));
+            return this.env.model.getters.getVisibleSheetIds().map((sheetId) => {
+                const sheet = this.env.model.getters.getSheet(sheetId);
+                return { id: sheet.id, name: sheet.name };
+            });
+        }
+        getSheets() {
+            return this.sheetState.sheetList;
         }
         listSheets(ev) {
             const registry = new MenuItemRegistry();
@@ -37968,12 +37990,15 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             this.menuState.menuItems = registry.getAll().filter((x) => x.isVisible(this.env));
             this.menuState.position = { x, y };
         }
+        closeContextMenu() {
+            this.menuState.isOpen = false;
+        }
         onIconClick(sheet, ev) {
             if (this.env.model.getters.getActiveSheetId() !== sheet) {
                 this.activateSheet(sheet);
             }
             if (this.menuState.isOpen) {
-                this.menuState.isOpen = false;
+                this.closeContextMenu();
             }
             else {
                 const target = ev.currentTarget.parentElement;
@@ -37988,6 +38013,122 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             const target = ev.currentTarget;
             const { top, left } = target.getBoundingClientRect();
             this.openContextMenu(left, top, sheetMenuRegistry);
+        }
+        onSheetMouseDown(sheetId, event) {
+            if (event.button !== 0)
+                return;
+            const mouseX = event.clientX;
+            document.body.style.cursor = "move";
+            this.activateSheet(sheetId);
+            const visibleSheets = this.getVisibleSheets();
+            const sheetRects = this.getSheetItemRects();
+            this.sheetState.dnd = {
+                draggedSheetId: sheetId,
+                sheets: visibleSheets.map((sheet, index) => ({
+                    sheetId: sheet.id,
+                    width: sheetRects[index].width,
+                    x: sheetRects[index].x,
+                    startingX: sheetRects[index].x,
+                })),
+                currentMouseX: mouseX,
+                deadZone: undefined,
+                initialMouseX: mouseX,
+            };
+            this.closeContextMenu();
+            startDnd(this.dragSheetMouseMove.bind(this), this.dragSheetMouseUp.bind(this));
+        }
+        dragSheetMouseMove(event) {
+            const dndState = this.sheetState.dnd;
+            if (!dndState || event.button !== 0) {
+                this.stopDragging();
+                return;
+            }
+            const mouseX = event.clientX;
+            const hoveredSheetIndex = this.getHoveredSheetIndex(mouseX, dndState.sheets.map((sheet) => sheet.x));
+            const draggedSheetIndex = dndState.sheets.findIndex((sheet) => sheet.sheetId === dndState.draggedSheetId);
+            const draggedSheet = dndState.sheets[draggedSheetIndex];
+            dndState.currentMouseX = mouseX;
+            if (dndState.deadZone && mouseX >= dndState.deadZone.start && mouseX <= dndState.deadZone.end) {
+                return;
+            }
+            else if (mouseX >= draggedSheet.x && mouseX <= draggedSheet.x + draggedSheet.width) {
+                dndState.deadZone = undefined;
+            }
+            if (draggedSheetIndex === hoveredSheetIndex)
+                return;
+            const startIndex = Math.min(draggedSheetIndex, hoveredSheetIndex);
+            const endIndex = Math.max(draggedSheetIndex, hoveredSheetIndex);
+            const dir = Math.sign(hoveredSheetIndex - draggedSheetIndex);
+            let movedWidth = 0;
+            for (let i = startIndex; i <= endIndex; i++) {
+                if (i === draggedSheetIndex) {
+                    continue;
+                }
+                dndState.sheets[i].x -= dir * draggedSheet.width;
+                movedWidth += dndState.sheets[i].width;
+            }
+            draggedSheet.x += dir * movedWidth;
+            dndState.deadZone =
+                dir > 0
+                    ? { start: mouseX, end: draggedSheet.x }
+                    : { start: draggedSheet.x + draggedSheet.width, end: mouseX };
+            dndState.sheets.sort((sheet1, sheet2) => sheet1.x - sheet2.x);
+        }
+        getHoveredSheetIndex(mouseX, xs) {
+            let hoveredSheetIndex = -1;
+            for (let x of xs) {
+                if (x > mouseX) {
+                    break;
+                }
+                hoveredSheetIndex++;
+            }
+            return Math.max(0, hoveredSheetIndex);
+        }
+        dragSheetMouseUp(event) {
+            const dndState = this.sheetState.dnd;
+            if (!dndState || event.button !== 0)
+                return;
+            const sheetId = dndState.draggedSheetId;
+            const originalIndex = this.sheetState.sheetList.findIndex((sheet) => sheet.id === sheetId);
+            const targetSheetIndex = dndState.sheets.findIndex((sheet) => sheet.sheetId === sheetId);
+            const delta = targetSheetIndex - originalIndex;
+            if (sheetId && delta !== 0) {
+                this.env.model.dispatch("MOVE_SHEET", {
+                    sheetId: sheetId,
+                    delta: delta,
+                });
+            }
+            this.stopDragging();
+        }
+        getSheetItemStyle(id) {
+            var _a;
+            const dndState = this.sheetState.dnd;
+            const sheet = (_a = this.sheetState.dnd) === null || _a === void 0 ? void 0 : _a.sheets.find((sheet) => sheet.sheetId === id);
+            if (!dndState || !sheet)
+                return "";
+            if (id !== dndState.draggedSheetId) {
+                return cssPropertiesToCss({
+                    left: `${Math.floor(sheet ? sheet.x - sheet.startingX : 0)}px`,
+                });
+            }
+            const firstSheetX = dndState.sheets[0].x;
+            const lastSheet = dndState.sheets[dndState.sheets.length - 1];
+            const lastSheetX = lastSheet.x + lastSheet.width;
+            let mouseOffset = dndState.currentMouseX - dndState.initialMouseX;
+            let left = mouseOffset;
+            left = Math.max(firstSheetX - sheet.startingX, left);
+            left = Math.min(lastSheetX - sheet.startingX - sheet.width, left);
+            return cssPropertiesToCss({
+                left: `${Math.floor(left)}px`,
+            });
+        }
+        stopDragging() {
+            document.body.style.cursor = "";
+            this.sheetState.sheetList = this.getVisibleSheets();
+            this.sheetState.dnd = undefined;
+        }
+        getSheetItemRects() {
+            return Array.from(document.querySelectorAll(`.o-sheet.o-sheet-item`)).map((sheetEl) => sheetEl.getBoundingClientRect());
         }
         getSelectedStatistic() {
             const statisticFnResults = this.env.model.getters.getStatisticFnResults();
@@ -42569,10 +42710,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     case 3 /* Status.Finalizing */:
                         throw new Error("Cannot dispatch commands in the finalize state");
                     case 2 /* Status.RunningCore */:
-                        if (isCoreCommand(command)) {
-                            throw new Error(`A UI plugin cannot dispatch ${type} while handling a core command`);
-                        }
-                        this.dispatchToHandlers(this.handlers, command);
+                        throw new Error("A UI plugin cannot dispatch while handling a core command");
                 }
                 return DispatchResult.Success;
             };
@@ -42706,10 +42844,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         }
         onRemoteRevisionReceived({ commands }) {
             for (let command of commands) {
-                const previousStatus = this.status;
-                this.status = 2 /* Status.RunningCore */;
                 this.dispatchToHandlers(this.allUIPlugins, command);
-                this.status = previousStatus;
             }
             this.finalize();
         }
@@ -43000,8 +43135,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-12-09T15:01:03.892Z';
-    exports.__info__.hash = '1419e57';
+    exports.__info__.date = '2022-12-13T15:52:13.067Z';
+    exports.__info__.hash = '2986007';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
