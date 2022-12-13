@@ -2,25 +2,29 @@
 <templates id="template" xml:space="preserve">
     <t t-name="ProductMainView" owl="1">
         <NavBar restaurantName="props.restaurantName" tableNumber="props.tableNumber" viewMenu="props.viewMenu"/>
-            <div class="text-center m-4">
-                <img t-att-src="props.product.image" class="img-fluid" alt="Product image"/>
-            </div>
-            <!-- Name and Price -->
-            <div class="d-flex w-100 justify-content-around">
-                <!-- Product Name -->
-                <h3><t t-esc="props.product.name"/></h3>
-                <!-- Price -->
-                <h3 class="ml-auto text-secondary"><t t-esc="props.product.price + '€'"/></h3>
-            </div>
-            <!-- Product Description -->
-            <div class="p-3">
-                <t t-esc="props.product.description"/>    
-            </div>
-            <!-- quantity select and add to cart button -->
-            <div>
-                <IncrementCounter setValue="setQuantity" value="state.quantity"/>
-               <button t-on-click="() => props.addToCart(props.product.id, state.quantity)"
-                        class="fixed-bottom btn btn-primary btn-lg btn-block w-100">Add to Cart</button>
+            <!-- this padding-bottom is important in order for the Cart button not to -->
+            <!-- appear over the last item -->
+            <div class="pb-5">
+                <div class="text-center m-4">
+                    <img t-att-src="props.product.image" class="img-fluid" alt="Product image"/>
+                </div>
+                <!-- Name and Price -->
+                <div class="d-flex w-100 justify-content-around">
+                    <!-- Product Name -->
+                    <h3><t t-esc="props.product.name"/></h3>
+                    <!-- Price -->
+                    <h3 class="ml-auto text-secondary"><t t-esc="props.product.price + '€'"/></h3>
+                </div>
+                <!-- Product Description -->
+                <div class="p-3">
+                    <t t-esc="props.product.description"/>    
+                </div>
+                <!-- quantity select and add to cart button -->
+                    <div class="m-5">
+                        <IncrementCounter setValue="setQuantity" value="state.quantity"/>
+                    </div>
+                    <button t-on-click="() => props.addToCart(props.product.id, state.quantity)"
+                                class="p-3 fixed-bottom btn btn-primary btn-lg btn-block w-100">Add to Cart</button>
             </div>
     </t>
 </templates>
