@@ -1356,6 +1356,7 @@ td {
     overflow-x: hidden;
     overflow-y: auto;
     border-left: solid 1px $gray-300;
+    flex: 1 1 0px;
 }
 
 @media screen and (min-width: 768px) {
@@ -1427,11 +1428,13 @@ td {
     max-width: inherit;
     border: none;
     max-height: 100%;
+    flex: 1 1 0px;
 }
 .payment-screen .center-content {
     display: grid;
     grid-template-rows: auto 1fr;
     border: 10px solid $gray-300;
+    flex: 1 1 0px;
 }
 .payment-screen p.title-category {
     margin: 0;
@@ -1522,6 +1525,7 @@ td {
     margin-left: 10px;
     margin-right: 10px;
     padding: map-get($spacers, 3);
+    overflow: hidden;
 }
 .paymentline .delete-button {
   margin-left: 10px;
