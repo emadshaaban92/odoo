@@ -1,49 +1,49 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-    <record id="escompte_template" model="account.reconcile.model.template">
+    <record id="discount_template" model="account.reconcile.model.template">
         <field name="chart_template_id" ref="l10nbe_chart_template"/>
-        <field name="name">Escompte</field>
+        <field name="name">Discount</field>
     </record>
-    <record id="escompte_line_template" model="account.reconcile.model.line.template">
-        <field name="model_id" ref="l10n_be.escompte_template"/>
+    <record id="discount_line_template" model="account.reconcile.model.line.template">
+        <field name="model_id" ref="l10n_be.discount_template"/>
         <field name="account_id" ref="a653"/>
         <field name="amount_type">percentage</field>
         <field name="amount_string">100</field>
-        <field name="label">Escompte accordé</field>
+        <field name="label">Discount Granted</field>
     </record>
-    <record id="frais_bancaires_htva_template" model="account.reconcile.model.template">
+    <record id="bank_fees_no_vat_template" model="account.reconcile.model.template">
         <field name="chart_template_id" ref="l10nbe_chart_template"/>
-        <field name="name">Frais bancaires HTVA</field>
+        <field name="name">Bank Fees (No VAT)</field>
     </record>
-    <record id="frais_bancaires_htva_line_template" model="account.reconcile.model.line.template">
-        <field name="model_id" ref="l10n_be.frais_bancaires_htva_template"/>
+    <record id="bank_fees_no_vat_line_template" model="account.reconcile.model.line.template">
+        <field name="model_id" ref="l10n_be.bank_fees_no_vat_template"/>
         <field name="account_id" ref="a6560" />
         <field name="amount_type">percentage</field>
         <field name="amount_string">100</field>
-        <field name="label">Frais bancaires HTVA</field>
+        <field name="label">Bank Fees (No VAT)</field>
     </record>
-    <record id="frais_bancaires_tva21_template" model="account.reconcile.model.template">
+    <record id="bank_fees_vat_21_template" model="account.reconcile.model.template">
         <field name="chart_template_id" ref="l10nbe_chart_template"/>
-        <field name="name">Frais bancaires TVA21</field>
+        <field name="name">Bank Fees (21% VAT)</field>
     </record>
-    <record id="frais_bancaires_tva21_line_template" model="account.reconcile.model.line.template">
-        <field name="model_id" ref="l10n_be.frais_bancaires_tva21_template"/>
+    <record id="bank_fees_vat_21_line_template" model="account.reconcile.model.line.template">
+        <field name="model_id" ref="l10n_be.bank_fees_vat_21_template"/>
         <field name="account_id" ref="a6560"/>
         <field name="amount_type">percentage</field>
         <field name="tax_ids" eval="[(6, 0, [ref('l10n_be.attn_TVA-21-inclus-dans-prix')])]"/>
         <field name="amount_string">100</field>
-        <field name="label">Frais bancaires TVA21</field>
+        <field name="label">Bank Fees (21% VAT)</field>
     </record>
-    <record id="virements_internes_template" model="account.reconcile.model.template">
+    <record id="internal_transfers_template" model="account.reconcile.model.template">
         <field name="chart_template_id" ref="l10nbe_chart_template"/>
-        <field name="name">Virements internes</field>
+        <field name="name">Internal Transfers</field>
         <field name="to_check" eval="False"/>
     </record>
-    <record id="virements_internes_line_template" model="account.reconcile.model.line.template">
-        <field name="model_id" ref="l10n_be.virements_internes_template"/>
+    <record id="internal_transfers_line_template" model="account.reconcile.model.line.template">
+        <field name="model_id" ref="l10n_be.internal_transfers_template"/>
         <field name="account_id" search="[('code', '=like', obj().env.ref('l10n_be.l10nbe_chart_template').transfer_account_code_prefix + '%'), ('chart_template_id', '=', obj().env.ref('l10n_be.l10nbe_chart_template').id)]"/>
         <field name="amount_type">percentage</field>
         <field name="amount_string">100</field>
-        <field name="label">Virements internes</field>
+        <field name="label">Internal Transfers</field>
     </record>
 </odoo>
