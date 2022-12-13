@@ -11382,9 +11382,6 @@
                         sheetId: this.env.model.getters.getActiveSheetId(),
                         id: this.props.figure.id,
                     });
-                    if (this.props.sidePanelIsOpen) {
-                        this.env.toggleSidePanel("ChartPanel");
-                    }
                     this.props.onFigureDeleted();
                 },
             });
@@ -11426,7 +11423,6 @@
     ChartFigure.components = { Menu };
     ChartFigure.props = {
         figure: Object,
-        sidePanelIsOpen: Boolean,
         onFigureDeleted: Function,
     };
 
@@ -21469,9 +21465,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             if (!selectResult.isSuccessful) {
                 return;
             }
-            if (this.props.sidePanelIsOpen) {
-                this.env.openSidePanel("ChartPanel");
-            }
             const position = gridOverlayPosition();
             const { x: offsetCorrectionX, y: offsetCorrectionY } = this.env.model.getters.getMainViewportCoordinates();
             const { offsetX, offsetY } = this.env.model.getters.getActiveSheetScrollInfo();
@@ -21551,12 +21544,10 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     FigureComponent.template = "o-spreadsheet-FigureComponent";
     FigureComponent.components = {};
     FigureComponent.defaultProps = {
-        sidePanelIsOpen: false,
         onFigureDeleted: function () { },
     };
     FigureComponent.props = {
         figure: Object,
-        sidePanelIsOpen: { type: Boolean, optional: true },
         onFigureDeleted: { type: Function, optional: true },
     };
 
@@ -21580,7 +21571,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     FiguresContainer.template = "o-spreadsheet-FiguresContainer";
     FiguresContainer.components = { FigureComponent };
     FiguresContainer.props = {
-        sidePanelIsOpen: Boolean,
         onFigureDeleted: Function,
     };
     figureRegistry.add("chart", { Component: ChartFigure, SidePanelComponent: "ChartPanel" });
@@ -21761,7 +21751,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         onCellRightClicked: () => { },
         onGridResized: () => { },
         onFigureDeleted: () => { },
-        sidePanelIsOpen: false,
     };
     GridOverlay.props = {
         onCellHovered: { type: Function, optional: true },
@@ -21772,7 +21761,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         onFigureDeleted: { type: Function, optional: true },
         onGridMoved: Function,
         gridOverlayDimensions: String,
-        sidePanelIsOpen: { type: Boolean, optional: true },
     };
 
     class GridPopover extends owl.Component {
@@ -22847,6 +22835,17 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                         sheetId: this.env.model.getters.getActiveSheetId(),
                         target: this.env.model.getters.getSelectedZones(),
                     });
+                },
+                ESCAPE: () => {
+                    if (this.env.model.getters.hasOpenedPopover()) {
+                        this.closeOpenedPopover();
+                    }
+                    else if (this.menuState.isOpen) {
+                        this.closeMenu();
+                    }
+                    else {
+                        this.env.model.dispatch("CLEAN_CLIPBOARD_HIGHLIGHT");
+                    }
                 },
                 "CTRL+A": () => this.env.model.selection.loopSelection(),
                 "CTRL+Z": () => this.env.model.dispatch("REQUEST_UNDO"),
@@ -29342,6 +29341,24 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             };
             this.dispatch("CREATE_FIGURE", { sheetId, figure });
         }
+        import(data) {
+            for (const sheet of data.sheets) {
+                const images = (sheet.figures || []).filter((figure) => figure.tag === "image");
+                for (const image of images) {
+                    this.history.update("nextId", this.nextId + 1);
+                    this.history.update("images", sheet.id, image.id, image.data);
+                }
+            }
+        }
+        export(data) {
+            var _a;
+            for (const sheet of data.sheets) {
+                const images = sheet.figures.filter((figure) => figure.tag === "image");
+                for (const image of images) {
+                    image.data = (_a = this.images[sheet.id]) === null || _a === void 0 ? void 0 : _a[image.id];
+                }
+            }
+        }
     }
     ImagePlugin.getters = ["getImage", "getImagePath", "getImageSize"];
     figureRegistry.add("image", {
@@ -33738,6 +33755,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     ...this.computePopoverProps(position, popover.cellCorner),
                 };
         }
+        hasOpenedPopover() {
+            return this.persistentPopover != null;
+        }
         getPersistentPopoverTypeAtPosition({ col, row }) {
             if (this.persistentPopover &&
                 this.persistentPopover.col === col &&
@@ -33771,7 +33791,11 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             }
         }
     }
-    CellPopoverPlugin.getters = ["getCellPopover", "getPersistentPopoverTypeAtPosition"];
+    CellPopoverPlugin.getters = [
+        "getCellPopover",
+        "getPersistentPopoverTypeAtPosition",
+        "hasOpenedPopover",
+    ];
 
     const BORDER_COLOR = "#8B008B";
     const BACKGROUND_COLOR = "#8B008B33";
@@ -36946,6 +36970,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     if (this.state.operation === "CUT") {
                         this.state = undefined;
                     }
+                    this.status = "invisible";
+                    break;
+                case "CLEAN_CLIPBOARD_HIGHLIGHT":
                     this.status = "invisible";
                     break;
                 case "DELETE_CELL": {
@@ -43000,8 +43027,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-12-09T15:01:03.892Z';
-    exports.__info__.hash = '1419e57';
+    exports.__info__.date = '2022-12-13T12:54:47.139Z';
+    exports.__info__.hash = '026b620';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
