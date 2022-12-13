@@ -18,6 +18,9 @@
         <field name="inherit_id" ref="project.view_project"/>
         <field name="priority">50</field>
         <field name="arch" type="xml">
+            <xpath expr="//field[@name='partner_id']" position="attributes">
+                <attribute name="context">{'res_partner_search_mode': 'customer'}</attribute>
+            </xpath>
             <xpath expr="//field[@name='partner_id']" position="after">
                 <field name="sale_line_id" optional="hide" readonly="1"/>
             </xpath>
@@ -80,6 +83,12 @@
                 <field name="commercial_partner_id" invisible="1" />
                 <field name="allow_billable" invisible="1"/>
             </xpath>
+            <xpath expr="//field[@name='child_ids']/tree/field[@name='partner_id']" position="attributes">
+                <attribute name="context">{'res_partner_search_mode': 'customer'}</attribute>
+            </xpath>
+            <xpath expr="//field[@name='depend_on_ids']/tree/field[@name='partner_id']" position="attributes">
+                <attribute name="context">{'res_partner_search_mode': 'customer'}</attribute>
+            </xpath>
         </field>
     </record>
 
@@ -88,6 +97,9 @@
         <field name="model">project.task</field>
         <field name="inherit_id" ref="project.view_task_tree2"/>
         <field name="arch" type="xml">
+            <xpath expr="//field[@name='partner_id']" position="attributes">
+                <attribute name="context">{'res_partner_search_mode': 'customer'}</attribute>
+            </xpath>
             <xpath expr="//field[@name='partner_id']" position="after">
                 <field name="sale_line_id" optional="hide" options="{'no_create': True}" readonly="1"/>
             </xpath>

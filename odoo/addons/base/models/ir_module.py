@@ -159,7 +159,7 @@ class Module(models.Model):
     _rec_name = "shortdesc"
     _rec_names_search = ['name', 'shortdesc', 'summary']
     _description = "Module"
-    _order = 'application desc,sequence,name'
+    _order = 'application desc,state,sequence,name'
 
     @api.model
     def get_views(self, views, options=None):

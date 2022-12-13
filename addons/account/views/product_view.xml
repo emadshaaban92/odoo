@@ -58,18 +58,16 @@
                     <field name="fiscal_country_codes" invisible="1"/>
                 </xpath>
                 <page name="inventory" position="after">
-                    <page string="Accounting" name="invoicing" groups="account.group_account_readonly,account.group_account_invoice">
+                    <page string="Accounting" name="invoicing" groups="account.group_account_readonly">
                         <group name="properties" groups="account.group_account_readonly">
                             <group string="Receivables">
-                                <field name="property_account_income_id"
-                                    groups="account.group_account_readonly"/>
+                                <field name="property_account_income_id"/>
                             </group>
                             <group string="Payables" name="payables">
-                                <field name="property_account_expense_id"
-                                    groups="account.group_account_readonly"/>
+                                <field name="property_account_expense_id"/>
                             </group>
                         </group>
-                        <group name="accounting" groups="account.group_account_readonly,account.group_account_invoice"/>
+                        <group name="accounting" groups="account.group_account_invoice"/>
                     </page>
                 </page>
                 <xpath expr="//div[@name='pricing']" position="after">
