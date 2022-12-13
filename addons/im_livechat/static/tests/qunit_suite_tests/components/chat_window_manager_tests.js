@@ -20,11 +20,11 @@ QUnit.test('closing a chat window with no message from admin side unpins it', as
     const mailChannelId1 = pyEnv['mail.channel'].create(
         {
             channel_member_ids: [
-                [0, 0, {
+                pyEnv.mockServer.x2ManyCreate({
                     is_pinned: true,
                     partner_id: pyEnv.currentPartnerId,
-                }],
-                [0, 0, { partner_id: resPartnerId1 }],
+                }),
+                pyEnv.mockServer.x2ManyCreate({ partner_id: resPartnerId1 }),
             ],
             channel_type: "livechat",
             uuid: 'channel-10-uuid',

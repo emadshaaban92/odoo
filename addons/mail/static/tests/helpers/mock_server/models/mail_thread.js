@@ -154,7 +154,7 @@ patch(MockServer.prototype, "mail/models/mail_thread", {
                 res_id: id,
                 res_model: model,
             });
-            kwargs.attachment_ids = attachmentIds.map((attachmentId) => [4, attachmentId]);
+            kwargs.attachment_ids = attachmentIds.map((attachmentId) => this.pyEnv.mockServer.x2ManyLinkTo(attachmentId));
         }
         const subtype_xmlid = kwargs.subtype_xmlid || "mail.mt_note";
         const [author_id, email_from] = this._MockMailThread_MessageComputeAuthor(

@@ -18,8 +18,8 @@ QUnit.module("mail", {}, function () {
             const resPartnerId1 = pyEnv["res.partner"].create({ name: "Demo" });
             const mailChannelId1 = pyEnv["mail.channel"].create({
                 channel_member_ids: [
-                    [0, 0, { partner_id: pyEnv.currentPartnerId }],
-                    [0, 0, { partner_id: resPartnerId1 }],
+                    pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.currentPartnerId }),
+                    pyEnv.mockServer.x2ManyCreate({ partner_id: resPartnerId1 }),
                 ],
             });
             const { messaging, openDiscuss } = await start({
@@ -64,8 +64,8 @@ QUnit.module("mail", {}, function () {
                 const resPartnerId1 = pyEnv["res.partner"].create({ name: "Demo" });
                 const mailChannelId1 = pyEnv["mail.channel"].create({
                     channel_member_ids: [
-                        [0, 0, { partner_id: pyEnv.currentPartnerId }],
-                        [0, 0, { partner_id: resPartnerId1 }],
+                        pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.currentPartnerId }),
+                        pyEnv.mockServer.x2ManyCreate({ partner_id: resPartnerId1 }),
                     ],
                 });
                 const { messaging, openDiscuss } = await start({
@@ -130,8 +130,8 @@ QUnit.module("mail", {}, function () {
                 const resPartnerId1 = pyEnv["res.partner"].create({ name: "Demo" });
                 const mailChannelId1 = pyEnv["mail.channel"].create({
                     channel_member_ids: [
-                        [0, 0, { partner_id: pyEnv.currentPartnerId }],
-                        [0, 0, { partner_id: resPartnerId1 }],
+                        pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.currentPartnerId }),
+                        pyEnv.mockServer.x2ManyCreate({ partner_id: resPartnerId1 }),
                     ],
                 });
                 const { advanceTime, messaging, openDiscuss } = await start({
@@ -185,8 +185,8 @@ QUnit.module("mail", {}, function () {
                 const resPartnerId1 = pyEnv["res.partner"].create({ name: "Demo" });
                 const mailChannelId1 = pyEnv["mail.channel"].create({
                     channel_member_ids: [
-                        [0, 0, { partner_id: pyEnv.currentPartnerId }],
-                        [0, 0, { partner_id: resPartnerId1 }],
+                        pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.currentPartnerId }),
+                        pyEnv.mockServer.x2ManyCreate({ partner_id: resPartnerId1 }),
                     ],
                 });
                 const { advanceTime, messaging, openDiscuss } = await start({
@@ -264,10 +264,10 @@ QUnit.module("mail", {}, function () {
                 ]);
                 const mailChannelId1 = pyEnv["mail.channel"].create({
                     channel_member_ids: [
-                        [0, 0, { partner_id: pyEnv.currentPartnerId }],
-                        [0, 0, { partner_id: resPartnerId1 }],
-                        [0, 0, { partner_id: resPartnerId2 }],
-                        [0, 0, { partner_id: resPartnerId3 }],
+                        pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.currentPartnerId }),
+                        pyEnv.mockServer.x2ManyCreate({ partner_id: resPartnerId1 }),
+                        pyEnv.mockServer.x2ManyCreate({ partner_id: resPartnerId2 }),
+                        pyEnv.mockServer.x2ManyCreate({ partner_id: resPartnerId3 }),
                     ],
                 });
                 const { messaging, openDiscuss } = await start({

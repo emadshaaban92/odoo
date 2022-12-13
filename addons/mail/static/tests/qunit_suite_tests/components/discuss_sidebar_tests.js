@@ -64,7 +64,7 @@ QUnit.module("mail", {}, function () {
 
                 const pyEnv = await startServer();
                 pyEnv["mail.channel"].create({
-                    channel_member_ids: [[0, 0, { partner_id: pyEnv.currentPartnerId }]],
+                    channel_member_ids: [pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.currentPartnerId })],
                     channel_type: "channel",
                     group_public_id: false,
                     name: "test",

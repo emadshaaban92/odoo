@@ -155,8 +155,8 @@ QUnit.module("mail", {}, function () {
             const guestId = pyEnv["mail.guest"].create({ im_status: "online" });
             const mailChannelId = pyEnv["mail.channel"].create({
                 channel_member_ids: [
-                    [0, 0, { partner_id: pyEnv.currentPartnerId }],
-                    [0, 0, { guest_id: guestId }],
+                    pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.currentPartnerId }),
+                    pyEnv.mockServer.x2ManyCreate({ guest_id: guestId }),
                 ],
                 channel_type: "group",
             });

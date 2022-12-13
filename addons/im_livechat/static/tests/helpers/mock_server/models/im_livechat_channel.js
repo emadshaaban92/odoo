@@ -26,19 +26,19 @@ patch(MockServer.prototype, 'im_livechat/models/im_livechat_channel', {
     _mockImLivechatChannel_getLivechatMailChannelVals(id, anonymous_name, operator, user_id, country_id) {
         // partner to add to the mail.channel
         const operator_partner_id = operator.partner_id;
-        const membersToAdd = [[0, 0, {
+        const membersToAdd = [this.pyEnv.mockServer.x2ManyCreate({
             is_pinned: false,
             partner_id: operator_partner_id,
-        }]];
+        })];
         let visitor_user;
         if (user_id) {
             const visitor_user = this.getRecords('res.users', [['id', '=', user_id]])[0];
             if (visitor_user && visitor_user.active && visitor_user !== operator) {
                 // valid session user (not public)
-                membersToAdd.push([0, 0, { partner_id: visitor_user.partner_id.id }]);
+                membersToAdd.push(this.pyEnv.mockServer.x2ManyCreate({ partner_id: visitor_user.partner_id.id }));
             }
         } else {
-            membersToAdd.push([0, 0, { partner_id: this.publicPartnerId }]);
+            membersToAdd.push(this.pyEnv.mockServer.x2ManyCreate({ partner_id: this.publicPartnerId }));
         }
         const membersName = [
             visitor_user ? visitor_user.display_name : anonymous_name,

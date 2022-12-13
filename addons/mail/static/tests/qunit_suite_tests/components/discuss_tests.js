@@ -606,8 +606,8 @@ QUnit.module("mail", {}, function () {
             const resPartnerId1 = pyEnv["res.partner"].create({ name: "Demo" });
             const mailChannelId1 = pyEnv["mail.channel"].create({
                 channel_member_ids: [
-                    [0, 0, { partner_id: pyEnv.currentPartnerId }],
-                    [0, 0, { partner_id: resPartnerId1 }],
+                    pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.currentPartnerId }),
+                    pyEnv.mockServer.x2ManyCreate({ partner_id: resPartnerId1 }),
                 ],
                 channel_type: "chat", // testing a chat is the goal of the test
             });
@@ -717,22 +717,22 @@ QUnit.module("mail", {}, function () {
             const [mailChannelId1, mailChannelId2, mailChannelId3] = pyEnv["mail.channel"].create([
                 {
                     channel_member_ids: [
-                        [0, 0, { partner_id: pyEnv.currentPartnerId }],
-                        [0, 0, { partner_id: resPartnerId1 }],
+                        pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.currentPartnerId }),
+                        pyEnv.mockServer.x2ManyCreate({ partner_id: resPartnerId1 }),
                     ],
                     channel_type: "chat",
                 },
                 {
                     channel_member_ids: [
-                        [0, 0, { partner_id: pyEnv.currentPartnerId }],
-                        [0, 0, { partner_id: resPartnerId2 }],
+                        pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.currentPartnerId }),
+                        pyEnv.mockServer.x2ManyCreate({ partner_id: resPartnerId2 }),
                     ],
                     channel_type: "chat",
                 },
                 {
                     channel_member_ids: [
-                        [0, 0, { partner_id: pyEnv.currentPartnerId }],
-                        [0, 0, { partner_id: resPartnerId3 }],
+                        pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.currentPartnerId }),
+                        pyEnv.mockServer.x2ManyCreate({ partner_id: resPartnerId3 }),
                     ],
                     channel_type: "chat",
                 },
@@ -814,7 +814,7 @@ QUnit.module("mail", {}, function () {
                             partner_id: pyEnv.currentPartnerId,
                         },
                     ],
-                    [0, 0, { partner_id: resPartnerId1 }],
+                    pyEnv.mockServer.x2ManyCreate({ partner_id: resPartnerId1 }),
                 ],
                 channel_type: "chat",
             });
@@ -2032,8 +2032,8 @@ QUnit.module("mail", {}, function () {
                 { name: "General" },
                 {
                     channel_member_ids: [
-                        [0, 0, { partner_id: pyEnv.currentPartnerId }],
-                        [0, 0, { partner_id: resPartnerId1 }],
+                        pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.currentPartnerId }),
+                        pyEnv.mockServer.x2ManyCreate({ partner_id: resPartnerId1 }),
                     ],
                     channel_type: "chat",
                 },
@@ -3653,8 +3653,8 @@ QUnit.module("mail", {}, function () {
                 { name: "General" },
                 {
                     channel_member_ids: [
-                        [0, 0, { partner_id: pyEnv.currentPartnerId }],
-                        [0, 0, { partner_id: resPartnerId1 }],
+                        pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.currentPartnerId }),
+                        pyEnv.mockServer.x2ManyCreate({ partner_id: resPartnerId1 }),
                     ],
                     channel_type: "chat",
                 },

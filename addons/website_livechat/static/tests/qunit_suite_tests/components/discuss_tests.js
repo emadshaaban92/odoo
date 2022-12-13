@@ -26,8 +26,8 @@ QUnit.test('rendering of visitor banner', async function (assert) {
     });
     const mailChannelId1 = pyEnv['mail.channel'].create({
         channel_member_ids: [
-            [0, 0, { partner_id: pyEnv.currentPartnerId }],
-            [0, 0, { partner_id: pyEnv.publicPartnerId }],
+            pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.currentPartnerId }),
+            pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.publicPartnerId }),
         ],
         channel_type: 'livechat',
         livechat_operator_id: pyEnv.currentPartnerId,
@@ -125,8 +125,8 @@ QUnit.test('livechat with non-logged visitor should show visitor banner', async 
     });
     const mailChannelId1 = pyEnv['mail.channel'].create({
         channel_member_ids: [
-            [0, 0, { partner_id: pyEnv.currentPartnerId }],
-            [0, 0, { partner_id: pyEnv.publicPartnerId }],
+            pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.currentPartnerId }),
+            pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.publicPartnerId }),
         ],
         channel_type: 'livechat',
         livechat_operator_id: pyEnv.currentPartnerId,
@@ -168,8 +168,8 @@ QUnit.test('livechat with logged visitor should show visitor banner', async func
     });
     const mailChannelId1 = pyEnv['mail.channel'].create({
         channel_member_ids: [
-            [0, 0, { partner_id: pyEnv.currentPartnerId }],
-            [0, 0, { partner_id: resPartnerId1 }],
+            pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.currentPartnerId }),
+            pyEnv.mockServer.x2ManyCreate({ partner_id: resPartnerId1 }),
         ],
         channel_type: 'livechat',
         livechat_operator_id: pyEnv.currentPartnerId,
@@ -202,8 +202,8 @@ QUnit.test('livechat without visitor should not show visitor banner', async func
     const resPartnerId1 = pyEnv['res.partner'].create({});
     const mailChannelId1 = pyEnv['mail.channel'].create({
         channel_member_ids: [
-            [0, 0, { partner_id: pyEnv.currentPartnerId }],
-            [0, 0, { partner_id: resPartnerId1 }],
+            pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.currentPartnerId }),
+            pyEnv.mockServer.x2ManyCreate({ partner_id: resPartnerId1 }),
         ],
         channel_type: 'livechat',
         livechat_operator_id: pyEnv.currentPartnerId,

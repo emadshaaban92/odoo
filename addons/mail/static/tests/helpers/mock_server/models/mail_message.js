@@ -290,7 +290,7 @@ patch(MockServer.prototype, "mail/models/mail_message", {
         ]);
         this.pyEnv["mail.message"].write(
             messages.map((message) => message.id),
-            { starred_partner_ids: [[3, this.currentPartnerId]] }
+            { starred_partner_ids: [this.pyEnv.mockServer.x2ManyForget(this.currentPartnerId)] }
         );
         this.pyEnv["bus.bus"]._sendone(this.pyEnv.currentPartner, "mail.message/toggle_star", {
             message_ids: messages.map((message) => message.id),

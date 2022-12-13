@@ -17,8 +17,8 @@ QUnit.test('receive visitor typing status "is typing"', async function (assert) 
     const mailChannelId1 = pyEnv['mail.channel'].create({
         anonymous_name: "Visitor 20",
         channel_member_ids: [
-            [0, 0, { partner_id: pyEnv.currentPartnerId }],
-            [0, 0, { partner_id: pyEnv.publicPartnerId }],
+            pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.currentPartnerId }),
+            pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.publicPartnerId }),
         ],
         channel_type: 'livechat',
         livechat_operator_id: pyEnv.currentPartnerId,

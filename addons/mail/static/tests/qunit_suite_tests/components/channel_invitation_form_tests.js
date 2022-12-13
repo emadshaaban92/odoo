@@ -19,8 +19,8 @@ QUnit.module("mail", {}, function () {
                 pyEnv["res.users"].create({ partner_id: resPartnerId1 });
                 const mailChannelId1 = pyEnv["mail.channel"].create({
                     channel_member_ids: [
-                        [0, 0, { partner_id: pyEnv.currentPartnerId }],
-                        [0, 0, { partner_id: resPartnerId1 }],
+                        pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.currentPartnerId }),
+                        pyEnv.mockServer.x2ManyCreate({ partner_id: resPartnerId1 }),
                     ],
                     channel_type: "chat",
                 });
@@ -59,8 +59,8 @@ QUnit.module("mail", {}, function () {
                 pyEnv["res.users"].create({ partner_id: resPartnerId2 });
                 const mailChannelId1 = pyEnv["mail.channel"].create({
                     channel_member_ids: [
-                        [0, 0, { partner_id: pyEnv.currentPartnerId }],
-                        [0, 0, { partner_id: resPartnerId1 }],
+                        pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.currentPartnerId }),
+                        pyEnv.mockServer.x2ManyCreate({ partner_id: resPartnerId1 }),
                     ],
                     channel_type: "chat",
                 });
@@ -101,8 +101,8 @@ QUnit.module("mail", {}, function () {
                 pyEnv["res.users"].create({ partner_id: resPartnerId2 });
                 const mailChannelId1 = pyEnv["mail.channel"].create({
                     channel_member_ids: [
-                        [0, 0, { partner_id: pyEnv.currentPartnerId }],
-                        [0, 0, { partner_id: resPartnerId1 }],
+                        pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.currentPartnerId }),
+                        pyEnv.mockServer.x2ManyCreate({ partner_id: resPartnerId1 }),
                     ],
                     channel_type: "chat",
                 });
@@ -142,7 +142,7 @@ QUnit.module("mail", {}, function () {
                     name: "testGroup",
                 });
                 const mailChannelId1 = pyEnv["mail.channel"].create({
-                    channel_member_ids: [[0, 0, { partner_id: pyEnv.currentPartnerId }]],
+                    channel_member_ids: [pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.currentPartnerId })],
                     channel_type: "channel",
                     group_public_id: resGroupId1,
                 });

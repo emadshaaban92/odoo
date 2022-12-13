@@ -20,8 +20,8 @@ QUnit.test('livechat in the sidebar: basic rendering', async function (assert) {
     const mailChannelId1 = pyEnv['mail.channel'].create({
         anonymous_name: "Visitor 11",
         channel_member_ids: [
-            [0, 0, { partner_id: pyEnv.currentPartnerId }],
-            [0, 0, { partner_id: pyEnv.publicPartnerId }],
+            pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.currentPartnerId }),
+            pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.publicPartnerId }),
         ],
         channel_type: 'livechat',
         livechat_operator_id: pyEnv.currentPartnerId,
@@ -70,8 +70,8 @@ QUnit.test('livechat in the sidebar: existing user with country', async function
     });
     pyEnv['mail.channel'].create({
         channel_member_ids: [
-            [0, 0, { partner_id: pyEnv.currentPartnerId }],
-            [0, 0, { partner_id: resPartnerId1 }],
+            pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.currentPartnerId }),
+            pyEnv.mockServer.x2ManyCreate({ partner_id: resPartnerId1 }),
         ],
         channel_type: 'livechat',
         livechat_operator_id: pyEnv.currentPartnerId,
@@ -141,11 +141,11 @@ QUnit.test('do not add livechat in the sidebar on visitor typing', async functio
     });
     const mailChannelId1 = pyEnv['mail.channel'].create({
         channel_member_ids: [
-            [0, 0, {
+            pyEnv.mockServer.x2ManyCreate({
                 is_pinned: false,
                 partner_id: pyEnv.currentPartnerId,
-            }],
-            [0, 0, { partner_id: pyEnv.publicPartnerId }],
+            }),
+            pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.publicPartnerId }),
         ],
         channel_type: 'livechat',
         livechat_channel_id: imLivechatChannelId1,
@@ -195,11 +195,11 @@ QUnit.test('add livechat in the sidebar on visitor sending first message', async
     const mailChannelId1 = pyEnv['mail.channel'].create({
         anonymous_name: "Visitor (Belgium)",
         channel_member_ids: [
-            [0, 0, {
+            pyEnv.mockServer.x2ManyCreate({
                 is_pinned: false,
                 partner_id: pyEnv.currentPartnerId,
-            }],
-            [0, 0, { partner_id: pyEnv.publicPartnerId }],
+            }),
+            pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.publicPartnerId }),
         ],
         channel_type: 'livechat',
         country_id: resCountryId1,
@@ -251,11 +251,11 @@ QUnit.test('livechats are sorted by last activity time in the sidebar: most rece
         {
             anonymous_name: "Visitor 11",
             channel_member_ids: [
-                [0, 0, {
+                pyEnv.mockServer.x2ManyCreate({
                     last_interest_dt: datetime_to_str(new Date(2021, 0, 1)),
                     partner_id: pyEnv.currentPartnerId,
-                }],
-                [0, 0, { partner_id: pyEnv.publicPartnerId }],
+                }),
+                pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.publicPartnerId }),
             ],
             channel_type: 'livechat',
             livechat_operator_id: pyEnv.currentPartnerId,
@@ -263,11 +263,11 @@ QUnit.test('livechats are sorted by last activity time in the sidebar: most rece
         {
             anonymous_name: "Visitor 12",
             channel_member_ids: [
-                [0, 0, {
+                pyEnv.mockServer.x2ManyCreate({
                     last_interest_dt: datetime_to_str(new Date(2021, 0, 2)),
                     partner_id: pyEnv.currentPartnerId,
-                }],
-                [0, 0, { partner_id: pyEnv.publicPartnerId }],
+                }),
+                pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.publicPartnerId }),
             ],
             channel_type: 'livechat',
             livechat_operator_id: pyEnv.currentPartnerId,
@@ -323,8 +323,8 @@ QUnit.test('invite button should be present on livechat', async function (assert
         {
             anonymous_name: "Visitor 11",
             channel_member_ids: [
-                [0, 0, { partner_id: pyEnv.currentPartnerId }],
-                [0, 0, { partner_id: pyEnv.publicPartnerId }],
+                pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.currentPartnerId }),
+                pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.publicPartnerId }),
             ],
             channel_type: 'livechat',
             livechat_operator_id: pyEnv.currentPartnerId,
@@ -353,8 +353,8 @@ QUnit.test('call buttons should not be present on livechat', async function (ass
         {
             anonymous_name: "Visitor 11",
             channel_member_ids: [
-                [0, 0, { partner_id: pyEnv.currentPartnerId }],
-                [0, 0, { partner_id: pyEnv.publicPartnerId }],
+                pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.currentPartnerId }),
+                pyEnv.mockServer.x2ManyCreate({ partner_id: pyEnv.publicPartnerId }),
             ],
             channel_type: 'livechat',
             livechat_operator_id: pyEnv.currentPartnerId,
