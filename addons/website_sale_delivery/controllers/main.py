@@ -268,8 +268,18 @@ class WebsiteSaleDelivery(WebsiteSale):
             if order.carrier_id and not order.delivery_rating_success:
                 order._remove_delivery_line()
 
-            delivery_carriers = order._get_delivery_methods()
-            values['deliveries'] = delivery_carriers.sudo()
+            delivery_carriers = order._get_delivery_methods().sudo()
+            accepted_carriers = []
+            for carrier in delivery_carriers:
+                if carrier.delivery_type == 'base_on_rule':
+                    try:
+                        carrier._get_price_available(order)
+                        accepted_carriers.append(carrier)
+                    except UserError:
+                        continue
+                else:
+                    accepted_carriers.append(carrier)
+            values['deliveries'] = accepted_carriers
 
         values['delivery_has_storable'] = has_storable_products
         values['delivery_action_id'] = request.env.ref('delivery.action_delivery_carrier_form').id
