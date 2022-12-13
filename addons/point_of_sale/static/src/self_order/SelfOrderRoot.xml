@@ -42,6 +42,7 @@
                 currencyType="currencyType"
                 cartItems="this.state.cart"
                 viewMenu="viewMenu"
+                removeProductFromCart="removeProductFromCart"
                 
                 />
             </t>

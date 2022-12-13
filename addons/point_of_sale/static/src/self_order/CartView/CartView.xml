@@ -14,7 +14,17 @@
                     class="mt-2 bg-white d-flex align-items-center shadow-sm  m-1">
                     <img class="w-25 img-fluid" t-att-src="product.image"  alt="Product image"/>
                     <div class="mt-4 mx-4 w-100 me-5">
-                        <p class="fw-bold"><t t-esc="product.name"/></p>
+                        <div class="d-flex justify-content-between w-100">
+                            <p class="fw-bold"><t t-esc="product.name"/></p>
+                            <svg xmlns="http://www.w3.org/2000/svg" 
+                                width="16" height="16" fill="currentColor" 
+                                class="bi bi-x text-primary" viewBox="0 0 16 16"
+                                t-on-click="() => props.removeProductFromCart(product.id)"
+                                >
+                                <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+                            </svg>
+
+                        </div>
                         <div class="d-flex justify-content-between w-100">
                             <t t-esc="cartItem.quantity + ' x ' + product.price+ '€'" />
                             <p class="fst-italic fw-bold text-right"><t t-esc="cartItem.quantity *  product.price+ '€'" /></p>

@@ -14,7 +14,7 @@ class PosController(PortalAccount):
     # this is the main controller for the POS Self Order App
     # The user gets this route from the QR code that they scan at the table
     @http.route('/pos/self-order/start/<int:table_number>/', auth='public', website=True)
-    def pos_self_order_start(self, id,config_id = False):
+    def pos_self_order_start(self, table_number,config_id = False):
         response = request.render('point_of_sale.pos_self_order_index', {'table_number': table_number})
         response.headers['Cache-Control'] = 'no-store'
         return response
