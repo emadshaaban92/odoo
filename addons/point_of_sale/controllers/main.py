@@ -11,45 +11,18 @@ _logger = logging.getLogger(__name__)
 
 
 class PosController(PortalAccount):
-    @http.route('/pos/self-order/<int:id>/', auth='public', website=True)
-    def pos_self_order(self, id,config_id = False):
-        # return request.render('point_of_sale.pos_self_order_index')
-        # domain = [
-        #         ('state', 'in', ['opening_control', 'opened']),
-        #         ('user_id', '=', request.session.uid),
-        #         ('rescue', '=', False)
-        #         ]
-        # if config_id:
-        #     domain = AND([domain,[('config_id', '=', int(config_id))]])
-        # pos_session = request.env['pos.session'].sudo().search(domain, limit=1)
-
-        # # The same POS session can be opened by a different user => search without restricting to
-        # # current user. Note: the config must be explicitly given to avoid fallbacking on a random
-        # # session.
-        # if not pos_session and config_id:
-        #     domain = [
-        #         ('state', 'in', ['opening_control', 'opened']),
-        #         ('rescue', '=', False),
-        #         ('config_id', '=', int(config_id)),
-        #     ]
-        #     pos_session = request.env['pos.session'].sudo().search(domain, limit=1)
-
-        # if not pos_session:
-        #     return request.redirect('/web#action=point_of_sale.action_client_pos_menu')
-        # # The POS only work in one company, so we enforce the one of the session in the context
-        # company = pos_session.company_id
-        # session_info = request.env['ir.http'].session_info()
-        # session_info['user_context']['allowed_company_ids'] = company.ids
-        # session_info['user_companies'] = {'current_company': company.id, 'allowed_companies': {company.id: session_info['user_companies']['allowed_companies'][company.id]}}
-        # context = {
-        #     'session_info': session_info,
-        #     'login_number': pos_session.login(),
-        #     'pos_session_id': pos_session.id,
-        # }
-        # response = request.render('point_of_sale.pos_self_order_index', context)
-        # TODO : learn how to pass data to frontend via headers
-        response = request.render('point_of_sale.pos_self_order_index')
+    # this is the main controller for the POS Self Order App
+    # The user gets this route from the QR code that they scan at the table
+    @http.route('/pos/self-order/start/<int:table_number>/', auth='public', website=True)
+    def pos_self_order_start(self, id,config_id = False):
+        response = request.render('point_of_sale.pos_self_order_index', {'table_number': table_number})
         response.headers['Cache-Control'] = 'no-store'
+        return response
+    # this is the route that the POS Self Order App uses to get the menu
+    @http.route('/pos/self-order/get-menu', auth='public',type="json", website=True)
+    def pos_self_order_get_menu(self,config_id = False):
+        # response.headers['Cache-Control'] = 'no-store'
+        response = { 'menu': 'lots of items in menu'}
         return response
 
 

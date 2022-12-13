@@ -6,14 +6,23 @@ from odoo.exceptions import UserError
 
 class ResPartner(models.Model):
     _inherit = 'res.partner'
-
+    preferred_way_of_contact = fields.Selection(
+        [
+            ('email', 'Email'),
+            ('phone', 'Phone'),
+            ('post', 'Post'),
+        ],
+        string='Preferred Way of Contact',
+        default='email',
+    )
+    birthdate = fields.Date('Birth Date')
+    vlad = fields.Char('Vlad')
     pos_order_count = fields.Integer(
         compute='_compute_pos_order',
         help="The number of point of sales orders related to this customer",
         groups="point_of_sale.group_pos_user",
     )
     pos_order_ids = fields.One2many('pos.order', 'partner_id', readonly=True)
-
     def _compute_pos_order(self):
         # retrieve all children partners and prefetch 'parent_id' on them
         all_partners = self.with_context(active_test=False).search([('id', 'child_of', self.ids)])

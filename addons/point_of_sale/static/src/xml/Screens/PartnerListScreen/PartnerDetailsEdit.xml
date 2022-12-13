@@ -93,7 +93,23 @@
                         <input class="detail" name="mobile" type="tel"
                                t-on-change="captureChange"
                                t-att-value="props.partner.mobile || ''" />
+                    <div class="partner-detail">
+                        <span class="label">Preferred Way of Contact</span>
+                        <select class="detail" name="preferred_way_of_contact" type="tel"
+                               t-on-change="captureChange"
+                               t-att-value="props.partner.preferred_way_of_contact || ''" />
+                    <div class="partner-detail">
+                        <span class="label">Birth Date</span>
+                        <!-- <p class="detail" name="birthdate" type="tel"
+                               t-on-change="captureChange"
+                               t-att-value="props.partner.birthdate || ''" /> -->
+                               <t t-esc="props.partner.birthdate" />
                     </div>
+                    <div class="partner-detail">
+                        <span class="label">vlad</span>
+                        <input class="detail" name="vlad" 
+                               t-on-change="captureChange"
+                               t-att-value="props.partner.vlad || ''" />
                     <div class="partner-detail">
                         <span class="label">Barcode</span>
                         <input class="detail barcode" name="barcode" t-on-change="captureChange"

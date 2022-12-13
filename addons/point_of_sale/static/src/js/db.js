@@ -257,6 +257,9 @@ var PosDB = core.Class.extend({
         if(partner.parent_name){
             str += '|' + partner.parent_name;
         }
+        if(partner.vlad){
+            str += '|' + partner.vlad;
+        }
         str = '' + partner.id + ':' + str.replace(':', '').replace(/\n/g, ' ') + '\n';
         return str;
     },

@@ -1,6 +1,6 @@
 /** @odoo-module */
 
-const { Component, mount, xml, onRendered, whenReady, App, useState} = owl;
+const { Component, mount, xml, onRendered, whenReady, App, useState, onWillStart} = owl;
 import { makeEnv, startServices } from "@web/env";
 import { setLoadXmlDefaultApp, loadJS, templates } from '@web/core/assets';
 import { _t } from "@web/core/l10n/translation";
@@ -11,15 +11,24 @@ import { NavBar } from "./NavBar/NavBar.js";
 import { ProductMainView } from "./ProductMainView/ProductMainView.js";
 import { ProductList } from "./ProductList/ProductList.js";
 import { CartView } from "./CartView/CartView.js";
+import { useService } from "@web/core/utils/hooks";
+
+
 class SelfOrderRoot extends Component {
     setup() {
         onRendered(() => {
                 console.log('Rendered:', this.constructor.name);
         });
         this.state = useState({ currentScreen: 0, currentProduct: 0, cart: [] });
+        const rpc = useService("rpc");
+        this.menu = "";
+        // this function makes a request to the server to get the menu
+        onWillStart(async () => {
+            this.menu = await rpc('/pos/self-order/get-menu');
+        }); 
 
     }
-
+    
     productList = [
         {
             id: 0,
@@ -115,8 +124,9 @@ class SelfOrderRoot extends Component {
         }
     ];
 
+
     //TODO: Add a method to get the table number from the response of the server
-    tableNumber = 12;
+    tableNumber = odoo.table_number;
     //TODO: Add a method to get the message from the response of the server
     message = "Your order is being processed";
     restaurantName = "Brasserie de Perwez";
