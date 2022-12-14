@@ -12,10 +12,10 @@ export class ProjectTaskStateSelectionMany2One extends StateSelectionField {
         this.orm = useService("orm");
         this.iconPrefix = "fa-";
         this.icons = {
-            "In Progress": "check-circle-o",
-            Done: "check-circle",
+            "In Progress": "check-square-o",
+            Done: "check-square",
             "Pending approval": "user",
-            Approved: "check-square",
+            Approved: "check-circle",
             Rejected: "times-circle",
             "Changes requested": "repeat",
             Waiting: "hourglass-o",

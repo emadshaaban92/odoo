@@ -75,6 +75,16 @@ BLOCKING_STATES = [
     'Changes requested'
 ]
 
+STATES_KEY = {
+    'In Progress': 1,
+    'Done': 2,
+    'Waiting': 3,
+    'Pending approval': 4,
+    'Approved': 5,
+    'Rejected': 6,
+    'Changes requested': 7
+}
+
 class ProjectTaskType(models.Model):
     _name = 'project.task.type'
     _description = 'Task Stage'
@@ -1401,23 +1411,23 @@ class Task(models.Model):
             print(f'task: {task}'.center(50,'-'))
         #dependent_tasks = self.env['project.task'].search([('depend_ids', 'in', self.ids)])
             for dependent_task in task.depend_on_ids:
-                    if dependent_task.state_id in self.env['project.task.state'].search([('name', 'in', BLOCKING_STATES)]):
-                        if task.state_id.name != "Waiting":
-                            task.state_pre_block = task.state_id.name 
-                        print("state_pre_block: {}".format(task.state_pre_block))
-                        task.state_id = self.env['project.task.state'].search([('name', '=', "Waiting")])
-                        return
+                if dependent_task.state_id in self.env['project.task.state'].search([('name', 'in', BLOCKING_STATES)]): # 
+                    if task.state_key != STATES_KEY['Waiting']:
+                        task.state_pre_block = task.state_name
+                    print("state_pre_block: {}".format(task.state_pre_block))
+                    task.state_id = self.env['project.task.state'].search([('key', '=', STATES_KEY['Waiting'])])
+                    return
             default_state = "Pending approval" if task.state_approval_mode else "In Progress"
             print(default_state)
             future_state = default_state if not task.state_pre_block else task.state_pre_block
             print(future_state)
-            task.state_id = self.env['project.task.state'].search([('name', '=', future_state)])
+            task.state_id = self.env['project.task.state'].search([('key', '=', STATES_KEY[future_state])])
 
     @api.onchange('state_approval_mode')
     def _onchange_state_approval_mode(self):
-        if self.state_id != self.env['project.task.state'].search([('key', '=', 3)]):   #waiting state
-            default_key = 4 if self.state_approval_mode else 1      # 4-> Pending approval, 1-> In Progress
-            self.state_id = self.env['project.task.state'].search([('key', '=', default_key)])
+        if self.state_id != self.env['project.task.state'].search([('key', '=', STATES_KEY['Waiting'])]):   #waiting state
+            default_state = 'Pending approval' if self.state_approval_mode else 'In Progress'
+            self.state_id = self.env['project.task.state'].search([('key', '=', STATES_KEY[default_state])])
 
     #@api.depends('project_id')
     #def _compute_state(self):
@@ -2524,33 +2534,76 @@ class Task(models.Model):
                     ('is_closed', '=', False)]).write({'partner_id': new_partner.id})
         return super(Task, self)._message_post_after_hook(message, msg_vals)
 
+    def unlink_wizard(self, stage_view=False):
+            self = self.with_context(active_test=False)
+            # retrieves all the projects with a least 1 task in that stage
+            # a task can be in a stage even if the project is not assigned to the stage
+            readgroup = self.with_context(active_test=False).env['project.task']._read_group([('stage_id', 'in', self.ids)], ['project_id'], ['project_id'])
+            project_ids = list(set([project['project_id'][0] for project in readgroup] + self.project_ids.ids))
+
+            wizard = self.with_context(project_ids=project_ids).env['project.task.type.delete.wizard'].create({
+                'project_ids': project_ids,
+                'stage_ids': self.ids
+            })
+
+            context = dict(self.env.context)
+            context['stage_view'] = stage_view
+            return {
+                'name': _('Delete Stage'),
+                'view_mode': 'form',
+                'res_model': 'project.task.type.delete.wizard',
+                'views': [(self.env.ref('project.view_project_task_type_delete_wizard').id, 'form')],
+                'type': 'ir.actions.act_window',
+                'res_id': wizard.id,
+                'target': 'new',
+                'context': context,
+            }
+
+    def call_confirmation_wizard(self):
+        context = dict(self.env.context)
+
+        return {
+            'name': 'Confirmation',
+            'view_mode': 'form',
+            'res_model': 'project.wizard_confirmation',
+            'views': [(self.env.ref('project.project_wizard_confirmation_form').id, 'form')],
+            'type': 'ir.actions.act_window',
+            'view_type': 'form',
+            'res_id': self.id,
+            #'view_id': self.env.ref("affichage2.confirm_wizard_form").id,
+            #'view_id': False,
+            'target': 'new',
+            'context': context,
+            #'nodestroy': True,
+        }
+
     def action_toggle_approval_mode(self):
         for task in self.browse(self.env.context['active_ids']):
             #task.state_approval_mode = not task.state_approval_mode
             task.write({'state_approval_mode': not task.state_approval_mode})
-            if task.state_id != task.env['project.task.state'].search([('key', '=', 3)]):   #waiting state
-                default_key = 4 if task.state_approval_mode else 1      # 4-> Pending approval, 1-> In Progress
-                task.state_id = task.env['project.task.state'].search([('key', '=', default_key)])
+            if task.state_id != task.env['project.task.state'].search([('key', '=', STATES_KEY['Waiting'])]):
+                default_state = 'Pending approval' if task.state_approval_mode else 'In Progress'     # 4-> Pending approval, 1-> In Progress
+                task.state_id = task.env['project.task.state'].search([('key', '=', STATES_KEY[default_state])])
 
 
     def action_toggle_approve_state(self):
-        new_key = 5 if self.state_id.key != 5 else 4
-        self.write({'state_id': self.env['project.task.state'].search([('key', '=', new_key)])})
+        #self.call_confirmation_wizard()
+        new_state = 'Approved' if self.state_name != 'Approved' else 'Pending approval'
+        self.write({'state_id': self.env['project.task.state'].search([('key', '=', STATES_KEY[new_state])])})
 
 
     def action_toggle_request_changes_state(self):
-        new_key = 7 if self.state_id.key != 7 else 4
-        self.write({'state_id': self.env['project.task.state'].search([('key', '=', new_key)])})
+        new_state = 'Changes requested' if self.state_name != 'Changes requested' else 'Pending approval'
+        self.write({'state_id': self.env['project.task.state'].search([('key', '=', STATES_KEY[new_state])])})
 
     def action_toggle_reject_state(self):
-        new_key = 6 if self.state_id.key != 6 else 4
-        self.write({'state_id': self.env['project.task.state'].search([('key', '=', new_key)])})
+        new_state = 'Rejected' if self.state_name != 'Rejected' else 'Pending approval'
+        self.write({'state_id': self.env['project.task.state'].search([('key', '=', STATES_KEY[new_state])])})
 
     def action_toggle_mark_as_done(self):
         # state_id.key 
-        print(self.state_id)
-        new_key = 2 if self.state_id.key != 2 else 1
-        self.write({'state_id': self.env['project.task.state'].search([('key', '=', new_key)])})
+        new_state = 'Done' if self.state_name != 'Done' else 'In Progress'
+        self.write({'state_id': self.env['project.task.state'].search([('key', '=', STATES_KEY[new_state])])})
 
     def action_assign_to_me(self):
         self.write({'user_ids': [(4, self.env.user.id)]})
