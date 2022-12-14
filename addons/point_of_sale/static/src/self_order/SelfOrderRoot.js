@@ -72,9 +72,11 @@ class SelfOrderRoot extends Component {
             return sum +  cartItem.quantity;
         },0);
     }
+    // this function returns the total price of the cart
+    // 
     getTotalCartCost = () => {
         return this.state.cart.reduce((sum, cartItem) => {
-            return sum +  this.productList[cartItem.id].list_price * cartItem.quantity;
+            return sum +  this.productList.find(x => x.id === cartItem.id).list_price * cartItem.quantity;
         },0);
     }
     // TODO: Find the currency type of the posConfig

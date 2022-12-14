@@ -28,7 +28,7 @@
                 <ProductMainView 
                     restaurantName="restaurantName" 
                     tableNumber="tableNumber"
-                    product="productList[this.state.currentProduct]" 
+                    product="productList.find(x => x.id === this.state.currentProduct)" 
                     viewMenu="viewMenu" 
                     addToCart="addToCart"/>
             </t>
