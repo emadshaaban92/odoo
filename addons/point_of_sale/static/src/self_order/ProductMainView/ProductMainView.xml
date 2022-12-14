@@ -6,7 +6,7 @@
             <!-- appear over the last item -->
             <div class="pb-5">
                 <div class="text-center m-4">
-                    <img t-att-src="props.product.image_1920" class="img-fluid" alt="Product image"/>
+                    <img class="img-fluid" t-attf-src="/pos/self-order/get-images/{{ props.product.id }}"  alt="Product image"/>
                 </div>
                 <!-- Name and Price -->
                 <div class="d-flex w-100 justify-content-around">
