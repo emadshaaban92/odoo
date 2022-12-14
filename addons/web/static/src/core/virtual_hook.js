@@ -6,23 +6,29 @@ import { throttleForAnimation } from "./utils/timing";
 
 /**
  * @template T
- * @typedef UseVirtualOptions
- * @property {typeof useRef} scrollableRef
+ * @typedef VirtualHookParams
  * @property {T[] | () => T[]} items
- * @property {AcceptedPixelValue | (item: T) => AcceptedPixelValue} itemHeight
- * @property {T[] | () => T[]} [stickyItems]
- * @property {AcceptedPixelValue} [margin="100%"]
+ * @property {PixelValue | (item: T) => PixelValue} itemHeight
+ * @property {typeof useRef} scrollableRef
  * @property {number} [initialScrollTop=0]
+ * @property {PixelValue} [margin="100%"]
+ * @property {T[] | () => T[]} [stickyItems]
  */
 
+/** @typedef {number | `${string}px` | `${string}%`} PixelValue */
+
 /**
- * @typedef {number | `${string}px` | `${string}%`} AcceptedPixelValue
+ * @template T
+ * @param {T[]} items
+ * @param {T[]} stickyItems
+ * @returns {T[]}
  */
+const combineItems = (items, stickyItems) => [...new Set([...items, ...stickyItems])];
 
 /**
  * Converts a number,
  *
- * @param {AcceptedPixelValue} value
+ * @param {PixelValue} value
  * @returns {number}
  */
 const toPixels = (value) => {
@@ -41,25 +47,20 @@ const toPixels = (value) => {
  * Calculates the displayed items in a virtual list.
  *
  * @template T
- * @param {UseVirtualOptions<T>} options
- * @returns {ReturnType<useState<T[]>>}
+ * @param {VirtualHookParams<T>} params
+ * @returns {ReturnType<useState<T>>}
  */
-export function useVirtual(options) {
-    const { initialScrollTop, scrollableRef } = options;
-    let { itemHeight, items, stickyItems, margin } = options;
-    itemHeight = typeof itemHeight === "function" ? itemHeight : (_) => options.itemHeight;
-    items = typeof items === "function" ? items : () => items;
-    stickyItems = typeof stickyItems === "function" ? stickyItems : () => options.stickyItems || [];
-    margin = typeof margin === "number" ? margin : options.margin || "100%";
-    const current = {
-        allItems: items(),
-        scrollTop: initialScrollTop || 0,
-    };
-
-    const virtualItems = useState([]);
-    function compute() {
-        const { allItems, scrollTop } = current;
-        const marginPixels = toPixels(margin);
+export function useVirtual({
+    items,
+    itemHeight,
+    scrollableRef,
+    initialScrollTop,
+    margin,
+    stickyItems,
+}) {
+    const computeVirtualItems = () => {
+        const { items, stickyItems, scrollTop } = current;
+        const marginPixels = toPixels(marginPx);
 
         const vStart = scrollTop - marginPixels;
         const vEnd =
@@ -68,8 +69,8 @@ export function useVirtual(options) {
         let startIndex = 0;
         let endIndex = 0;
         let currentTop = 0;
-        for (const item of allItems) {
-            const size = toPixels(itemHeight(item));
+        for (const item of items) {
+            const size = toPixels(getItemHeight(item));
             if (currentTop + size < vStart) {
                 startIndex++;
                 endIndex++;
@@ -82,24 +83,42 @@ export function useVirtual(options) {
         }
 
         const prevItems = toRaw(virtualItems);
-        const newItems = [...new Set([...allItems.slice(startIndex, endIndex), ...stickyItems()])];
+        const newItems = combineItems(items.slice(startIndex, endIndex), stickyItems);
+
         if (!shallowEqual(prevItems, newItems)) {
             virtualItems.length = 0;
             virtualItems.push(...newItems);
         }
-    }
+    };
 
-    onWillStart(compute);
+    const getItems = typeof items === "function" ? items : () => items;
+
+    const getItemHeight = typeof itemHeight === "function" ? itemHeight : () => itemHeight;
+
+    const getStickyItems =
+        typeof stickyItems === "function" ? stickyItems : () => stickyItems || [];
+
+    const marginPx = toPixels(typeof margin === "number" ? margin : margin || "100%");
+    const current = {
+        items: getItems(),
+        stickyItems: getStickyItems(),
+        scrollTop: initialScrollTop || 0,
+    };
+
+    const virtualItems = useState([]);
+
+    onWillStart(computeVirtualItems);
     onWillRender(() => {
-        const allItems = items();
-        if (!shallowEqual(current.allItems, allItems)) {
-            current.allItems = allItems;
-            compute();
+        const prevItems = combineItems(current.items, current.stickyItems);
+        current.items = getItems();
+        current.stickyItems = getStickyItems();
+        if (!shallowEqual(prevItems, combineItems(current.items, current.stickyItems))) {
+            computeVirtualItems();
         }
     });
-    const throttledOnScroll = throttleForAnimation((ev) => {
+    const throttledOnScroll = throttleForAnimation((/** @type {Event} */ ev) => {
         current.scrollTop = ev.target.scrollTop;
-        compute();
+        computeVirtualItems();
     });
     useEffect(
         (el) => {

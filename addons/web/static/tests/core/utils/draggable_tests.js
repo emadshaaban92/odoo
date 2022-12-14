@@ -1,7 +1,7 @@
 /** @odoo-module **/
 
 import { drag, dragAndDrop, getFixture, mount, nextTick } from "@web/../tests/helpers/utils";
-import { useSortable } from "@web/core/utils/sortable";
+import { useDraggable } from "@web/core/utils/draggable";
 
 import { Component, reactive, useRef, useState, xml } from "@odoo/owl";
 
@@ -9,10 +9,10 @@ let target;
 QUnit.module("Draggable", ({ beforeEach }) => {
     beforeEach(() => (target = getFixture()));
 
-    QUnit.module("Sortable hook");
+    QUnit.module("Draggable hook");
 
     QUnit.test("Parameters error handling", async (assert) => {
-        assert.expect(6);
+        assert.expect(5);
 
         const mountListAndAssert = async (setupList, shouldThrow) => {
             class List extends Component {
@@ -39,38 +39,31 @@ QUnit.module("Draggable", ({ beforeEach }) => {
 
         // Incorrect params
         await mountListAndAssert(() => {
-            useSortable({});
+            useDraggable({});
         }, true);
         await mountListAndAssert(() => {
-            useSortable({
+            useDraggable({
                 ref: useRef("root"),
             });
         }, true);
         await mountListAndAssert(() => {
-            useSortable({
+            useDraggable({
                 elements: ".item",
-            });
-        }, true);
-        await mountListAndAssert(() => {
-            useSortable({
-                elements: ".item",
-                groups: ".list",
             });
         }, true);
 
         // Correct params
         await mountListAndAssert(() => {
-            useSortable({
+            useDraggable({
                 ref: {},
                 elements: ".item",
                 enable: false,
             });
         }, false);
         await mountListAndAssert(() => {
-            useSortable({
+            useDraggable({
                 ref: useRef("root"),
                 elements: ".item",
-                connectGroups: () => true,
             });
         }, false);
     });
@@ -80,27 +73,24 @@ QUnit.module("Draggable", ({ beforeEach }) => {
 
         class List extends Component {
             setup() {
-                useSortable({
+                useDraggable({
                     ref: useRef("root"),
                     elements: ".item",
-                    onDragStart({ element, group }) {
+                    onDragStart({ element }) {
                         assert.step("start");
-                        assert.notOk(group);
                         assert.strictEqual(element.innerText, "1");
                     },
                     onElementEnter({ element }) {
                         assert.step("elemententer");
                         assert.strictEqual(element.innerText, "2");
                     },
-                    onDragEnd({ element, group }) {
+                    onDragEnd({ element }) {
                         assert.step("stop");
-                        assert.notOk(group);
                         assert.strictEqual(element.innerText, "1");
                         assert.containsN(target, ".item", 4);
                     },
-                    onDrop({ element, group, previous, next, parent }) {
+                    onDrop({ element, previous, next, parent }) {
                         assert.step("drop");
-                        assert.notOk(group);
                         assert.strictEqual(element.innerText, "1");
                         assert.strictEqual(previous.innerText, "2");
                         assert.strictEqual(next.innerText, "3");
@@ -140,28 +130,23 @@ QUnit.module("Draggable", ({ beforeEach }) => {
 
         class List extends Component {
             setup() {
-                useSortable({
+                useDraggable({
                     ref: useRef("root"),
                     elements: ".item",
-                    groups: ".list",
-                    connectGroups: true,
-                    onDragStart({ element, group }) {
+                    onDragStart({ element }) {
                         assert.step("start");
-                        assert.hasClass(group, "list2");
                         assert.strictEqual(element.innerText, "2 1");
                     },
                     onGroupEnter({ group }) {
                         assert.step("groupenter");
                         assert.hasClass(group, "list1");
                     },
-                    onDragEnd({ element, group }) {
+                    onDragEnd({ element }) {
                         assert.step("stop");
-                        assert.hasClass(group, "list2");
                         assert.strictEqual(element.innerText, "2 1");
                     },
-                    onDrop({ element, group, previous, next, parent }) {
+                    onDrop({ element, previous, next, parent }) {
                         assert.step("drop");
-                        assert.hasClass(group, "list2");
                         assert.strictEqual(element.innerText, "2 1");
                         assert.strictEqual(previous.innerText, "1 3");
                         assert.notOk(next);
@@ -199,7 +184,7 @@ QUnit.module("Draggable", ({ beforeEach }) => {
         class List extends Component {
             setup() {
                 this.state = useState(state);
-                useSortable({
+                useDraggable({
                     ref: useRef("root"),
                     elements: ".item",
                     enable: () => this.state.enableSortable,
@@ -242,7 +227,7 @@ QUnit.module("Draggable", ({ beforeEach }) => {
 
         class List extends Component {
             setup() {
-                useSortable({
+                useDraggable({
                     ref: useRef("root"),
                     elements: ".item",
                     onDragStart() {
@@ -274,7 +259,7 @@ QUnit.module("Draggable", ({ beforeEach }) => {
 
         class List extends Component {
             setup() {
-                useSortable({
+                useDraggable({
                     ref: useRef("root"),
                     elements: ".item",
                     ignore: ".ignored",

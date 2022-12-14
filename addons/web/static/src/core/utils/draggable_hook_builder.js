@@ -1,7 +1,6 @@
 /** @odoo-module **/
 
 import { onWillUnmount, reactive, useEffect, useEnv, useExternalListener } from "@odoo/owl";
-import { getActiveHotkey } from "@web/core/hotkeys/hotkey_service";
 import { clamp } from "@web/core/utils/numbers";
 import { camelToKebab } from "@web/core/utils/strings";
 import { debounce, setRecurringAnimationFrame } from "@web/core/utils/timing";
@@ -45,39 +44,50 @@ import { debounce, setRecurringAnimationFrame } from "@web/core/utils/timing";
  * @property {Record<string, any>} [defaultParams]
  *
  * Build hooks
- * @property {(params: DraggableBuilderHookParams) => any} onComputeParams
+ * @property {(params: DraggableBuildHandlerParams) => any} onComputeParams
  *
  * Runtime hooks
- * @property {(params: DraggableBuilderHookParams) => any} onDragStart
- * @property {(params: DraggableBuilderHookParams) => any} onDrag
- * @property {(params: DraggableBuilderHookParams) => any} onDragEnd
- * @property {(params: DraggableBuilderHookParams) => any} onDrop
- * @property {(params: DraggableBuilderHookParams) => any} onWillStartDrag
+ * @property {(params: DraggableBuildHandlerParams) => any} onDragStart
+ * @property {(params: DraggableBuildHandlerParams) => any} onDrag
+ * @property {(params: DraggableBuildHandlerParams) => any} onDragEnd
+ * @property {(params: DraggableBuildHandlerParams) => any} onDrop
+ * @property {(params: DraggableBuildHandlerParams) => any} onWillStartDrag
  */
 
 /**
- * @typedef DraggableHookRunningContext
+ * @typedef DraggableHookContext
  * @property {{ el: HTMLElement | null }} ref
  * @property {string | null} [elementSelector=null]
  * @property {string | null} [ignoreSelector=null]
  * @property {string | null} [fullSelector=null]
  * @property {string | null} [cursor=null]
- * @property {HTMLElement | null} [currentContainer=null]
- * @property {DOMRect | null} [currentContainerRect=null]
- * @property {HTMLElement | null} [currentElement=null]
- * @property {DOMRect | null} [currentElementRect=null]
- * @property {HTMLElement | null} [scrollParent=null]
  * @property {boolean} [enabled=false]
  * @property {Position} [mouse={ x: 0, y: 0 }]
- * @property {Position} [offset={ x: 0, y: 0 }]
  * @property {EdgeScrollingOptions} [edgeScrolling]
+ * @property {DraggableHookCurrentContext} current
+ */
+
+/**
+ * @typedef DraggableHookCurrentContext
+ * @property {HTMLElement} [current.container]
+ * @property {DOMRect} [current.containerRect]
+ * @property {HTMLElement} [current.element]
+ * @property {DOMRect} [current.elementRect]
+ * @property {HTMLElement} [scrollParent]
+ * @property {Position} [offset={ x: 0, y: 0 }]
  */
 
 /**
  * @typedef {DOMHelpers & {
- *  ctx: DraggableHookRunningContext,
+ *  ctx: DraggableHookContext,
+ *  addCleanup(cleanupFn: () => any): void,
+ *  addEffectCleanup(cleanupFn: () => any): void,
  *  callHandler(handlerName: string, arg: Record<any, any>): void,
- * }} DraggableBuilderHookParams
+ * }} DraggableBuildHandlerParams
+ */
+
+/**
+ * @typedef {DOMHelpers & Position & { element: HTMLElement }} DraggableHandlerParams
  */
 
 const DEFAULT_ACCEPTED_PARAMS = {
@@ -99,6 +109,7 @@ const DEFAULT_DEFAULT_PARAMS = {
 const DRAGGED_CLASS = "o_dragged";
 const LEFT_CLICK = 0;
 const MANDATORY_PARAMS = ["ref", "elements"];
+const WHITE_LISTED_KEYS = ["Alt", "Control", "Meta", "Shift"];
 
 /**
  * Cache containing the elements in which an attribute has been modified by a hook.
@@ -406,25 +417,17 @@ export function makeDraggableHook(hookParams) {
             const dragStart = () => {
                 state.dragging = true;
 
-                // Swaps the initial currentElement by its clone
-                const initialElement = ctx.currentElement;
-                ctx.currentElement = initialElement.cloneNode(true);
-                initialElement.before(ctx.currentElement);
-
-                dom.addStyle(initialElement, { display: "none !important" });
-                cleanup.add(() => ctx.currentElement.remove());
-
                 // Compute scrollable parent
-                ctx.scrollParent = getScrollParent(ctx.currentContainer);
+                ctx.current.scrollParent = getScrollParent(ctx.current.container);
 
                 updateRects();
-                const { x, y, width, height } = ctx.currentElementRect;
+                const { x, y, width, height } = ctx.current.elementRect;
 
                 // Adjusts the offset
-                ctx.offset.x -= x;
-                ctx.offset.y -= y;
+                ctx.current.offset.x -= x;
+                ctx.current.offset.y -= y;
 
-                dom.addStyle(ctx.currentElement, {
+                dom.addStyle(ctx.current.element, {
                     width: `${width}px`,
                     height: `${height}px`,
                 });
@@ -440,12 +443,12 @@ export function makeDraggableHook(hookParams) {
                     dom.addStyle(document.body, { cursor: ctx.cursor });
                 }
 
-                if (ctx.scrollParent && ctx.edgeScrolling.enabled) {
+                if (ctx.current.scrollParent && ctx.edgeScrolling.enabled) {
                     const cleanupFn = setRecurringAnimationFrame(handleEdgeScrolling);
                     cleanup.add(cleanupFn);
                 }
 
-                dom.addClass(ctx.currentElement, DRAGGED_CLASS);
+                dom.addClass(ctx.current.element, DRAGGED_CLASS);
 
                 callBuildHandler("onDragStart");
             };
@@ -463,7 +466,7 @@ export function makeDraggableHook(hookParams) {
                 if (state.dragging) {
                     if (!inErrorState) {
                         callBuildHandler("onDragEnd");
-                        if (!cancelled && document.body.contains(ctx.currentElement)) {
+                        if (!cancelled) {
                             callBuildHandler("onDrop");
                         }
                     }
@@ -478,8 +481,8 @@ export function makeDraggableHook(hookParams) {
              */
             const handleEdgeScrolling = (deltaTime) => {
                 updateRects();
-                const eRect = ctx.currentElementRect;
-                const cRect = ctx.currentContainerRect;
+                const eRect = ctx.current.elementRect;
+                const cRect = ctx.current.containerRect;
 
                 const { speed, threshold } = ctx.edgeScrolling;
                 const correctedSpeed = (speed / 16) * deltaTime;
@@ -516,7 +519,7 @@ export function makeDraggableHook(hookParams) {
                     if (diff.y) {
                         scrollParams.top = diffToScroll(diff.y);
                     }
-                    ctx.scrollParent.scrollBy(scrollParams);
+                    ctx.current.scrollParent.scrollBy(scrollParams);
                 }
             };
 
@@ -528,18 +531,17 @@ export function makeDraggableHook(hookParams) {
                 if (!ctx.enabled || !state.dragging) {
                     return;
                 }
-                switch (getActiveHotkey(ev)) {
-                    case "alt":
-                    case "alt+control":
-                    case "alt+control+shift":
-                    case "alt+shift":
-                    case "control":
-                    case "control+shift":
-                    case "shift":
-                        cancelEvent(ev);
-                        break;
-                    default:
-                        dragEnd(true);
+                if (ev.key === "Enter") {
+                    cancelEvent(ev);
+                    dragEnd();
+                    return;
+                }
+                if (ev.key === "Escape") {
+                    cancelEvent(ev);
+                }
+                if (!WHITE_LISTED_KEYS.includes(ev.key)) {
+                    // Cancels drag sequences on every non-whitelisted key down event.
+                    dragEnd(true);
                 }
             };
 
@@ -563,21 +565,11 @@ export function makeDraggableHook(hookParams) {
                     return;
                 }
 
-                // Initial target is cloned and hidden.
-                // This is done so that the initial element can be removed without
-                // the drag sequence being affected.
-                ctx.currentElement = ev.target.closest(ctx.elementSelector);
-                ctx.currentContainer = ctx.ref.el;
+                ctx.current.element = ev.target.closest(ctx.elementSelector);
+                ctx.current.container = ctx.ref.el;
+                ctx.current.offset = { ...ctx.mouse };
 
-                Object.assign(ctx.offset, ctx.mouse);
-
-                cleanup.add(() => {
-                    ctx.currentContainer = null;
-                    ctx.currentContainerRect = null;
-                    ctx.currentElement = null;
-                    ctx.currentElementRect = null;
-                    ctx.scrollParent = null;
-                });
+                cleanup.add(() => (ctx.current = {}));
 
                 callBuildHandler("onWillStartDrag");
             };
@@ -589,7 +581,7 @@ export function makeDraggableHook(hookParams) {
             const onMouseMove = (ev) => {
                 updateMousePosition(ev);
 
-                if (!ctx.enabled || !ctx.currentElement) {
+                if (!ctx.enabled || !ctx.current.element) {
                     return;
                 }
                 if (state.dragging) {
@@ -614,13 +606,14 @@ export function makeDraggableHook(hookParams) {
              * the current mouse position.
              */
             const updateElementPosition = () => {
-                const { width: ew, height: eh } = ctx.currentElementRect;
-                const { x: cx, y: cy, width: cw, height: ch } = ctx.currentContainerRect;
+                const { containerRect, element, elementRect, offset } = ctx.current;
+                const { width: ew, height: eh } = elementRect;
+                const { x: cx, y: cy, width: cw, height: ch } = containerRect;
 
                 // Updates the position of the dragged element.
-                dom.addStyle(ctx.currentElement, {
-                    left: `${clamp(ctx.mouse.x - ctx.offset.x, cx, cx + cw - ew)}px`,
-                    top: `${clamp(ctx.mouse.y - ctx.offset.y, cy, cy + ch - eh)}px`,
+                dom.addStyle(element, {
+                    left: `${clamp(ctx.mouse.x - offset.x, cx, cx + cw - ew)}px`,
+                    top: `${clamp(ctx.mouse.y - offset.y, cy, cy + ch - eh)}px`,
                 });
             };
 
@@ -634,25 +627,27 @@ export function makeDraggableHook(hookParams) {
             };
 
             const updateRects = () => {
+                const { current } = ctx;
+                const { container, element, scrollParent } = current;
                 // Container rect
-                ctx.currentContainerRect = dom.getRect(ctx.currentContainer, { adjust: true });
-                if (ctx.scrollParent) {
+                current.containerRect = dom.getRect(container, { adjust: true });
+                if (scrollParent) {
                     // Adjust container rect according to scrollparent
-                    const parentRect = dom.getRect(ctx.scrollParent, { adjust: true });
-                    ctx.currentContainerRect.x = Math.max(ctx.currentContainerRect.x, parentRect.x);
-                    ctx.currentContainerRect.y = Math.max(ctx.currentContainerRect.y, parentRect.y);
-                    ctx.currentContainerRect.width = Math.min(
-                        ctx.currentContainerRect.width,
+                    const parentRect = dom.getRect(scrollParent, { adjust: true });
+                    current.containerRect.x = Math.max(current.containerRect.x, parentRect.x);
+                    current.containerRect.y = Math.max(current.containerRect.y, parentRect.y);
+                    current.containerRect.width = Math.min(
+                        current.containerRect.width,
                         parentRect.width
                     );
-                    ctx.currentContainerRect.height = Math.min(
-                        ctx.currentContainerRect.height,
+                    current.containerRect.height = Math.min(
+                        current.containerRect.height,
                         parentRect.height
                     );
                 }
 
                 // Element rect
-                ctx.currentElementRect = dom.getRect(ctx.currentElement);
+                ctx.current.elementRect = dom.getRect(element);
             };
 
             // Initialize helpers
@@ -680,24 +675,20 @@ export function makeDraggableHook(hookParams) {
                 }
             }
 
-            /** @type {DraggableHookRunningContext} */
+            /** @type {DraggableHookContext} */
             const ctx = {
                 ref: params.ref,
                 ignoreSelector: null,
                 fullSelector: null,
                 cursor: null,
-                currentContainer: null,
-                currentContainerRect: null,
-                currentElement: null,
-                currentElementRect: null,
-                scrollParent: null,
                 enabled: false,
                 mouse: { x: 0, y: 0 },
-                offset: { x: 0, y: 0 },
                 edgeScrolling: { enabled: true },
                 get dragging() {
                     return state.dragging;
                 },
+                // Current context
+                current: {},
             };
 
             // Effect depending on the params to update them.
