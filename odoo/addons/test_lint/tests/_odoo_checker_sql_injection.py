@@ -1,7 +1,11 @@
 import os
 
 import astroid
-from pylint import checkers, interfaces
+from pylint.checkers import BaseChecker, utils
+try:
+    from pylint.checkers.utils import only_required_for_messages
+except ImportError:
+    from pylint.checkers.utils import check_messages as only_required_for_messages
 
 DFTL_CURSOR_EXPR = [
     'self.env.cr', 'self._cr',  # new api
@@ -9,9 +13,7 @@ DFTL_CURSOR_EXPR = [
     'cr',  # old api
 ]
 
-
-class OdooBaseChecker(checkers.BaseChecker):
-    __implements__ = interfaces.IAstroidChecker
+class OdooBaseChecker(BaseChecker):
     name = 'odoo'
 
     msgs = {
@@ -140,7 +142,7 @@ class OdooBaseChecker(checkers.BaseChecker):
 
         return True
 
-    @checkers.utils.check_messages('sql-injection')
+    @only_required_for_messages('sql-injection')
     def visit_call(self, node):
         if self._check_sql_injection_risky(node):
             self.add_message('sql-injection', node=node)
