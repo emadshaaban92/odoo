@@ -10091,6 +10091,7 @@ msgid "Last Updated on"
 msgstr ""
 
 #. module: l10n_pe
+<<<<<<< HEAD
 #: model:res.city,name:l10n_pe.city_pe_1010
 msgid "Lauricocha"
 msgstr ""
@@ -12128,6 +12129,14 @@ msgid "Ninacaca"
 msgstr ""
 
 #. module: l10n_pe
+||||||| parent of 9cf861e24e5 (temp)
+=======
+#: model:l10n_latam.identification.type,name:l10n_pe.it_CPP
+msgid "License Permit Temp. Perman."
+msgstr ""
+
+#. module: l10n_pe
+>>>>>>> 9cf861e24e5 (temp)
 #: model:l10n_latam.identification.type,name:l10n_pe.it_NDTD
 msgid "Non-Domiciled Tax Document"
 msgstr ""
