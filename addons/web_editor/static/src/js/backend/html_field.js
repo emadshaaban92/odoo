@@ -78,6 +78,9 @@ export class HtmlField extends Component {
         this.iframeRef = useRef("iframe");
         this.codeViewButtonRef = useRef("codeViewButton");
 
+        this.DOMParser = new DOMParser();
+        this.getPresentationValue(this.props.value);
+
         if (this.props.dynamicPlaceholder) {
             this.dynamicPlaceholder = useDynamicPlaceholder();
         }
@@ -122,6 +125,7 @@ export class HtmlField extends Component {
                 this.currentEditingValue = undefined;
             }
             this._lastRecordInfo = newRecordInfo;
+            this.getPresentationValue(newProps.value);
         });
         useEffect(() => {
             (async () => {
@@ -163,9 +167,44 @@ export class HtmlField extends Component {
             this.updateValue();
         });
     }
+    /**
+     * Get a re-formatted version of an HTML document that can be inserted into an existing document.
+     *
+     * @param {string} htmlString string representation of the document, or the body
+     */
+    getPresentationValue(htmlString) {
+        this.parsedValue = this.DOMParser.parseFromString(htmlString, 'text/html');
+        const bodyValue = this.parsedValue.body ? this.parsedValue.body.innerHTML : htmlString;
+        const headValue = this.parsedValue.head.innerHTML;
+        if (!bodyValue.trim() || !headValue.trim()) {
+            this.presentationValue = bodyValue;
+        } else {
+            this.presentationValue = `
+                <div class="o_html_field_head">
+                ${this.parsedValue.head.innerHTML}
+                </div>
+                ${bodyValue};
+            `;
+        }
+    }
+
+    getBackendValue(newValue) {
+        // if there were no head nodes, no need to reconstruct
+        if (!this.parsedValue.head.childNodes.length) {
+            return newValue;
+        }
+        // otherwise take the original parsed value and replace the body
+        const parsedNewValue = this.DOMParser.parseFromString(newValue, 'text/html');
+        parsedNewValue.body.removeChild(parsedNewValue.querySelector('.o_html_field_head'));
+        const parsedValueCopy = this.parsedValue.cloneNode(true);
+        parsedValueCopy.body.replaceWith(parsedNewValue.body);
+        const serializer = new XMLSerializer();
+        return serializer.serializeToString(parsedValueCopy);
+    }
+
 
     get markupValue () {
-        return markup(this.props.value);
+        return markup(this.presentationValue);
     }
     get showIframe () {
         return this.props.readonly && this.props.cssReadonlyAssetId;
@@ -209,7 +248,7 @@ export class HtmlField extends Component {
         }
 
         return {
-            value: this.props.value,
+            value: this.presentationValue,
             autostart: false,
             onAttachmentChange: this._onAttachmentChange.bind(this),
             onWysiwygBlur: this._onWysiwygBlur.bind(this),
@@ -276,13 +315,13 @@ export class HtmlField extends Component {
     }
     async updateValue() {
         const value = this.getEditingValue();
-        const lastValue = (this.props.value || "").toString();
+        const lastValue = (this.presentationValue || "").toString();
         if (value !== null && !(!lastValue && value === "<p><br></p>") && value !== lastValue) {
             if (this.props.setDirty) {
                 this.props.setDirty(true);
             }
             this.currentEditingValue = value;
-            await this.props.update(value);
+            await this.props.update(this.getBackendValue(value));
         }
     }
     async startWysiwyg(wysiwyg) {
@@ -315,7 +354,7 @@ export class HtmlField extends Component {
         if (this.state.showCodeView) {
             this.wysiwyg.odooEditor.toolbarHide();
             const value = this.wysiwyg.getValue();
-            this.props.update(value);
+            this.props.update(this.getBackendValue(value));
         } else {
             this.wysiwyg.odooEditor.observerActive('toggleCodeView');
             const $codeview = $(el);
@@ -366,7 +405,7 @@ export class HtmlField extends Component {
         }
     }
     _isDirty() {
-        return !this.props.readonly && this.props.value !== this.getEditingValue();
+        return !this.props.readonly && this.presentationValue !== this.getEditingValue();
     }
     _getCodeViewEl() {
         return this.state.showCodeView && this.codeViewRef.el;
@@ -374,13 +413,13 @@ export class HtmlField extends Component {
     async _setupReadonlyIframe() {
         const iframeTarget = this.iframeRef.el.contentDocument.querySelector('#iframe_target');
         if (this.iframePromise && iframeTarget) {
-            if (iframeTarget.innerHTML !== this.props.value) {
-                iframeTarget.innerHTML = this.props.value;
+            if (iframeTarget.innerHTML !== this.presentationValue) {
+                iframeTarget.innerHTML = this.presentationValue;
             }
             return this.iframePromise;
         }
         this.iframePromise = new Promise((resolve) => {
-            let value = this.props.value;
+            let value = this.presentationValue;
             if (this.props.wrapper) {
                 value = this._wrap(value);
             }
