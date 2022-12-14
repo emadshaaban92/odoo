@@ -50,10 +50,11 @@ class SlidesPortalChatter(PortalChatter):
         # fetch and update mail.message
         message_id = int(message_id)
         message_body = plaintext2html(message)
+        subtype_comment_id = request.env['ir.model.data']._xmlid_to_res_id('mail.mt_comment')
         domain = [
             ('model', '=', res_model),
             ('res_id', '=', res_id),
-            ('is_internal', '=', False),
+            ('subtype_id', '=', subtype_comment_id),
             ('author_id', '=', request.env.user.partner_id.id),
             ('message_type', '=', 'comment'),
             ('id', '=', message_id)
