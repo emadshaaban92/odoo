@@ -41,21 +41,16 @@ const toPixels = (value) => {
  * Calculates the displayed items in a virtual list.
  *
  * @template T
- * @param {UseVirtualOptions<T>} param0
+ * @param {UseVirtualOptions<T>} options
  * @returns {ReturnType<useState<T[]>>}
  */
-export function useVirtual({
-    itemHeight,
-    items,
-    stickyItems,
-    margin,
-    initialScrollTop,
-    scrollableRef,
-}) {
-    itemHeight = typeof itemHeight === "function" ? itemHeight : (_) => itemHeight;
+export function useVirtual(options) {
+    const { initialScrollTop, scrollableRef } = options;
+    let { itemHeight, items, stickyItems, margin } = options;
+    itemHeight = typeof itemHeight === "function" ? itemHeight : (_) => options.itemHeight;
     items = typeof items === "function" ? items : () => items;
-    stickyItems = typeof stickyItems === "function" ? stickyItems : () => stickyItems || [];
-    margin = typeof margin === "number" ? margin : margin || "100%";
+    stickyItems = typeof stickyItems === "function" ? stickyItems : () => options.stickyItems || [];
+    margin = typeof margin === "number" ? margin : options.margin || "100%";
     const current = {
         allItems: items(),
         scrollTop: initialScrollTop || 0,
