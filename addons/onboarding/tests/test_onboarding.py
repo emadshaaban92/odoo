@@ -2,6 +2,8 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from odoo.addons.onboarding.tests.common import TestOnboardingCommon
+from odoo.exceptions import ValidationError
+from odoo.tools import mute_logger
 
 
 class TestOnboarding(TestOnboardingCommon):
@@ -131,36 +133,21 @@ class TestOnboarding(TestOnboardingCommon):
 
         self.assert_onboarding_is_not_done(self.onboarding_1)
 
-    def test_no_crash_on_multiple_progress_records(self):
-        existing_progress = self.env['onboarding.progress'].search([
-            ('onboarding_id', '=', self.onboarding_1.id), ('company_id', '=', False)
-        ])
-        self.assertEqual(len(existing_progress), 1)
+    @mute_logger('odoo.sql_db')
+    def test_only_one_progress_per_company_or_without(self):
+        self.assertFalse(self.onboarding_1.current_progress_id.company_id)
+        with self.assertRaises(ValidationError):
+            self.env['onboarding.progress'].create({
+                'onboarding_id': self.onboarding_1.id,
+                'company_id': False
+            })
+        # Updating onboarding to per-company
+        self.onboarding_1.is_per_company = True
+        # Required after progress reset (simulate role of controller)
+        self.onboarding_1._search_or_create_progress()
 
-        extra_progress = self.env['onboarding.progress'].create({
-            'onboarding_id': self.onboarding_1.id,
-            'company_id': False
-        })
-
-        self.env['onboarding.progress.step'].create([{
-            'step_id': self.onboarding_1_step_1.id,
-            'progress_id': progress.id
-            } for progress in (existing_progress, extra_progress)
-        ])
-
-        nb_progress = self.env['onboarding.progress'].search([
-            ('onboarding_id', '=', self.onboarding_1.id), ('company_id', '=', False)], count=True)
-        nb_progress_steps = self.env['onboarding.progress.step'].search([
-            ('step_id', '=', self.onboarding_1_step_1.id)], count=True)
-
-        # Even though multiple onboarding progress (& steps) records exist
-        self.assertEqual(nb_progress, 2)
-        self.assertEqual(nb_progress_steps, 2)
-
-        # no error is raised, and so we can interact
-        _ = self.onboarding_1_step_1.current_progress_step_id
-        self.onboarding_1_step_1.action_set_just_done()
-
-        # Same with onboarding progress
-        _ = self.onboarding_1.current_progress_id
-        self.onboarding_1.action_close()
+        with self.assertRaises(ValidationError):
+            self.env['onboarding.progress'].create({
+                'onboarding_id': self.onboarding_1.id,
+                'company_id': self.env.company.id
+            })

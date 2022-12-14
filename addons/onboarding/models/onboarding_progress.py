@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import ValidationError
 
 
 ONBOARDING_PROGRESS_STATES = [
@@ -23,10 +24,6 @@ class OnboardingProgress(models.Model):
     onboarding_id = fields.Many2one(
         'onboarding.onboarding', 'Related onboarding tracked', required=True, ondelete='cascade')
     progress_step_ids = fields.One2many('onboarding.progress.step', 'progress_id', 'Progress Steps Trackers')
-    _sql_constraints = [
-        ('onboarding_company_uniq', 'unique (onboarding_id,company_id)',
-         'There cannot be multiple records of the same onboarding completion for the same company.'),
-    ]
 
     @api.depends('onboarding_id.step_ids', 'progress_step_ids', 'progress_step_ids.step_state')
     def _compute_onboarding_state(self):
@@ -39,6 +36,16 @@ class OnboardingProgress(models.Model):
             progress.onboarding_state = (
                 'not_done' if result.get(progress.id, 0) != len(progress.onboarding_id.step_ids)
                 else 'done')
+
+    @api.constrains('company_id', 'onboarding_id')
+    def check_progress_per_company(self):
+        progress_data = self.read_group(
+            [('company_id', 'in', [self.env.company.id, False]), ('onboarding_id', 'in', self.onboarding_id.ids)],
+            ['onboarding_id', 'ids:array_agg(id)'], ['onboarding_id']
+        )
+        for data in progress_data:
+            if len(data['ids']) > 1:
+                raise ValidationError(_('There cannot be multiple records of the same onboarding completion for the same company.'))
 
     def action_close(self):
         self.is_onboarding_closed = True
