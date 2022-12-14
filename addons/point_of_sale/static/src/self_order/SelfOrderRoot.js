@@ -30,11 +30,9 @@ class SelfOrderRoot extends Component {
     jsonToString = (json) => {
         return JSON.stringify(json);
     }
-
-    //TODO: Add a method to get the table number from the response of the server
+    // FIXME we have to use the function that correctly formats the price (with the currency symbol and the correct number of decimals)
     tableNumber = odoo.table_number;
-    //TODO: Add a method to get the message from the response of the server
-    message = "Your order is being processed";
+    // TODO we need to get the restaurant name from the posConfig
     restaurantName = "Brasserie de Perwez";
     viewMenu = () => {
         this.state.currentScreen = 1;

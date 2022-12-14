@@ -7,19 +7,23 @@
             <!-- NavBar is an Owl component -->
             <NavBar  restaurantName="props.restaurantName" tableNumber="props.tableNumber"/>
             <!-- Looping through all the available products -->
-            <t t-foreach="props.productList" t-as="product" t-key="product">
-                <!-- <div t-on-click="() => props.viewProduct(product.id)" 
-                    class="mt-2 bg-white d-flex w-100 align-items-center shadow-sm  m-1"> -->
-                <div t-on-click="() => props.viewProduct(product.id)" 
-                    class="mt-2 bg-white d-flex align-items-center shadow-sm  m-1">
-                    <img class="w-25 img-fluid" t-attf-src="/pos/self-order/get-images/{{ product.id }}"  alt="Product image"/>
-                    <div class="mt-4 mx-4">
-                        <p class="fw-bold"><t t-esc="product.name"/></p>
-                        <p class="break-line"><t t-esc="product.description" /></p>
-                        <p class="fst-italic"><t t-esc="product.list_price + '€'" /></p>
-                    </div>
+            <div class="container">
+                <div class="row">
+                    <t t-foreach="props.productList" t-as="product" t-key="product">
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <div t-on-click="() => props.viewProduct(product.id)" 
+                                class="mt-2 bg-white d-flex align-items-center shadow-sm  m-1">
+                                <img class="w-25 img-fluid" t-attf-src="/pos/self-order/get-images/{{ product.id }}"  alt="Product image"/>
+                                <div class="mt-4 mx-4">
+                                    <p class="fw-bold"><t t-esc="product.name"/></p>
+                                    <p class="break-line"><t t-esc="product.description" /></p>
+                                    <p class="fst-italic"><t t-esc="product.list_price + '€'" /></p>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
                 </div>
-            </t>
+            </div>
             <!-- Go to Cart Button -->
             <button t-on-click="() => props.viewCart()"
                     class="fixed-bottom btn btn-primary btn-lg btn-block w-100 text-white">
