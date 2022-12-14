@@ -18,7 +18,7 @@ class PosController(PortalAccount):
         response = request.render('point_of_sale.pos_self_order_index', {'table_number': table_number})
         response.headers['Cache-Control'] = 'no-store'
         return response
-    # this is the route that the POS Self Order App uses to get the menu
+    # this is the route that the POS Self Order App uses to GET THE MENU
     @http.route('/pos/self-order/get-menu', auth='public',type="json", website=True)
     def pos_self_order_get_menu(self,config_id = False):
         # response.headers['Cache-Control'] = 'no-store'
@@ -28,11 +28,19 @@ class PosController(PortalAccount):
         # 2. We are using the read() method to get the name and price of the product
         # 3. We are using the search() method to get the products that are available in the POS
         # 4. We are using the type="json" argument in the function call to return the response as JSON
-        response = http.request.env['product.product'].sudo().search([('available_in_pos', '=', True)]).read(['name', 'list_price','image_1920'])
-
+        response = http.request.env['product.product'].sudo().search([('available_in_pos', '=', True)]).read(['name', 'list_price'])
         return response
+    # this is the route that the POS Self Order App uses to GET THE PRODUCT IMAGES
+    @http.route('/pos/self-order/get-images/<int:product_id>', methods=['GET'], type='http', auth='public')
+    def pos_self_order_get_images(self, product_id, **kwargs):
+        # We get the product with the specific id from the database
+        product = request.env['product.product'].sudo().browse(product_id)
+        # We return the image of the product in binary format
+        # 'image_1920' is the name of the field that contains the image
+        # If the product does not have an image, the function _get_image_stream_from will return the default image
+        return request.env['ir.binary']._get_image_stream_from(product, field_name='image_1920').get_response()
 
-
+    
     @http.route(['/pos/web', '/pos/ui'], type='http', auth='user')
     def pos_web(self, config_id=False, **k):
         """Open a pos session for the given config.
