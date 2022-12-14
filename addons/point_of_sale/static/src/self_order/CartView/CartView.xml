@@ -6,8 +6,8 @@
         <div class="pb-5">
             <!-- NavBar is an Owl component -->
             <NavBar restaurantName="props.restaurantName" tableNumber="props.tableNumber" viewMenu="props.viewMenu"/>
-            <!-- Looping through all the cart items  -->
-            <t t-foreach="props.cartItems" t-as="cartItem" t-key="cartItem">
+<!-- Looping through all the cart items  -->
+            <t t-foreach="props.cartItems" t-as="cartItem" t-key="cartItem.id">
                 <!-- create a reference to the product -->
                 <t t-set="product" t-value="props.productList.find(x => x.id === cartItem.id)"/>
                 <div 

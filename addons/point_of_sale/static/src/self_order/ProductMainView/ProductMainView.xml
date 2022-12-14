@@ -17,7 +17,10 @@
                 </div>
                 <!-- Product Description -->
                 <div class="p-3 text-center">
-                    <t t-esc="props.product.description_sale"/>    
+
+                    <t t-if="props.product.description_sale != false">
+                        <t t-esc="props.product.description_sale"/>    
+                    </t>
                 </div>
                 <!-- quantity select and add to cart button -->
                     <div class="m-5">

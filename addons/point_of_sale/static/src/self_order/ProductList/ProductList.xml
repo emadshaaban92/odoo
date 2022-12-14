@@ -4,19 +4,25 @@
         <!-- this padding-bottom is important in order for the Cart button not to -->
         <!-- appear over the last item -->
         <div class="pb-5">
-            <!-- NavBar is an Owl component -->
+<!-- NavBar is an Owl component -->
             <NavBar  restaurantName="props.restaurantName" tableNumber="props.tableNumber"/>
-            <!-- Looping through all the available products -->
             <div class="container">
                 <div class="row">
+<!-- Looping through all the available products -->
                     <t t-foreach="props.productList" t-as="product" t-key="product.id">
                         <div class="col-12 col-sm-6 col-md-4">
                             <div t-on-click="() => props.viewProduct(product.id)" 
                                 class="mt-2 bg-white d-flex align-items-center shadow-sm  m-1">
+<!-- Product IMAGE -->
                                 <img class="w-25 img-fluid" t-attf-src="/pos/self-order/get-images/{{ product.id }}"  alt="Product image"/>
                                 <div class="mt-4 mx-4">
+<!-- Product NAME -->
                                     <p class="fw-bold"><t t-esc="product.name"/></p>
-                                    <p class="break-line"><t t-esc="product.description_sale" /></p>
+<!-- Product DESCRIPTION -->
+                                    <t t-if="product.description_sale != false">
+                                        <p class="break-line"><t t-esc="product.description_sale" /></p>
+                                    </t>
+<!-- Product PRICE -->
                                     <p class="fst-italic"><t t-esc="product.list_price + '€'" /></p>
                                 </div>
                             </div>
