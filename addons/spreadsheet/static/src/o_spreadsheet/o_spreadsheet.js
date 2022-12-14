@@ -3653,6 +3653,7 @@
         "SET_FORMATTING",
         "CLEAR_FORMATTING",
         "SET_BORDER",
+        "SET_DECIMAL",
         /** CHART */
         "CREATE_CHART",
         "UPDATE_CHART",
@@ -26728,8 +26729,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
      */
     function repairInitialMessages(data, initialMessages) {
         initialMessages = fixTranslatedSheetIds(data, initialMessages);
-        initialMessages = dropCommands(initialMessages, "SORT_CELLS");
-        initialMessages = dropCommands(initialMessages, "SET_DECIMAL");
+        initialMessages = dropSortCommands(data, initialMessages);
         return initialMessages;
     }
     /**
@@ -26767,13 +26767,14 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         }
         return messages;
     }
-    function dropCommands(initialMessages, commandType) {
+    function dropSortCommands(data, initialMessages) {
         const messages = [];
         for (const message of initialMessages) {
             if (message.type === "REMOTE_REVISION") {
                 messages.push({
                     ...message,
-                    commands: message.commands.filter((command) => command.type !== commandType),
+                    // @ts-ignore
+                    commands: message.commands.filter((command) => command.type !== "SORT_CELLS"),
                 });
             }
             else {
@@ -34265,7 +34266,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         drawGrid(renderingContext, layer) {
             switch (layer) {
                 case 0 /* LAYERS.Background */:
-                    this.boxes = this.getGridBoxes();
+                    this.boxes = this.getGridBoxes(renderingContext);
                     this.drawBackground(renderingContext);
                     this.drawOverflowingCellBackground(renderingContext);
                     this.drawCellBackground(renderingContext);
@@ -34295,7 +34296,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 for (const box of this.boxes) {
                     ctx.strokeStyle = CELL_BORDER_COLOR;
                     ctx.lineWidth = thinLineWidth;
-                    ctx.strokeRect(box.x + inset, box.y + inset, box.width - 2 * inset, box.height - 2 * inset);
+                    let { x, y, width, height } = box;
+                    // + thinLineWidth : box width/height don't include the borders
+                    ctx.strokeRect(x + inset, y + inset, width + thinLineWidth - 2 * inset, height + thinLineWidth - 2 * inset);
                 }
             }
         }
@@ -34512,7 +34515,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             // Columns headers background
             for (let col = left; col <= right; col++) {
                 const colZone = { left: col, right: col, top: 0, bottom: numberOfRows - 1 };
-                const { x, width } = this.getters.getVisibleRect(colZone);
+                const { x, width } = this.getVisibleRectWithoutBorders(colZone, thinLineWidth);
                 const colHasFilter = this.getters.doesZonesContainFilter(sheetId, [colZone]);
                 const isColActive = activeCols.has(col);
                 const isColSelected = selectedCols.has(col);
@@ -34527,12 +34530,12 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 else {
                     ctx.fillStyle = colHasFilter ? BACKGROUND_HEADER_FILTER_COLOR : BACKGROUND_HEADER_COLOR;
                 }
-                ctx.fillRect(x, 0, width, HEADER_HEIGHT);
+                ctx.fillRect(x, 0, width, HEADER_HEIGHT - thinLineWidth);
             }
             // Rows headers background
             for (let row = top; row <= bottom; row++) {
                 const rowZone = { top: row, bottom: row, left: 0, right: numberOfCols - 1 };
-                const { y, height } = this.getters.getVisibleRect(rowZone);
+                const { y, height } = this.getVisibleRectWithoutBorders(rowZone, thinLineWidth);
                 const rowHasFilter = this.getters.doesZonesContainFilter(sheetId, [rowZone]);
                 const isRowActive = activeRows.has(row);
                 const isRowSelected = selectedRows.has(row);
@@ -34547,7 +34550,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 else {
                     ctx.fillStyle = rowHasFilter ? BACKGROUND_HEADER_FILTER_COLOR : BACKGROUND_HEADER_COLOR;
                 }
-                ctx.fillRect(0, y, HEADER_WIDTH, height);
+                ctx.fillRect(0, y, HEADER_WIDTH - thinLineWidth, height);
             }
             // 2 main lines
             ctx.beginPath();
@@ -34607,7 +34610,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             const top = visibleRows[0];
             const bottom = visibleRows[visibleRows.length - 1];
             const viewport = { left, right, top, bottom };
-            const rect = this.getters.getVisibleRect(viewport);
+            const rect = this.getVisibleRectWithoutBorders(viewport, thinLineWidth);
             const widthCorrection = this.getters.isDashboard() ? 0 : HEADER_WIDTH;
             const heightCorrection = this.getters.isDashboard() ? 0 : HEADER_HEIGHT;
             ctx.lineWidth = 6 * thinLineWidth;
@@ -34667,7 +34670,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             }
             return align || evaluatedCell.defaultAlign;
         }
-        createZoneBox(sheetId, zone) {
+        createZoneBox(sheetId, zone, context) {
+            const { thinLineWidth } = context;
             const visibleCols = this.getters.getSheetViewVisibleCols();
             const left = visibleCols[0];
             const right = visibleCols[visibleCols.length - 1];
@@ -34676,7 +34680,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             const position = { sheetId, col, row };
             const cell = this.getters.getEvaluatedCell(position);
             const showFormula = this.getters.shouldShowFormulas();
-            const { x, y, width, height } = this.getters.getVisibleRect(zone);
+            const { x, y, width, height } = this.getVisibleRectWithoutBorders(zone, thinLineWidth);
             const { verticalAlign } = this.getters.getCellStyle(position);
             const box = {
                 x,
@@ -34749,7 +34753,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 switch (align) {
                     case "left": {
                         const emptyZoneOnTheLeft = positionToZone({ col: nextColIndex, row });
-                        const { x, y, width, height } = this.getters.getVisibleRect(union(zone, emptyZoneOnTheLeft));
+                        const { x, y, width, height } = this.getVisibleRectWithoutBorders(union(zone, emptyZoneOnTheLeft), thinLineWidth);
                         if (width < contentWidth || fontSizePX > height) {
                             box.clipRect = { x, y, width, height };
                         }
@@ -34757,7 +34761,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     }
                     case "right": {
                         const emptyZoneOnTheRight = positionToZone({ col: previousColIndex, row });
-                        const { x, y, width, height } = this.getters.getVisibleRect(union(zone, emptyZoneOnTheRight));
+                        const { x, y, width, height } = this.getVisibleRectWithoutBorders(union(zone, emptyZoneOnTheRight), thinLineWidth);
                         if (width < contentWidth || fontSizePX > height) {
                             box.clipRect = { x, y, width, height };
                         }
@@ -34769,7 +34773,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                             right: nextColIndex,
                             left: previousColIndex,
                         };
-                        const { x, y, width, height } = this.getters.getVisibleRect(emptyZone);
+                        const { x, y, width, height } = this.getVisibleRectWithoutBorders(emptyZone, thinLineWidth);
                         if (width < contentWidth ||
                             previousColIndex === col ||
                             nextColIndex === col ||
@@ -34790,7 +34794,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             }
             return box;
         }
-        getGridBoxes() {
+        getGridBoxes(context) {
             const boxes = [];
             const visibleCols = this.getters.getSheetViewVisibleCols();
             const left = visibleCols[0];
@@ -34806,7 +34810,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     if (this.getters.isInMerge(position)) {
                         continue;
                     }
-                    boxes.push(this.createZoneBox(sheetId, positionToZone(position)));
+                    boxes.push(this.createZoneBox(sheetId, positionToZone(position), context));
                 }
             }
             for (const merge of this.getters.getMerges(sheetId)) {
@@ -34814,7 +34818,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     continue;
                 }
                 if (overlap(merge, viewport)) {
-                    const box = this.createZoneBox(sheetId, merge);
+                    const box = this.createZoneBox(sheetId, merge, context);
                     const borderBottomRight = this.getters.getCellBorder({
                         sheetId,
                         col: merge.right,
@@ -34830,6 +34834,17 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 }
             }
             return boxes;
+        }
+        /**
+         * Computes the coordinates and size to draw the zone on the canvas, but exclude the borders of the cells.
+         */
+        getVisibleRectWithoutBorders(zone, thinLineWidth) {
+            const visibleRect = this.getters.getVisibleRect(zone);
+            return {
+                ...visibleRect,
+                height: visibleRect.height - thinLineWidth,
+                width: visibleRect.width - thinLineWidth,
+            };
         }
     }
     RendererPlugin.layers = [0 /* LAYERS.Background */, 7 /* LAYERS.Headers */];
@@ -35313,7 +35328,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             this.clientId = "local";
             this.pendingMessages = [];
             this.waitingAck = false;
-            this.isReplayingInitialRevisions = false;
             this.processedRevisions = new Set();
             this.uuidGenerator = new UuidGenerator();
             this.debouncedMove = debounce(this._move.bind(this), DEBOUNCE_TIME);
@@ -35373,7 +35387,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             this.transportService.onNewMessage(this.clientId, this.onMessageReceived.bind(this));
         }
         loadInitialMessages(messages) {
-            this.isReplayingInitialRevisions = true;
             this.on("unexpected-revision-id", this, ({ revisionId }) => {
                 throw new Error(`The spreadsheet could not be loaded. Revision ${revisionId} is corrupted.`);
             });
@@ -35381,7 +35394,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 this.onMessageReceived(message);
             }
             this.off("unexpected-revision-id", this);
-            this.isReplayingInitialRevisions = false;
         }
         /**
          * Notify the server that the user client left the collaborative session
@@ -35569,10 +35581,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     clientId: revision.clientId,
                     commands: revision.commands,
                 };
-            }
-            if (this.isReplayingInitialRevisions) {
-                throw new Error(`Trying to send a new revision while replaying initial revision. This can lead to endless dispatches every time the spreadsheet is open.
-      ${JSON.stringify(message)}`);
             }
             this.transportService.sendMessage({
                 ...message,
@@ -42569,10 +42577,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     case 3 /* Status.Finalizing */:
                         throw new Error("Cannot dispatch commands in the finalize state");
                     case 2 /* Status.RunningCore */:
-                        if (isCoreCommand(command)) {
-                            throw new Error(`A UI plugin cannot dispatch ${type} while handling a core command`);
-                        }
-                        this.dispatchToHandlers(this.handlers, command);
+                        throw new Error("A UI plugin cannot dispatch while handling a core command");
                 }
                 return DispatchResult.Success;
             };
@@ -42706,10 +42711,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         }
         onRemoteRevisionReceived({ commands }) {
             for (let command of commands) {
-                const previousStatus = this.status;
-                this.status = 2 /* Status.RunningCore */;
                 this.dispatchToHandlers(this.allUIPlugins, command);
-                this.status = previousStatus;
             }
             this.finalize();
         }
@@ -43000,8 +43002,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-12-09T15:01:03.892Z';
-    exports.__info__.hash = '1419e57';
+    exports.__info__.date = '2022-12-14T08:50:22.112Z';
+    exports.__info__.hash = '32847fe';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
