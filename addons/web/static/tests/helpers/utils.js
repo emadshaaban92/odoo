@@ -720,7 +720,7 @@ function getDifferentParents(n1, n2) {
  * @returns {Promise<void>}
  */
 export async function dragAndDrop(from, to, position) {
-    const dropFunction = drag(from, to, position);
+    const dropFunction = await drag(from, to, position);
     await dropFunction();
 }
 
@@ -736,9 +736,9 @@ export async function dragAndDrop(from, to, position) {
  * @param {Element|string} from
  * @param {Element|string} to
  * @param {string} [position] "top" | "bottom" | "left" | "right"
- * @returns {function: Promise<void>}
+ * @returns {Promise<() => Promise<void>>}
  */
-export function drag(from, to, position) {
+export async function drag(from, to, position) {
     const fixture = getFixture();
     from = from instanceof Element ? from : fixture.querySelector(from);
     to = to instanceof Element ? to : fixture.querySelector(to);
@@ -783,9 +783,9 @@ export function drag(from, to, position) {
         triggerEvent(target, null, "mouseenter", toPos);
     }
 
-    return function () {
-        return drop(from, toPos);
-    };
+    await nextTick();
+
+    return () => drop(from, toPos);
 }
 
 function drop(from, toPos) {

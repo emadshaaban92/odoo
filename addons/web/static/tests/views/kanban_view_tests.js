@@ -4595,7 +4595,7 @@ QUnit.module("Views", (hooks) => {
         assert.containsN(target, ".o_kanban_group:nth-child(2) .o_kanban_record", 2);
 
         // first record of first column moved to the bottom of second column
-        const drop = drag(
+        const drop = await drag(
             ".o_kanban_group:first-child .o_kanban_record",
             ".o_kanban_group:nth-child(2)"
         );
