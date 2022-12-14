@@ -46,7 +46,7 @@ const toPixels = (value) => {
 export function useVirtual({ itemHeight, items, margin, initialScrollTop, scrollableRef }) {
     itemHeight = typeof itemHeight === "function" ? itemHeight : (_) => itemHeight;
     items = typeof items === "function" ? items : () => items;
-    margin = 0; //typeof margin === "number" ? margin : margin || "100%";
+    margin = typeof margin === "number" ? margin : margin || "100%";
     const current = {
         allItems: items(),
         scrollTop: initialScrollTop || 0,
