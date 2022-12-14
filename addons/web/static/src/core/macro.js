@@ -171,10 +171,11 @@ export class MacroEngine {
         }
     }
 
-    delayedCheck() {
+    delayedCheck(records) {
         if (this.timeout) {
             browser.clearTimeout(this.timeout);
         }
+        console.log(records);
         this.timeout = browser.setTimeout(this.advanceMacros.bind(this), this.interval);
     }
 
