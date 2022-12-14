@@ -22,19 +22,6 @@ import { debounce, setRecurringAnimationFrame } from "@web/core/utils/timing";
  */
 
 /**
- * @typedef Position
- * @property {number} x
- * @property {number} y
- */
-
-/**
- * @typedef EdgeScrollingOptions
- * @property {boolean} [enabled=true]
- * @property {number} [speed=10]
- * @property {number} [threshold=20]
- */
-
-/**
  * @typedef DraggableBuilderParams
  *
  * Hook params
@@ -78,6 +65,19 @@ import { debounce, setRecurringAnimationFrame } from "@web/core/utils/timing";
  */
 
 /**
+ * @typedef EdgeScrollingOptions
+ * @property {boolean} [enabled=true]
+ * @property {number} [speed=10]
+ * @property {number} [threshold=20]
+ */
+
+/**
+ * @typedef Position
+ * @property {number} x
+ * @property {number} y
+ */
+
+/**
  * @typedef {DOMHelpers & {
  *  ctx: DraggableHookContext,
  *  addCleanup(cleanupFn: () => any): void,
@@ -86,9 +86,7 @@ import { debounce, setRecurringAnimationFrame } from "@web/core/utils/timing";
  * }} DraggableBuildHandlerParams
  */
 
-/**
- * @typedef {DOMHelpers & Position & { element: HTMLElement }} DraggableHandlerParams
- */
+/** @typedef {DOMHelpers & Position & { element: HTMLElement }} DraggableHandlerParams */
 
 const DEFAULT_ACCEPTED_PARAMS = {
     enable: ["boolean", "function"],
@@ -531,16 +529,9 @@ export function makeDraggableHook(hookParams) {
                 if (!ctx.enabled || !state.dragging) {
                     return;
                 }
-                if (ev.key === "Enter") {
-                    cancelEvent(ev);
-                    dragEnd();
-                    return;
-                }
-                if (ev.key === "Escape") {
-                    cancelEvent(ev);
-                }
                 if (!WHITE_LISTED_KEYS.includes(ev.key)) {
                     // Cancels drag sequences on every non-whitelisted key down event.
+                    cancelEvent(ev);
                     dragEnd(true);
                 }
             };
