@@ -3,7 +3,7 @@
 
 import datetime
 
-from odoo import _, fields, models
+from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 
@@ -11,6 +11,11 @@ class ResConfigSettings(models.TransientModel):
     """ Inherit the base settings to add a counter of failed email + configure
     the alias domain. """
     _inherit = 'res.config.settings'
+
+    def _default_use_google_maps_static_api(self):
+        api_key = self.env['ir.config_parameter'].sudo().get_param('mail.google_maps_static_api_key')
+        api_secret = self.env['ir.config_parameter'].sudo().get_param('mail.google_maps_static_api_secret')
+        return api_key and api_secret
 
     fail_counter = fields.Integer('Fail Mail', compute="_compute_fail_counter")
     alias_domain = fields.Char(
@@ -38,6 +43,18 @@ class ResConfigSettings(models.TransientModel):
     )
     primary_color = fields.Char(related='company_id.primary_color', string="Header Color", readonly=False)
     secondary_color = fields.Char(related='company_id.secondary_color', string="Button Color", readonly=False)
+
+    google_maps_static_api_key = fields.Char("Google Maps API key", config_parameter='mail.google_maps_static_api_key')
+    google_maps_static_api_secret = fields.Char("Google Maps API secret", config_parameter='mail.google_maps_static_api_secret')
+    use_google_maps_static_api = fields.Boolean("Google Maps static API", default=_default_use_google_maps_static_api)
+
+    @api.onchange('use_google_maps_static_api')
+    def _onchange_use_google_maps_static_api(self):
+        """Clear API keys on disabling google maps."""
+        for config in self:
+            if not config.use_google_maps_static_api:
+                config.google_maps_static_api_key = ''
+                config.google_maps_static_api_secret = ''
 
     def _compute_fail_counter(self):
         previous_date = fields.Datetime.now() - datetime.timedelta(days=30)
