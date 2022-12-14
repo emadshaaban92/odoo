@@ -717,11 +717,10 @@ function getDifferentParents(n1, n2) {
  * @param {Element|string} from
  * @param {Element|string} to
  * @param {string} [position] "top" | "bottom" | "left" | "right"
- * @returns {Promise<void>}
  */
 export async function dragAndDrop(from, to, position) {
-    const dropFunction = await drag(from, to, position);
-    await dropFunction();
+    const drop = await drag(from, to, position);
+    await drop();
 }
 
 /**
@@ -785,11 +784,9 @@ export async function drag(from, to, position) {
 
     await nextTick();
 
-    return () => drop(from, toPos);
-}
-
-function drop(from, toPos) {
-    return triggerEvent(from, null, "mouseup", toPos);
+    return async function drop() {
+        await triggerEvent(from, null, "mouseup", toPos);
+    };
 }
 
 export async function clickDropdown(target, fieldName) {
