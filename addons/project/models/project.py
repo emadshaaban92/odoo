@@ -1129,9 +1129,11 @@ class Task(models.Model):
     state_id = fields.Many2one('project.task.state', default=_default_state_id, readonly=False, compute='_compute_state_id', store=True,
      tracking=True, change_default=True, recursive=True)
     state_approval_mode = fields.Boolean(default=False, store=True)
-    state_pre_block = fields.Char(string='Remember state before task block', store=True, copy=False)
+    state_pre_block = fields.Char(help='Remember state before task block', store=True, copy=False)
     state_key = fields.Integer(related='state_id.key', readonly=True)
+    state_name = fields.Char(related='state_id.name', readonly=True)
     state_forced = fields.Boolean(default=False)
+
     
     kanban_state = fields.Selection([
         ('normal', 'In Progress'),

@@ -1182,7 +1182,7 @@
                             <field name="kanban_state" widget="state_selection" class=""/>
                         </h1>
                         <!--
-                            Debuging field gor state_id
+                            Debuging field for state_id
                         <h2>
                             statekey:
                             <field name="state_key"/>
@@ -1464,7 +1464,7 @@
                     <field name="state_id" />
                     <field name="state_approval_mode" />
                     <field name="company_id"/>
-                    <progressbar field="kanban_state" colors='{"done": "success", "blocked": "danger", "normal": "200"}'/>
+                    <progressbar field="state_name" colors='{"Done": "success", "Approved": "success", "Changes requested": "warning", "Rejected": "danger", "In Progress": "200", "Pending approval": "200"}'/>
                     <templates>
                     <t t-name="kanban-box">
                         <div t-attf-class="{{!selection_mode ? 'oe_kanban_color_' + kanban_getcolor(record.color.raw_value) : ''}} oe_kanban_card oe_kanban_global_click">
@@ -1859,7 +1859,7 @@
 
         
         <record id="action_toggle_approval_mode" model="ir.actions.server">
-            <field name="name">Mark as approval</field>
+            <field name="name">Toggle approval mode</field>
             <field name="model_id" ref="model_project_task"/>
             <field name="binding_model_id" ref="project.model_project_task"/>
             <field name="binding_view_types">form</field>
