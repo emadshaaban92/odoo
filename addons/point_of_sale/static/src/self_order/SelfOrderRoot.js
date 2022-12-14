@@ -61,11 +61,8 @@ class SelfOrderRoot extends Component {
         this.state.cart.push({id: id, quantity: quantity});
         this.state.currentScreen = 1;
     }
-    // TODO find function to remove product from cart
     removeProductFromCart = (id) =>{
         this.state.cart = this.state.cart.filter(item => item.id !== id);
- 
-        // this.state.cart.
     }
     getTotalCartQuantity = () =>{
         return this.state.cart.reduce((sum, cartItem) => {
