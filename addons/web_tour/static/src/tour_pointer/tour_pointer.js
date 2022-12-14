@@ -1,11 +1,11 @@
 /** @odoo-module **/
 
-import { Component, markup, xml } from "@odoo/owl";
+import { Component, markup, onPatched, xml, useRef, useState } from "@odoo/owl";
 
 export class TourPointer extends Component {
     static template = xml`
-        <div class="o_tooltip" t-att-class="extraClasses" t-att-style="style" t-on-mouseenter="props.onMouseEnter" t-on-mouseleave="props.onMouseLeave">
-            <div class="o_tooltip_content">
+        <div t-ref="tooltip-ref" class="o_tooltip" t-att-class="extraClasses" t-att-style="style" t-on-mouseenter="props.onMouseEnter" t-on-mouseleave="props.onMouseLeave">
+            <div t-if="props.pointerState.mode === 'info'" class="o_tooltip_content">
                 <t t-out="contentMarkup"/>
             </div>
         </div>
@@ -46,14 +46,18 @@ export class TourPointer extends Component {
         onMouseLeave: Function,
     };
     setup() {
-        // If anchor is not inside the screen, the pointer should point where to scroll.
-        // When mouseenter on the anchor/pointer, show the info (info mode).
-        // - on mouseleave, return to bubble mode.
+        this.tooltipRef = useRef("tooltip-ref");
+        this.state = useState({ height: false });
+        onPatched(() => {
+            const width = this.tooltipRef.el.offsetWidth;
+            if (width > 270) {
+                this.tooltipRef.el.style.width = "270px";
+            }
+        });
     }
     get extraClasses() {
         return {
-            // [this.props.pointerState.mode === "bubble" ? "o_animated" : "active"]: true,
-            o_animated: true, // TODO-JCB: Temporarily disable mode toggling. Remove this and uncomment line above.
+            [this.props.pointerState.mode === "bubble" ? "o_animated" : "active"]: true,
 
             // TODO-JCB: Should be removed.
             o_tooltip_visible: this.props.pointerState.isVisible,
@@ -63,9 +67,19 @@ export class TourPointer extends Component {
         };
     }
     get contentMarkup() {
-        return markup(this.props.pointerState.content);
+        return this.props.pointerState.mode == "info" && this.props.pointerState.content
+            ? markup(this.props.pointerState.content)
+            : "";
     }
     get style() {
-        return `top: ${this.props.pointerState.y}px; left: ${this.props.pointerState.x}px;`;
+        return Object.entries({
+            top: `${this.props.pointerState.y}px`,
+            left: `${this.props.pointerState.x}px`,
+            // Force the width when in bubble mode.
+            width: this.props.pointerState.mode === "bubble" && "28px",
+        })
+            .filter(([, v]) => v)
+            .map(([k, v]) => `${k}:${v}`)
+            .join(";");
     }
 }

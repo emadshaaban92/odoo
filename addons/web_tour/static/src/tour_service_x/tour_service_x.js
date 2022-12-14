@@ -346,7 +346,7 @@ function createPointerState({ x, y, isVisible, position, content, mode, viewPort
             top = rect.top - pointerSize.height;
             left = rect.left + rect.width / 2 - pointerSize.width / 2;
         } else if (position == "bottom") {
-            top = rect.top + rect.height
+            top = rect.top + rect.height;
             left = rect.left + rect.width / 2 - pointerSize.width / 2;
         } else if (position == "left") {
             top = rect.top + rect.height / 2 - pointerSize.height / 2;
