@@ -44,11 +44,8 @@ const toPixels = (value) => {
 export function useVirtual({ items, itemHeight, scrollableRef, initialScrollTop, margin }) {
     const computeVirtualItems = () => {
         const { items, scrollTop } = current;
-        const marginPixels = toPixels(marginPx);
-
-        const vStart = scrollTop - marginPixels;
-        const vEnd =
-            scrollTop + (scrollableRef.el?.clientHeight || window.innerHeight) + marginPixels;
+        const vStart = scrollTop - marginPx;
+        const vEnd = scrollTop + (scrollableRef.el?.clientHeight || window.innerHeight) + marginPx;
 
         let startIndex = 0;
         let endIndex = 0;
