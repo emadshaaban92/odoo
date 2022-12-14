@@ -759,6 +759,19 @@ class ProductTemplate(models.Model):
         return res
 
     def write(self, vals):
+        if 'company_id' in vals and vals['company_id']:
+            for product in self:
+                if product.company_id.id == vals['company_id']:
+                    continue
+            # Forbid changing the product's company when quants exist in another company.
+            existing_quants_count = self.env['stock.quant'].search([
+                ('product_id', 'in', product.product_variant_ids.ids),
+                ('company_id', '!=', vals['company_id']),
+                ('quantity', '!=', 0),
+            ], count=True)
+            if existing_quants_count:
+                raise UserError(_("This product's company cannot be changed as long as there are quantities of it belonging to another company."))
+
         if 'uom_id' in vals:
             new_uom = self.env['uom.uom'].browse(vals['uom_id'])
             updated = self.filtered(lambda template: template.uom_id != new_uom)
