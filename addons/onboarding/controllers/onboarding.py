@@ -2,6 +2,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from odoo import http
+from odoo.exceptions import ValidationError
 from odoo.http import request
 
 
@@ -12,7 +13,7 @@ class OnboardingController(http.Controller):
             return {}
 
         onboarding = request.env['onboarding.onboarding'].search([('route_name', '=', route_name)])
-        if onboarding and not onboarding._search_or_create_progress().is_onboarding_closed:
+        if onboarding and not self._safe_search_or_create_progress(onboarding).is_onboarding_closed:
             # JS implementation of the onboarding panel expects this data structure
             return {
                 'html': request.env['ir.qweb']._render(
@@ -20,3 +21,14 @@ class OnboardingController(http.Controller):
             }
 
         return {}
+
+    @staticmethod
+    def _safe_search_or_create_progress(onboarding):
+        try:
+            current_progress = onboarding._search_or_create_progress()
+        except ValidationError as e:
+            # If initially not found but was created by another process before we tried to create
+            current_progress = onboarding.current_progress_id
+            if not current_progress:  # If other cause of ValidationError
+                raise e
+        return current_progress

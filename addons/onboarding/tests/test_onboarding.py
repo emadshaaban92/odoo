@@ -2,6 +2,8 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from odoo.addons.onboarding.tests.common import TestOnboardingCommon
+from odoo.exceptions import ValidationError
+from odoo.tools import mute_logger
 
 
 class TestOnboarding(TestOnboardingCommon):
@@ -130,3 +132,24 @@ class TestOnboarding(TestOnboardingCommon):
         self.onboarding_1._search_or_create_progress()
 
         self.assert_onboarding_is_not_done(self.onboarding_1)
+
+    @mute_logger('odoo.sql_db')
+    def test_only_one_progress_per_company_or_without(self):
+        self.assertFalse(self.onboarding_1.current_progress_id.company_id)
+
+        with self.assertRaises(ValidationError):
+            self.env['onboarding.progress'].create({
+                'onboarding_id': self.onboarding_1.id,
+                'company_id': False
+            })
+
+        # Updating onboarding to per-company
+        self.onboarding_1.is_per_company = True
+        # Required after progress reset (simulate role of controller)
+        self.onboarding_1._search_or_create_progress()
+
+        with self.assertRaises(ValidationError):
+            self.env['onboarding.progress'].create({
+                'onboarding_id': self.onboarding_1.id,
+                'company_id': self.env.company.id
+            })
