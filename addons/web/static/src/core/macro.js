@@ -4,7 +4,7 @@ import { browser } from "@web/core/browser/browser";
 import { isVisible } from "@web/core/utils/ui";
 
 // TODO-JCB: Don't use legacy imports.
-import { findTrigger } from "web_tour.utils";
+import { findTrigger, hasTrackedMutations } from "web_tour.utils";
 
 export const ACTION_HELPERS = {
     click(el, _step) {
@@ -171,11 +171,15 @@ export class MacroEngine {
         }
     }
 
-    delayedCheck(records) {
+    delayedCheck(mutations) {
+        // NOTE: This check is introduced because of the use of jquery in finding the trigger.
+        // When jquery is completely unused, we can maybe remove this check.
+        if (!hasTrackedMutations(mutations)) {
+            return;
+        }
         if (this.timeout) {
             browser.clearTimeout(this.timeout);
         }
-        console.log(records);
         this.timeout = browser.setTimeout(this.advanceMacros.bind(this), this.interval);
     }
 
