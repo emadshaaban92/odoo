@@ -70,10 +70,14 @@ const PosRestaurantPosGlobalState = (PosGlobalState) =>
             this.ordersToUpdateSet.add(order);
             return order;
         }
+        // to override
+        isInterfacePrinter(){
+            return this.env.pos.config.iface_printers;
+        }
         //@override
         createReactiveOrder(json) {
             let reactiveOrder = super.createReactiveOrder(...arguments);
-            if (this.config.iface_printers) {
+            if (this.isInterfacePrinter()) {
                 const updateOrderChanges = () => {
                     if (reactiveOrder.get_screen_data().name === "ProductScreen") {
                         reactiveOrder.updateChangesToPrint();
@@ -338,7 +342,7 @@ const PosRestaurantOrder = (Order) =>
                 }
                 this.customerCount = this.customerCount || 1;
             }
-            if (this.pos.config.iface_printers) {
+            if (this.pos.isInterfacePrinter()) {
                 // printedResume will store the previous state of the orderlines (when there were no skip), it will
                 // store all the orderlines even if the product are not printable. This way, when we add a new category in
                 // the printers, the already added products of the newly added category are not printed.
@@ -358,7 +362,7 @@ const PosRestaurantOrder = (Order) =>
                 }
                 json.customer_count = this.customerCount;
             }
-            if (this.pos.config.iface_printers) {
+            if (this.pos.isInterfacePrinter()) {
                 json.multiprint_resume = JSON.stringify(this.printedResume);
                 // so that it can be stored in local storage and be used when loading the pos in the floorscreen
                 json.printing_changes = JSON.stringify(this.printingChanges);
@@ -374,7 +378,7 @@ const PosRestaurantOrder = (Order) =>
                 }
                 this.customerCount = json.customer_count;
             }
-            if (this.pos.config.iface_printers) {
+            if (this.pos.isInterfacePrinter()) {
                 this.printedResume = json.multiprint_resume && JSON.parse(json.multiprint_resume);
                 this.printingChanges = json.printing_changes && JSON.parse(json.printing_changes);
             }
@@ -583,7 +587,7 @@ const PosRestaurantOrderline = (Orderline) =>
         constructor() {
             super(...arguments);
             this.note = this.note || "";
-            if (this.pos.config.iface_printers) {
+            if (this.pos.isInterfacePrinter()) {
                 this.uuid = this.uuid || uuidv4();
                 // mp dirty is true if this orderline has changed since the last kitchen print
                 this.mp_dirty = false;
@@ -614,7 +618,7 @@ const PosRestaurantOrderline = (Orderline) =>
         export_as_JSON() {
             const json = super.export_as_JSON(...arguments);
             json.note = this.note;
-            if (this.pos.config.iface_printers) {
+            if (this.pos.isInterfacePrinter()) {
                 json.uuid = this.uuid;
                 json.mp_skip = this.mp_skip;
             }
@@ -624,7 +628,7 @@ const PosRestaurantOrderline = (Orderline) =>
         init_from_JSON(json) {
             super.init_from_JSON(...arguments);
             this.note = json.note;
-            if (this.pos.config.iface_printers) {
+            if (this.pos.isInterfacePrinter()) {
                 this.uuid = json.uuid;
                 this.mp_skip = json.mp_skip;
             }

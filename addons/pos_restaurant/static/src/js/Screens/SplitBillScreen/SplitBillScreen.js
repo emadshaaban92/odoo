@@ -63,7 +63,7 @@ class SplitBillScreen extends PosComponent {
             // order and for the new one. This is not entirely correct
             // but avoids flooding the kitchen with unnecessary orders.
             // Not sure what to do in this case.
-            if (this.env.pos.config.iface_printers) {
+            if (this.env.pos.isInterfacePrinter()) {
                 this.currentOrder.updatePrintedResume();
                 this.newOrder.updatePrintedResume();
             }
