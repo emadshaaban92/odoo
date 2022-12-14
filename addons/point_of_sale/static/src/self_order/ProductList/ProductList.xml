@@ -9,7 +9,7 @@
             <!-- Looping through all the available products -->
             <div class="container">
                 <div class="row">
-                    <t t-foreach="props.productList" t-as="product" t-key="product">
+                    <t t-foreach="props.productList" t-as="product" t-key="product.id">
                         <div class="col-12 col-sm-6 col-md-4">
                             <div t-on-click="() => props.viewProduct(product.id)" 
                                 class="mt-2 bg-white d-flex align-items-center shadow-sm  m-1">

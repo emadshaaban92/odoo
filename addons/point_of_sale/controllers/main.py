@@ -28,7 +28,7 @@ class PosController(PortalAccount):
         # 2. We are using the read() method to get the name and price of the product
         # 3. We are using the search() method to get the products that are available in the POS
         # 4. We are using the type="json" argument in the function call to return the response as JSON
-        response = http.request.env['product.product'].sudo().search([('available_in_pos', '=', True)]).read(['name', 'list_price'])
+        response = http.request.env['product.product'].sudo().search([('available_in_pos', '=', True)]).read(['id','name', 'list_price'])
         return response
     # this is the route that the POS Self Order App uses to GET THE PRODUCT IMAGES
     @http.route('/pos/self-order/get-images/<int:product_id>', methods=['GET'], type='http', auth='public')
