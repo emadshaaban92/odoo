@@ -10,6 +10,7 @@ import { throttleForAnimation } from "./utils/timing";
  * @property {typeof useRef} scrollableRef
  * @property {T[] | () => T[]} items
  * @property {AcceptedPixelValue | (item: T) => AcceptedPixelValue} itemHeight
+ * @property {T[] | () => T[]} [stickyItems]
  * @property {AcceptedPixelValue} [margin="100%"]
  * @property {number} [initialScrollTop=0]
  */
@@ -43,9 +44,17 @@ const toPixels = (value) => {
  * @param {UseVirtualOptions<T>} param0
  * @returns {ReturnType<useState<T[]>>}
  */
-export function useVirtual({ itemHeight, items, margin, initialScrollTop, scrollableRef }) {
+export function useVirtual({
+    itemHeight,
+    items,
+    stickyItems,
+    margin,
+    initialScrollTop,
+    scrollableRef,
+}) {
     itemHeight = typeof itemHeight === "function" ? itemHeight : (_) => itemHeight;
     items = typeof items === "function" ? items : () => items;
+    stickyItems = typeof stickyItems === "function" ? stickyItems : () => stickyItems || [];
     margin = typeof margin === "number" ? margin : margin || "100%";
     const current = {
         allItems: items(),
@@ -78,7 +87,7 @@ export function useVirtual({ itemHeight, items, margin, initialScrollTop, scroll
         }
 
         const prevItems = toRaw(virtualItems);
-        const newItems = allItems.slice(startIndex, endIndex);
+        const newItems = [...new Set([...allItems.slice(startIndex, endIndex), ...stickyItems()])];
         if (!shallowEqual(prevItems, newItems)) {
             virtualItems.length = 0;
             virtualItems.push(...newItems);
