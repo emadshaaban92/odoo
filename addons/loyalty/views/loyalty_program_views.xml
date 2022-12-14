@@ -94,7 +94,8 @@
                             <field name="applies_on" invisible="1"/>
                             <field name="applies_on" string="Use points on" groups="base.group_no_one" widget="radio" readonly="1" force_save="1"/>
                             <field name="valid_pricelist_ids" invisible="1"/>
-                            <field name="pricelist_ids" widget="many2many_tags" string="Pricelists" domain="[('id', 'in', valid_pricelist_ids)]"/>
+                            <field name="count_valid_pricelist" invisible="1"/>
+                            <field name="pricelist_ids" widget="many2many_tags" string="Pricelists" domain="[('id', 'in', valid_pricelist_ids)]" attrs="{'invisible': [('count_valid_pricelist', '&lt;=', 1)]}"/>
                         </group>
                         <group>
                             <field name="date_to" attrs="{'invisible': [('program_type', 'in', ('gift_card', 'ewallet'))]}"/>

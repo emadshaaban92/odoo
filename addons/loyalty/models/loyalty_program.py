@@ -32,6 +32,7 @@ class LoyaltyProgram(models.Model):
          compute='_compute_from_program_type', readonly=False, store=True)
 
     valid_pricelist_ids = fields.One2many('product.pricelist', 'valid_loyalty_program_ids', compute="_compute_valid_pricelists")
+    count_valid_pricelist = fields.Integer('Number of valid pricelists', compute='_compute_count_pricelist')
     pricelist_ids = fields.Many2many('product.pricelist', string='Pricelist')
 
     # These fields are used for the simplified view of gift_card and ewallet
@@ -111,6 +112,10 @@ class LoyaltyProgram(models.Model):
 
     def _compute_total_order_count(self):
         self.total_order_count = 0
+
+    @api.depends('valid_pricelist_ids')
+    def _compute_count_pricelist(self):
+        self.count_valid_pricelist = len(self.valid_pricelist_ids)
 
     @api.depends('coupon_count', 'program_type')
     def _compute_coupon_count_display(self):
