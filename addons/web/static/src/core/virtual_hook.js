@@ -12,18 +12,9 @@ import { throttleForAnimation } from "./utils/timing";
  * @property {typeof useRef} scrollableRef
  * @property {number} [initialScrollTop=0]
  * @property {PixelValue} [margin="100%"]
- * @property {T[] | () => T[]} [stickyItems]
  */
 
 /** @typedef {number | `${string}px` | `${string}%`} PixelValue */
-
-/**
- * @template T
- * @param {T[]} items
- * @param {T[]} stickyItems
- * @returns {T[]}
- */
-const combineItems = (items, stickyItems) => [...new Set([...items, ...stickyItems])];
 
 /**
  * Converts a number,
@@ -50,16 +41,9 @@ const toPixels = (value) => {
  * @param {VirtualHookParams<T>} params
  * @returns {ReturnType<useState<T>>}
  */
-export function useVirtual({
-    items,
-    itemHeight,
-    scrollableRef,
-    initialScrollTop,
-    margin,
-    stickyItems,
-}) {
+export function useVirtual({ items, itemHeight, scrollableRef, initialScrollTop, margin }) {
     const computeVirtualItems = () => {
-        const { items, stickyItems, scrollTop } = current;
+        const { items, scrollTop } = current;
         const marginPixels = toPixels(marginPx);
 
         const vStart = scrollTop - marginPixels;
@@ -83,7 +67,7 @@ export function useVirtual({
         }
 
         const prevItems = toRaw(virtualItems);
-        const newItems = combineItems(items.slice(startIndex, endIndex), stickyItems);
+        const newItems = items.slice(startIndex, endIndex);
 
         if (!shallowEqual(prevItems, newItems)) {
             virtualItems.length = 0;
@@ -95,13 +79,9 @@ export function useVirtual({
 
     const getItemHeight = typeof itemHeight === "function" ? itemHeight : () => itemHeight;
 
-    const getStickyItems =
-        typeof stickyItems === "function" ? stickyItems : () => stickyItems || [];
-
     const marginPx = toPixels(typeof margin === "number" ? margin : margin || "100%");
     const current = {
         items: getItems(),
-        stickyItems: getStickyItems(),
         scrollTop: initialScrollTop || 0,
     };
 
@@ -109,10 +89,9 @@ export function useVirtual({
 
     onWillStart(computeVirtualItems);
     onWillRender(() => {
-        const prevItems = combineItems(current.items, current.stickyItems);
+        const previousItems = current.items;
         current.items = getItems();
-        current.stickyItems = getStickyItems();
-        if (!shallowEqual(prevItems, combineItems(current.items, current.stickyItems))) {
+        if (!shallowEqual(previousItems, current.items)) {
             computeVirtualItems();
         }
     });
