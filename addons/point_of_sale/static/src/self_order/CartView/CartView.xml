@@ -26,8 +26,8 @@
 
                         </div>
                         <div class="d-flex justify-content-between w-100">
-                            <t t-esc="cartItem.quantity + ' x ' + product.price+ '€'" />
-                            <p class="fst-italic fw-bold text-right"><t t-esc="cartItem.quantity *  product.price+ '€'" /></p>
+                            <t t-esc="cartItem.quantity + ' x ' + product.list_price+ '€'" />
+                            <p class="fst-italic fw-bold text-right"><t t-esc="cartItem.quantity *  product.list_price+ '€'" /></p>
                         </div>
                     </div>
                 </div>

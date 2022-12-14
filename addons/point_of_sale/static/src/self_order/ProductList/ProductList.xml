@@ -12,11 +12,11 @@
                     class="mt-2 bg-white d-flex w-100 align-items-center shadow-sm  m-1"> -->
                 <div t-on-click="() => props.viewProduct(product.id)" 
                     class="mt-2 bg-white d-flex align-items-center shadow-sm  m-1">
-                    <img class="w-25 img-fluid" t-att-src="product.image"  alt="Product image"/>
+                    <img class="w-25 img-fluid" t-att-src="product.image_1920"  alt="Product image"/>
                     <div class="mt-4 mx-4">
                         <p class="fw-bold"><t t-esc="product.name"/></p>
                         <p class="break-line"><t t-esc="product.description" /></p>
-                        <p class="fst-italic"><t t-esc="product.price + '€'" /></p>
+                        <p class="fst-italic"><t t-esc="product.list_price + '€'" /></p>
                     </div>
                 </div>
             </t>
