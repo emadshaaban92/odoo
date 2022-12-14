@@ -16,8 +16,8 @@
                     <h3 class="ml-auto text-secondary"><t t-esc="props.product.list_price + '€'"/></h3>
                 </div>
                 <!-- Product Description -->
-                <div class="p-3">
-                    <t t-esc="props.product.description"/>    
+                <div class="p-3 text-center">
+                    <t t-esc="props.product.description_sale"/>    
                 </div>
                 <!-- quantity select and add to cart button -->
                     <div class="m-5">
