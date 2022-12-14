@@ -575,12 +575,14 @@ export function makeDraggableHook(hookParams) {
                 if (!ctx.enabled || !ctx.current.element) {
                     return;
                 }
+
                 if (state.dragging) {
-                    updateElementPosition();
                     callBuildHandler("onDrag");
                 } else {
                     dragStart();
                 }
+
+                updateElementPosition();
             };
 
             /**

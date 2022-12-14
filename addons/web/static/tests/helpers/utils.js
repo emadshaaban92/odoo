@@ -1,5 +1,6 @@
 /** @odoo-module **/
 
+import { templates } from "@web/core/assets";
 import { browser } from "@web/core/browser/browser";
 import { isMacOS } from "@web/core/browser/feature_detection";
 import { download } from "@web/core/network/download";
@@ -7,7 +8,6 @@ import { Deferred } from "@web/core/utils/concurrency";
 import { patch, unpatch } from "@web/core/utils/patch";
 import { isVisible } from "@web/core/utils/ui";
 import { registerCleanup } from "./cleanup";
-import { templates } from "@web/core/assets";
 
 import { App, onMounted, onPatched, useComponent } from "@odoo/owl";
 
@@ -697,10 +697,8 @@ function getDifferentParents(n1, n2) {
 /**
  * Helper performing a drag and drop sequence.
  *
- * - the 'fromSelector' is used to determine the element on which the drag will
- *  start;
- * - the 'toSelector' will determine the element on which the first one will be
- * dropped.
+ * - 'from' is used to determine the element on which the drag will start;
+ * - 'target' will determine the element on which the first one will be dropped.
  *
  * The first element will be dragged by its center, and will be dropped on the
  * bottom-right inner pixel of the target element. This behavior covers both
@@ -715,12 +713,11 @@ function getDifferentParents(n1, n2) {
  * considered to be synchronous.
  *
  * @param {Element|string} from
- * @param {Element|string} to
- * @param {string} [position] "top" | "bottom" | "left" | "right"
+ * @param {Element|string} target
+ * @param {"top" | "bottom" | "left" | "right"} [position]
  */
-export async function dragAndDrop(from, to, position) {
-    const drop = await drag(from, to, position);
-    await drop();
+export async function dragAndDrop(from, target, position) {
+    await drag(from).drop(target, position);
 }
 
 /**
@@ -728,65 +725,103 @@ export async function dragAndDrop(from, to, position) {
  *
  * - the 'from' selector is used to determine the element on which the drag will
  *  start;
- * - the 'to' selector will determine the element on which the dragged element will be
+ * - the 'target' selector will determine the element on which the dragged element will be
  * moved.
  *
  * Returns a drop function
- * @param {Element|string} from
- * @param {Element|string} to
- * @param {string} [position] "top" | "bottom" | "left" | "right"
- * @returns {Promise<() => Promise<void>>}
+ *
+ * @param {HTMLElement | string} from
  */
-export async function drag(from, to, position) {
+export function drag(from) {
+    const cancel = async () => {
+        await triggerEvent(window, null, "keydown", { key: "Escape" });
+    };
+
+    /**
+     * @param {HTMLElement | string} [target]
+     * @param {"top" | "bottom" | "left" | "right"} [position]
+     */
+    const drop = async (target, position) => {
+        if (target) {
+            await moveTo(target, position);
+        }
+        await triggerEvent(from, null, "mouseup", targetPosition);
+    };
+
+    /**
+     * @param {HTMLElement | string} target
+     * @param {"top" | "bottom" | "left" | "right"} [position]
+     */
+    const getTargetPosition = (target, position) => {
+        const tRect = target.getBoundingClientRect();
+        const tPos = {
+            clientX: tRect.x + tRect.width / 2,
+            clientY: tRect.y + tRect.height / 2,
+        };
+        switch (position) {
+            case "top": {
+                tPos.clientY = tRect.y - 1;
+                break;
+            }
+            case "bottom": {
+                tPos.clientY = tRect.y + tRect.height + 1;
+                break;
+            }
+            case "left": {
+                tPos.clientX = tRect.x - 1;
+                break;
+            }
+            case "right": {
+                tPos.clientX = tRect.x + tRect.width + 1;
+                break;
+            }
+        }
+        return tPos;
+    };
+
+    /**
+     * @param {HTMLElement | string} [target]
+     * @param {"top" | "bottom" | "left" | "right"} [position]
+     */
+    const moveTo = async (target, position) => {
+        if (!target) {
+            return;
+        }
+
+        target = target instanceof Element ? target : fixture.querySelector(target);
+
+        // Recompute target position
+        targetPosition = getTargetPosition(target, position);
+
+        // Move, enter and drop the element on the target
+        triggerEvent(window, null, "mousemove", targetPosition);
+        // "mouseenter" is fired on every parent of `target` that do not contain
+        // `from` (typically: different parent lists).
+        for (const target of getDifferentParents(from, target)) {
+            triggerEvent(target, null, "mouseenter", targetPosition);
+        }
+
+        await nextTick();
+
+        return dragHelpers;
+    };
+
+    const dragHelpers = { cancel, drop, moveTo };
     const fixture = getFixture();
+
     from = from instanceof Element ? from : fixture.querySelector(from);
-    to = to instanceof Element ? to : fixture.querySelector(to);
+
+    const fromRect = from.getBoundingClientRect();
+    let targetPosition;
 
     // Mouse down on main target
-    const fromRect = from.getBoundingClientRect();
-    const toRect = to.getBoundingClientRect();
+
     triggerEvent(from, null, "mousedown", {
         clientX: fromRect.x + fromRect.width / 2,
         clientY: fromRect.y + fromRect.height / 2,
     });
 
-    // Find target position
-    const toPos = {
-        clientX: toRect.x + toRect.width / 2,
-        clientY: toRect.y + toRect.height / 2,
-    };
-    switch (position) {
-        case "top": {
-            toPos.clientY = toRect.y - 1;
-            break;
-        }
-        case "bottom": {
-            toPos.clientY = toRect.y + toRect.height + 1;
-            break;
-        }
-        case "left": {
-            toPos.clientX = toRect.x - 1;
-            break;
-        }
-        case "right": {
-            toPos.clientX = toRect.x + toRect.width + 1;
-            break;
-        }
-    }
-
-    // Move, enter and drop the element on the target
-    triggerEvent(window, null, "mousemove", toPos);
-    // "mouseenter" is fired on every parent of `to` that do not contain
-    // `from` (typically: different parent lists).
-    for (const target of getDifferentParents(from, to)) {
-        triggerEvent(target, null, "mouseenter", toPos);
-    }
-
-    await nextTick();
-
-    return async function drop() {
-        await triggerEvent(from, null, "mouseup", toPos);
-    };
+    return dragHelpers;
 }
 
 export async function clickDropdown(target, fieldName) {

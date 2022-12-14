@@ -80,14 +80,14 @@ QUnit.module("Draggable", ({ beforeEach }) => {
                         assert.step("start");
                         assert.strictEqual(element.innerText, "1");
                     },
-                    onElementEnter({ element }) {
-                        assert.step("elemententer");
-                        assert.strictEqual(element.innerText, "2");
+                    onDrag({ element }) {
+                        assert.step("drag");
+                        assert.strictEqual(element.innerText, "1");
                     },
                     onDragEnd({ element }) {
                         assert.step("stop");
                         assert.strictEqual(element.innerText, "1");
-                        assert.containsN(target, ".item", 4);
+                        assert.containsN(target, ".item", 3);
                     },
                     onDrop({ element, previous, next, parent }) {
                         assert.step("drop");
@@ -114,7 +114,7 @@ QUnit.module("Draggable", ({ beforeEach }) => {
         assert.verifySteps([]);
 
         // First item after 2nd item
-        const drop = await drag(".item:first-child", ".item:nth-child(2)");
+        const { drop } = await drag(".item:first-child").moveTo(".item:nth-child(2)");
 
         assert.hasClass(target.querySelector(".item"), "o_dragged");
 
@@ -122,7 +122,7 @@ QUnit.module("Draggable", ({ beforeEach }) => {
 
         assert.containsN(target, ".item", 3);
         assert.containsNone(target, ".o_dragged");
-        assert.verifySteps(["start", "elemententer", "stop", "drop"]);
+        assert.verifySteps(["start", "drag", "stop", "drop"]);
     });
 
     QUnit.test("Simple sorting in multiple groups", async (assert) => {

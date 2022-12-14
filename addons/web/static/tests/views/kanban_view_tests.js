@@ -4595,12 +4595,14 @@ QUnit.module("Views", (hooks) => {
         assert.containsN(target, ".o_kanban_group:nth-child(2) .o_kanban_record", 2);
 
         // first record of first column moved to the bottom of second column
-        const drop = await drag(
-            ".o_kanban_group:first-child .o_kanban_record",
+        const { drop } = await drag(".o_kanban_group:first-child .o_kanban_record").moveTo(
             ".o_kanban_group:nth-child(2)"
         );
+
         assert.hasClass(target.querySelector(".o_kanban_group:nth-child(2)"), "o_kanban_hover");
+
         await drop();
+
         assert.containsNone(target, ".o_kanban_group:nth-child(2).o_kanban_hover");
     });
 
@@ -12102,7 +12104,7 @@ QUnit.module("Views", (hooks) => {
         assert.containsNone(target, ".o_kanban_record.o_dragged");
 
         // Drag first record of first group to the right
-        await drag(".o_kanban_record", ".o_kanban_group:nth-child(3) .o_kanban_record");
+        await drag(".o_kanban_record").moveTo(".o_kanban_group:nth-child(3) .o_kanban_record");
 
         assert.strictEqual(content.scrollLeft, 0);
 
@@ -12126,7 +12128,7 @@ QUnit.module("Views", (hooks) => {
         assert.containsNone(target, ".o_kanban_record.o_dragged");
 
         // Drag first record of last group to the left
-        await drag(".o_kanban_group:nth-child(3) .o_kanban_record", ".o_kanban_record");
+        await drag(".o_kanban_group:nth-child(3) .o_kanban_record").moveTo(".o_kanban_record");
 
         // next frame (normal time delta)
         await nextAnimationFrame(16);
