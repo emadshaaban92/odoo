@@ -470,10 +470,6 @@ class WebsiteSlides(WebsiteProfile):
         Will return all necessary data to display the requested slide_channel along with a possible category.
         """
 
-        # retro-compatibility for older links, 'slide_category' field was previously named 'slide_type'
-        # can be safely removed after 15.3 (I swear though, don't be afraid, remove it!)
-        slide_category = slide_category or kw.get('slide_type')
-
         domain = self._get_channel_slides_base_domain(channel)
 
         pager_url = "/slides/%s" % (channel.id)
