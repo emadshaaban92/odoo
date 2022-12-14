@@ -2534,34 +2534,14 @@ class Task(models.Model):
                     ('is_closed', '=', False)]).write({'partner_id': new_partner.id})
         return super(Task, self)._message_post_after_hook(message, msg_vals)
 
-    def unlink_wizard(self, stage_view=False):
-            self = self.with_context(active_test=False)
-            # retrieves all the projects with a least 1 task in that stage
-            # a task can be in a stage even if the project is not assigned to the stage
-            readgroup = self.with_context(active_test=False).env['project.task']._read_group([('stage_id', 'in', self.ids)], ['project_id'], ['project_id'])
-            project_ids = list(set([project['project_id'][0] for project in readgroup] + self.project_ids.ids))
-
-            wizard = self.with_context(project_ids=project_ids).env['project.task.type.delete.wizard'].create({
-                'project_ids': project_ids,
-                'stage_ids': self.ids
-            })
-
-            context = dict(self.env.context)
-            context['stage_view'] = stage_view
-            return {
-                'name': _('Delete Stage'),
-                'view_mode': 'form',
-                'res_model': 'project.task.type.delete.wizard',
-                'views': [(self.env.ref('project.view_project_task_type_delete_wizard').id, 'form')],
-                'type': 'ir.actions.act_window',
-                'res_id': wizard.id,
-                'target': 'new',
-                'context': context,
-            }
-
     def call_confirmation_wizard(self):
-        context = dict(self.env.context)
+        
+        action = self.env["ir.actions.act_window"]._for_xml_id("project.action_project_wizard_confirmation_form")
+        return action
 
+        context = dict(self.env.context)
+        
+        wizard = self.env['project.wizard_confirmation'].create({})
         return {
             'name': 'Confirmation',
             'view_mode': 'form',
@@ -2569,7 +2549,7 @@ class Task(models.Model):
             'views': [(self.env.ref('project.project_wizard_confirmation_form').id, 'form')],
             'type': 'ir.actions.act_window',
             'view_type': 'form',
-            'res_id': self.id,
+            'res_id': wizard.id,
             #'view_id': self.env.ref("affichage2.confirm_wizard_form").id,
             #'view_id': False,
             'target': 'new',
@@ -2587,9 +2567,9 @@ class Task(models.Model):
 
 
     def action_toggle_approve_state(self):
-        #self.call_confirmation_wizard()
         new_state = 'Approved' if self.state_name != 'Approved' else 'Pending approval'
         self.write({'state_id': self.env['project.task.state'].search([('key', '=', STATES_KEY[new_state])])})
+        #return self.call_confirmation_wizard()
 
 
     def action_toggle_request_changes_state(self):
