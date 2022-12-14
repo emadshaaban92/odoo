@@ -18,26 +18,15 @@ class SelfOrderRoot extends Component {
     setup() {
         onRendered(() => {
                 console.log('Rendered:', this.constructor.name);
+                console.log("vlad", this.env)
         });
         this.state = useState({ currentScreen: 0, currentProduct: 0, cart: [] });
         const rpc = useService("rpc");
-        this.menu = "";
         // this function makes a request to the server to get the menu
         onWillStart(async () => {
             this.productList = await rpc('/pos/self-order/get-menu');
         }); 
     }
-    
-    // productList = [
-    //     {
-    //         id: 0,
-    //         name: "Coca-Cola",
-    //         price: 2.5,
-    //         description: "Coca-Cola is a carbonated soft drink manufactured by The Coca-Cola Company. Originally intended as a patent medicine, it was invented in the late 19th century by John Stith Pemberton and was bought out by businessman Asa Griggs Candler, whose marketing tactics led Coca-Cola to its dominance of the world soft-drink market throughout the 20th century.",
-    //         image: "https://images2.minutemediacdn.com/image/fetch/w_2000,h_2000,c_fit/https%3A%2F%2Ffoodsided.com%2Ffiles%2F2021%2F05%2FWendys-Daves-Triple.jpg",
-
-    //     },
-    // ];
     jsonToString = (json) => {
         return JSON.stringify(json);
     }
