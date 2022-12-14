@@ -8,10 +8,17 @@ import { throttleForAnimation } from "./utils/timing";
  * @template T
  * @typedef VirtualHookParams
  * @property {T[] | () => T[]} items
- * @property {PixelValue | (item: T) => PixelValue} itemHeight
  * @property {typeof useRef} scrollableRef
- * @property {number} [initialScrollTop=0]
+ * @property {ScrollPosition} [initialScroll={ left: 0, top: 0 }]
+ * @property {PixelValue | (item: T) => PixelValue} [itemHeight=0]
+ * @property {PixelValue | (item: T) => PixelValue} [itemWidth=0]
  * @property {PixelValue} [margin="100%"]
+ */
+
+/**
+ * @typedef ScrollPosition
+ * @property {number} left
+ * @property {number} top
  */
 
 /** @typedef {number | `${string}px` | `${string}%`} PixelValue */
@@ -19,15 +26,17 @@ import { throttleForAnimation } from "./utils/timing";
 /**
  * Converts a number,
  *
- * @param {PixelValue} value
+ * @param {{ width: PixelValue } | { height: PixelValue }} propValue
  * @returns {number}
  */
-const toPixels = (value) => {
+const toPixels = (propValue) => {
+    const [prop, value] = Object.entries(propValue)[0];
     if (typeof value === "number") {
         return value;
     }
     if (value.endsWith("%")) {
-        return window.innerHeight * (Number(value.slice(0, -1)) / 100);
+        const size = prop === "width" ? window.innerWidth : window.innerHeight;
+        return size * (Number(value.slice(0, -1)) / 100);
     }
     if (value.endsWith("px")) {
         return Number(value.slice(0, -2));
@@ -41,26 +50,32 @@ const toPixels = (value) => {
  * @param {VirtualHookParams<T>} params
  * @returns {ReturnType<useState<T>>}
  */
-export function useVirtual({ items, itemHeight, scrollableRef, initialScrollTop, margin }) {
+export function useVirtual({ items, scrollableRef, initialScroll, itemHeight, itemWidth, margin }) {
     const computeVirtualItems = () => {
-        const { items, scrollTop } = current;
-        const vStart = scrollTop - marginPx;
-        const vEnd = scrollTop + (scrollableRef.el?.clientHeight || window.innerHeight) + marginPx;
+        const { items, scroll } = current;
 
-        let startIndex = 0;
-        let endIndex = 0;
-        let currentTop = 0;
+        const xStart = scroll.left - xMargin;
+        const xEnd = scroll.left + window.innerWidth + xMargin;
+
+        const yStart = scroll.top - yMargin;
+        const yEnd = scroll.top + window.innerHeight + yMargin;
+
+        let [startIndex, endIndex] = [0, 0];
+        let [currentLeft, currentTop] = [0, 0];
+
         for (const item of items) {
-            const size = toPixels(getItemHeight(item));
-            if (currentTop + size < vStart) {
+            const width = toPixels({ width: getItemWidth(item) });
+            const height = toPixels({ height: getItemHeight(item) });
+            if (currentLeft + width < xStart || currentTop + height < yStart) {
                 startIndex++;
                 endIndex++;
-            } else if (currentTop - size <= vEnd) {
+            } else if (currentLeft - width <= xEnd || currentTop - height <= yEnd) {
                 endIndex++;
             } else {
                 break;
             }
-            currentTop += size;
+            currentLeft += width;
+            currentTop += height;
         }
 
         const prevItems = toRaw(virtualItems);
@@ -74,12 +89,18 @@ export function useVirtual({ items, itemHeight, scrollableRef, initialScrollTop,
 
     const getItems = typeof items === "function" ? items : () => items;
 
-    const getItemHeight = typeof itemHeight === "function" ? itemHeight : () => itemHeight;
+    const getItemHeight =
+        typeof itemHeight === "function" ? itemHeight : () => itemHeight || "100%";
 
-    const marginPx = toPixels(typeof margin === "number" ? margin : margin || "100%");
+    const getItemWidth = typeof itemWidth === "function" ? itemWidth : () => itemWidth || "100%";
+
+    const marginValue = margin === undefined ? "100%" : margin;
+    const xMargin = toPixels({ width: marginValue });
+    const yMargin = toPixels({ height: marginValue });
+
     const current = {
         items: getItems(),
-        scrollTop: initialScrollTop || 0,
+        scroll: { left: 0, top: 0, ...initialScroll },
     };
 
     const virtualItems = useState([]);
@@ -93,7 +114,8 @@ export function useVirtual({ items, itemHeight, scrollableRef, initialScrollTop,
         }
     });
     const throttledOnScroll = throttleForAnimation((/** @type {Event} */ ev) => {
-        current.scrollTop = ev.target.scrollTop;
+        current.scroll.left = ev.target.scrollLeft;
+        current.scroll.top = ev.target.scrollTop;
         computeVirtualItems();
     });
     useEffect(
