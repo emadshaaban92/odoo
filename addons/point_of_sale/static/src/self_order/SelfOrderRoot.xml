@@ -43,7 +43,6 @@
                 cartItems="this.state.cart"
                 viewMenu="viewMenu"
                 removeProductFromCart="removeProductFromCart"
-                
                 />
             </t>
             <!-- Landing Page at the end -->

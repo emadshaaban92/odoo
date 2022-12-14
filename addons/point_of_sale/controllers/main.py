@@ -22,7 +22,14 @@ class PosController(PortalAccount):
     @http.route('/pos/self-order/get-menu', auth='public',type="json", website=True)
     def pos_self_order_get_menu(self,config_id = False):
         # response.headers['Cache-Control'] = 'no-store'
-        response = { 'menu': 'lots of items in menu'}
+        # Let me break this down:
+        # 0. We request the product.product model
+        # 1. We are using the sudo() method to bypass the access rights
+        # 2. We are using the read() method to get the name and price of the product
+        # 3. We are using the search() method to get the products that are available in the POS
+        # 4. We are using the type="json" argument in the function call to return the response as JSON
+        response = http.request.env['product.product'].sudo().search([('available_in_pos', '=', True)]).read(['name', 'list_price'])
+
         return response
 
 
