@@ -11,38 +11,6 @@ _logger = logging.getLogger(__name__)
 
 
 class PosController(PortalAccount):
-
-    # this is the main controller for the POS Self Order App
-    # The user gets this route from the QR code that they scan at the table
-    @http.route('/pos/self-order/start/<int:table_number>/', auth='public', website=True)
-    def pos_self_order_start(self, table_number,config_id = False):
-        # TODO get the name and logo of the restaurant from the "res.company" model
-        # and pass it to the template
-        response = request.render('point_of_sale.pos_self_order_index', {'table_number': table_number})
-        # response.headers['Cache-Control'] = 'no-store'
-        return response
-    # this is the route that the POS Self Order App uses to GET THE MENU
-    @http.route('/pos/self-order/get-menu', auth='public',type="json", website=True)
-    def pos_self_order_get_menu(self,config_id = False):
-        # response.headers['Cache-Control'] = 'no-store'
-        # Let me break this down:
-        # 0. We request the product.product model
-        # 1. We are using the sudo() method to bypass the access rights
-        # 2. We are using the search() method to get the products that are available in the POS
-        # 3. We are using the read() method to get the name and price of the product
-        # 4. We are using the type="json" argument in the function call to return the response as JSON
-        response = http.request.env['product.product'].sudo().search([('available_in_pos', '=', True)]).read(['id','name', 'list_price', 'description_sale'])
-        return response
-    # this is the route that the POS Self Order App uses to GET THE PRODUCT IMAGES
-    @http.route('/pos/self-order/get-images/<int:product_id>', methods=['GET'], type='http', auth='public')
-    def pos_self_order_get_images(self, product_id, **kwargs):
-        # We get the product with the specific id from the database
-        product = request.env['product.product'].sudo().browse(product_id)
-        # We return the image of the product in binary format
-        # 'image_1920' is the name of the field that contains the image
-        # If the product does not have an image, the function _get_image_stream_from will return the default image
-        return request.env['ir.binary']._get_image_stream_from(product, field_name='image_1920').get_response()
-    
     @http.route(['/pos/web', '/pos/ui'], type='http', auth='user')
     def pos_web(self, config_id=False, **k):
         """Open a pos session for the given config.

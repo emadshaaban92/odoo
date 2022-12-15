@@ -19,7 +19,6 @@
         'wizard/pos_session_check_product_wizard.xml',
         'views/pos_assets_common.xml',
         'views/pos_assets_index.xml',
-        'views/pos_self_order_index.xml',
         'views/pos_assets_qunit.xml',
         'views/point_of_sale_report.xml',
         'views/point_of_sale_view.xml',
@@ -134,10 +133,6 @@
             'point_of_sale/static/src/entry/main.js',
             'web/static/src/start.js',
             'web/static/src/legacy/legacy_setup.js',
-        ],
-        'point_of_sale.assets_self_order': [
-            'web/static/tests/legacy/legacy_setup.js',
-            'point_of_sale/static/src/self_order/**/*',
         ],
 
         #########################################################
