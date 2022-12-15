@@ -15,8 +15,10 @@ class PosController(PortalAccount):
     # The user gets this route from the QR code that they scan at the table
     @http.route('/pos/self-order/start/<int:table_number>/', auth='public', website=True)
     def pos_self_order_start(self, table_number,config_id = False):
+        # TODO get the name and logo of the restaurant from the "res.company" model
+        # and pass it to the template
         response = request.render('point_of_sale.pos_self_order_index', {'table_number': table_number})
-        response.headers['Cache-Control'] = 'no-store'
+        # response.headers['Cache-Control'] = 'no-store'
         return response
     # this is the route that the POS Self Order App uses to GET THE MENU
     @http.route('/pos/self-order/get-menu', auth='public',type="json", website=True)
@@ -25,8 +27,8 @@ class PosController(PortalAccount):
         # Let me break this down:
         # 0. We request the product.product model
         # 1. We are using the sudo() method to bypass the access rights
-        # 2. We are using the read() method to get the name and price of the product
-        # 3. We are using the search() method to get the products that are available in the POS
+        # 2. We are using the search() method to get the products that are available in the POS
+        # 3. We are using the read() method to get the name and price of the product
         # 4. We are using the type="json" argument in the function call to return the response as JSON
         response = http.request.env['product.product'].sudo().search([('available_in_pos', '=', True)]).read(['id','name', 'list_price', 'description_sale'])
         return response

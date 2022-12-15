@@ -23,7 +23,6 @@
                                 >
                                 <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
                             </svg>
-
                         </div>
                         <div class="d-flex justify-content-between w-100">
                             <t t-esc="cartItem.quantity + ' x ' + product.list_price+ '€'" />
@@ -32,7 +31,7 @@
                     </div>
                 </div>
             </t>
-            <!-- Pay Button -->
+<!-- Pay Button -->
             <button t-on-click="() => props.cartView()"
                     class="fixed-bottom text-white btn btn-primary btn-lg btn-block w-100">
                     <div class="d-flex align-items-center justify-content-between mx-2 ">

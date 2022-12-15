@@ -25,7 +25,10 @@
         <style> body { background: #222; } </style>
 
         <link rel="shortcut icon" href="/point_of_sale/static/src/img/favicon.ico" type="image/x-icon"/>
-
+<!-- odoo var is sent to the client ( front end ) -->
+<!-- it contains generic data that the self order app needs, such as: -->
+<!-- table_number: which the backend knows from the route that the client called -->
+<!-- the qr code on the table will have the table number in the url -->
         <script type="text/javascript">
             var odoo = <t t-out="json.dumps({
                 'csrf_token': request.csrf_token(None),
