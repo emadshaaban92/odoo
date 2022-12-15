@@ -11,6 +11,7 @@ _logger = logging.getLogger(__name__)
 
 
 class PosController(PortalAccount):
+
     # this is the main controller for the POS Self Order App
     # The user gets this route from the QR code that they scan at the table
     @http.route('/pos/self-order/start/<int:table_number>/', auth='public', website=True)
@@ -41,7 +42,6 @@ class PosController(PortalAccount):
         # 'image_1920' is the name of the field that contains the image
         # If the product does not have an image, the function _get_image_stream_from will return the default image
         return request.env['ir.binary']._get_image_stream_from(product, field_name='image_1920').get_response()
-
     
     @http.route(['/pos/web', '/pos/ui'], type='http', auth='user')
     def pos_web(self, config_id=False, **k):
