@@ -62,6 +62,9 @@
             <field name="inherit_id" ref="project.project_project_view_form_simplified"/>
             <field name="priority">24</field>
             <field name="arch" type="xml">
+                <xpath expr="//div[hasclass('o_settings_container')]" position="attributes">
+                    <attribute name="invisible">0</attribute>
+                </xpath>
                 <xpath expr="//div[hasclass('o_settings_container')]" position="inside">
                     <div class="col-lg-6 o_setting_box">
                         <div class="o_setting_left_pane">
