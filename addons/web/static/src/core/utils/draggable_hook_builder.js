@@ -577,12 +577,11 @@ export function makeDraggableHook(hookParams) {
                 }
 
                 if (state.dragging) {
+                    updateElementPosition();
                     callBuildHandler("onDrag");
                 } else {
                     dragStart();
                 }
-
-                updateElementPosition();
             };
 
             /**
