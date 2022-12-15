@@ -26,6 +26,7 @@ from odoo.addons.sale.controllers import portal
 from odoo.osv import expression
 from odoo.tools import lazy
 from odoo.tools.json import scriptsafe as json_scriptsafe
+from odoo.addons.web_editor.controllers import main as main_controller
 
 _logger = logging.getLogger(__name__)
 
@@ -96,6 +97,27 @@ class TableCompute(object):
             rows[col] = [r[1] for r in cols if r[1]]
 
         return rows
+
+
+class Web_Editor(main_controller.Web_Editor):
+
+    @http.route()
+    def modify_image(self, attachment, res_model=None, res_id=None, name=None, data=None, original_id=None, mimetype=None, description=None):
+        # The model is product.template and the product has only one variant or does not have any image.
+        # In this last case, the image of the template is used as default for the image of the product.
+        if res_model == "product.template":
+            template = request.env[res_model].browse(res_id)
+            if (template.product_variant_count <= 1 or
+                    not request.env["product.product"].browse(template._get_first_possible_variant_id()).image_variant_1920):
+                product_product_res_id = template._get_first_possible_variant_id()
+                self.create_attachment(attachment, "product.product", product_product_res_id, name, data, original_id, mimetype, description)
+        # The model is product.product and it has only one variant
+        if res_model == "product.product":
+            product = request.env[res_model].browse(res_id)
+            if product.product_tmpl_id.product_variant_count <= 1:
+                product_template_res_id = product.product_tmpl_id.id
+                self.create_attachment(attachment, "product.template", product_template_res_id, name, data, original_id, mimetype, description)
+        return super().modify_image(attachment, res_model, res_id, name, data, original_id, mimetype, description)
 
 
 class WebsiteSaleForm(WebsiteForm):

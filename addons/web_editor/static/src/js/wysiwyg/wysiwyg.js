@@ -937,10 +937,25 @@ const Wysiwyg = Widget.extend({
      */
     saveModifiedImages: function ($editable = this.$editable) {
         const defs = _.map($editable, async editableEl => {
-            const {oeModel: resModel, oeId: resId} = editableEl.dataset;
+            let resModel, resId;
+            if (editableEl.hasAttribute("data-res-model") && editableEl.hasAttribute("data-res-id")) {
+                ({resModel: resModel, resId: resId} = editableEl.dataset);
+            } else {
+                ({oeModel: resModel, oeId: resId} = (editableEl.dataset));
+            }
             const proms = [...editableEl.querySelectorAll('.o_modified_image_to_save')].map(async el => {
                 const isBackground = !el.matches('img');
                 el.classList.remove('o_modified_image_to_save');
+                // The field "description" of the attachment is used to store
+                // data such as the shape, the shape color, the filter, the
+                // width and the quality. This is necessary in order to be able
+                // to display the correct parameters at the re-edition.
+                let description = "";
+                description += (el.dataset.shape ? "shape:" + el.dataset.shape : "");
+                description += (el.dataset.shapeColors ? " shapeColors:" + el.dataset.shapeColors : "");
+                description += (el.dataset.glFilter ? " glFilter:" + el.dataset.glFilter : "");
+                description += (el.dataset.resizeWidth ? " resizeWidth:" + el.dataset.resizeWidth : "");
+                description += (el.dataset.quality ? " quality:" + el.dataset.quality : "");
                 // Modifying an image always creates a copy of the original, even if
                 // it was modified previously, as the other modified image may be used
                 // elsewhere if the snippet was duplicated or was saved as a custom one.
@@ -952,6 +967,7 @@ const Wysiwyg = Widget.extend({
                         data: (isBackground ? el.dataset.bgSrc : el.getAttribute('src')).split(',')[1],
                         mimetype: el.dataset.mimetype,
                         name: (el.dataset.fileName ? el.dataset.fileName : null),
+                        description: description,
                     },
                 });
                 if (isBackground) {

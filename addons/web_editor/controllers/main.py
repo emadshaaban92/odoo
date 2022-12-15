@@ -273,6 +273,13 @@ class Web_Editor(http.Controller):
                 )
                 if record._name == 'ir.attachment':
                     attachment = record
+                # Recover the correct attachment thanks to the resource model
+                # and the resource id.
+                else:
+                    attachment = request.env['ir.attachment'].sudo().search(
+                        domain=[('res_model', '=', record._name),
+                                ('res_id', '=', record.id)],
+                        limit=1)
         if not attachment:
             # Find attachment by url. There can be multiple matches because of default
             # snippet images referencing the same image in /static/, so we limit to 1
@@ -286,6 +293,7 @@ class Web_Editor(http.Controller):
                 'original': False,
             }
         return {
+            'description': attachment.read(['description'])[0].get('description'),
             'attachment': attachment.read(['id'])[0],
             'original': (attachment.original_id or attachment).read(['id', 'image_src', 'mimetype'])[0],
         }
@@ -494,8 +502,7 @@ class Web_Editor(http.Controller):
 
         return files_data_by_bundle
 
-    @http.route('/web_editor/modify_image/<model("ir.attachment"):attachment>', type="json", auth="user", website=True)
-    def modify_image(self, attachment, res_model=None, res_id=None, name=None, data=None, original_id=None, mimetype=None):
+    def create_attachment(self, attachment, res_model=None, res_id=None, name=None, data=None, original_id=None, mimetype=None, description=None):
         """
         Creates a modified copy of an attachment and returns its image_src to be
         inserted into the DOM.
@@ -506,6 +513,7 @@ class Web_Editor(http.Controller):
             'type': 'binary',
             'res_model': res_model or 'ir.ui.view',
             'mimetype': mimetype or attachment.mimetype,
+            'description': description,
         }
         if fields['res_model'] == 'ir.ui.view':
             fields['res_id'] = 0
@@ -526,6 +534,11 @@ class Web_Editor(http.Controller):
                 url_fragments = attachment.url.split('/')
                 url_fragments.insert(-1, str(attachment.id))
                 attachment.url = '/'.join(url_fragments)
+        return attachment
+
+    @http.route('/web_editor/modify_image/<model("ir.attachment"):attachment>', type="json", auth="user", website=True)
+    def modify_image(self, attachment, res_model=None, res_id=None, name=None, data=None, original_id=None, mimetype=None, description=None):
+        attachment = self.create_attachment(attachment, res_model, res_id, name, data, original_id, mimetype, description)
         if attachment.public:
             return attachment.image_src
         attachment.generate_access_token()

@@ -431,7 +431,7 @@ async function loadImageInfo(img, rpc, attachmentSrc = '') {
         return;
     }
 
-    const {original} = await rpc({
+    const {description, original} = await rpc({
         route: '/web_editor/get_image_info',
         params: {src: src.split(/[?#]/)[0]},
     });
@@ -441,6 +441,15 @@ async function loadImageInfo(img, rpc, attachmentSrc = '') {
         img.dataset.originalId = original.id;
         img.dataset.originalSrc = original.image_src;
         img.dataset.mimetype = original.mimetype;
+        // Add the correct data attributes thanks to the information stored in
+        // the description field of the attachment.
+        if (description) {
+            const imgOptions = description.match(/shapeColors|shape|glFilter|resizeWidth|quality/g);
+            const imgOptionsValues = description.match(/(?<=shapeColors:)[^\s]+|(?<=shape:)[^\s]+|(?<=glFilter:)[^\s]+|(?<=resizeWidth:)[^\s]+|(?<=quality:)[^\s]+/g);
+            for (const index in imgOptions) {
+                img.dataset[imgOptions[index]] = imgOptionsValues[index];
+            }
+        }
     }
 }
 
