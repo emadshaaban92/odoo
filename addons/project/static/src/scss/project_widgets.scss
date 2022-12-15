@@ -56,12 +56,13 @@
     }
 }
 
-.o_kanban_record_title {
+.o_kanban_record_headings {
     .o_field_name_with_subtask_count{
         display: inline;
     }
+    .o_field_project_task_state_selection{
+        margin-right: 3px;
+    }
 }
 
-.o_field_project_task_state_selection{
-    margin-right: 3px;
-}
+

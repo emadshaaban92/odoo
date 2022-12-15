@@ -94,6 +94,8 @@ class ProjectTaskType(models.Model):
         default_project_id = self.env.context.get('default_project_id')
         return [default_project_id] if default_project_id else None
 
+
+
     active = fields.Boolean('Active', default=True)
     name = fields.Char(string='Name', required=True, translate=True)
     description = fields.Text(translate=True)
@@ -1106,6 +1108,9 @@ class Task(models.Model):
         return self.env.company
 
     def _default_state_id(self):
+        for dependent_task in self.depend_on_ids:
+            if dependent_task.state_id in self.env['project.task.state'].search([('name', 'in', BLOCKING_STATES)]):
+                return self.env['project.task.state'].search([('key', '=', STATES_KEY['Waiting'])])
         return self.env['project.task.state'].search([], limit=1)
 
     @api.model
@@ -1419,8 +1424,8 @@ class Task(models.Model):
         #dependent_tasks = self.env['project.task'].search([('depend_ids', 'in', self.ids)])
             for dependent_task in task.depend_on_ids:
                 if dependent_task.state_id in self.env['project.task.state'].search([('name', 'in', BLOCKING_STATES)]): # 
-                    if task.state_key != STATES_KEY['Waiting']:
-                        task.state_pre_block = task.state_name
+                    if task.state_id.key != STATES_KEY['Waiting']:
+                        task.state_pre_block = task.state_id.name
                     print("state_pre_block: {}".format(task.state_pre_block))
                     task.write({'state_id': self.env['project.task.state'].search([('key', '=', STATES_KEY['Waiting'])])})
                     return
@@ -2545,9 +2550,14 @@ class Task(models.Model):
                     ('is_closed', '=', False)]).write({'partner_id': new_partner.id})
         return super(Task, self)._message_post_after_hook(message, msg_vals)
 
-    def call_confirmation_wizard(self):
-        
+    def call_confirmation_wizard(self, future_state):
+        blocking_task_list = [tsk.name for tsk in self.depend_on_ids]
         action = self.env["ir.actions.act_window"]._for_xml_id("project.action_project_wizard_confirmation_form")
+        action['context'] = {
+            'task_id' : self.id,
+            'future_state_key' : future_state,
+            'blocking_task_list' : blocking_task_list,
+        }
         return action
 
         context = dict(self.env.context)
@@ -2592,7 +2602,8 @@ class Task(models.Model):
         self.write({'state_id': self.env['project.task.state'].search([('key', '=', STATES_KEY[new_state])])})
 
     def action_toggle_mark_as_done(self):
-        # state_id.key 
+        if self.state_name == 'Waiting':
+            return self.call_confirmation_wizard(STATES_KEY['Done'])
         new_state = 'Done' if self.state_name != 'Done' else 'In Progress'
         self.write({'state_id': self.env['project.task.state'].search([('key', '=', STATES_KEY[new_state])])})
 

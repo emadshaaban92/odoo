@@ -98,16 +98,6 @@ export class ProjectTaskStateSelectionMany2One extends StateSelectionField {
         this.props.record.model.notify();
     }
 
-    /**
-     * @param {MouseEvent} ev
-     */
-    onGlobalClick(ev) {
-        console.log("global click");
-        if (ev.target.closest(".button")) {
-            return;
-        }
-        return super.onGlobalClick(ev);
-    }
 }
 
 ProjectTaskStateSelectionMany2One.template = "project.ProjectTaskStateMany2OneField";

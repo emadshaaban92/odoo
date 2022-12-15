@@ -31,22 +31,26 @@
                     <separator/>
                     <filter string="High Priority" name="high_priority" domain="[('priority', '=', 1)]"/>
                     <filter string="Low Priority" name="low_priority" domain="[('priority', '=', 0)]"/>
+                    <!-- TO REMOVE
                     <separator/>
                     <filter string="Blocked" name="blocked" domain="[('is_blocked', '=', True)]" groups="project.group_project_task_dependencies"/>
                     <filter string="Not Blocked" name="not_blocked" domain="[('is_blocked', '=', False), ('is_private', '=', False)]" groups="project.group_project_task_dependencies"/>
                     <separator groups="project.group_project_task_dependencies"/>
                     <filter string="Blocking" name="blocking" domain="[('is_closed', '=', False), ('dependent_ids', '!=', False)]" groups="project.group_project_task_dependencies"/>
                     <filter string="Not Blocking" name="not_blocking" domain="['|', ('is_closed', '=', True), ('dependent_ids', '=', False), ('is_private', '=', False)]" groups="project.group_project_task_dependencies"/>
+                    -->
                     <separator groups="project.group_project_task_dependencies"/>
                     <filter string="Late Milestones" name="late_milestone" domain="[('is_closed', '=', False), ('has_late_and_unreached_milestone', '=', True)]" groups="project.group_project_milestone"/>
                     <filter string="Late Tasks" name="late" domain="[('date_deadline', '&lt;', context_today().strftime('%Y-%m-%d')), ('is_closed', '=', False)]"/>
                     <filter string="Tasks Due Today" name="tasks_due_today" domain="[('date_deadline', '=', context_today().strftime('%Y-%m-%d'))]"/>
                     <filter string="Stalling for 30 Days+" name="stall_last_30_days" domain="[('is_closed', '=', False), ('date_last_stage_update', '&lt;=', datetime.datetime.now() - relativedelta(days=30))]"/>
+                    <!-- TO REMOVE
                     <separator/>
                     <filter string="Open Tasks" name="open_tasks" domain="[('is_closed', '=', False)]"/>
                     <filter string="Closed Tasks" name="closed_tasks" domain="[('is_closed', '=', True)]"/>
                     <filter string="Closed Last 7 Days" name="closed_last_7_days" domain="[('is_closed', '=', True), ('date_last_stage_update', '&gt;', datetime.datetime.now() - relativedelta(days=7))]"/>
                     <filter string="Closed Last 30 Days" name="closed_last_30_days" domain="[('is_closed', '=', True), ('date_last_stage_update', '&gt;', datetime.datetime.now() - relativedelta(days=30))]"/>
+                    -->
                     <separator/>
                     <filter string="Incomplete Tasks" name="incomplete_tasks" domain="[('is_closed', '=', False)]"/>
                     <filter string="Completed Tasks" name="completed_tasks" domain="[('is_closed', '=', True)]"/>
@@ -77,6 +81,7 @@
                         <filter string="Milestone" name="milestone" context="{'group_by': 'milestone_id'}" groups="project.group_project_milestone"/>
                         <filter string="Customer" name="customer" context="{'group_by': 'partner_id'}"/>
                         <filter string="Kanban State" name="kanban_state" context="{'group_by': 'kanban_state'}"/>
+                        <filter string="State" name="state_id" context="{'group_by': 'state_id'}"/>
                         <filter string="Deadline" name="date_deadline" context="{'group_by': 'date_deadline'}"/>
                         <filter string="Creation Date" name="group_create_date" context="{'group_by': 'create_date'}"/>
                     </group>
@@ -1111,7 +1116,7 @@
                     <field name="state_key" invisible="1"/>
                     <field name="state_id" invisible="1"/>
                     <header>
-                        <button name="call_confirmation_wizard" string="Approve" type="object" class="" attrs="{'invisible' : &quot;['|', ('state_approval_mode', '=', False), ('state_key','=',5)]&quot;}" icon="fa-check"/>
+                        <button name="action_toggle_approve_state" string="Approve" type="object" class="" attrs="{'invisible' : &quot;['|', ('state_approval_mode', '=', False), ('state_key','=',5)]&quot;}" icon="fa-check"/>
                         <button name="action_toggle_approve_state" string="Approved" type="object" class="oe_highlight" attrs="{'invisible' : &quot;['|', ('state_approval_mode', '=', False), ('state_key','!=',5)]&quot;}" icon="fa-check"/>
                         <button name="action_toggle_request_changes_state" string="Request changes" type="object" class="" attrs="{'invisible' : &quot;['|', ('state_approval_mode', '=', False), ('state_key','=',7)]&quot;}" icon="fa-repeat"/>
                         <button name="action_toggle_request_changes_state" string="Change requested" type="object" class="oe_highlight" attrs="{'invisible' : &quot;['|', ('state_approval_mode', '=', False), ('state_key','!=',7)]&quot;}" icon="fa-repeat"/>
@@ -1189,17 +1194,15 @@
                             <field name="kanban_state" widget="state_selection" class=""/>
                         </h1>
                         <!--
-                            Debuging field for state_id
                         <h2>
-                            statekey:
+                            State Key:
                             <field name="state_key"/>
-
+                            Approval Mode:
+                            <field name="state_approval_mode" class="" string="Approval mode"/>
                             State: 
                             <field name="state_id" class="" string="State: " domain="[('approval_mode', '=', state_approval_mode), ('user_trigger_possible', '=', True)]"/>
-                            Approval Mode
-                            <field name="state_approval_mode" class="" string="Approval mode"/>
-                        </h2>-->
-                        
+                        </h2>
+                        -->
                     </div>
                     <group>
                         <group>
@@ -1483,8 +1486,8 @@
                                                 <i title="state approval" t-attf-class="{{record.state_approval_mode.raw_value ? 'fa fa-arrow-up' : 'fa fa-arrow-down'}}"/>
                                         
                                             -->
-                                        <strong class="o_kanban_record_title">
                                             <field name="state_id" widget="project_task_state_selection"/>
+                                        <strong class="o_kanban_record_title">
                                             <s t-if="!record.active.raw_value">
                                             <field name="name" widget="name_with_subtask_count"/>
                                             </s>
@@ -1592,7 +1595,9 @@
                     <field name="legend_done" invisible="1"/>
                     <field name="legend_blocked" invisible="1"/>
                     <field name="kanban_state" widget="state_selection" optional="show" options="{'hide_label': True}" nolabel="1" required="0"/>
+                    
                     <field name="state_id" widget="project_task_state_selection" optional="show" readonly="not context.get('default_project_id')" options="{'hide_label': True}" nolabel="1" />
+                    
                     <field name="stage_id" invisible="context.get('set_visible',False)" optional="show" readonly="not context.get('default_project_id')"/>
                     <field name="recurrence_id" invisible="1" />
                 </tree>
