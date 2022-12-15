@@ -318,7 +318,7 @@ class PosSession(models.Model):
         # needs to be validated.
         self._check_bank_statement_state()
         return self._validate_session(balancing_account, amount_to_balance, bank_payment_method_diffs)
-
+azeze
     def _validate_session(self, balancing_account=False, amount_to_balance=0, bank_payment_method_diffs=None):
         bank_payment_method_diffs = bank_payment_method_diffs or {}
         self.ensure_one()
@@ -367,6 +367,7 @@ class PosSession(models.Model):
             statement = self.cash_register_id
             if not self.config_id.cash_control:
                 statement.write({'balance_end_real': statement.balance_end})
+                aazezaeaezaeazzaeaeaz
             statement.button_post()
             statement.button_validate()
         self.write({'state': 'closed'})
@@ -435,9 +436,6 @@ class PosSession(models.Model):
         return {'successful': True}
 
     def update_closing_control_state_session(self, notes):
-        # Prevent closing the session again if it was already closed
-        if self.state == 'closed':
-            raise UserError(_('This session is already closed.'))
         # Prevent the session to be opened again.
         self.write({'state': 'closing_control', 'stop_at': fields.Datetime.now()})
         self._post_cash_details_message('Closing', self.cash_register_difference, notes)
