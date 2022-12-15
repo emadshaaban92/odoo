@@ -334,9 +334,13 @@ function augmentMacro(macroDescription, augmenter, options) {
  * @param {*} param0
  * @returns {[state: { x, y, isVisible, position, content, mode, viewPortState, fixed }, methods: { updateOnStep, setState }]}
  */
-function createPointerState({ x, y, isVisible, position, content, mode, viewPortState, fixed }) {
+function createPointerState(
+    { x, y, isVisible, position, content, mode, viewPortState, fixed },
+    intersectionObserver
+) {
     const state = reactive({ x, y, isVisible, position, content, mode, viewPortState, fixed });
     const pointerSize = { width: 28, height: 28 };
+    let anchor;
 
     // TODO-JCB: Take into account the rtl config.
     function computeLocation(el, position = "right") {
@@ -360,14 +364,22 @@ function createPointerState({ x, y, isVisible, position, content, mode, viewPort
 
     function updateOnStep(step, anchorEl) {
         if (anchorEl) {
-            const [top, left] = computeLocation(anchorEl, step.position);
-            Object.assign(state, {
-                x: left,
-                y: top,
-                content: step.content || "",
-                position: step.position,
-            });
+            if (anchor) {
+                intersectionObserver.unobserve(anchor);
+            }
+            anchor = anchorEl;
+            intersectionObserver.observe(anchorEl);
+            if (state.viewPortState == "in") {
+                const [top, left] = computeLocation(anchorEl, step.position);
+                Object.assign(state, {
+                    x: left,
+                    y: top,
+                    content: step.content || "",
+                    position: step.position,
+                });
+            }
         } else {
+            intersectionObserver.unobserve(anchor);
             setState({ isVisible: false });
         }
     }
@@ -423,17 +435,63 @@ export const tourService = {
         const macroEngine = new MacroEngine(document);
         const edition = odoo.info.isEnterprise ? "enterprise" : "community";
         const isMobile = device.isMobile;
-
-        const [pointerState, pointerMethods] = createPointerState({
-            content: "",
-            position: "top",
-            x: 0,
-            y: 0,
-            isVisible: false,
-            mode: "bubble",
-            viewPortState: "in",
-            fixed: false,
+        let intersectionTimeout;
+        const intersectionObserver = new IntersectionObserver((entries) => {
+            let x, y, viewPortState;
+            for (const entry of entries) {
+                const { rootBounds, boundingClientRect: targetBounds } = entry;
+                x = rootBounds.width / 2;
+                if (targetBounds.bottom < rootBounds.top) {
+                    // the target is above the viewport
+                    y = 60;
+                    viewPortState = "up";
+                } else if (targetBounds.top > rootBounds.bottom) {
+                    // the target is at the bottom of the viewport
+                    y = rootBounds.height - 60 - 28;
+                    viewPortState = "down";
+                } else {
+                    viewPortState = "in";
+                }
+            }
+            if (intersectionTimeout) {
+                clearTimeout(intersectionTimeout);
+            }
+            setTimeout(() => {
+                if (viewPortState === "up") {
+                    pointerMethods.setState({
+                        x,
+                        y,
+                        position: "bottom",
+                        viewPortState,
+                        content: "Scroll to reach the next step.",
+                    });
+                } else if (viewPortState === "down") {
+                    pointerMethods.setState({
+                        x,
+                        y,
+                        position: "top",
+                        viewPortState,
+                        content: "Scroll to reach the next step.",
+                    });
+                } else if (viewPortState === "in") {
+                    pointerMethods.setState({ viewPortState });
+                }
+            }, 100);
         });
+
+        const [pointerState, pointerMethods] = createPointerState(
+            {
+                content: "",
+                position: "top",
+                x: 0,
+                y: 0,
+                isVisible: false,
+                mode: "bubble",
+                fixed: false,
+                viewPortState: "in",
+            },
+            intersectionObserver
+        );
 
         /**
          * @param {string} _tourName
