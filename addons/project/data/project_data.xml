@@ -27,6 +27,7 @@
         <field name="sequence">10</field>
         <field name="name">In Progress</field>
         <field name="approval_mode">False</field>
+        <field name="closing">False</field>
         <field name="key">1</field>
     </record>
 
@@ -34,6 +35,7 @@
         <field name="sequence">11</field>
         <field name="name">Done</field>
         <field name="approval_mode">False</field>
+        <field name="closing">True</field>
         <field name="key">2</field>
     </record>
 
@@ -41,6 +43,7 @@
         <field name="sequence">11</field>
         <field name="name">Waiting</field>
         <field name="approval_mode">False</field>
+        <field name="closing">False</field>
         <field name="user_trigger_possible">False</field>
         <field name="key">3</field>
     </record>
@@ -49,6 +52,7 @@
         <field name="sequence">11</field>
         <field name="name">Pending approval</field>
         <field name="approval_mode">True</field>
+        <field name="closing">False</field>
         <field name="key">4</field>
     </record>
 
@@ -56,6 +60,7 @@
         <field name="sequence">12</field>
         <field name="name">Approved</field>
         <field name="approval_mode">True</field>
+        <field name="closing">True</field>
         <field name="key">5</field>
     </record>
 
@@ -63,6 +68,7 @@
         <field name="sequence">14</field>
         <field name="name">Rejected</field>
         <field name="approval_mode">True</field>
+        <field name="closing">True</field>
         <field name="key">6</field>
     </record>
     
@@ -70,6 +76,7 @@
         <field name="sequence">13</field>
         <field name="name">Changes requested</field>
         <field name="approval_mode">True</field>
+        <field name="closing">False</field>
         <field name="key">7</field>
     </record>
 </odoo>

@@ -3,7 +3,6 @@
 
     <t t-name="web.CharField" owl="1">
         <t t-if="props.readonly">
-        charfield
             <span t-esc="formattedValue" />
         </t>
         <t t-else="">

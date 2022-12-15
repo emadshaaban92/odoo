@@ -1164,6 +1164,13 @@ class Task(models.Model):
         readonly=True,
         help="Date on which the stage of your task has last been modified.\n"
             "Based on this information you can identify tasks that are stalling and get statistics on the time it usually takes to move tasks from one stage to another.")
+    date_last_state_update = fields.Datetime(string='Last State Update',
+        index=True,
+        copy=False,
+        readonly=True,
+        help="Date on which the state of your task has last been modified.\n"
+            "Based on this information you can identify tasks that are stalling and get statistics on the time it usually takes to move tasks from one stage to another.")
+    
     project_id = fields.Many2one('project.project', string='Project', recursive=True,
         compute='_compute_project_id', store=True, readonly=False, precompute=True,
         index=True, tracking=True, check_company=True, change_default=True)
@@ -1223,7 +1230,7 @@ class Task(models.Model):
     legend_blocked = fields.Char(related='stage_id.legend_blocked', string='Kanban Blocked Explanation', readonly=True)
     legend_done = fields.Char(related='stage_id.legend_done', string='Kanban Valid Explanation', readonly=True)
     legend_normal = fields.Char(related='stage_id.legend_normal', string='Kanban Ongoing Explanation', readonly=True)
-    is_closed = fields.Boolean(related="stage_id.fold", string="Closing Stage", store=True, index=True, help="Folded in Kanban stages are closing stages.")
+    is_closed = fields.Boolean(related="state_id.closing", string="Closing Stage", store=True, index=True, help="Folded in Kanban stages are closing stages.")
     parent_id = fields.Many2one('project.task', string='Parent Task', index=True)
     ancestor_id = fields.Many2one('project.task', string='Ancestor Task', compute='_compute_ancestor_id', index='btree_not_null', recursive=True, store=True)
     child_ids = fields.One2many('project.task', 'parent_id', string="Sub-tasks")
@@ -1415,19 +1422,19 @@ class Task(models.Model):
                     if task.state_key != STATES_KEY['Waiting']:
                         task.state_pre_block = task.state_name
                     print("state_pre_block: {}".format(task.state_pre_block))
-                    task.state_id = self.env['project.task.state'].search([('key', '=', STATES_KEY['Waiting'])])
+                    task.write({'state_id': self.env['project.task.state'].search([('key', '=', STATES_KEY['Waiting'])])})
                     return
             default_state = "Pending approval" if task.state_approval_mode else "In Progress"
             print(default_state)
             future_state = default_state if not task.state_pre_block else task.state_pre_block
             print(future_state)
-            task.state_id = self.env['project.task.state'].search([('key', '=', STATES_KEY[future_state])])
+            task.write({'state_id': self.env['project.task.state'].search([('key', '=', STATES_KEY[future_state])])})
 
     @api.onchange('state_approval_mode')
     def _onchange_state_approval_mode(self):
         if self.state_id != self.env['project.task.state'].search([('key', '=', STATES_KEY['Waiting'])]):   #waiting state
             default_state = 'Pending approval' if self.state_approval_mode else 'In Progress'
-            self.state_id = self.env['project.task.state'].search([('key', '=', STATES_KEY[default_state])])
+            self.write({'state_id': self.env['project.task.state'].search([('key', '=', STATES_KEY[default_state])])})
 
     #@api.depends('project_id')
     #def _compute_state(self):
@@ -2058,6 +2065,8 @@ class Task(models.Model):
             if vals.get('stage_id'):
                 vals.update(self.update_date_end(vals['stage_id']))
                 vals['date_last_stage_update'] = fields.Datetime.now()
+            if vals.get('state_id'):
+                vals['date_last_state_update'] = fields.Datetime.now()
             # recurrence
             rec_fields = vals.keys() & self._get_recurrence_fields()
             if rec_fields and vals.get('recurring_task') is True:
@@ -2119,6 +2128,8 @@ class Task(models.Model):
 
             vals.update(self.update_date_end(vals['stage_id']))
             vals['date_last_stage_update'] = now
+        if 'state_id' in vals:
+            vals['date_last_state_update'] = now
         task_ids_without_user_set = set()
         if 'user_ids' in vals and 'date_assign' not in vals:
             # prepare update of date_assign after super call
@@ -2563,7 +2574,7 @@ class Task(models.Model):
             task.write({'state_approval_mode': not task.state_approval_mode})
             if task.state_id != task.env['project.task.state'].search([('key', '=', STATES_KEY['Waiting'])]):
                 default_state = 'Pending approval' if task.state_approval_mode else 'In Progress'     # 4-> Pending approval, 1-> In Progress
-                task.state_id = task.env['project.task.state'].search([('key', '=', STATES_KEY[default_state])])
+                task.write({'state_id' : task.env['project.task.state'].search([('key', '=', STATES_KEY[default_state])])})
 
 
     def action_toggle_approve_state(self):

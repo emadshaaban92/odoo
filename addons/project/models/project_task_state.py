@@ -13,6 +13,7 @@ class ProjectTaskState(models.Model):
     name = fields.Char(required=True, translate=True)
     approval_mode = fields.Boolean(default=False)
     user_trigger_possible = fields.Boolean(default=True)
+    closing = fields.Boolean(default=False, help='Determines if a task in this stage is closed')
 
     key = fields.Integer()
     
