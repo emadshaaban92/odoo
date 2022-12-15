@@ -226,7 +226,7 @@ function augmentStepManual(step, options) {
         return [];
     }
 
-    let proceedWith, stepEl, prevEl, consumeEvent, $anchorEl;
+    let proceedWith, stepEl, prevEl, consumeEvent, $anchorEl, currentAnchor;
     return [
         {
             ...step,
@@ -245,7 +245,7 @@ function augmentStepManual(step, options) {
                 );
                 // This callback can be called multiple times until it returns true.
                 // We should take into account the fact the element is not in the
-                // dom. [updateOnStep] takes into account whether [stepEl] is null or not.
+                // dom. [update] takes into account whether [stepEl] is null or not.
                 prevEl = stepEl;
                 // [alt_trigger] - alternative to [trigger].
                 // [extra_trigger] - should also be present together with the [trigger].
@@ -294,7 +294,12 @@ function augmentStepManual(step, options) {
                         options.pointerMethods.setState({ mode: "bubble" });
                     });
                 }
-                options.pointerMethods.updateOnStep(step, stepEl && $anchorEl[0]);
+                const newAnchor = stepEl && $anchorEl[0];
+                if (currentAnchor !== newAnchor) {
+                    options.intersection.set({ target: newAnchor });
+                }
+                options.pointerMethods.update(options.intersection, step, newAnchor);
+                currentAnchor = newAnchor;
             },
             action: () => {
                 // Clean up
@@ -302,6 +307,7 @@ function augmentStepManual(step, options) {
                 stepEl = undefined;
                 consumeEvent = undefined;
                 $anchorEl = undefined;
+                currentAnchor = undefined;
                 options.pointerMethods.setState({ isVisible: false, mode: "bubble" });
             },
         },
@@ -332,18 +338,15 @@ function augmentMacro(macroDescription, augmenter, options) {
 
 /**
  * @param {*} param0
- * @returns {[state: { x, y, isVisible, position, content, mode, viewPortState, fixed }, methods: { updateOnStep, setState }]}
+ * @returns {[state: { x, y, isVisible, position, content, mode, fixed }, methods: { update, setState }]}
  */
-function createPointerState(
-    { x, y, isVisible, position, content, mode, viewPortState, fixed },
-    intersectionObserver
-) {
-    const state = reactive({ x, y, isVisible, position, content, mode, viewPortState, fixed });
+function createPointerState({ x, y, isVisible, position, content, mode, fixed }) {
+    const state = reactive({ x, y, isVisible, position, content, mode, fixed });
     const pointerSize = { width: 28, height: 28 };
-    let anchor;
+    let currentStep, currentAnchor;
 
     // TODO-JCB: Take into account the rtl config.
-    function computeLocation(el, position = "right") {
+    function computeLocation(el, position) {
         let top, left;
         const rect = el.getBoundingClientRect();
         if (position == "top") {
@@ -362,33 +365,141 @@ function createPointerState(
         return [top, left];
     }
 
-    function updateOnStep(step, anchorEl) {
-        if (anchorEl) {
-            if (anchor) {
-                intersectionObserver.unobserve(anchor);
-            }
-            anchor = anchorEl;
-            intersectionObserver.observe(anchorEl);
-            if (state.viewPortState == "in") {
-                const [top, left] = computeLocation(anchorEl, step.position);
-                Object.assign(state, {
+    function updateOnIntersection(intersection) {
+        if (currentStep) {
+            update(intersection, currentStep, currentAnchor);
+        }
+    }
+
+    function update(intersection, step, anchor) {
+        if (anchor) {
+            if (intersection.isIntersecting) {
+                const [top, left] = computeLocation(anchor, step.position);
+                setState({
                     x: left,
                     y: top,
                     content: step.content || "",
                     position: step.position,
                 });
+            } else {
+                if (intersection.rootBounds) {
+                    let x = intersection.rootBounds.width / 2;
+                    let y, position, content;
+                    const targetBounds = anchor.getBoundingClientRect();
+                    if (targetBounds.bottom < intersection.rootBounds.height / 2) {
+                        // the target is above the viewport
+                        y = 80;
+                        position = "bottom";
+                        content = "Scroll up to reach the next step.";
+                    } else if (targetBounds.top > intersection.rootBounds.height / 2) {
+                        // the target is at the bottom of the viewport
+                        y = intersection.rootBounds.height - 80 - 28;
+                        position = "top";
+                        content = "Scroll down to reach the next step.";
+                    }
+                    setState({ x, y, content, position });
+                }
             }
         } else {
-            intersectionObserver.unobserve(anchor);
             setState({ isVisible: false });
         }
+        currentStep = step;
+        currentAnchor = anchor;
     }
 
     function setState(obj) {
         Object.assign(state, obj);
     }
 
-    return [state, { updateOnStep, setState }];
+    return [state, { update, setState, updateOnIntersection }];
+}
+
+function intersectionService() {
+    let root, target, observer, _isIntersecting, _rootBounds;
+
+    function observe(newTarget) {
+        unobserve();
+        if (newTarget && observer) {
+            observer.observe(newTarget);
+        }
+        target = newTarget;
+    }
+
+    function unobserve() {
+        if (target && observer) {
+            observer.unobserve(target);
+        }
+        target = undefined;
+    }
+
+    function stop() {
+        unobserve();
+        if (observer) {
+            observer.disconnect();
+        }
+        root = undefined;
+        observer = undefined;
+    }
+
+    function start(startRoot, customCallback = () => {}) {
+        root = startRoot;
+        observer = new IntersectionObserver(
+            (observations, _observer) => {
+                for (const observation of observations) {
+                    const { rootBounds } = observation;
+                    _rootBounds = rootBounds;
+                    if (rootBounds) {
+                        _isIntersecting = observation.isIntersecting;
+                        customCallback(intersection);
+                    }
+                }
+            },
+            { root }
+        );
+    }
+    function set(elements) {
+        let sameRoot = true,
+            sameTarget = true;
+        if ("root" in elements) {
+            sameRoot = elements.root === root;
+        }
+        if ("target" in elements) {
+            sameTarget = elements.target === target;
+        }
+        if (observer) {
+            if (sameRoot) {
+                if (sameTarget) {
+                    // Do nothing
+                } else {
+                    observe(elements.target);
+                }
+            } else {
+                root = newRoot;
+                stop();
+                start();
+                if (sameTarget) {
+                    observe(target);
+                } else {
+                    observe(elements.target);
+                }
+            }
+        } else {
+            root = newRoot;
+            target = elements.target;
+        }
+    }
+    const intersection = {
+        start,
+        stop,
+        set,
+        get isIntersecting() {
+            return _isIntersecting;
+        },
+        get rootBounds() {
+            return _rootBounds;
+        },
+    };
+    return intersection;
 }
 
 /**
@@ -435,63 +546,19 @@ export const tourService = {
         const macroEngine = new MacroEngine(document);
         const edition = odoo.info.isEnterprise ? "enterprise" : "community";
         const isMobile = device.isMobile;
-        let intersectionTimeout;
-        const intersectionObserver = new IntersectionObserver((entries) => {
-            let x, y, viewPortState;
-            for (const entry of entries) {
-                const { rootBounds, boundingClientRect: targetBounds } = entry;
-                x = rootBounds.width / 2;
-                if (targetBounds.bottom < rootBounds.top) {
-                    // the target is above the viewport
-                    y = 60;
-                    viewPortState = "up";
-                } else if (targetBounds.top > rootBounds.bottom) {
-                    // the target is at the bottom of the viewport
-                    y = rootBounds.height - 60 - 28;
-                    viewPortState = "down";
-                } else {
-                    viewPortState = "in";
-                }
-            }
-            if (intersectionTimeout) {
-                clearTimeout(intersectionTimeout);
-            }
-            setTimeout(() => {
-                if (viewPortState === "up") {
-                    pointerMethods.setState({
-                        x,
-                        y,
-                        position: "bottom",
-                        viewPortState,
-                        content: "Scroll to reach the next step.",
-                    });
-                } else if (viewPortState === "down") {
-                    pointerMethods.setState({
-                        x,
-                        y,
-                        position: "top",
-                        viewPortState,
-                        content: "Scroll to reach the next step.",
-                    });
-                } else if (viewPortState === "in") {
-                    pointerMethods.setState({ viewPortState });
-                }
-            }, 100);
+        const intersection = intersectionService();
+
+        const [pointerState, pointerMethods] = createPointerState({
+            content: "",
+            position: "top",
+            x: 0,
+            y: 0,
+            isVisible: false,
+            mode: "bubble",
+            fixed: false,
         });
 
-        const [pointerState, pointerMethods] = createPointerState(
-            {
-                content: "",
-                position: "top",
-                x: 0,
-                y: 0,
-                isVisible: false,
-                mode: "bubble",
-                fixed: false,
-                viewPortState: "in",
-            },
-            intersectionObserver
-        );
+        intersection.start(null, pointerMethods.updateOnIntersection);
 
         /**
          * @param {string} _tourName
@@ -513,6 +580,7 @@ export const tourService = {
                     isMobile,
                     mode: mode.kind,
                     showPointer: mode.showPointer,
+                    intersection,
                 }
             );
 

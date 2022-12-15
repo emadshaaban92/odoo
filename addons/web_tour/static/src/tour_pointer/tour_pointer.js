@@ -29,14 +29,6 @@ export class TourPointer extends Component {
                     validate: (m) => ["bubble", "info"].includes(m),
                 },
                 /**
-                 * "in": the anchor is visible in the screen.
-                 * "up": needs to scroll up to see the anchor.
-                 * "down": needs to scroll down to see the anchor.
-                 */
-                viewPortState: {
-                    validate: (v) => ["in", "up", "down"].includes(v),
-                },
-                /**
                  * Whether this component should be { display: "fixed" }.
                  */
                 fixed: Boolean,
