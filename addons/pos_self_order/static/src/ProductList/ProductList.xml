@@ -14,7 +14,7 @@
                             <div t-on-click="() => props.viewProduct(product.id)" 
                                 class="mt-2 bg-white d-flex align-items-center shadow-sm  m-1">
 <!-- Product IMAGE -->
-                                <img class="w-25 img-fluid" t-attf-src="/pos/self-order/get-images/{{ product.id }}"  alt="Product image"/>
+                                <img class="w-25 img-fluid" t-attf-src="/pos-self-order/get-images/{{ product.id }}"  alt="Product image"/>
                                 <div class="mt-4 mx-4">
 <!-- Product NAME -->
                                     <p class="fw-bold"><t t-esc="product.name"/></p>
