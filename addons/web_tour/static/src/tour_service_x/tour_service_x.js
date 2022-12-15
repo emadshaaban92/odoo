@@ -4,6 +4,7 @@ import { reactive } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { MacroEngine } from "@web/core/macro";
 import { TourPointer } from "../tour_pointer/tour_pointer";
+import { browser } from "@web/core/browser/browser";
 
 // TODO-JCB: Replace the following import with the non-legacy version.
 import { device } from "web.config";
@@ -143,7 +144,7 @@ function queryStep(step) {
  * @param {*} options
  * @returns
  */
-function augmentStepAuto(step, options) {
+function augmentStepAuto(macroDesc, [stepIndex, step], options) {
     if (shouldOmit(step, options)) {
         return [];
     }
@@ -177,7 +178,10 @@ function augmentStepAuto(step, options) {
                 return stepEl;
             },
             action: (stepEl) => {
-                if (skipAction) return;
+                if (skipAction) {
+                    browser.localStorage.setItem(macroDesc.name, stepIndex + 1);
+                    return;
+                }
 
                 const consumeEvent = step.consumeEvent || getConsumeEventType($(stepEl), step.run);
                 const $anchorEl = getAnchorEl($(stepEl), consumeEvent);
@@ -208,6 +212,7 @@ function augmentStepAuto(step, options) {
                 } else {
                     actionHelper.auto();
                 }
+                browser.localStorage.setItem(macroDesc.name, stepIndex + 1);
             },
         },
     ];
@@ -221,7 +226,7 @@ function augmentStepAuto(step, options) {
  * @param {*} options
  * @returns
  */
-function augmentStepManual(step, options) {
+function augmentStepManual(macroDesc, [stepIndex, step], options) {
     if (shouldOmit(step, options)) {
         return [];
     }
@@ -309,6 +314,7 @@ function augmentStepManual(step, options) {
                 $anchorEl = undefined;
                 currentAnchor = undefined;
                 options.pointerMethods.setState({ isVisible: false, mode: "bubble" });
+                browser.localStorage.setItem(macroDesc.name, stepIndex + 1);
             },
         },
     ];
@@ -324,7 +330,14 @@ function augmentMacro(macroDescription, augmenter, options) {
     return {
         ...macroDescription,
         steps: macroDescription.steps
-            .reduce((newSteps, step) => [...newSteps, ...augmenter(step, options)], [])
+            .reduce((newSteps, step, i) => {
+                if (i < options.currentStepIndex) {
+                    // Don't include the step because it's already done.
+                    return newSteps;
+                } else {
+                    return [...newSteps, ...augmenter(macroDescription, [i, step], options)];
+                }
+            }, [])
             .concat([
                 {
                     action: () => {
@@ -561,14 +574,19 @@ export const tourService = {
         intersection.start(null, pointerMethods.updateOnIntersection);
 
         /**
-         * @param {string} _tourName
+         * @param {string} tourName
          * @param {{ kind: "manual" } | { kind: "auto", interval: number }} mode
          */
         function run(
-            params = { tourName: "", mode: { kind: "auto", interval: 0, showPointer: false } }
+            params = { tourName: "", mode: { kind: "auto", interval: 0 } }
         ) {
-            const { tourName: _tourName, mode } = params;
+            const { tourName, mode } = params;
             const tourDesc = registry.category("tours").get(params.tourName);
+            const currentStepIndex = parseInt(browser.localStorage.getItem(tourName) || 0);
+            if (currentStepIndex >= tourDesc.steps.length) {
+                // TODO-JCB: log something here?
+                return;
+            }
 
             const augmentedMacro = augmentMacro(
                 Object.assign(tourDesc, { interval: mode.kind === "manual" ? 0 : mode.interval }),
@@ -579,8 +597,8 @@ export const tourService = {
                     edition,
                     isMobile,
                     mode: mode.kind,
-                    showPointer: mode.showPointer,
                     intersection,
+                    currentStepIndex,
                 }
             );
 
