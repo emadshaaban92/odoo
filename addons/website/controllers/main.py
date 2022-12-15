@@ -7,6 +7,7 @@ import os
 import logging
 import pytz
 import requests
+import re
 import werkzeug.urls
 import werkzeug.utils
 import werkzeug.wrappers
@@ -535,7 +536,16 @@ class Website(Home):
         Returns:
             boolean
         """
-        request.env['web_editor.assets'].make_scss_customization(url, values)
+        # Protect variable names so they cannot be computed as numbers on SCSS
+        # compilation (e.g. var(--700) => var(700)).
+        scss_fixed_values = {}
+        for key, value in values.items():
+            scss_fixed_values[key] = re.sub(
+                r"var\(--([0-9]+)\)",
+                lambda matchobj: "var(--#{" + matchobj.group(1) + "})",
+                value)
+
+        request.env['web_editor.assets'].make_scss_customization(url, scss_fixed_values)
         return True
 
     # ------------------------------------------------------
