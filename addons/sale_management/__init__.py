@@ -3,11 +3,9 @@
 
 from . import models
 from . import controllers
-from odoo.api import Environment, SUPERUSER_ID
 
 
-def uninstall_hook(cr, registry):
-    env = Environment(cr, SUPERUSER_ID, {})
+def uninstall_hook(env):
     res_ids = env['ir.model.data'].search([
         ('model', '=', 'ir.ui.menu'),
         ('module', '=', 'sale')
@@ -15,8 +13,7 @@ def uninstall_hook(cr, registry):
     env['ir.ui.menu'].browse(res_ids).update({'active': False})
 
 
-def post_init_hook(cr, registry):
-    env = Environment(cr, SUPERUSER_ID, {})
+def post_init_hook(env):
     res_ids = env['ir.model.data'].search([
         ('model', '=', 'ir.ui.menu'),
         ('module', '=', 'sale'),
