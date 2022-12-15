@@ -75,8 +75,5 @@ export async function startWebClient(Webclient) {
         msIcon.content = favicon;
     }
     // TODO-JCB: Implement tours management.
-    env.services.tour_service_x.run({
-        tourName: "planning_tour",
-        mode: { kind: "manual", interval: 500 },
-    });
+    env.services.tour_service_x.run("planning_tour", "manual", 500);
 }

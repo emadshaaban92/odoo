@@ -4,7 +4,12 @@ import { Component, markup, onPatched, xml, useRef, useState } from "@odoo/owl";
 
 export class TourPointer extends Component {
     static template = xml`
-        <div t-ref="tooltip-ref" class="o_tooltip" t-att-class="extraClasses" t-att-style="style" t-on-mouseenter="props.onMouseEnter" t-on-mouseleave="props.onMouseLeave">
+        <div t-ref="tooltip-ref"
+            class="o_tooltip"
+            t-att-class="extraClasses"
+            t-att-style="style"
+            t-on-mouseenter="() => props.setPointerState({ mode: 'info' })"
+            t-on-mouseleave="() => props.setPointerState({ mode: 'bubble' })">
             <div t-if="props.pointerState.mode === 'info'" class="o_tooltip_content">
                 <t t-out="contentMarkup"/>
             </div>
@@ -34,8 +39,7 @@ export class TourPointer extends Component {
                 fixed: Boolean,
             },
         },
-        onMouseEnter: Function,
-        onMouseLeave: Function,
+        setPointerState: Function,
     };
     setup() {
         this.tooltipRef = useRef("tooltip-ref");

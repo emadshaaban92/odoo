@@ -13,6 +13,9 @@ import RunningTourActionHelper from "web_tour.RunningTourActionHelper";
 // TODO-JCB: Find `config.device.isMobile` from non-legacy module.
 import config from "web.config";
 
+const getEdition = () => (odoo.info.isEnterprise ? "enterprise" : "community");
+const isMobile = device.isMobile;
+
 /**
  * TODO-JCB: Don't forget the following:
  * - It doesn't seem to work in mobile. For the tour from [planning.js],
@@ -111,17 +114,17 @@ function getAnchorEl($el, consumeEvent) {
 /**
  * Returns true if `step` should *not* be included in a tour.
  * @param {TourStep} step
- * @param {{ mode: "manual" | "auto", edition: boolean, isMobile: boolean }} options
+ * @param {"manual" | "auto"} mode
  * @returns {boolean}
  */
-function shouldOmit(step, options) {
-    const correctEdition = isDefined("edition", step) ? step.edition === options.edition : true;
-    const correctDevice = isDefined("mobile", step) ? step.mobile === options.isMobile : true;
+function shouldOmit(step, mode) {
+    const correctEdition = isDefined("edition", step) ? step.edition === getEdition() : true;
+    const correctDevice = isDefined("mobile", step) ? step.mobile === isMobile : true;
     return (
         !correctEdition ||
         !correctDevice ||
         // `step.auto = true` means omitting a step in a manual tour.
-        (options.mode === "manual" && step.auto)
+        (mode === "manual" && step.auto)
     );
 }
 
@@ -145,7 +148,9 @@ function queryStep(step) {
  * @returns
  */
 function augmentStepAuto(macroDesc, [stepIndex, step], options) {
-    if (shouldOmit(step, options)) {
+    const { mode } = options;
+
+    if (shouldOmit(step, mode)) {
         return [];
     }
 
@@ -227,7 +232,9 @@ function augmentStepAuto(macroDesc, [stepIndex, step], options) {
  * @returns
  */
 function augmentStepManual(macroDesc, [stepIndex, step], options) {
-    if (shouldOmit(step, options)) {
+    const { pointerMethods, advance, intersection, mode } = options;
+
+    if (shouldOmit(step, mode)) {
         return [];
     }
 
@@ -269,7 +276,7 @@ function augmentStepManual(macroDesc, [stepIndex, step], options) {
                     $anchorEl = getAnchorEl($(stepEl), consumeEvent);
                     // Start waiting for action, or automatically perform `step.run`.
                     // Set `proceedWith` to a non-falsy value as a signal to proceed to the next step.
-                    options.pointerMethods.setState({ isVisible: true });
+                    pointerMethods.setState({ isVisible: true });
                     $anchorEl.on(`${consumeEvent}.anchor`, async () => {
                         // TODO-JCB: The following logic comes from _getAnchorAndCreateEvent and it might be important to take it into account.
                         // $consumeEventAnchors.on(consumeEvent + ".anchor", (function (e) {
@@ -290,20 +297,20 @@ function augmentStepManual(macroDesc, [stepIndex, step], options) {
 
                         // Finally, advance to the next step.
                         // The following will call this `trigger` function which returns the `proceedWith`.
-                        options.advance();
+                        advance();
                     });
                     $anchorEl.on("mouseenter.anchor", () => {
-                        options.pointerMethods.setState({ mode: "info" });
+                        pointerMethods.setState({ mode: "info" });
                     });
                     $anchorEl.on("mouseleave.anchor", () => {
-                        options.pointerMethods.setState({ mode: "bubble" });
+                        pointerMethods.setState({ mode: "bubble" });
                     });
                 }
                 const newAnchor = stepEl && $anchorEl[0];
                 if (currentAnchor !== newAnchor) {
-                    options.intersection.set({ target: newAnchor });
+                    intersection.set({ target: newAnchor });
                 }
-                options.pointerMethods.update(options.intersection, step, newAnchor);
+                pointerMethods.update(intersection, step, newAnchor);
                 currentAnchor = newAnchor;
             },
             action: () => {
@@ -321,17 +328,17 @@ function augmentStepManual(macroDesc, [stepIndex, step], options) {
 }
 
 /**
- * TODO-JCB: Make sure to include "edition", "mode" and "isMobile" in the type of [options].
  * @param {*} macroDescription
  * @param {*} options
  * @returns
  */
 function augmentMacro(macroDescription, augmenter, options) {
+    const { currentStepIndex, pointerMethods } = options;
     return {
         ...macroDescription,
         steps: macroDescription.steps
             .reduce((newSteps, step, i) => {
-                if (i < options.currentStepIndex) {
+                if (i < currentStepIndex) {
                     // Don't include the step because it's already done.
                     return newSteps;
                 } else {
@@ -342,7 +349,7 @@ function augmentMacro(macroDescription, augmenter, options) {
                 {
                     action: () => {
                         console.log("Tour done!");
-                        options.pointerMethods.setState({ isVisible: false });
+                        pointerMethods.setState({ isVisible: false });
                     },
                 },
             ]),
@@ -557,8 +564,6 @@ function intersectionService() {
 export const tourService = {
     start() {
         const macroEngine = new MacroEngine(document);
-        const edition = odoo.info.isEnterprise ? "enterprise" : "community";
-        const isMobile = device.isMobile;
         const intersection = intersectionService();
 
         const [pointerState, pointerMethods] = createPointerState({
@@ -575,13 +580,11 @@ export const tourService = {
 
         /**
          * @param {string} tourName
-         * @param {{ kind: "manual" } | { kind: "auto", interval: number }} mode
+         * @param {"auto" | "manual"} mode
+         * @param {number} interval
          */
-        function run(
-            params = { tourName: "", mode: { kind: "auto", interval: 0 } }
-        ) {
-            const { tourName, mode } = params;
-            const tourDesc = registry.category("tours").get(params.tourName);
+        function run(tourName, mode, interval) {
+            const tourDesc = registry.category("tours").get(tourName);
             const currentStepIndex = parseInt(browser.localStorage.getItem(tourName) || 0);
             if (currentStepIndex >= tourDesc.steps.length) {
                 // TODO-JCB: log something here?
@@ -589,14 +592,12 @@ export const tourService = {
             }
 
             const augmentedMacro = augmentMacro(
-                Object.assign(tourDesc, { interval: mode.kind === "manual" ? 0 : mode.interval }),
-                mode.kind === "manual" ? augmentStepManual : augmentStepAuto,
+                Object.assign(tourDesc, { interval: mode === "manual" ? 0 : interval }),
+                mode === "manual" ? augmentStepManual : augmentStepAuto,
                 {
                     advance: () => macroEngine.advanceMacros(),
                     pointerMethods,
-                    edition,
-                    isMobile,
-                    mode: mode.kind,
+                    mode,
                     intersection,
                     currentStepIndex,
                 }
@@ -608,11 +609,7 @@ export const tourService = {
 
         registry.category("main_components").add("TourPointer", {
             Component: TourPointer,
-            props: {
-                pointerState,
-                onMouseEnter: () => pointerMethods.setState({ mode: "info" }),
-                onMouseLeave: () => pointerMethods.setState({ mode: "bubble" }),
-            },
+            props: { pointerState, setPointerState: pointerMethods.setState },
         });
 
         return { run };
