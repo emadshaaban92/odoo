@@ -36,12 +36,6 @@
             'web/static/tests/legacy/legacy_setup.js',
             'pos_self_order/static/src/**/*',
         ],
-        'pos_self_order.assets_backend': [
-            ('include', 'web.assets_backend'),
-        ],
-        'pos_self_order.assets_common': [
-            ('include', 'web.assets_common'),
-        ],
 
     }
 

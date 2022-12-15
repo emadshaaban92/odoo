@@ -20,7 +20,7 @@
         <link rel="apple-touch-icon" sizes="76x76"   href="/point_of_sale/static/src/img/touch-icon-ipad.png"/>
         <link rel="apple-touch-icon" sizes="120x120" href="/point_of_sale/static/src/img/touch-icon-iphone-retina.png"/>
         <link rel="apple-touch-icon" sizes="152x152" href="/point_of_sale/static/src/img/touch-icon-ipad-retina.png"/>
-        <link rel="stylesheet" type="text/css" href="/point_of_sale/static/src/self_order/pos_self_order_styles.css"/>
+        <link rel="stylesheet" type="text/css" href="/pos_self_order/static/src/pos_self_order_styles.css"/>
 
         <style> body { background: #222; } </style>
 
@@ -32,10 +32,10 @@
         <script type="text/javascript">
             var odoo = <t t-out="json.dumps({
                 'csrf_token': request.csrf_token(None),
-                '__session_info__': session_info,
-                'login_number': login_number,
-                'pos_session_id': pos_session_id,
                 'table_number': table_number,
+                'pos_id': pos_id,
+                'currency': currency,
+                'pos_name': pos_name,
                 'debug': debug,
             })"/>;
             // Prevent the menu_service to load anything. In an ideal world, POS assets would only contain
@@ -46,8 +46,6 @@
 
         <t t-call-assets="web.assets_common" />
         <t t-call-assets="web.assets_backend" />
-        <!-- <t t-call-assets="point_of_sale.assets_common" />
-        <t t-call-assets="point_of_sale.assets_backend" /> -->
         <t t-call-assets="pos_self_order.assets_self_order" />
     </head>
     <body>

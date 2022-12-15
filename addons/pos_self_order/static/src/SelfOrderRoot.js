@@ -18,13 +18,12 @@ class SelfOrderRoot extends Component {
     setup() {
         onRendered(() => {
                 console.log('Rendered:', this.constructor.name);
-                console.log("vlad", this.env)
         });
         this.state = useState({ currentScreen: 0, currentProduct: 0, cart: [] });
         const rpc = useService("rpc");
         // this function makes a request to the server to get the menu
         onWillStart(async () => {
-            this.productList = await rpc('/pos/self-order/get-menu');
+            this.productList = await rpc('/pos-self-order/get-menu');
         }); 
     }
     jsonToString = (json) => {
@@ -32,8 +31,6 @@ class SelfOrderRoot extends Component {
     }
     // FIXME we have to use the function that correctly formats the price (with the currency symbol and the correct number of decimals)
     tableNumber = odoo.table_number;
-    // TODO we need to get the restaurant name from the posConfig
-    restaurantName = "Brasserie de Perwez";
     viewMenu = () => {
         this.state.currentScreen = 1;
     }
@@ -82,7 +79,6 @@ export async function createPublicRoot() {
         translatableAttributes: ["data-tooltip"],
     });
     setLoadXmlDefaultApp(app);
-    console.log("salut")
     return app.mount(document.body)
 }
 createPublicRoot();
