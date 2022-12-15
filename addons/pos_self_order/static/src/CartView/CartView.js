@@ -1,6 +1,6 @@
 /** @odoo-module */
 
-const { Component } = owl;
+const { Component, onRendered } = owl;
 import { _t } from "@web/core/l10n/translation";
 import { NavBar } from "../NavBar/NavBar.js";
 export class CartView extends Component {

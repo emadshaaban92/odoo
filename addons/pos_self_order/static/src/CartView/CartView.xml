@@ -32,7 +32,7 @@
                 </div>
             </t>
 <!-- Pay Button -->
-            <button t-on-click="() => props.cartView()"
+            <button t-on-click="() => props.sendOrder()"
                     class="fixed-bottom text-white btn btn-primary btn-lg btn-block w-100">
                     <div class="d-flex align-items-center justify-content-between mx-2 ">
                     <p>

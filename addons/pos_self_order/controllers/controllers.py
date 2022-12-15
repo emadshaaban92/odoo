@@ -53,24 +53,5 @@ class PosSelfOrder(http.Controller):
         # If the product does not have an image, the function _get_image_stream_from will return the default image
         return request.env['ir.binary']._get_image_stream_from(product, field_name='image_1920').get_response()
     @http.route('/pos-self-order/send-order', auth='public', type="json", website=True)
-    def pos_self_order_send_order(self):
-        print("send order")
-        print("send order")
-        print("send order")
-        print("send order")
-        print("send order")
-        print("send order")
-        print("send order")
-        print("send order")
-        print("send order")
-        print("send order")
-        print("send order")
-        # print the request data
-        print(request.jsonrequest)
-        print(request)
-        print("send order")
-        print("send order")
-        print("send order")
-        print("send order")
-        print("send order")
-        return 
+    def pos_self_order_send_order(self, cart):
+        return cart

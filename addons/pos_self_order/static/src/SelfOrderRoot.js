@@ -24,6 +24,7 @@ class SelfOrderRoot extends Component {
         // this function makes a request to the server to get the menu
         onWillStart(async () => {
             this.productList = await rpc('/pos-self-order/get-menu');
+            // this.response_after_order = await rpc('/pos-self-order/send-order', { cart: "this is the cart" });
         }); 
     }
     jsonToString = (json) => {
@@ -59,6 +60,12 @@ class SelfOrderRoot extends Component {
         return this.state.cart.reduce((sum, cartItem) => {
             return sum +  this.productList.find(x => x.id === cartItem.id).list_price * cartItem.quantity;
         },0);
+    }
+    sendOrder = async () => {
+        const rpc = useService("rpc");
+        this.response_after_order = await rpc('/pos-self-order/send-order', { cart: this.state.cart });
+        this.state.currentScreen = 4;
+        console.log("raspuns dupa ",this.response_after_order)
     }
     // TODO: Find the currency type of the posConfig
     // TODO: replace the euro sign string from the rest of the app with this variable
