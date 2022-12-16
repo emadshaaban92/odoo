@@ -27,13 +27,9 @@ class SelfOrderRoot extends Component {
     setup() {
         /*
         In the state we store the following information:
-            currentScreen: 0 -- LandingPageStart
-            currentScreen: 1 -- ProductList
-            currentScreen: 2 -- ProductMainView
-            currentScreen: 3 -- CartView
-            currentScreen: 4 -- LandingPageEnd
+            currentScreen: int -- the id of the current screen
             -------------------
-            currentProduct: 0 -- the id of the product that is currently displayed in the ProductMainView
+            currentProduct: int -- the id of the product that is currently displayed in the ProductMainView
             -------------------
             cart: [] -- the cart is an array of objects that have the following structure:
             {
