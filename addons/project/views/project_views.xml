@@ -1244,7 +1244,7 @@
                         <page name="sub_tasks_page" string="Sub-tasks" attrs="{'invisible': [('allow_subtasks', '=', False)]}">
                             <field name="child_ids"
                                    context="{'search_view_ref' : 'project.view_task_search_form_extended', 'default_project_id': project_id if not parent_id or not display_project_id else display_project_id, 'default_user_ids': user_ids, 'default_parent_id': id,
-                                    'default_partner_id': partner_id, 'default_milestone_id': allow_milestones and milestone_id, 'search_default_display_project_id': project_id, 'search_default_open_tasks': 1 }"
+                                    'default_partner_id': partner_id, 'default_milestone_id': allow_milestones and milestone_id, 'search_default_display_project_id': project_id, 'search_default_incomplete_tasks': 1 }"
                                    widget="many2many"
                                    domain="['!', ('id', 'parent_of', id)]">
                                 <tree editable="bottom" decoration-muted="is_closed == True">
@@ -1277,7 +1277,9 @@
                                         decoration-warning="rating_last_text == 'ok'" decoration-success="rating_last_text == 'top'"
                                         attrs="{'invisible': [('rating_last_text', '=', 'none')]}"
                                         class="fw-bold" widget="badge" optional="hide"/>
+                                    <!--
                                     <field name="kanban_state" widget="state_selection" optional="show" options="{'hide_label': True}" nolabel="1"/>
+                                    -->
                                     <field name="stage_id" optional="show" context="{'default_project_id': project_id}"/>
                                     <button name="action_open_task" type="object" title="View Task" string="View Task" class="btn btn-link float-end"/>
                                 </tree>
@@ -1285,7 +1287,7 @@
                         </page>
                         <page name="task_dependencies" string="Blocked By" attrs="{'invisible': [('allow_task_dependencies', '=', False)]}" groups="project.group_project_task_dependencies">
                             <field name="depend_on_ids" nolabel="1"
-                                   context="{'default_project_id' : project_id, 'search_view_ref' : 'project.view_task_search_form_extended', 'search_default_display_project_id': project_id, 'search_default_open_tasks': 1}">
+                                   context="{'default_project_id' : project_id, 'search_view_ref' : 'project.view_task_search_form_extended', 'search_default_display_project_id': project_id, 'search_default_incomplete_tasks': 1}">
                                 <tree editable="bottom" decoration-muted="is_closed == True">
                                     <field name="allow_milestones" invisible="1"/>
                                     <field name="parent_id" invisible="1" />
@@ -1317,7 +1319,9 @@
                                     <field name="legend_normal" invisible="1"/>
                                     <field name="legend_done" invisible="1"/>
                                     <field name="legend_blocked" invisible="1"/>
+                                    <!--
                                     <field name="kanban_state" widget="state_selection" optional="show" options="{'hide_label': True}" nolabel="1"/>
+                                    -->
                                     <field name="stage_id" optional="show" />
                                     <button class="oe_link float-end" string="View Task" name="action_open_task" type="object"/>
                                 </tree>
@@ -1594,8 +1598,9 @@
                     <field name="legend_normal" invisible="1"/>
                     <field name="legend_done" invisible="1"/>
                     <field name="legend_blocked" invisible="1"/>
+                    <!--
                     <field name="kanban_state" widget="state_selection" optional="show" options="{'hide_label': True}" nolabel="1" required="0"/>
-                    
+                    -->
                     <field name="state_id" widget="project_task_state_selection" optional="show" readonly="not context.get('default_project_id')" options="{'hide_label': True}" nolabel="1" />
                     
                     <field name="stage_id" invisible="context.get('set_visible',False)" optional="show" readonly="not context.get('default_project_id')"/>
@@ -1624,6 +1629,8 @@
                     <field name="tag_ids" widget="many2many_tags" attrs="{'invisible': [('tag_ids', '=', [])]}"/>
                     <field name="stage_id"/>
                     <field name="kanban_state"/>
+                    <field name="state_name"/>
+                    <field name="state_id"/>
                 </calendar>
             </field>
         </record>
@@ -1753,7 +1760,7 @@
             <field name="name">My Tasks</field>
             <field name="res_model">project.task</field>
             <field name="view_mode">kanban,tree,form,calendar,pivot,graph,activity</field>
-            <field name="context">{'search_default_my_tasks': 1, 'search_default_open_tasks': 1, 'all_task': 0, 'default_user_ids': [(4, uid)]}</field>
+            <field name="context">{'search_default_my_tasks': 1, 'search_default_incomplete_tasks': 1, 'all_task': 0, 'default_user_ids': [(4, uid)]}</field>
             <field name="search_view_id" ref="view_task_search_form_extended"/>
             <field name="help" type="html">
                 <p class="o_view_nocontent_smiling_face">
@@ -1800,7 +1807,7 @@
             <field name="name">All Tasks</field>
             <field name="res_model">project.task</field>
             <field name="view_mode">tree,kanban,form,calendar,pivot,graph,activity</field>
-            <field name="context">{'search_default_open_tasks': 1, 'default_user_ids': [(4, uid)]}</field>
+            <field name="context">{'search_default_incomplete_tasks': 1, 'default_user_ids': [(4, uid)]}</field>
             <field name="search_view_id" ref="view_task_search_form_extended"/>
             <field name="help" type="html">
                 <p class="o_view_nocontent_smiling_face">
