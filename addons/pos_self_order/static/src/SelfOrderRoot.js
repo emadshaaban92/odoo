@@ -13,6 +13,15 @@ import { ProductList } from "./ProductList/ProductList.js";
 import { CartView } from "./CartView/CartView.js";
 import { useService } from "@web/core/utils/hooks";
 
+// This is the Root Component of the SelfOrder App
+// Most of the business logic is done here
+// The app has the folowing screens:
+// 1. LandingPageStart  -- the first screen that the user sees -- it has a button that redirects to the menu
+// 2. ProductList -- the screen that shows the list of products ( the menu )
+// 2. ProductMainView  -- the screen that shows the details of a product ( the product page )
+// 3. CartView  -- the screen that shows the cart
+// 4. LandingPageEnd -- the screen that shows the order confirmation  --  it has a button that redirects to the menu
+
 
 class SelfOrderRoot extends Component {
     setup() {
