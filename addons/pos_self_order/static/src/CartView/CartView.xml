@@ -4,7 +4,6 @@
         <!-- this padding-bottom is important in order for Pay button not to -->
         <!-- appear over the last item -->
         <div class="pb-5">
-            <!-- NavBar is an Owl component -->
             <NavBar viewMenu="props.viewMenu"/>
 <!-- Looping through all the cart items  -->
             <t t-foreach="props.cartItems" t-as="cartItem" t-key="cartItem.id">

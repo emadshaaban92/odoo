@@ -25,16 +25,28 @@ import { useService } from "@web/core/utils/hooks";
 
 class SelfOrderRoot extends Component {
     setup() {
-        onRendered(() => {
-                console.log('Rendered:', this.constructor.name);
-        });
+        /*
+        In the state we store the following information:
+            currentScreen: 0 -- LandingPageStart
+            currentScreen: 1 -- ProductList
+            currentScreen: 2 -- ProductMainView
+            currentScreen: 3 -- CartView
+            currentScreen: 4 -- LandingPageEnd
+            -------------------
+            currentProduct: 0 -- the id of the product that is currently displayed in the ProductMainView
+            -------------------
+            cart: [] -- the cart is an array of objects that have the following structure:
+            {
+                id: 0, -- the id of the product
+                quantity: 0 -- the quantity of the product
+            }
+        */
         this.state = useState({ currentScreen: 0, currentProduct: 0, cart: [] });
         this.rpc = useService("rpc");
 
         // this function makes a request to the server to get the menu
         onWillStart(async () => {
             this.productList = await this.rpc('/pos-self-order/get-menu');
-            // throw new Error("test");
         }); 
 
     }
@@ -42,7 +54,6 @@ class SelfOrderRoot extends Component {
         return JSON.stringify(json);
     }
     // FIXME we have to use the function that correctly formats the price (with the currency symbol and the correct number of decimals)
-    tableNumber = odoo.table_number;
     viewMenu = () => {
         this.state.currentScreen = 1;
     }
@@ -66,19 +77,14 @@ class SelfOrderRoot extends Component {
         },0);
     }
     // this function returns the total price of the cart
-    // 
     getTotalCartCost = () => {
         return this.state.cart.reduce((sum, cartItem) => {
             return sum +  this.productList.find(x => x.id === cartItem.id).list_price * cartItem.quantity;
         },0);
     }
     sendOrder = async () => {
-        // const rpc = useService("rpc");
-        console.log("sending order", this.state.cart)
-        console.log("sending order")
         this.response_after_order = await this.rpc('/pos-self-order/send-order', { cart: this.state.cart });
         // this.state.currentScreen = 4;
-        console.log("raspuns dupa ", this.response_after_order)
     }
     // TODO: Find the currency type of the posConfig
     // TODO: replace the euro sign string from the rest of the app with this variable

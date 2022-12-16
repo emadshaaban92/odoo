@@ -9,17 +9,21 @@ from odoo.addons.account.controllers.portal import PortalAccount
 
 
 class PosSelfOrder(http.Controller):
+    """
     # this is the controller for the POS Self Order App
     # The user gets this route from the QR code that they scan at the table
     # This START ROUTE will render the LANDIN PAGE of the POS Self Order App
     # And it will pass some generic variabiles to the template: pos_id, table_number, pos_name, currency
+    """
     @http.route('/pos-self-order/start/<int:pos_id>/<int:table_number>/', auth='public', website=True)
     def pos_self_order_start(self, table_number, pos_id):
+        """
         # We know the id of the POS from the QR code
         # We get some details about this POS from the model "pos.config"
         # We need:
         # 1. The name of the POS - to display it on the POS Self Order App - this name is the name that the user gave to the POS when they created it
         # 2. The currency of the POS - to display the prices in the correct currency
+        """
         pos_details_sudo = http.request.env['pos.config'].sudo().search_read([('id', '=', pos_id)], ['name', 'currency_id'])[0]
         context = {
             'pos_id': pos_id,
@@ -46,18 +50,41 @@ class PosSelfOrder(http.Controller):
         # If the product does not have an image, the function _get_image_stream_from will return the default image
         return request.env['ir.binary']._get_image_stream_from(product_sudo, field_name='image_1920').get_response()
     @http.route('/pos-self-order/send-order', auth='public', type="json", website=True)
-    def pos_self_order_send_order(self, cart):
+    # def pos_self_order_send_order(self,cart):
+    def pos_self_order_send_order(self):
         # pos_details = http.request.env['pos.order'].sudo().search([('id', '=', 7)])
-        import pdb; pdb.set_trace()
-        request.env['pos.order'].sudo().create(
-        {
+        order = {
             'name': 'resto1/0001-test-vlad',
-            'session_id': 8,
             'user_id': 2,
+            'amount_tax': 2,
+            'amount_total': 10,
+            'amount_paid': 10,
+            'amount_return': 0,
+            'lines': [
+                (0, 0, {
+                    'product_id': 1,
+                    'qty': 1,
+                    'price_unit': 10,
+                    'discount': 0,
+                    'price_subtotal': 10,
+                    'price_subtotal_incl': 10,
+                })
+            ],
+            'company_id': 1,
+            'partner_id': 1,
 
-        
-        })
-        return cart
+            'session_id': 8,
+            'config_id': 2,
+            'currency_id': 2,
+            'state': 'paid',
+
+        }
+
+        import pdb; pdb.set_trace()
+        request.env['pos.order'].sudo().create([order])
+        old_orders = request.env['pos.order'].sudo().search([]).read([])
+
+        return True
 
     # name = fields.Char(string='Order Ref', required=True, readonly=True, copy=False, default='/')
     # date_order = fields.Datetime(string='Date', readonly=True, index=True, default=fields.Datetime.now)

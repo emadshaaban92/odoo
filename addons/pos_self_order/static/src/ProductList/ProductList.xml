@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates id="template" xml:space="preserve">
+<!-- Here we show the list of all the available products -->
     <t t-name="ProductList" owl="1">
         <!-- this padding-bottom is important in order for the Cart button not to -->
         <!-- appear over the last item -->
         <div class="pb-5">
-<!-- NavBar is an Owl component -->
             <NavBar/>
             <div class="container">
                 <div class="row">
