@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<templates>
+    <t t-name="Transifex.reload_code_translations_button" owl="1">
+        <button type="button" class="btn btn-primary" t-on-click="onClickReloadCodeTranslations">
+            Reload
+        </button>
+    </t>
+
+    <t t-name="Transifex.CodeTranslationListView.Buttons" t-inherit="web.ListView.Buttons" t-inherit-mode="primary" owl="1">
+        <!-- Before the export button -->
+        <xpath expr="//t[contains(@t-if, 'isExportEnable')]" position="before">
+            <t t-call="Transifex.reload_code_translations_button"/>
+        </xpath>
+    </t>
+</templates>

@@ -4,7 +4,7 @@
         <field name="name">transifex.code.translation.tree</field>
         <field name="model">transifex.code.translation</field>
         <field name="arch" type="xml">
-            <tree string="Transifex Code Translation">
+            <tree string="Transifex Code Translation" js_class="transifex_code_translation_tree">
                 <field name="source"/>
                 <field name="value"/>
                 <field name="module"/>
@@ -40,7 +40,7 @@
         <field name="model_id" ref="transifex.model_transifex_code_translation"/>
         <field name="groups_id" eval="[(4, ref('base.group_system'))]"/>
         <field name="state">code</field>
-        <field name="code">action = model._load_code_translations()</field>
+        <field name="code">action = model._open_code_translations()</field>
     </record>
     <menuitem action="action_code_translations" id="menu_transifex_code_translations" parent="base.menu_translation_app"/>
 

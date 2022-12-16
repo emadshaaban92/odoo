@@ -6,4 +6,15 @@
         <field name="value">https://www.transifex.com/odoo</field>
     </record>
 
+    <record id="transifex_code_translation_clean" model="ir.cron">
+        <field name="name">Transifex: Clean code translations</field>
+        <field name="model_id" ref="model_transifex_code_translation"/>
+        <field name="state">code</field>
+        <field name="code">model.reload()</field>
+        <field name='interval_number'>7</field>
+        <field name='interval_type'>days</field>
+        <field name="numbercall">-1</field>
+        <field name="doall" eval="True"/>
+    </record>
+
 </odoo>

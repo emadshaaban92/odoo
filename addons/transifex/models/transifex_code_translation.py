@@ -3,7 +3,7 @@
 
 import psycopg2
 
-from odoo import models, fields, _
+from odoo import api, models, fields, _
 from odoo.tools.translate import CodeTranslations
 
 
@@ -18,10 +18,6 @@ class TransifexCodeTranslation(models.Model):
     lang = fields.Selection(selection='_get_languages', string='Language', validate=False)
     transifex_url = fields.Char("Transifex URL", compute='_compute_transifex_url',
                                 help="Propose a modification in the official version of Odoo")
-
-    def init(self):
-        super().init()
-        self.clean()
 
     def _get_languages(self):
         return self.env['res.lang'].get_installed()
@@ -59,6 +55,8 @@ class TransifexCodeTranslation(models.Model):
             # transactions without table lock can only see existing translations
             pass
 
+    def _open_code_translations(self):
+        self._load_code_translations()
         return {
             'name': 'Code Translations',
             'type': 'ir.actions.act_window',
@@ -75,5 +73,7 @@ class TransifexCodeTranslation(models.Model):
                         </p>'''),
         }
 
-    def clean(self):
+    @api.model
+    def reload(self):
         self.env.cr.execute(f'DELETE FROM {self._table}')
+        return self._load_code_translations()
