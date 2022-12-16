@@ -30,7 +30,7 @@ export class ProjectTaskStateSelectionMany2One extends StateSelectionField {
             Waiting: "",
         };
         //this.serv = useService("statisticsServiceMod");
-        console.log("this.props.record.preloadedData");
+        //console.log("this.props.record.preloadedData");
         /*
         setInterval(() => {
             
