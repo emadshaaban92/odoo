@@ -46,9 +46,20 @@ class AccountMove(models.Model):
                 debit_expense_account = accounts['expense']
                 if not debit_expense_account:
                     continue
+                # Retrieve stock valuation moves.
+                valuation_stock_moves = self.env['stock.move'].search([
+                    ('purchase_line_id', '=', line.purchase_line_id.id),
+                    ('state', '=', 'done'),
+                    ('product_qty', '!=', 0.0),
+                ]) if line.purchase_line_id else self.env['stock.move']
+                if move.move_type == 'in_refund':
+                    valuation_stock_moves = valuation_stock_moves.filtered(lambda stock_move: stock_move._is_out())
+                else:
+                    valuation_stock_moves = valuation_stock_moves.filtered(lambda stock_move: stock_move._is_in())
 
                 if line.product_id.cost_method != 'standard' and line.purchase_line_id:
 
+<<<<<<< HEAD
                     # Retrieve stock valuation moves.
                     valuation_stock_moves = self.env['stock.move'].search([
                         ('purchase_line_id', '=', line.purchase_line_id.id),
@@ -64,13 +75,52 @@ class AccountMove(models.Model):
 
                     if not valuation_stock_moves:
                         continue
+||||||| parent of c6ede00e133 (temp)
+                    # Retrieve stock valuation moves.
+                    valuation_stock_moves = self.env['stock.move'].search([
+                        ('purchase_line_id', '=', line.purchase_line_id.id),
+                        ('state', '=', 'done'),
+                        ('product_qty', '!=', 0.0),
+                    ])
+                    if move.move_type == 'in_refund':
+                        valuation_stock_moves = valuation_stock_moves.filtered(lambda stock_move: stock_move._is_out())
+                    else:
+                        valuation_stock_moves = valuation_stock_moves.filtered(lambda stock_move: stock_move._is_in())
+
+                    if valuation_stock_moves:
+                        valuation_price_unit_total, valuation_total_qty = valuation_stock_moves._get_valuation_price_and_qty(line, move.currency_id)
+                        valuation_price_unit = valuation_price_unit_total / valuation_total_qty
+                        valuation_price_unit = line.product_id.uom_id._compute_price(valuation_price_unit, line.product_uom_id)
+=======
+                    if valuation_stock_moves:
+                        valuation_price_unit_total, valuation_total_qty = valuation_stock_moves._get_valuation_price_and_qty(line, move.currency_id)
+                        valuation_price_unit = valuation_price_unit_total / valuation_total_qty
+                        valuation_price_unit = line.product_id.uom_id._compute_price(valuation_price_unit, line.product_uom_id)
+>>>>>>> c6ede00e133 (temp)
 
                     valuation_price_unit_total, valuation_total_qty = valuation_stock_moves._get_valuation_price_and_qty(line, move.currency_id)
                     valuation_price_unit = valuation_price_unit_total / valuation_total_qty
                     valuation_price_unit = line.product_id.uom_id._compute_price(valuation_price_unit, line.product_uom_id)
 
                 else:
+<<<<<<< HEAD
                     continue
+||||||| parent of c6ede00e133 (temp)
+                    # Valuation_price unit is always expressed in invoice currency, so that it can always be computed with the good rate
+                    price_unit = line.product_id.uom_id._compute_price(line.product_id.standard_price, line.product_uom_id)
+                    valuation_price_unit = line.company_currency_id._convert(
+                        price_unit, move.currency_id,
+                        move.company_id, fields.Date.today(), round=False
+                    )
+=======
+                    # Valuation_price unit is always expressed in invoice currency, so that it can always be computed with the good rate
+                    price_unit = line.product_id.uom_id._compute_price(line.product_id.standard_price, line.product_uom_id)
+                    valuation_date = valuation_stock_moves and max(valuation_stock_moves.mapped('date')) or move.date
+                    valuation_price_unit = line.company_currency_id._convert(
+                        price_unit, move.currency_id,
+                        move.company_id, valuation_date, round=False
+                    )
+>>>>>>> c6ede00e133 (temp)
 
 
                 price_unit = line._get_gross_unit_price()
