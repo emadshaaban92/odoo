@@ -215,6 +215,7 @@ const ReplenishReport = clientAction.extend({
         const $newButtons = $(qweb.render('replenish_report_buttons', {}));
         this.$buttons.find('.o_report_print').replaceWith($newButtons);
         this.$buttons.on('click', '.o_report_replenish_buy', this._onClickReplenish.bind(this));
+        this.$buttons.on('click', '.o_report_update_quantity', this._onClickUpdateQuantity.bind(this));
         this.controlPanelProps.cp_content = {
             $buttons: this.$buttons,
         };
@@ -293,6 +294,22 @@ const ReplenishReport = clientAction.extend({
         return this.do_action(action, {
             on_close: on_close.bind(this),
         });
+    },
+
+    _onClickUpdateQuantity: async function () {
+        const action = await this._rpc({
+            model: this.resModel,
+            args: [[this.productId]],
+            method: "action_update_quantity_on_hand"
+        });
+        const params = {};
+        if (action.res_model === "stock.quant") { // Quant view in inventory mode.
+            action.views = [[false, "tree"]];
+        } else { // Update quantity wizard.
+            params.on_close = res => (res && res.special) || this._reloadReport();
+        }
+        return this.do_action(action, params);
+
     },
 
     /**

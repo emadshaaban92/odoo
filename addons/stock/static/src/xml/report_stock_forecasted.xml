@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <templates id="template" xml:space="preserve">
 
-<button t-name="replenish_report_buttons"
-    class="btn btn-primary o_report_replenish_buy"
-    type="button" title="Replenish">
-    Replenish
-</button>
+<t t-name="replenish_report_buttons">
+    <button class="btn btn-primary o_report_replenish_buy" type="button" title="Replenish">
+        Replenish
+    </button>
+    <button class="btn btn-secondary o_report_update_quantity" type="button" title="Update Quantity">
+        Update Quantity
+    </button>
+</t>
 
 <t t-name="warehouseFilter">
     <div id="warehouse_filter" class="btn-group dropdown o_stock_report_warehouse_filter"
