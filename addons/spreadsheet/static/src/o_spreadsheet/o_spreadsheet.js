@@ -235,8 +235,8 @@
         }
     }
     class NotAvailableError extends EvaluationError {
-        constructor() {
-            super(CellErrorType.NotAvailable, _lt("Data not available"), CellErrorLevel.silent);
+        constructor(errorMessage = undefined) {
+            super(CellErrorType.NotAvailable, errorMessage || _lt("Data not available"), errorMessage ? CellErrorLevel.error : CellErrorLevel.silent);
         }
     }
     class UnknownFunctionError extends EvaluationError {
@@ -365,6 +365,7 @@
     const PADDING_AUTORESIZE_VERTICAL = 3;
     const PADDING_AUTORESIZE_HORIZONTAL = MIN_CELL_TEXT_MARGIN;
     const FILTER_ICON_MARGIN = 2;
+    const FILTER_ICON_EDGE_LENGTH = 17;
     // Menus
     const MENU_WIDTH = 250;
     const MENU_ITEM_HEIGHT = 28;
@@ -11382,9 +11383,6 @@
                         sheetId: this.env.model.getters.getActiveSheetId(),
                         id: this.props.figure.id,
                     });
-                    if (this.props.sidePanelIsOpen) {
-                        this.env.toggleSidePanel("ChartPanel");
-                    }
                     this.props.onFigureDeleted();
                 },
             });
@@ -11426,7 +11424,6 @@
     ChartFigure.components = { Menu };
     ChartFigure.props = {
         figure: Object,
-        sidePanelIsOpen: Boolean,
         onFigureDeleted: Function,
     };
 
@@ -17493,7 +17490,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             else {
                 colIndex = linearSearch(range, _searchKey, "strict", range.length, getNormalizedValueFromRowRange);
             }
-            assert(() => colIndex > -1, _lt("Did not find value '%s' in [[FUNCTION_NAME]] evaluation.", toString(searchKey)));
+            if (colIndex < 0) {
+                throw new NotAvailableError(_lt("Did not find value '%s' in [[FUNCTION_NAME]] evaluation.", toString(searchKey)));
+            }
             return range[colIndex][_index - 1];
         },
         isExported: true,
@@ -17519,7 +17518,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 : getNormalizedValueFromRowRange;
             const rangeLength = verticalSearch ? nbRow : nbCol;
             const index = dichotomicSearch(searchArray, _searchKey, "nextSmaller", "asc", rangeLength, getElement);
-            assert(() => index >= 0, _lt("Did not find value '%s' in [[FUNCTION_NAME]] evaluation.", toString(searchKey)));
+            if (index < 0) {
+                throw new NotAvailableError(_lt("Did not find value '%s' in [[FUNCTION_NAME]] evaluation.", toString(searchKey)));
+            }
             if (resultRange === undefined) {
                 return (verticalSearch ? searchArray[nbCol - 1][index] : searchArray[index][nbRow - 1]);
             }
@@ -17527,10 +17528,14 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             nbRow = resultRange[0].length;
             assert(() => nbCol === 1 || nbRow === 1, _lt("The result_range must be a single row or a single column."));
             if (nbCol > 1) {
-                assert(() => index <= nbCol - 1, _lt("[[FUNCTION_NAME]] evaluates to an out of range row value %s.", (index + 1).toString()));
+                if (index >= nbCol) {
+                    throw new NotAvailableError(_lt("Did not find value '%s' in [[FUNCTION_NAME]] evaluation.", toString(searchKey)));
+                }
                 return resultRange[index][0];
             }
-            assert(() => index <= nbRow - 1, _lt("[[FUNCTION_NAME]] evaluates to an out of range column value %s.", (index + 1).toString()));
+            if (index >= nbRow) {
+                throw new NotAvailableError(_lt("[[FUNCTION_NAME]] evaluates to an out of range column value %s.", (index + 1).toString()));
+            }
             return resultRange[0][index];
         },
         isExported: true,
@@ -17568,7 +17573,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     index = dichotomicSearch(range, _searchKey, "nextGreater", "desc", rangeLen, getElement);
                     break;
             }
-            assert(() => index >= 0, _lt("Did not find value '%s' in [[FUNCTION_NAME]] evaluation.", toString(searchKey)));
+            if (index < 0) {
+                throw new NotAvailableError(_lt("Did not find value '%s' in [[FUNCTION_NAME]] evaluation.", toString(searchKey)));
+            }
             return index + 1;
         },
         isExported: true,
@@ -17626,7 +17633,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             else {
                 rowIndex = linearSearch(range, _searchKey, "strict", range[0].length, getNormalizedValueFromColumnRange);
             }
-            assert(() => rowIndex > -1, _lt("Did not find value '%s' in [[FUNCTION_NAME]] evaluation.", toString(searchKey)));
+            if (rowIndex < 0) {
+                throw new NotAvailableError(_lt("Did not find value '%s' in [[FUNCTION_NAME]] evaluation.", toString(searchKey)));
+            }
             return range[_index - 1][rowIndex];
         },
         isExported: true,
@@ -17676,7 +17685,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 return (lookupRange.length === 1 ? returnRange[0][index] : returnRange[index][0]);
             }
             const _defaultValue = defaultValue === null || defaultValue === void 0 ? void 0 : defaultValue();
-            assert(() => !!_defaultValue, _lt("Did not find value '%s' in [[FUNCTION_NAME]] evaluation.", toString(searchKey)));
+            if (!_defaultValue) {
+                throw new NotAvailableError(_lt("Did not find value '%s' in [[FUNCTION_NAME]] evaluation.", toString(searchKey)));
+            }
             return _defaultValue;
         },
         isExported: true,
@@ -21076,8 +21087,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     display: flex;
     align-items: center;
     justify-content: center;
-    width: ${ICON_EDGE_LENGTH}px;
-    height: ${ICON_EDGE_LENGTH}px;
+    width: ${FILTER_ICON_EDGE_LENGTH}px;
+    height: ${FILTER_ICON_EDGE_LENGTH}px;
 
     svg {
       path {
@@ -21121,10 +21132,10 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             const rowDims = this.env.model.getters.getRowDimensionsInViewport(sheetId, position.row);
             const colDims = this.env.model.getters.getColDimensionsInViewport(sheetId, position.col);
             // TODO : change this offset when we support vertical cell align
-            const centeringOffset = (rowDims.size - ICON_EDGE_LENGTH) / 2;
+            const centeringOffset = Math.floor((rowDims.size - FILTER_ICON_EDGE_LENGTH) / 2);
             return {
-                x: colDims.end - ICON_EDGE_LENGTH + this.props.gridPosition.x - FILTER_ICON_MARGIN,
-                y: rowDims.end - ICON_EDGE_LENGTH + this.props.gridPosition.y - centeringOffset,
+                x: colDims.end - FILTER_ICON_EDGE_LENGTH + this.props.gridPosition.x - FILTER_ICON_MARGIN - 1,
+                y: rowDims.end - FILTER_ICON_EDGE_LENGTH + this.props.gridPosition.y - centeringOffset,
             };
         }
         isFilterActive(position) {
@@ -21469,9 +21480,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             if (!selectResult.isSuccessful) {
                 return;
             }
-            if (this.props.sidePanelIsOpen) {
-                this.env.openSidePanel("ChartPanel");
-            }
             const position = gridOverlayPosition();
             const { x: offsetCorrectionX, y: offsetCorrectionY } = this.env.model.getters.getMainViewportCoordinates();
             const { offsetX, offsetY } = this.env.model.getters.getActiveSheetScrollInfo();
@@ -21551,12 +21559,10 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     FigureComponent.template = "o-spreadsheet-FigureComponent";
     FigureComponent.components = {};
     FigureComponent.defaultProps = {
-        sidePanelIsOpen: false,
         onFigureDeleted: function () { },
     };
     FigureComponent.props = {
         figure: Object,
-        sidePanelIsOpen: { type: Boolean, optional: true },
         onFigureDeleted: { type: Function, optional: true },
     };
 
@@ -21580,7 +21586,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     FiguresContainer.template = "o-spreadsheet-FiguresContainer";
     FiguresContainer.components = { FigureComponent };
     FiguresContainer.props = {
-        sidePanelIsOpen: Boolean,
         onFigureDeleted: Function,
     };
     figureRegistry.add("chart", { Component: ChartFigure, SidePanelComponent: "ChartPanel" });
@@ -21761,7 +21766,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         onCellRightClicked: () => { },
         onGridResized: () => { },
         onFigureDeleted: () => { },
-        sidePanelIsOpen: false,
     };
     GridOverlay.props = {
         onCellHovered: { type: Function, optional: true },
@@ -21772,7 +21776,6 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         onFigureDeleted: { type: Function, optional: true },
         onGridMoved: Function,
         gridOverlayDimensions: String,
-        sidePanelIsOpen: { type: Boolean, optional: true },
     };
 
     class GridPopover extends owl.Component {
@@ -29342,6 +29345,24 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             };
             this.dispatch("CREATE_FIGURE", { sheetId, figure });
         }
+        import(data) {
+            for (const sheet of data.sheets) {
+                const images = (sheet.figures || []).filter((figure) => figure.tag === "image");
+                for (const image of images) {
+                    this.history.update("nextId", this.nextId + 1);
+                    this.history.update("images", sheet.id, image.id, image.data);
+                }
+            }
+        }
+        export(data) {
+            var _a;
+            for (const sheet of data.sheets) {
+                const images = sheet.figures.filter((figure) => figure.tag === "image");
+                for (const image of images) {
+                    image.data = (_a = this.images[sheet.id]) === null || _a === void 0 ? void 0 : _a[image.id];
+                }
+            }
+        }
     }
     ImagePlugin.getters = ["getImage", "getImagePath", "getImageSize"];
     figureRegistry.add("image", {
@@ -34704,7 +34725,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             }
             /** Filter Header */
             box.isFilterHeader = this.getters.isFilterHeader(position);
-            const headerIconWidth = box.isFilterHeader ? ICON_EDGE_LENGTH + FILTER_ICON_MARGIN : 0;
+            const headerIconWidth = box.isFilterHeader ? FILTER_ICON_EDGE_LENGTH + FILTER_ICON_MARGIN : 0;
             /** Content */
             const text = this.getters.getCellText(position, showFormula);
             const textWidth = this.getters.getTextWidth(position) + MIN_CELL_TEXT_MARGIN;
@@ -43000,8 +43021,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-12-09T15:01:03.892Z';
-    exports.__info__.hash = '1419e57';
+    exports.__info__.date = '2022-12-16T12:15:37.794Z';
+    exports.__info__.hash = 'b4179f6';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
