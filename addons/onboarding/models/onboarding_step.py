@@ -87,6 +87,17 @@ class OnboardingStep(models.Model):
         steps_without_progress._create_progress_steps()
         return self.current_progress_step_id.action_set_just_done()
 
+    @api.model
+    def action_safe_set_just_done(self, xmlid):
+        """Set the onboarding step identified by its `xmlid` as 'just_done'.
+
+        :return: `True` if this step was validated for the first time or if
+          step record is missing in order to show the animation or refresh the
+          panel, respectively.
+        """
+        step = self.env.ref(xmlid, raise_if_not_found=False)
+        return bool(step.action_set_just_done()) if step else True
+
     def _create_progress_steps(self):
         """Create progress step records only for (current company if `is_per_company`) and
         * If no onboarding panel is linked, or

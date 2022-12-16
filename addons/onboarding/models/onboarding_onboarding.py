@@ -68,6 +68,14 @@ class Onboarding(models.Model):
         """Close the onboarding panel."""
         self.current_progress_id.action_close()
 
+    @api.model
+    def action_safe_close(self, xmlid):
+        """Close the onboarding panel identified by its `xmlid`. If not found,
+        quietly do nothing."""
+        onboarding = self.env.ref(xmlid, raise_if_not_found=False)
+        if onboarding:
+            onboarding.action_close()
+
     def action_toggle_visibility(self):
         self.current_progress_id.action_toggle_visibility()
 
