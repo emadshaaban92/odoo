@@ -29,11 +29,11 @@ class SelfOrderRoot extends Component {
                 console.log('Rendered:', this.constructor.name);
         });
         this.state = useState({ currentScreen: 0, currentProduct: 0, cart: [] });
-        const rpc = useService("rpc");
+        this.rpc = useService("rpc");
+
         // this function makes a request to the server to get the menu
         onWillStart(async () => {
-            this.productList = await rpc('/pos-self-order/get-menu');
-            // this.response_after_order = await rpc('/pos-self-order/send-order', { cart: "this is the cart" });
+            this.productList = await this.rpc('/pos-self-order/get-menu');
         }); 
     }
     jsonToString = (json) => {
@@ -71,10 +71,12 @@ class SelfOrderRoot extends Component {
         },0);
     }
     sendOrder = async () => {
-        const rpc = useService("rpc");
-        this.response_after_order = await rpc('/pos-self-order/send-order', { cart: this.state.cart });
-        this.state.currentScreen = 4;
-        console.log("raspuns dupa ",this.response_after_order)
+        // const rpc = useService("rpc");
+        console.log("sending order", this.state.cart)
+        console.log("sending order")
+        this.response_after_order = await this.rpc('/pos-self-order/send-order', { cart: this.state.cart });
+        // this.state.currentScreen = 4;
+        console.log("raspuns dupa ", this.response_after_order)
     }
     // TODO: Find the currency type of the posConfig
     // TODO: replace the euro sign string from the rest of the app with this variable
