@@ -52,6 +52,18 @@ class PosSelfOrder(http.Controller):
     @http.route('/pos-self-order/send-order', auth='public', type="json", website=True)
     # def pos_self_order_send_order(self,cart):
     def pos_self_order_send_order(self):
+        print('vlad')
+        print('vlad')
+        print('vlad')
+        print('vlad')
+        print('vlad')
+        print('vlad')
+        print('vlad')
+        print('vlad')
+        print('vlad')
+        print('vlad')
+        print('vlad')
+        print('vlad')
         # pos_details = http.request.env['pos.order'].sudo().search([('id', '=', 7)])
         order = {
             'name': 'resto1/0001-test-vlad',
@@ -80,9 +92,10 @@ class PosSelfOrder(http.Controller):
 
         }
 
+        # old_orders = request.env['pos.order'].sudo().search([]).read(['name'])
+        old_orders = request.env['pos.order'].sudo().search([])
         import pdb; pdb.set_trace()
         request.env['pos.order'].sudo().create([order])
-        old_orders = request.env['pos.order'].sudo().search([]).read([])
 
         return True
 
