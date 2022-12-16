@@ -16,8 +16,11 @@
             <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
         </svg>
     </t>
+<!-- Restaurant NAME and Table NUMBER appear in the NAVBAR-->
+<!-- The NavBar gets this data from the window.odoo -->
+<!-- This is a global variable that is set in the POSController -->
         <span class="navbar-brand h1 text-center"><t t-esc="window.odoo.pos_name"/></span>
-        <h1 class="text-white"><t t-esc="'T' + props.tableNumber"/></h1>
+        <h1 class="text-white"><t t-esc="'T' + window.odoo.table_number"/></h1>
     </nav>
     </t>
 </templates>

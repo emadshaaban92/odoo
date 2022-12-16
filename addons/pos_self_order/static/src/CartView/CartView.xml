@@ -5,7 +5,7 @@
         <!-- appear over the last item -->
         <div class="pb-5">
             <!-- NavBar is an Owl component -->
-            <NavBar restaurantName="props.restaurantName" tableNumber="props.tableNumber" viewMenu="props.viewMenu"/>
+            <NavBar viewMenu="props.viewMenu"/>
 <!-- Looping through all the cart items  -->
             <t t-foreach="props.cartItems" t-as="cartItem" t-key="cartItem.id">
                 <!-- create a reference to the product -->

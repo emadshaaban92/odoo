@@ -10,10 +10,7 @@
             <!-- Menu -->
             <!-- We go here after clicking VIEW MENU -->
             <t t-elif="state.currentScreen == 1">
-                <!-- <ProductList restaurantName="restaurantName" tableNumber="tableNumber" productList="productList"/> -->
                 <ProductList
-                restaurantName="restaurantName" 
-                tableNumber="tableNumber" 
                 productList="productList" 
                 viewProduct="viewProduct"
                 getTotalCartQuantity="getTotalCartQuantity"
@@ -26,16 +23,12 @@
             <!-- We go here when clicking on a product from the menu -->
             <t t-elif="state.currentScreen == 2">
                 <ProductMainView 
-                    restaurantName="restaurantName" 
-                    tableNumber="tableNumber"
                     product="productList.find(x => x.id === this.state.currentProduct)" 
                     viewMenu="viewMenu" 
                     addToCart="addToCart"/>
             </t>
             <t t-elif="state.currentScreen == 3">
                 <CartView 
-                restaurantName="restaurantName" 
-                tableNumber="tableNumber" 
                 productList="productList" 
                 getTotalCartQuantity="getTotalCartQuantity"
                 getTotalCartCost="getTotalCartCost"

@@ -34,7 +34,9 @@ class SelfOrderRoot extends Component {
         // this function makes a request to the server to get the menu
         onWillStart(async () => {
             this.productList = await this.rpc('/pos-self-order/get-menu');
+            // throw new Error("test");
         }); 
+
     }
     jsonToString = (json) => {
         return JSON.stringify(json);

@@ -5,7 +5,7 @@
         <!-- appear over the last item -->
         <div class="pb-5">
 <!-- NavBar is an Owl component -->
-            <NavBar  restaurantName="props.restaurantName" tableNumber="props.tableNumber"/>
+            <NavBar/>
             <div class="container">
                 <div class="row">
 <!-- Looping through all the available products -->
