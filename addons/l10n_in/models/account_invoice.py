@@ -37,6 +37,12 @@ class AccountMove(models.Model):
         for record in self:
             record.l10n_in_gst_treatment = record.partner_id.l10n_in_gst_treatment
 
+    def _get_name_invoice_report(self):
+        self.ensure_one()
+        if self.company_id.account_fiscal_country_id.code == 'IN':
+            return 'l10n_in.l10n_in_report_invoice_document_inherit'
+        return super()._get_name_invoice_report()
+
     @api.model
     def _l10n_in_get_indian_state(self, partner):
         """In tax return filing, If customer is not Indian in that case place of supply is must set to Other Territory.
