@@ -8,6 +8,9 @@
                 <xpath expr="//page[@name='invoicing']" position="attributes">
                     <attribute name="groups">account.group_account_readonly,account.group_account_invoice</attribute>
                 </xpath>
+                 <xpath expr="//group[@name='properties']" position="attributes">
+                    <attribute name="groups">account.group_account_readonly</attribute>
+                </xpath>
                 <xpath expr="//page[@name='invoicing']//group[@name='accounting']" position="inside">
                     <group name="email_template" string="Automatic Email at Invoice">
                         <field name="email_template_id" string="Email Template" help="Send a product-specific email once the invoice is validated"
