@@ -1,3 +1,10 @@
 .o_field_status_with_color button.disabled {
     color: black;
 }
+.o_list_renderer{
+    .o_field_project_task_state_selection{
+        .o_dropdown-item{
+            display: inline-block;
+        }
+    }
+}

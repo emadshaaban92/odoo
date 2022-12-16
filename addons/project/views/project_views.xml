@@ -1191,7 +1191,9 @@
                                 <field name="priority" widget="priority_switch" class="me-3"/>
                                 <field name="name" class="o_task_name text-truncate" placeholder="Task Title..."/>
                             </div>
+                            <!--
                             <field name="kanban_state" widget="state_selection" class=""/>
+                            -->
                         </h1>
                         <!--
                         <h2>
@@ -1548,7 +1550,8 @@
                                         </b>
                                     </div>
                                     <div class="oe_kanban_bottom_right" t-if="!selection_mode">
-                                        <field name="kanban_state" widget="state_selection" groups="base.group_user"/>
+                                    <!--
+                                        <field name="kanban_state" widget="state_selection" groups="base.group_user"/>-->
                                         <t t-if="record.user_ids.raw_value"><field name="user_ids" widget="many2many_avatar_user"/></t>
                                     </div>
                                 </div>
@@ -1628,8 +1631,11 @@
                     <field name="date_deadline"/>
                     <field name="tag_ids" widget="many2many_tags" attrs="{'invisible': [('tag_ids', '=', [])]}"/>
                     <field name="stage_id"/>
+                    <!--
+                    
                     <field name="kanban_state"/>
                     <field name="state_name"/>
+                    -->
                     <field name="state_id"/>
                 </calendar>
             </field>

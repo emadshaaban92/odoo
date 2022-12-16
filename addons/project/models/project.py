@@ -2560,24 +2560,6 @@ class Task(models.Model):
         }
         return action
 
-        context = dict(self.env.context)
-        
-        wizard = self.env['project.wizard_confirmation'].create({})
-        return {
-            'name': 'Confirmation',
-            'view_mode': 'form',
-            'res_model': 'project.wizard_confirmation',
-            'views': [(self.env.ref('project.project_wizard_confirmation_form').id, 'form')],
-            'type': 'ir.actions.act_window',
-            'view_type': 'form',
-            'res_id': wizard.id,
-            #'view_id': self.env.ref("affichage2.confirm_wizard_form").id,
-            #'view_id': False,
-            'target': 'new',
-            'context': context,
-            #'nodestroy': True,
-        }
-
     def action_toggle_approval_mode(self):
         for task in self.browse(self.env.context['active_ids']):
             #task.state_approval_mode = not task.state_approval_mode
