@@ -1483,7 +1483,7 @@ class AccountMove(models.Model):
                 elif currency.compare_amounts(total_to_pay, total_residual) != 0:
                     new_pmt_state = 'partial'
 
-            if new_pmt_state == 'paid' and move.move_type in ('in_invoice', 'out_invoice', 'entry'):
+            if new_pmt_state == 'paid' and move.move_type in ('in_invoice', 'out_invoice', 'entry') and not self._context.get('skip_move_reverse_state'):
                 reverse_type = move.move_type == 'in_invoice' and 'in_refund' or move.move_type == 'out_invoice' and 'out_refund' or 'entry'
                 reverse_moves = self.env['account.move'].search([('reversed_entry_id', '=', move.id), ('state', '=', 'posted'), ('move_type', '=', reverse_type)])
                 if self.env.company.tax_exigibility:
