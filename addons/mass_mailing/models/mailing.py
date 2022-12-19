@@ -1046,48 +1046,51 @@ class MassMailing(models.Model):
     def action_send_mail(self, res_ids=None):
         author_id = self.env.user.partner_id.id
 
-        # If no recipient is passed, we don't want to use the recipients of the first
-        # mailing for all the others
-        initial_res_ids = res_ids
         for mailing in self:
-            if not initial_res_ids:
-                res_ids = mailing._get_remaining_recipients()
-            if not res_ids:
+            context_user = mailing.user_id or mailing.write_uid or self.env.user
+            mailing_with_user = mailing.with_context(
+                **context_user.with_user(context_user).context_get()
+            )
+            mailing_res_ids = res_ids or mailing_with_user._get_remaining_recipients()
+            if not mailing_res_ids:
                 raise UserError(_('There are no recipients selected.'))
 
             composer_values = {
+                'auto_delete': not mailing_with_user.keep_archives,
+                # email-mode: keep original message for routing
+                'auto_delete_message': not mailing_with_user.reply_to_mode == 'update',
                 'author_id': author_id,
-                'attachment_ids': [(4, attachment.id) for attachment in mailing.attachment_ids],
-                'body': mailing._prepend_preview(mailing.body_html, mailing.preview),
+                'attachment_ids': [(4, attachment.id) for attachment in mailing_with_user.attachment_ids],
+                'body': mailing_with_user._prepend_preview(mailing_with_user.body_html, mailing_with_user.preview),
                 'composition_mode': 'mass_mail',
-                'email_from': mailing.email_from,
-                'mail_server_id': mailing.mail_server_id.id,
-                'mailing_list_ids': [(4, l.id) for l in mailing.contact_list_ids],
-                'mass_mailing_id': mailing.id,
-                'model': mailing.mailing_model_real,
+                'email_from': mailing_with_user.email_from,
+                'mail_server_id': mailing_with_user.mail_server_id.id,
+                'mailing_list_ids': [(4, l.id) for l in mailing_with_user.contact_list_ids],
+                'mass_mailing_id': mailing_with_user.id,
+                'model': mailing_with_user.mailing_model_real,
                 'record_name': False,
-                'reply_to_force_new': mailing.reply_to_mode == 'new',
-                'subject': mailing.subject,
+                'reply_to_force_new': mailing_with_user.reply_to_mode == 'new',
+                'subject': mailing_with_user.subject,
                 'template_id': False,
             }
-            if mailing.reply_to_mode == 'new':
-                composer_values['reply_to'] = mailing.reply_to
+            if mailing_with_user.reply_to_mode == 'new':
+                composer_values['reply_to'] = mailing_with_user.reply_to
 
             composer = self.env['mail.compose.message'].with_context(
-                active_ids=res_ids,
+                active_ids=mailing_res_ids,
                 default_composition_mode='mass_mail',
-                **mailing._get_mass_mailing_context()
+                **mailing_with_user._get_mass_mailing_context()
             ).create(composer_values)
 
             # auto-commit except in testing mode
             composer._action_send_mail(
                 auto_commit=not getattr(threading.current_thread(), 'testing', False)
             )
-            mailing.write({
+            mailing_with_user.write({
                 'state': 'done',
                 'sent_date': fields.Datetime.now(),
                 # send the KPI mail only if it's the first sending
-                'kpi_mail_required': not mailing.sent_date,
+                'kpi_mail_required': not mailing_with_user.sent_date,
             })
         return True
 
@@ -1113,8 +1116,8 @@ class MassMailing(models.Model):
     def _process_mass_mailing_queue(self):
         mass_mailings = self.search([('state', 'in', ('in_queue', 'sending')), '|', ('schedule_date', '<', fields.Datetime.now()), ('schedule_date', '=', False)])
         for mass_mailing in mass_mailings:
-            user = mass_mailing.write_uid or self.env.user
-            mass_mailing = mass_mailing.with_context(**user.with_user(user).context_get())
+            context_user = mass_mailing.user_id or mass_mailing.write_uid or self.env.user
+            mass_mailing = mass_mailing.with_context(**context_user.with_user(context_user).context_get())
             if len(mass_mailing._get_remaining_recipients()) > 0:
                 mass_mailing.state = 'sending'
                 mass_mailing.action_send_mail()
