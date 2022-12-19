@@ -986,7 +986,14 @@ var SnippetEditor = Widget.extend({
         this.trigger_up('user_value_widget_request', {
             name: 'grid_mode',
             allowParentOption: true,
-            onSuccess: () => hasGridLayoutOption = true,
+            onSuccess: (widget) => {
+                // The grid option is considered as present only if the
+                // container element having it is the same as the container of
+                // the column we are dragging.
+                if (widget.$target[0] === rowEl.parentElement) {
+                    hasGridLayoutOption = true;
+                }
+            },
         });
         const allowGridMode = hasGridLayoutOption || rowEl.classList.contains('o_grid_mode');
 
@@ -1099,21 +1106,40 @@ var SnippetEditor = Widget.extend({
         // Remove the siblings that belong to a snippet in grid mode
         // and put the identified grid mode snippets in their own "selector".
         const selectorGrids = new Set();
-        if (rowEl.classList.contains('row')) {
-            if ($selectorSiblings) {
-                // Looping backwards because elements are removed, so the
-                // indexes are not lost.
-                for (let i = $selectorSiblings.length - 1; i >= 0; i--) {
-                    if (isPopup && !$selectorSiblings[i].closest('div.s_popup')) {
-                        // Removing the siblings that are outside the popup if
-                        // the grid item is in a popup.
+        if (rowEl.classList.contains('row') && $selectorSiblings) {
+            // Getting the closest grid of the column at the start of the drag
+            // (may be undefined, if it cannot toggle the grid mode).
+            const columnGridEl = rowEl.closest('.o_grid_mode');
+            // Looping backwards because elements are removed, so the
+            // indexes are not lost.
+            for (let i = $selectorSiblings.length - 1; i >= 0; i--) {
+                if (isPopup && !$selectorSiblings[i].closest('div.s_popup')) {
+                    // Removing the siblings that are outside the popup if
+                    // the grid item is in a popup.
+                    $selectorSiblings.splice(i, 1);
+                } else {
+                    const gridSnippetEl = $selectorSiblings[i].closest('.o_grid_mode');
+                    // If we drag a normal column (= not grid), all the siblings
+                    // having a closest grid are removed (because columnGridEl
+                    // is undefined so the condition is true).
+                    // If we drag a grid column (= direct child of grid), every
+                    // siblings having a closest grid are removed because either
+                    // they are in another snippet (gridSnippetEl is different
+                    // than columnGridEl) or their closest grid is the parent of
+                    // the column (gridSnippetEl === rowEl).
+                    // If we drag a column of a snippet that is in a grid column
+                    // (= inner snippet column), the inner siblings are kept
+                    // because they are the only ones having the same closest
+                    // grid as the column and which is not the parent of the
+                    // column. (*)
+                    // *: Note that it works only for non-grid inner snippets
+                    // whose columns cannot be dropped outside them (i.e. form
+                    // snippet). It may need to be adapted when other snippets
+                    // not as restricted as the form could be dropped inside
+                    // columns in a hypothetical future.
+                    if (gridSnippetEl && (gridSnippetEl !== columnGridEl || gridSnippetEl === rowEl)) {
                         $selectorSiblings.splice(i, 1);
-                    } else {
-                        const gridSnippet = $selectorSiblings[i].closest('div.o_grid_mode');
-                        if (gridSnippet) {
-                            $selectorSiblings.splice(i, 1);
-                            selectorGrids.add(gridSnippet);
-                        }
+                        selectorGrids.add(gridSnippetEl);
                     }
                 }
             }
