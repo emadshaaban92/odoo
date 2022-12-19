@@ -7,10 +7,11 @@ import { Component, xml, onWillStart, onWillUpdateProps } from "@odoo/owl";
 
 class _Record extends Component {
     setup() {
+        const fieldNames = this.props.info.fieldNames || Object.keys(this.props.info.initialValues);
         const activeFields =
             this.props.info.activeFields ||
             Object.fromEntries(
-                this.props.info.fieldNames.map((f) => [f, { attrs: {}, options: {}, domain: "[]" }])
+                fieldNames.map((f) => [f, { attrs: {}, options: {}, domain: "[]" }])
             );
 
         this.model = useModel(RelationalModel, {
