@@ -83,6 +83,24 @@ TIME_GRANULARITY_AGGREGATION = {
     'year': dateutil.relativedelta.relativedelta(years=1)
 }
 
+READ_GROUP_DISPLAY_FORMAT = {
+    # Careful with week/year formats:
+    #  - yyyy (lower) must always be used, *except* for week+year formats
+    #  - YYYY (upper) must always be used for week+year format
+    #         e.g. 2006-01-01 is W52 2005 in some locales (de_DE),
+    #                         and W1 2006 for others
+    #
+    # Mixing both formats, e.g. 'MMM YYYY' would yield wrong results,
+    # such as 2006-01-01 being formatted as "January 2005" in some locales.
+    # Cfr: http://babel.pocoo.org/en/latest/dates.html#date-fields
+    'hour': 'hh:00 dd MMM',
+    'day': 'dd MMM yyyy', # yyyy = normal year
+    'week': "'W'w YYYY",  # w YYYY = ISO week-year
+    'month': 'MMMM yyyy',
+    'quarter': 'QQQ yyyy',
+    'year': 'yyyy',
+}
+
 AUTOINIT_RECALCULATE_STORED_FIELDS = 1000
 
 INSERT_BATCH_SIZE = 100
@@ -178,21 +196,18 @@ def merge_trigger_trees(trees: list, select=bool) -> dict:
     return result_tree
 
 
-DEFAULT_SENTINEL = object()
-
 class AggregateResult:
 
     def __init__(
         self,
-        rows: "list[dict]",       # [{<groupby spec>: <groupby value>, ..., <aggregates spec>: <aggregates value>, ...}]
-        aggregates: "list[str]",  # [<aggregates spec>]
-        groupby: "list[str]",     # [<groupby spec>]
-        Model: "BaseModel",
+        rows: 'list[dict]',       # [{<groupby spec>: <groupby value>, ..., <aggregates spec>: <aggregates value>, ...}]
+        aggregates: 'list[str]',  # [<aggregates spec>]
+        groupby: 'list[str]',     # [<groupby spec>]
+        Model: 'BaseModel',
     ):
         self._groupby = groupby
         self._aggregates = aggregates
         self._rows = rows
-        assert isinstance(Model, BaseModel)
         self._Model = Model
 
         def to_key(row):
@@ -205,7 +220,7 @@ class AggregateResult:
         self._map = {to_key(row): to_value(row) for row in self._rows}
 
     @lazy_property
-    def _prefetch_info(self) -> "dict[tuple[BaseModel, tuple]]":
+    def _prefetch_info(self) -> 'dict[tuple[BaseModel, tuple]]':
         prefetch_info = {}
         for spec in itertools.chain(self._groupby, self._aggregates):
             if spec == '*:count':
@@ -229,7 +244,7 @@ class AggregateResult:
 
         return prefetch_info
 
-    def _as_records(self, spec: str, value):
+    def _as_records(self, spec: 'str', value):
         if spec not in self._prefetch_info:
             return value
         Model, prefetch_ids = self._prefetch_info[spec]
@@ -237,7 +252,7 @@ class AggregateResult:
             return Model.browse()
         return Model.browse(value).with_prefetch(prefetch_ids)
 
-    def items(self, as_records: bool= False) -> "Iterator[(tuple, tuple)]":
+    def items(self, as_records: 'bool' = False) -> "Iterator[(tuple, tuple)]":
         for groups, aggregations in self._map.items():
             if as_records:
                 yield (
@@ -247,14 +262,14 @@ class AggregateResult:
             else:
                 yield groups, tuple(aggregations.values())
 
-    def values(self, as_records: bool= False) -> "Iterator[tuple]":
+    def values(self, as_records: 'bool' = False) -> "Iterator[tuple]":
         for aggregations in self._map.values():
             if as_records:
                 yield tuple(self._as_records(spec, aggregate) for spec, aggregate in aggregations.items())
             else:
                 yield tuple(aggregations.values())
 
-    def keys(self, as_records: bool= False) -> "Iterator[tuple]":
+    def keys(self, as_records: 'bool' = False) -> "Iterator[tuple]":
         if not as_records:
             yield from self._map.keys()
         else:
@@ -276,17 +291,23 @@ class AggregateResult:
 
     def __bool__(self) -> 'bool':
         return bool(self._map)
-    
-    def __len__(self) -> int:
+
+    def __len__(self) -> 'int':
         return len(self._map)
 
     def __contains__(self, group) -> 'bool':
         return self._map.__contains__(self._flexible_key(group))
-    
+
     def __getitem__(self, group) -> 'dict':
         return self._map[self._flexible_key(group)]
 
-    def get_agg(self, group=None, aggregate: 'str | None'=None, default=None, as_record: bool=False):
+    def get_agg(self, group=None, aggregate: 'str | None'=None, default=None, as_record: 'bool'=False):
+        # TODO: the default should be False ? like the read_group and convert_to_record of each fields
+        # Check _read_group_prepare_data ?
+
+        if aggregate is not None and aggregate not in self._aggregates:
+            raise KeyError(f"{aggregate} isn't a correct aggregation. Available aggregation: {self._aggregates}")
+
         group = self._flexible_key(group)
         if group not in self._map:
             return self._as_records(aggregate, default) if as_record else default
@@ -295,16 +316,13 @@ class AggregateResult:
         if aggregate is None and len(self._aggregates) == 1:
             aggregate = self._aggregates[0]
 
-        if aggregate not in self._aggregates:
-            raise KeyError(f"{aggregate} isn't a correct aggregation. Available aggregation: {self._aggregates}")
-
         res = self._map[group][aggregate]
         # Threat NULL value with the default
         if res is None:
             res = default
         return self._as_records(aggregate, res) if as_record else res
 
-    def to_list(self):
+    def to_list(self) -> 'list[dict]':
         return self._rows
 
 class MetaModel(api.Meta):
@@ -1850,14 +1868,14 @@ class BaseModel(metaclass=MetaModel):
     @api.returns('self', lambda x: x.to_list())
     def aggregate(
         self,
-        domain: list,
-        aggregates: "list[str] | tuple[str]" = (),
-        groupby: "list[str] | tuple[str]" = (),
-        having: list = (),
-        offset: int = 0,
-        limit: "int | None" = None,
-        order: "str | None" = None,
-    ) -> AggregateResult:
+        domain: 'list',
+        aggregates: 'list[str] | tuple[str]' = (),
+        groupby: 'list[str] | tuple[str]' = (),
+        having: 'list' = (),
+        offset: 'int' = 0,
+        limit: 'int | None' = None,
+        order: 'str | None' = None,
+    ) -> 'AggregateResult':
         """ Get the list of records grouped by the given ``groupby`` fields.
 
         :param list domain: :ref:`A search domain <reference/orm/domains>`. Use an empty
@@ -2035,14 +2053,14 @@ class BaseModel(metaclass=MetaModel):
 
     def _aggregate(
         self,
-        domain: list,
-        aggregates: "list[str] | tuple[str]" = (),
-        groupby: "list[str] | tuple[str]" = (),
-        having: list = (),
-        offset: int = 0,
-        limit: "int | None" = None,
-        order: "str | None" = None,
-    ) -> "AggregateResult":
+        domain: 'list',
+        aggregates: 'list[str] | tuple[str]' = (),
+        groupby: 'list[str] | tuple[str]' = (),
+        having: 'list' = (),
+        offset: 'int' = 0,
+        limit: 'int | None' = None,
+        order: 'str | None' = None,
+    ) -> 'AggregateResult':
         """ Executes exactly what the public aggregate() does, except it doesn't
         order many2one fields on their comodel's order but on their ID instead. It is more
         efficient if you don't care about the order of returning values.
@@ -2050,7 +2068,10 @@ class BaseModel(metaclass=MetaModel):
         self.check_access_rights('read')
 
         if expression.is_false(self, domain):
-            return AggregateResult([], aggregates, groupby, self)
+            fake_res = []
+            if not groupby:  # If there is no group postgresql always return a row
+                fake_res = [{agg: 0 if agg.startswith('count') else None for agg in aggregates}]
+            return AggregateResult(fake_res, aggregates, groupby, self)
 
         order_traverse_many2one = True
         if not order:
@@ -2426,23 +2447,6 @@ class BaseModel(metaclass=MetaModel):
         tz_convert = field_type == 'datetime' and self._context.get('tz') in pytz.all_timezones
         qualified_field = self._inherits_join_calc(self._table, split[0], query)
         if temporal:
-            display_formats = {
-                # Careful with week/year formats:
-                #  - yyyy (lower) must always be used, *except* for week+year formats
-                #  - YYYY (upper) must always be used for week+year format
-                #         e.g. 2006-01-01 is W52 2005 in some locales (de_DE),
-                #                         and W1 2006 for others
-                #
-                # Mixing both formats, e.g. 'MMM YYYY' would yield wrong results,
-                # such as 2006-01-01 being formatted as "January 2005" in some locales.
-                # Cfr: http://babel.pocoo.org/en/latest/dates.html#date-fields
-                'hour': 'hh:00 dd MMM',
-                'day': 'dd MMM yyyy', # yyyy = normal year
-                'week': "'W'w YYYY",  # w YYYY = ISO week-year
-                'month': 'MMMM yyyy',
-                'quarter': 'QQQ yyyy',
-                'year': 'yyyy',
-            }
             if tz_convert:
                 qualified_field = "timezone('%s', timezone('UTC',%s))" % (self._context.get('tz', 'UTC'), qualified_field)
             qualified_field = "date_trunc('%s', %s::timestamp)" % (gb_function or 'month', qualified_field)
@@ -2452,7 +2456,7 @@ class BaseModel(metaclass=MetaModel):
             'field': split[0],
             'groupby': gb,
             'type': field_type,
-            'display_format': display_formats[gb_function or 'month'] if temporal else None,
+            'display_format': READ_GROUP_DISPLAY_FORMAT[gb_function or 'month'] if temporal else None,
             'interval': TIME_GRANULARITY_AGGREGATION[gb_function or 'month'] if temporal else None,
             'granularity': gb_function or 'month' if temporal else None,
             'tz_convert': tz_convert,

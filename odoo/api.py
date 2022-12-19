@@ -520,7 +520,7 @@ class Environment(Mapping):
         """ Test whether the given model exists. """
         return model_name in self.registry
 
-    def __getitem__(self, model_name:str) -> "BaseModel":
+    def __getitem__(self, model_name: str) -> "BaseModel":
         """ Return an empty recordset from the given model. """
         return self.registry[model_name](self, (), ())
 
