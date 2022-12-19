@@ -5,7 +5,7 @@ from datetime import datetime
 from uuid import uuid4
 import pytz
 
-from odoo import api, fields, models, tools, _
+from odoo import api, fields, models, _, Command
 from odoo.exceptions import ValidationError, UserError
 
 
@@ -174,6 +174,8 @@ class PosConfig(models.Model):
     limited_partners_amount = fields.Integer(default=100)
     partner_load_background = fields.Boolean(default=True)
     auto_validate_terminal_payment = fields.Boolean(default=True, help="Automatically validates orders paid with a payment terminal.")
+    share_orders = fields.Boolean(default=False)
+    trusted_config_ids = fields.Many2many("pos.config", relation="pos_config_trust_relation", column1="is_trusting", column2="is_trusted", string="Trusted Point of Sale Configurations", domain="[('id', '!=', pos_config_id), ('module_pos_restaurant', '=', False)]")
 
     @api.depends('payment_method_ids')
     def _compute_cash_control(self):
@@ -687,3 +689,12 @@ class PosConfig(models.Model):
             'res_id': self.id,
             'context': {'pos_config_open_modal': True},
         }
+
+    def add_trusted_config_id(self, config_id):
+        self.share_orders = True
+        self.trusted_config_ids = [Command.link(config_id)]
+
+    def remove_trusted_config_id(self, config_id):
+        self.trusted_config_ids = [Command.unlink(config_id)]
+        if len(self.trusted_config_ids) == 0:
+            self.share_orders = False

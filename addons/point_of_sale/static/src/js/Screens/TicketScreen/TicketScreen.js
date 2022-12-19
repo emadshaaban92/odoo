@@ -94,8 +94,8 @@ class TicketScreen extends IndependentToOrderScreen {
             this._setOrder(clickedOrder);
         }
     }
-    _onCreateNewOrder() {
-        this.env.pos.add_new_order();
+    async _onCreateNewOrder() {
+        await this.env.pos.add_new_order();
         this.showScreen("ProductScreen");
     }
     _selectNextOrder(currentOrder) {
@@ -130,6 +130,9 @@ class TicketScreen extends IndependentToOrderScreen {
                 this._selectNextOrder(order);
             }
             this.env.pos.removeOrder(order);
+        }
+        if (this.env.pos.config.share_orders) {
+            this.env.pos._removeOrdersFromServer();
         }
     }
     async _onNextPage() {

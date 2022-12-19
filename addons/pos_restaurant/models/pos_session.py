@@ -19,9 +19,7 @@ class PosSession(models.Model):
     def _loader_params_restaurant_floor(self):
         return {
             'search_params': {
-                'domain': [('pos_config_id', '=', self.config_id.id)],
                 'fields': ['name', 'background_color', 'table_ids', 'sequence'],
-                'order': 'sequence',
             },
         }
 
@@ -37,7 +35,7 @@ class PosSession(models.Model):
         }
 
     def _get_pos_ui_restaurant_floor(self, params):
-        floors = self.env['restaurant.floor'].search_read(**params['search_params'])
+        floors = self.env['restaurant.floor'].search([]).filtered(lambda r: self.config_id.id in r.pos_config_ids.ids).read(**params['search_params'])
         floor_ids = [floor['id'] for floor in floors]
 
         table_params = self._loader_params_restaurant_table()

@@ -14,9 +14,7 @@ const PosRestaurantPosGlobalState = (PosGlobalState) =>
         constructor(obj) {
             super(obj);
             this.orderToTransfer = null; // table transfer feature
-            this.ordersToUpdateSet = new Set(); // used to know which orders need to be sent to the back end when syncing
             this.transferredOrdersSet = new Set(); // used to know which orders has been transferred but not sent to the back end yet
-            this.loadingOrderState = false; // used to prevent orders fetched to be put in the update set during the reactive change
         }
         //@override
         async _processData(loadedData) {
@@ -37,18 +35,6 @@ const PosRestaurantPosGlobalState = (PosGlobalState) =>
             }
         }
         //@override
-        removeOrder(order, removeFromServer = true) {
-            super.removeOrder(...arguments);
-            if (this.config.iface_floorplan && removeFromServer) {
-                if (this.ordersToUpdateSet.has(order)) {
-                    this.ordersToUpdateSet.delete(order);
-                }
-                if (order.server_id && !order.finalized) {
-                    this.db.set_order_to_remove_from_server(order);
-                }
-            }
-        }
-        //@override
         async after_load_server_data() {
             var res = await super.after_load_server_data(...arguments);
             if (this.config.iface_floorplan) {
@@ -65,12 +51,6 @@ const PosRestaurantPosGlobalState = (PosGlobalState) =>
             }
         }
         //@override
-        add_new_order() {
-            const order = super.add_new_order();
-            this.ordersToUpdateSet.add(order);
-            return order;
-        }
-        //@override
         createReactiveOrder(json) {
             let reactiveOrder = super.createReactiveOrder(...arguments);
             if (this.config.iface_printers) {
@@ -83,12 +63,6 @@ const PosRestaurantPosGlobalState = (PosGlobalState) =>
                 reactiveOrder.updateChangesToPrint();
             }
             return reactiveOrder;
-        }
-        //@override
-        async load_orders() {
-            this.loadingOrderState = true;
-            await super.load_orders();
-            this.loadingOrderState = false;
         }
         _loadRestaurantPrinter(printers) {
             this.unwatched.printers = [];
@@ -146,60 +120,8 @@ const PosRestaurantPosGlobalState = (PosGlobalState) =>
             const ordersResponse = await this._save_to_server(ordersToSync, { draft: true });
             const tableOrders = [...this.ordersToUpdateSet].map((order) => order);
             ordersResponse.forEach((orderResponseData) =>
-                this._updateTableOrder(orderResponseData, tableOrders)
+                this._updateOrder(orderResponseData, tableOrders)
             );
-        }
-        // created this hook for modularity
-        _updateTableOrder(ordersResponseData, tableOrders) {
-            const order = tableOrders.find(
-                (order) => order.name === ordersResponseData.pos_reference
-            );
-            order.server_id = ordersResponseData.id;
-            return order;
-        }
-        /**
-         * Remove the deleted orders from the backend.
-         * @throw error
-         */
-        async _removeOrdersFromServer() {
-            const removedOrdersIds = this.db.get_ids_to_remove_from_server();
-            if (removedOrdersIds.length === 0) {
-                return;
-            }
-
-            const timeout = TIMEOUT * removedOrdersIds.length;
-            this.set_synch("connecting", removedOrdersIds.length);
-            try {
-                const removeOrdersResponseData = await this.env.services.rpc(
-                    {
-                        model: "pos.order",
-                        method: "remove_from_ui",
-                        args: [removedOrdersIds],
-                    },
-                    {
-                        timeout: timeout,
-                        shadow: true,
-                    }
-                );
-                this.set_synch("connected");
-                this._postRemoveFromServer(removedOrdersIds, removeOrdersResponseData);
-            } catch (reason) {
-                const error = reason.message;
-                if (error.code === 200) {
-                    // Business Logic Error, not a connection problem
-                    //if warning do not need to display traceback!!
-                    if (error.data.exception_type == "warning") {
-                        delete error.data.debug;
-                    }
-                }
-                // important to throw error here and let the rendering component handle the error
-                console.warn("Failed to remove orders:", removedOrdersIds);
-                throw error;
-            }
-        }
-        // to override
-        _postRemoveFromServer(serverIds, data) {
-            this.db.set_ids_removed_from_server(serverIds);
         }
         /**
          * Replace all the orders of a table by orders fetched from the backend
@@ -212,24 +134,27 @@ const PosRestaurantPosGlobalState = (PosGlobalState) =>
             const tableOrders = this.getTableOrders(tableId);
             this._replaceOrders(tableOrders, ordersJsons);
         }
-        async _syncAllOrdersFromServer() {
-            await this._removeOrdersFromServer(); // in case we were offline and we deleted orders in the mean time
-            const tableIds = [].concat(
-                ...this.floors.map((floor) => floor.tables.map((table) => table.id))
-            );
-            const ordersJsons = await this._getTableOrdersFromServer(tableIds); // get all orders
-            await this._syncTableOrdersToServer(); // to prevent losing the transferred orders
-            const allOrders = [...this.get_order_list()];
-            this._replaceOrders(allOrders, ordersJsons);
+        async _getOrdersJson() {
+            if (this.config.module_pos_restaurant) {
+                const tableIds = [].concat(
+                    ...this.floors.map((floor) => floor.tables.map((table) => table.id))
+                );
+                const ordersJsons = await this._getTableOrdersFromServer(tableIds); // get all orders
+                await this._syncTableOrdersToServer(); // to prevent losing the transferred orders
+                return ordersJsons;
+            } else {
+                return await super._getOrdersJson();
+            }
         }
         _replaceOrders(ordersToReplace, newOrdersJsons) {
             ordersToReplace.forEach((order) => {
                 // We don't remove the validated orders because we still want to see them in the ticket screen.
                 // Orders in 'ReceiptScreen' or 'TipScreen' are validated orders.
-                if (order.server_id && !order.finalized && !this.transferredOrdersSet.has(order)) {
+                if ((!this.selectedOrder || (this.selectedOrder.uid != order.uid)) && order.server_id && !order.finalized && !this.transferredOrdersSet.has(order)) {
                     this.removeOrder(order, false);
                 }
             });
+            let removeSelected = true;
             newOrdersJsons.forEach((json) => {
                 // Because of the offline feature, some draft orders fetched from the backend will appear
                 // to belong in different table, but in fact they are already moved.
@@ -241,14 +166,20 @@ const PosRestaurantPosGlobalState = (PosGlobalState) =>
                     // this means we transferred back to the original table, we'll prioritize the server state
                     this.removeOrder(transferredOrder, false);
                 }
-                if (!transferredOrder || isSameTable) {
+                if ((!transferredOrder || isSameTable) && (!this.selectedOrder || (json.uid != this.selectedOrder.uid))) {
                     const order = this.createReactiveOrder(json);
                     this.orders.add(order);
+                } else if ((!this.selectedOrder || (json.uid == this.selectedOrder.uid))) {
+                    removeSelected = false;
                 }
             });
-        }
-        setLoadingOrderState(bool) {
-            this.loadingOrderState = bool;
+            if (removeSelected && this.selectedOrder && this.selectedOrder.server_id && !this.selectedOrder.finalized) {
+                this.removeOrder(this.selectedOrder, false);
+                const orderList = this.get_order_list();
+                if (orderList.length != 0) {
+                    this.set_order(orderList[0]);
+                }
+            }
         }
         loadRestaurantFloor() {
             // we do this in the front end due to the circular/recursive reference needed
@@ -383,7 +314,7 @@ const PosRestaurantOrder = (Order) =>
         export_for_printing() {
             const json = super.export_for_printing(...arguments);
             if (this.pos.config.module_pos_restaurant) {
-                if (this.pos.config.iface_floorplan) {
+                if (this.pos.config.iface_floorplan && this.getTable()) {
                     json.table = this.getTable().name;
                 }
                 json.customer_count = this.getCustomerCount();

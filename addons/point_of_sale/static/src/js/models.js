@@ -9,11 +9,12 @@ import time from "web.time";
 import utils from "web.utils";
 import { Gui } from "@point_of_sale/js/Gui";
 import { batched, uuidv4 } from "@point_of_sale/js/utils";
-
 var QWeb = core.qweb;
 var _t = core._t;
 var round_di = utils.round_decimals;
 var round_pr = utils.round_precision;
+
+const TIMEOUT = 7500;
 
 import Registries from "@point_of_sale/js/Registries";
 const { markRaw, reactive } = owl;
@@ -135,6 +136,9 @@ export class PosGlobalState extends PosModel {
                 highlightHeaderNote: false,
             },
         };
+
+        this.ordersToUpdateSet = new Set(); // used to know which orders need to be sent to the back end when syncing
+        this.loadingOrderState = false; // used to prevent orders fetched to be put in the update set during the reactive change
 
         // these dynamic attributes can be watched for change by other models or widgets
         Object.assign(this, {
@@ -396,12 +400,20 @@ export class PosGlobalState extends PosModel {
      * Remove the order passed in params from the list of orders
      * @param order
      */
-    removeOrder(order) {
+    removeOrder(order, removeFromServer = true) {
         this.orders.remove(order);
         this.db.remove_unpaid_order(order);
         for (const line of order.get_orderlines()) {
             if (line.refunded_orderline_id) {
                 delete this.toRefundLines[line.refunded_orderline_id];
+            }
+        }
+        if (removeFromServer) {
+            if (this.ordersToUpdateSet.has(order)) {
+                this.ordersToUpdateSet.delete(order);
+            }
+            if (order.server_id && !order.finalized) {
+                this.db.set_order_to_remove_from_server(order);
             }
         }
     }
@@ -421,6 +433,9 @@ export class PosGlobalState extends PosModel {
     }
     _onReactiveOrderUpdated(order) {
         order.save_to_db();
+        if (this.config.share_orders) {
+            this.ordersToUpdateSet.add(order);
+        }
     }
     createReactiveOrder(json) {
         const options = { pos: this };
@@ -438,10 +453,28 @@ export class PosGlobalState extends PosModel {
         return order;
     }
     // creates a new empty order and sets it as the current order
-    add_new_order() {
+    async add_new_order() {
+        if (this.config.share_orders) {
+            const ordersUidsToSync = [...this.ordersToUpdateSet].map((order) => order.uid);
+            const ordersToSync = this.db.get_unpaid_orders_to_sync(ordersUidsToSync);
+            const ordersResponse = await this._save_to_server(ordersToSync, { draft: true });
+            const orders = [...this.ordersToUpdateSet].map((order) => order);
+            ordersResponse.forEach((orderResponseData) =>
+                    this._updateOrder(orderResponseData, orders)
+            );
+            this.ordersToUpdateSet.clear();
+        }
         const order = this.createReactiveOrder();
         this.orders.add(order);
         this.selectedOrder = order;
+        return order;
+    }
+    // created this hook for modularity
+    _updateOrder(ordersResponseData, orders) {
+        const order = orders.find(
+            (order) => order.name === ordersResponseData.pos_reference
+        );
+        order.server_id = ordersResponseData.id;
         return order;
     }
     /**
@@ -452,6 +485,7 @@ export class PosGlobalState extends PosModel {
      * Only if tho order has orderlines.
      */
     async load_orders() {
+        this.loadingOrderState = true;
         var jsons = this.db.get_unpaid_orders();
         await this._loadMissingProducts(jsons);
         await this._loadMissingPartners(jsons);
@@ -484,6 +518,7 @@ export class PosGlobalState extends PosModel {
                 this.orders.add(order);
             }
         }
+        this.loadingOrderState = false;
     }
     async _loadMissingProducts(orders) {
         const missingProductIds = new Set([]);
@@ -583,6 +618,88 @@ export class PosGlobalState extends PosModel {
             i += 1;
         } while (partners.length);
     }
+    setLoadingOrderState(bool) {
+        this.loadingOrderState = bool;
+    }
+    async _removeOrdersFromServer() {
+        const removedOrdersIds = this.db.get_ids_to_remove_from_server();
+        if (removedOrdersIds.length === 0) {
+            return;
+        }
+
+        const timeout = TIMEOUT * removedOrdersIds.length;
+        this.set_synch("connecting", removedOrdersIds.length);
+        try {
+            const removeOrdersResponseData = await this.env.services.rpc(
+                {
+                    model: "pos.order",
+                    method: "remove_from_ui",
+                    args: [removedOrdersIds],
+                },
+                {
+                    timeout: timeout,
+                    shadow: true,
+                }
+            );
+            this.set_synch("connected");
+            this._postRemoveFromServer(removedOrdersIds, removeOrdersResponseData);
+        } catch (reason) {
+            const error = reason.message;
+            if (error.code === 200) {
+                // Business Logic Error, not a connection problem
+                //if warning do not need to display traceback!!
+                if (error.data.exception_type == "warning") {
+                    delete error.data.debug;
+                }
+            }
+            // important to throw error here and let the rendering component handle the error
+            console.warn("Failed to remove orders:", removedOrdersIds);
+            throw error;
+        }
+    }
+    _postRemoveFromServer(serverIds, data) {
+        this.db.set_ids_removed_from_server(serverIds);
+    }
+    _replaceOrders(ordersToReplace, newOrdersJsons) {
+        ordersToReplace.forEach((order) => {
+            // We don't remove the validated orders because we still want to see them in the ticket screen.
+            // Orders in 'ReceiptScreen' or 'TipScreen' are validated orders.
+            if ((this.selectedOrder.uid != order.uid) && order.server_id && !order.finalized) {
+                this.removeOrder(order, false);
+            }
+        });
+        let removeSelected = true;
+        newOrdersJsons.forEach((json) => {
+            if (json.uid != this.selectedOrder.uid) {
+                const order = this.createReactiveOrder(json);
+                this.orders.add(order);
+            } else {
+                removeSelected = false;
+            }
+        });
+        if (removeSelected && this.selectedOrder.server_id && !this.selectedOrder.finalized) {
+            this.removeOrder(this.selectedOrder, false);
+            const orderList = this.get_order_list();
+            if (orderList.length != 0) {
+                this.set_order(orderList[0]);
+            }
+        }
+    }
+    async _syncAllOrdersFromServer() {
+        await this._removeOrdersFromServer();
+        const ordersJson = await this._getOrdersJson();
+        const allOrders = [...this.get_order_list()];
+        this._replaceOrders(allOrders, ordersJson);
+    }
+
+    async _getOrdersJson() {
+        return await this.env.services.rpc({
+            model: "pos.order",
+            method: "get_draft_share_order_ids",
+            kwargs: { config_id: this.config.id, trusted_configs: this.config.trusted_config_ids},
+            context: this.env.session.user_context,
+        });
+    }
     async getProductInfo(product, quantity) {
         const order = this.get_order();
         // check back-end method `get_product_info_pos` to see what it returns
@@ -679,6 +796,7 @@ export class PosGlobalState extends PosModel {
     set_start_order() {
         if (this.orders.length && !this.selectedOrder) {
             this.selectedOrder = this.orders[0];
+            this.ordersToUpdateSet.add(this.orders[0]);
         } else {
             this.add_new_order();
         }

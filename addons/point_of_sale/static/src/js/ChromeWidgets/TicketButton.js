@@ -8,11 +8,21 @@ class TicketButton extends PosComponent {
     setup() {
         this.pos = usePos();
     }
-    onClick() {
+    async onClick() {
         if (this.isTicketScreenShown) {
             this.env.posbus.trigger("ticket-button-clicked");
         } else {
-            this.showScreen("TicketScreen");
+            if (this._getLoadingOrderConditions()) {
+                try {
+                    this.env.pos.setLoadingOrderState(true);
+                    await this.env.pos._syncAllOrdersFromServer();
+                } finally {
+                    this.env.pos.setLoadingOrderState(false);
+                    this.showScreen("TicketScreen");
+                }
+            } else {
+                this.showScreen("TicketScreen");
+            }
         }
     }
     get isTicketScreenShown() {
@@ -24,6 +34,10 @@ class TicketButton extends PosComponent {
         } else {
             return 0;
         }
+    }
+
+    _getLoadingOrderConditions() {
+        return this.env.pos.config.share_orders;
     }
 }
 TicketButton.template = "TicketButton";
