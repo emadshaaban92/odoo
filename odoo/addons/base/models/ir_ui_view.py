@@ -1813,6 +1813,26 @@ actual arch.
                 msg = "attribute 'group' is not valid.  Did you mean 'groups'?"
                 self._log_view_warning(msg, node)
 
+            elif attr == "default_order":
+                try:
+                    name_manager.model._check_qorder(expr)
+                except UserError:
+                    msg = _('Invalid "default_order" specified. '
+                        'A valid "order" specification is a comma-separated list of valid field names '
+                        '(optionally followed by asc/desc for the direction)')
+                    self.handle_view_error(msg)
+                order_fields = re.findall(r'"?(\w+)"?\s*(?:asc|desc)?', expr, flags=re.I)
+                for fname in order_fields:
+                    if fname not in name_manager.model._fields:
+                        msg = _('Unknown field "%s" in "default_order" value', fname)
+                        self._log_view_warning(msg)
+
+            elif attr == "default_group_by":
+                fname = expr.split(":")[0]  # date:day, date:month support
+                if not fname in name_manager.model._fields:
+                    msg = _('Unknown field "%s" in "default_group_by" value', fname)
+                    self._log_view_warning(fname)
+
     def _validate_classes(self, node, expr):
         """ Validate the classes present on node. """
         classes = set(expr.split(' '))
