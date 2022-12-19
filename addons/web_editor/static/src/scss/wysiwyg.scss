@@ -207,6 +207,14 @@ $o-we-toolbar-color-clickable-active: $o-we-bg-darkest;
     box-shadow: 0 0 4px rgba(#000, .1), 0 4px 18px rgba(#000, .25);
     color: $o-we-toolbar-color-text;
     font-family: $o-we-font-family;
+    @include media-breakpoint-down(md) {
+        display: flex;
+        overflow-y: visible;
+        box-shadow: 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        width: calc(80vw);
+    }
 
     &.toolbar-bottom:before {
         border-bottom-color: $o-we-toolbar-bg;
@@ -292,6 +300,10 @@ $o-we-toolbar-color-clickable-active: $o-we-bg-darkest;
         box-shadow: 0 18px 18px rgba(#000, .23);
         @include border-top-radius(0);
         @include border-bottom-radius($o-we-item-border-radius);
+        @include media-breakpoint-down(md) {
+            max-height: 20vh;
+            overflow: auto;
+        }
 
         &.show { // To overcome .note-XXX .dropdown-menu rules
             min-width: 0;
@@ -305,6 +317,9 @@ $o-we-toolbar-color-clickable-active: $o-we-bg-darkest;
             margin-top: 0;
             margin-bottom: 0.125rem;
             min-width: 222px !important;
+            @include media-breakpoint-down(md) {
+                top: 10px;
+            }
         }
     }
 
