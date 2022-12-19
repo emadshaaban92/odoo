@@ -234,7 +234,9 @@ export function parseServerValues(fields, values) {
     for (const fieldName in values) {
         const value = values[fieldName];
         const field = fields[fieldName];
-        parsedValues[fieldName] = parseServerValue(field, value);
+        if (field) {
+            parsedValues[fieldName] = parseServerValue(field, value);
+        }
     }
     return parsedValues;
 }
