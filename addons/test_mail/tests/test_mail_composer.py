@@ -1226,8 +1226,7 @@ class TestComposerResultsMass(TestMailComposer):
 
         self.assertEqual(len(self._mails), 2, 'Should have sent 1 email per record')
         self.assertEqual(len(self._new_mails), 2, 'Should have created 1 mail.mail per record')
-        # self.assertEqual(self._new_mails.exists(), self._new_mails, 'Should not have deleted mail.mail records')
-        self.assertFalse(self._new_mails.exists(), 'Template is forced over composer value, which is not correct')
+        self.assertEqual(self._new_mails.exists(), self._new_mails, 'Should not have deleted mail.mail records')
         self.assertEqual(len(self._new_msgs), 2, 'Should have created 1 mail.mail per record')
         self.assertEqual(self._new_msgs.exists(), self._new_msgs, 'Should not have deleted mail.message records')
 
