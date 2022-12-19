@@ -124,7 +124,7 @@ class TestComposerForm(TestMailComposer):
         composer_form = Form(self.env['mail.compose.message'].with_context(
             self._get_web_context(self.test_record, add_web=True)
         ))
-        self.assertFalse(composer_form.auto_delete)
+        self.assertTrue(composer_form.auto_delete, 'MailComposer: comment mode should remove notification emails by default')
         self.assertTrue(composer_form.auto_delete_keep_log)
         self.assertEqual(composer_form.author_id, self.env.user.partner_id)
         self.assertFalse(composer_form.body)
@@ -200,8 +200,7 @@ class TestComposerForm(TestMailComposer):
         composer_form = Form(self.env['mail.compose.message'].with_context(
             self._get_web_context(self.test_record, add_web=True, default_template_id=self.template.id)
         ))
-        # self.assertTrue(composer_form.auto_delete)
-        self.assertFalse(composer_form.auto_delete)  # FIXME: currently not taking template value
+        self.assertTrue(composer_form.auto_delete, 'Should take template value')
         self.assertTrue(composer_form.auto_delete_keep_log)
         self.assertEqual(composer_form.author_id, self.env.user.partner_id)
         self.assertEqual(composer_form.body, '<p>TemplateBody %s</p>' % self.test_record.name)
@@ -229,8 +228,7 @@ class TestComposerForm(TestMailComposer):
                 default_composition_mode='comment',
                 default_template_id=self.template.id),
         ))
-        # self.assertTrue(composer_form.auto_delete)
-        self.assertFalse(composer_form.auto_delete)  # FIXME: currently not taking template value
+        self.assertTrue(composer_form.auto_delete, 'Should take composer value')
         self.assertTrue(composer_form.auto_delete_keep_log)
         self.assertEqual(composer_form.author_id, self.env.user.partner_id)
         self.assertEqual(composer_form.body, self.template.body_html,
@@ -258,8 +256,7 @@ class TestComposerForm(TestMailComposer):
             default_model='mail.test.ticket',
             default_template_id=self.template.id,
         ))
-        # self.assertTrue(composer_form.auto_delete)
-        self.assertFalse(composer_form.auto_delete)  # FIXME: currently not taking template value
+        self.assertTrue(composer_form.auto_delete, 'Should take composer value')
         self.assertTrue(composer_form.auto_delete_keep_log)
         self.assertEqual(composer_form.author_id, self.env.user.partner_id)
         self.assertEqual(composer_form.body, '<p>TemplateBody </p>')
@@ -306,8 +303,7 @@ class TestComposerForm(TestMailComposer):
         composer_form = Form(self.env['mail.compose.message'].with_context(
             self._get_web_context(self.test_records, add_web=True, default_template_id=self.template.id)
         ))
-        # self.assertTrue(composer_form.auto_delete)
-        self.assertFalse(composer_form.auto_delete)  # FIXME: currently not taking template value
+        self.assertTrue(composer_form.auto_delete, 'Should take composer value')
         self.assertTrue(composer_form.auto_delete_keep_log)
         self.assertEqual(composer_form.author_id, self.env.user.partner_id)
         self.assertEqual(composer_form.body, self.template.body_html,
@@ -336,8 +332,7 @@ class TestComposerForm(TestMailComposer):
             default_model='mail.test.ticket',
             default_template_id=self.template.id,
         ))
-        # self.assertTrue(composer_form.auto_delete)
-        self.assertFalse(composer_form.auto_delete)  # FIXME: currently not taking template value
+        self.assertTrue(composer_form.auto_delete, 'Should take composer value')
         self.assertTrue(composer_form.auto_delete_keep_log)
         self.assertEqual(composer_form.author_id, self.env.user.partner_id)
         self.assertEqual(composer_form.body, self.template.body_html,
@@ -959,7 +954,7 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
             'body': '<p>Test Body</p>',
             'partner_ids': [(4, self.partner_1.id), (4, self.partner_2.id)]
         })
-        self.assertFalse(composer.auto_delete)
+        self.assertTrue(composer.auto_delete, 'Comment mode removes notification emails by default')
         self.assertTrue(composer.auto_delete_keep_log)
         with self.mock_mail_gateway(mail_unlink_sent=True):
             composer._action_send_mail()
@@ -993,7 +988,7 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
         # global outgoing
         self.assertEqual(len(self._mails), 3, 'Should have sent an email each recipient')
         self.assertEqual(len(self._new_mails), 2, 'Should have created 2 mail.mail (1 for users, 1 for customers)')
-        self.assertEqual(len(self._new_mails.exists()), 0, 'To fix: does not respect auto_delete')
+        self.assertEqual(len(self._new_mails.exists()), 2, 'Should not have deleted mail.mail records')
 
     @users('employee')
     @mute_logger('odoo.tests', 'odoo.addons.mail.models.mail_mail', 'odoo.models.unlink')
@@ -1208,7 +1203,7 @@ class TestComposerResultsMass(TestMailComposer):
                                   default_template_id=self.template.id)
         ))
         composer = composer_form.save()
-        self.assertFalse(composer.auto_delete, 'Fixme: should take composer value')
+        self.assertTrue(composer.auto_delete, 'Should take composer value')
         self.assertTrue(composer.auto_delete_keep_log)
         with self.mock_mail_gateway(mail_unlink_sent=True), self.mock_mail_app():
             composer._action_send_mail()
