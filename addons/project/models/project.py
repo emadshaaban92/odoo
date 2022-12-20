@@ -48,6 +48,7 @@ PROJECT_TASK_READABLE_FIELDS = {
     'milestone_id',
     'has_late_and_unreached_milestone',
     'state_id',
+    'state',
     'state_approval_mode'
 }
 
@@ -65,6 +66,7 @@ PROJECT_TASK_WRITABLE_FIELDS = {
     'parent_id',
     'priority',
     'state_id',
+    'state',
     'state_approval_mode'
 }
 
@@ -1143,17 +1145,26 @@ class Task(models.Model):
     
     state_id = fields.Many2one('project.task.state', default=_default_state_id, readonly=False, compute='_compute_state_id', store=True,
      tracking=True, change_default=True, recursive=True)
+    state = fields.Selection([
+        ('in_progress','In Progress'),
+        ('done','Done'),
+        ('waiting','Waiting'),
+        ('pending_approval','Pending Approval'),
+        ('approved','Approved'),
+        ('rejected','Rejected'),
+        ('changes_requested','Changes Requested'),
+    ], string='Status', copy=False, default='in_progress', required=True, compute='_compute_state', readonly=False, store=True, recursive=True)
+
     state_approval_mode = fields.Boolean(default=False, store=True)
     state_pre_block = fields.Char(help='Remember state before task block', store=True, copy=False)
     state_key = fields.Integer(related='state_id.key', readonly=True)
     state_name = fields.Char(related='state_id.name', readonly=True)
     state_forced = fields.Boolean(default=False)
-
     
     kanban_state = fields.Selection([
         ('normal', 'In Progress'),
         ('done', 'Ready'),
-        ('blocked', 'Blocked')], string='Status',
+        ('blocked', 'Blocked')], string='Status_deprecated',
         copy=False, default='normal', required=True, compute='_compute_kanban_state', readonly=False, store=True)
     kanban_state_label = fields.Char(compute='_compute_kanban_state_label', string='Kanban State Label', tracking=True, task_dependency_tracking=True)
     create_date = fields.Datetime("Created On", readonly=True)
@@ -1416,6 +1427,16 @@ class Task(models.Model):
     @api.depends('stage_id', 'project_id')
     def _compute_kanban_state(self):
         self.kanban_state = 'normal'
+
+    @api.depends('depend_on_ids.state')
+    def _compute_state(self):
+        for task in self:
+            for dependent_task in task.depend_on_ids:
+                if dependent_task.state in BLOCKING_STATES:
+                    task.write({'state':'waiting'})
+            default_state = 'pending_approval' if task.state_approval_mode else 'in_progress'
+            task.write({'state':default_state})
+
 
     @api.depends('depend_on_ids.state_id')
     def _compute_state_id(self):

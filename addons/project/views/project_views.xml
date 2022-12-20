@@ -1191,11 +1191,10 @@
                                 <field name="priority" widget="priority_switch" class="me-3"/>
                                 <field name="name" class="o_task_name text-truncate" placeholder="Task Title..."/>
                             </div>
-                            <!--
-                            <field name="kanban_state" widget="state_selection" class=""/>
-                            -->
+                            
+                            <field name="state" widget="state_selection" class=""/>
+                            
                         </h1>
-                        <!--
                         <h2>
                             State Key:
                             <field name="state_key"/>
@@ -1204,7 +1203,6 @@
                             State: 
                             <field name="state_id" class="" string="State: " domain="[('approval_mode', '=', state_approval_mode), ('user_trigger_possible', '=', True)]"/>
                         </h2>
-                        -->
                     </div>
                     <group>
                         <group>
@@ -1478,6 +1476,7 @@
                     <field name="has_late_and_unreached_milestone" />
                     <field name="allow_milestones" />
                     <field name="state_id" />
+                    <field name="state" />
                     <field name="state_approval_mode" />
                     <field name="company_id"/>
                     <progressbar field="state_name" colors='{"Done": "success", "Approved": "success", "Changes requested": "warning", "Rejected": "danger", "In Progress": "200", "Pending approval": "200"}'/>
@@ -1492,7 +1491,7 @@
                                                 <i title="state approval" t-attf-class="{{record.state_approval_mode.raw_value ? 'fa fa-arrow-up' : 'fa fa-arrow-down'}}"/>
                                         
                                             -->
-                                            <field name="state_id" widget="project_task_state_selection"/>
+                                            <field name="state_id" widget="project_task_state_selection_m2o"/>
                                         <strong class="o_kanban_record_title">
                                             <s t-if="!record.active.raw_value">
                                             <field name="name" widget="name_with_subtask_count"/>
@@ -1552,6 +1551,8 @@
                                     <div class="oe_kanban_bottom_right" t-if="!selection_mode">
                                     <!--
                                         <field name="kanban_state" widget="state_selection" groups="base.group_user"/>-->
+                                        <field name="state" widget="project_task_state_selection"/>
+
                                         <t t-if="record.user_ids.raw_value"><field name="user_ids" widget="many2many_avatar_user"/></t>
                                     </div>
                                 </div>
@@ -1604,7 +1605,7 @@
                     <!--
                     <field name="kanban_state" widget="state_selection" optional="show" options="{'hide_label': True}" nolabel="1" required="0"/>
                     -->
-                    <field name="state_id" widget="project_task_state_selection" optional="show" readonly="not context.get('default_project_id')" options="{'hide_label': True}" nolabel="1" />
+                    <field name="state_id" widget="project_task_state_selection_m2o" optional="show" readonly="not context.get('default_project_id')" options="{'hide_label': True}" nolabel="1" />
                     
                     <field name="stage_id" invisible="context.get('set_visible',False)" optional="show" readonly="not context.get('default_project_id')"/>
                     <field name="recurrence_id" invisible="1" />

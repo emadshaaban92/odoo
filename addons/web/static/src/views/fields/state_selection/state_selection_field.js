@@ -39,7 +39,7 @@ export class StateSelectionField extends Component {
         });
     }
     get availableOptions() {
-        return this.options.filter((o) => o[0] !== this.currentValue);
+        return this.options.filter((o) => o !== this.currentValue);
     }
     get currentValue() {
         return this.props.value || this.options[0][0];
