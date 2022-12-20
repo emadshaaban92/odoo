@@ -121,3 +121,28 @@ options.registry.TableOfContentMainColumns = options.Class.extend({
     },
 });
 });
+
+odoo.define('website.TableOfContentRemoveBlock', function(require) {
+'use strict';
+
+const editor = require('web_editor.snippet.editor');
+const Dialog = require('web.Dialog');
+editor.SnippetEditor.include({
+    /**
+     * Prevent user to delete last section of snippet.
+     *
+     * @override
+     */
+    removeSnippet: function () {
+        let nextSibling = this.$target[0].nextElementSibling;
+        let previousSibling = this.$target[0].previousElementSibling;
+        return this.$target.parents().hasClass("s_table_of_content")
+            ? (nextSibling !== null || previousSibling !== null)
+            ? (this.$target.remove(), this.$el.remove())
+            : Dialog.alert(this, "You can not remove last content of snippet.")
+            : !(this.$target.hasClass("s_table_of_content"))
+            ? this._super(...arguments)
+            : this._super(...arguments)
+    }
+});
+});
