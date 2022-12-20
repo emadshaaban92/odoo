@@ -459,37 +459,6 @@ class WebsiteSlides(WebsiteProfile):
             status = 'not_authorized'
         return {'status': status, 'slide': slide, 'channel_id': slide.sudo().channel_id.id}
 
-    @staticmethod
-    def _get_valid_invite_values(channel_id=False, invite_hash=False, partner_id=False):
-        valid_invite_values = {}
-        if not channel_id or not partner_id or not invite_hash:
-            return valid_invite_values
-
-        channel_sudo = request.env['slide.channel'].browse(channel_id).exists().sudo()
-        partner_sudo = request.env['res.partner'].browse(partner_id).exists().sudo()
-        if not partner_sudo or not channel_sudo.is_published:
-            return valid_invite_values
-
-        partner_hash = tools.hmac(request.env(su=True), 'website_slides-channel-invite', (partner_id, channel_id))
-        if not hmac.compare_digest(partner_hash, invite_hash):
-            return valid_invite_values
-
-        channel_partner = channel_sudo.channel_partner_all_ids.filtered(lambda cp: cp.partner_id.id == partner_id)
-        if channel_partner.member_status != 'invited':
-            return valid_invite_values
-
-        # TODO-NAN: hash expired
-
-        valid_invite_values['is_partner_without_user'] = not partner_sudo.user_ids or all(user._is_public() for user in partner_sudo.user_ids)
-        valid_invite_values['is_visible_via_invite'] = channel_sudo.visibility == 'members'
-        valid_invite_values['channel'] = channel_sudo
-        valid_invite_values['pager_args'] = {
-            'invite_hash': invite_hash,
-            'partner_id': partner_id
-        } if valid_invite_values['is_visible_via_invite'] else {}
-
-        return valid_invite_values
-
     @http.route([
         '/slides/<int:channel_id>',
         '/slides/<int:channel_id>/category/<int:category_id>',
@@ -651,6 +620,35 @@ class WebsiteSlides(WebsiteProfile):
 
         render_values = self._prepare_additional_channel_values(render_values, **kw)
         return request.render('website_slides.course_main', render_values)
+
+    @staticmethod
+    def _get_valid_invite_values(channel_id=False, invite_hash=False, partner_id=False):
+        if not channel_id or not partner_id or not invite_hash:
+            return {}
+
+        channel_sudo = request.env['slide.channel'].browse(channel_id).exists().sudo()
+        partner_sudo = request.env['res.partner'].browse(partner_id).exists().sudo()
+        if not partner_sudo or not channel_sudo.is_published:
+            return {}
+
+        partner_hash = tools.hmac(request.env(su=True), 'website_slides-channel-invite', (partner_id, channel_id))
+        if not hmac.compare_digest(partner_hash, invite_hash):
+            return {}
+
+        channel_partner = channel_sudo.channel_partner_all_ids.filtered(lambda cp: cp.partner_id.id == partner_id)
+        if channel_partner.member_status != 'invited' or channel_partner.create_date + relativedelta(months=1) < fields.Datetime.now():
+            return {}
+
+        valid_invite_values = {}
+        valid_invite_values['is_partner_without_user'] = not partner_sudo.user_ids or all(user._is_public() for user in partner_sudo.user_ids)
+        valid_invite_values['is_visible_via_invite'] = channel_sudo.visibility == 'members'
+        valid_invite_values['channel'] = channel_sudo
+        valid_invite_values['pager_args'] = {
+            'invite_hash': invite_hash,
+            'partner_id': partner_id
+        } if valid_invite_values['is_visible_via_invite'] else {}
+
+        return valid_invite_values
 
     # SLIDE.CHANNEL UTILS
     # --------------------------------------------------

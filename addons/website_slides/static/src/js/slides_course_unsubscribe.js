@@ -93,18 +93,16 @@ var SlideUnsubscribeDialog = Dialog.extend({
         this.set('state', '_subscription');
     },
 
-    _onClickLeaveCourseSubmit: function () {
-        var self = this;
-        this._rpc({
+    _onClickLeaveCourseSubmit: async function () {
+        await this._rpc({
             route: '/slides/channel/leave',
             params: {channel_id: this.channelID},
-        }).then(function () {
-            if (self.visibility === 'public') {
-                window.location.reload();
-            } else {
-                window.location.replace('/slides');
-            }
         });
+        if (this.visibility === 'public') {
+            window.location.reload();
+        } else {
+            window.location.replace('/slides');
+        }
     },
 
     _onClickSubscriptionSubmit: function () {

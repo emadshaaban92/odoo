@@ -10,10 +10,10 @@
                     <field name="channel_published" invisible="1"/>
                     <field name="channel_visibility" invisible="1"/>
                     <field name="signup_allowed" invisible="1"/>
-                    <field name="is_enroll" invisible="1"/>
+                    <field name="with_enrollment" invisible="1"/>
                     <group col="1">
                         <div>
-                            <div attrs="{'invisible': ['|', ('is_enroll', '=', True), ('signup_allowed', '=', True)]}" role="alert" class="alert alert-info mb-4">
+                            <div attrs="{'invisible': ['|', ('with_enrollment', '=', True), ('signup_allowed', '=', True)]}" role="alert" class="alert alert-info mb-4">
                                 Attendees without account will not be able to create one in order to join the course.
                             </div>
                         </div>
@@ -28,7 +28,7 @@
                         </div>
                         <group col="2">
                             <field name="channel_invite_url" readonly="1" widget="CopyClipboardChar"
-                                attrs="{'invisible':['|', ('is_enroll', '=', True), ('channel_visibility', '!=', 'public')]}"
+                                attrs="{'invisible':['|', ('with_enrollment', '=', True), ('channel_visibility', '!=', 'public')]}"
                                 class="mb16"/>
                         </group>
                         <group col="2">

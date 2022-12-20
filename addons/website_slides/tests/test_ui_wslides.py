@@ -19,7 +19,7 @@ class TestUICommon(HttpCaseWithUserDemo, HttpCaseWithUserPortal):
         img_path = get_module_resource('website_slides', 'static', 'src', 'img', 'slide_demo_gardening_1.jpg')
         img_content = base64.b64encode(open(img_path, "rb").read())
 
-        self.env['slide.channel'].create({
+        self.channel = self.env['slide.channel'].create({
             'name': 'Basics of Gardening - Test',
             'user_id': self.env.ref('base.user_admin').id,
             'enroll': 'public',
@@ -166,6 +166,34 @@ class TestUiPublisher(HttpCaseWithUserDemo):
             'odoo.__DEBUG__.services["web_tour.tour"].run("course_publisher_standard")',
             'odoo.__DEBUG__.services["web_tour.tour"].tours.course_publisher_standard.ready',
             login=user_demo.login)
+
+
+@tests.common.tagged('post_install', '-at_install')
+class TestUiMemberInvited(TestUICommon):
+
+    def setUp(self):
+        super(TestUiMemberInvited, self).setUp()
+        self.channel_partner_portal = self.env['slide.channel.partner'].create({
+            'channel_id': self.channel.id,
+            'partner_id': self.user_portal.partner_id.id,
+            'member_status': 'invited',
+        })
+        self.channel.visibility = 'members'
+        self.portal_invite_url = self.channel_partner_portal.invitation_link_with_hash
+
+    def test_course_member_invited_members_only_logged_in(self):
+        self.start_tour(self.portal_invite_url, 'course_member_invited_members_only_logged', login='portal')
+
+    def test_course_member_invited_members_only_public_user(self):
+        self.start_tour(self.portal_invite_url, 'course_member_invited_members_only_public', login=None)
+
+    def test_course_member_invited_members_only_on_invite_logged_in(self):
+        self.channel.enroll = 'invite'
+        self.start_tour(self.portal_invite_url, 'course_member_invited_members_only_logged', login='portal')
+
+    def test_course_member_invited_members_only_on_invite_public(self):
+        self.channel.enroll = 'invite'
+        self.start_tour(self.portal_invite_url, 'course_member_invited_members_only_public', login=None)
 
 
 @tests.common.tagged('external', 'post_install', '-standard', '-at_install')

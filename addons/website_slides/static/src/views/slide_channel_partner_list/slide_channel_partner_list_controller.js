@@ -24,15 +24,15 @@ export default class SlideChannelPartnerListController extends ListController {
      * Reloads the model afterwards to see new (invited) attendees.
      * 
      * @private
-     * @param {boolean} isEnroll If true, then the wizard will invite and enroll members, who will join
+     * @param {boolean} withEnrollment If true, then the wizard will invite and enroll members, who will join
      * the course with status 'joined'. Otherwise, they will be invited only, with member_status 'invited'.
      */
-    async _slideChannelInvite(isEnroll) {
+    async _slideChannelInvite(withEnrollment) {
         let defaultChannelId = this.model.env.searchModel._context.default_channel_id || false;
         const action = await this.orm.call(
             'slide.channel',
             'action_channel_invite',
-            ["", defaultChannelId, isEnroll]
+            ["", defaultChannelId, withEnrollment]
         );
         this.action.doAction(action, {
             onClose: async () => await this.model.load()

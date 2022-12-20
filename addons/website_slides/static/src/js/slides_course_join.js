@@ -57,6 +57,7 @@ var CourseJoinWidget = publicWidget.Widget.extend({
 
         if (this.isVisibleViaInvite) {
             this.joinChannel(this.channel.channelId);
+            return;
         }
 
         if (this.channel.channelEnroll !== 'invite' || (this.channel.channelEnroll === 'invite' && this.isAllowedMember)) {
@@ -119,7 +120,6 @@ var CourseJoinWidget = publicWidget.Widget.extend({
      */
     joinChannel: function (channelId) {
         var self = this;
-        let message = '';
         this._rpc({
             route: '/slides/channel/join',
             params: {
@@ -130,6 +130,7 @@ var CourseJoinWidget = publicWidget.Widget.extend({
                 self.afterJoin();
             } else {
                 if (data.error === 'public_user') {
+                    let message;
                     if (self.isVisibleViaInvite) {
                         message = self.isPartnerWithoutUser ?
                             _t('Please <a href="/web/signup?redirect=%s">create an account</a> to join this course') :

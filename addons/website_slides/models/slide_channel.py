@@ -737,9 +737,9 @@ class Channel(models.Model):
         return self.action_redirect_to_members('invited')
 
     def action_channel_enroll_invite(self):
-        return self.action_channel_invite(is_enroll=True)
+        return self.action_channel_invite(with_enrollment=True)
 
-    def action_channel_invite(self, channel_id=False, is_enroll=False):
+    def action_channel_invite(self, channel_id=False, with_enrollment=False):
         template = self.env.ref('website_slides.mail_template_slide_channel_invite', raise_if_not_found=False)
         course_name = self.env['slide.channel'].sudo().browse(channel_id).name if channel_id else self.name if len(self) == 1 else ''
 
@@ -749,9 +749,9 @@ class Channel(models.Model):
             default_use_template=bool(template),
             default_template_id=template and template.id or False,
             default_email_layout_xmlid='website_slides.mail_notification_channel_invite',
-            default_is_enroll=is_enroll,
+            default_with_enrollment=with_enrollment,
         )
-        title_text = _('Invite Members to ') if is_enroll and course_name else _('Invite Members to a course') if is_enroll else _('Share ') if course_name else _('Share a Course')
+        title_text = _('Invite Members to ') if with_enrollment and course_name else _('Invite Members to a course') if with_enrollment else _('Share ') if course_name else _('Share a Course')
         return {
             'type': 'ir.actions.act_window',
             'view_mode': 'form',

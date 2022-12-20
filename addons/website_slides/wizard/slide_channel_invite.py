@@ -28,7 +28,7 @@ class SlideChannelInvite(models.TransientModel):
     channel_published = fields.Boolean('Course Published', compute="_compute_channel_published", readonly=False, store=True)
     channel_can_publish = fields.Boolean(compute="_compute_channel_can_publish")
     # membership
-    is_enroll = fields.Boolean(
+    with_enrollment = fields.Boolean(
         'Enroll partners', readonly=True,
         help="Whether invited partners will be added as enrolled or just invited partners")
     signup_allowed = fields.Boolean('Signup Allowed', readonly=True, default=lambda self: self.env['res.users']._get_signup_invitation_scope() == 'b2c')
@@ -77,7 +77,7 @@ class SlideChannelInvite(models.TransientModel):
         """ Process the wizard content and proceed with sending the related
             email(s), rendering any template patterns on the fly if needed.
             This method is used both to add members as 'joined' (on invitation)
-            and as 'invited' (on share), depending on the value of is_enroll"""
+            and as 'invited' (on share), depending on the value of with_enrollment"""
         self.ensure_one()
 
         if not self.env.user.email:
@@ -87,7 +87,7 @@ class SlideChannelInvite(models.TransientModel):
 
         mail_values = []
         for partner_id in self.partner_ids:
-            slide_channel_partner = self.channel_id._action_add_members(partner_id, member_status='joined' if self.is_enroll else 'invited')
+            slide_channel_partner = self.channel_id._action_add_members(partner_id, member_status='joined' if self.with_enrollment else 'invited')
             if slide_channel_partner:
                 mail_values.append(self._prepare_mail_values(slide_channel_partner))
 
