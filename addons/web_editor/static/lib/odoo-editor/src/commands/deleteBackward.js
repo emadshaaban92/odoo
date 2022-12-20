@@ -25,7 +25,6 @@ import {
     isVisibleEmpty,
     isNotEditableNode,
     createDOMPathGenerator,
-    setCursorStart,
 } from '../utils/utils.js';
 
 Text.prototype.oDeleteBackward = function (offset, alreadyMoved = false) {
@@ -216,15 +215,13 @@ HTMLElement.prototype.oDeleteBackward = function (offset, alreadyMoved = false, 
             // or we would loose the line break located after the <p>.
             const cursorNodeNode = cursorNode.childNodes[cursorOffset];
             const cursorNodeRightNode = cursorNodeNode ? cursorNodeNode.nextSibling : undefined;
-            if (cursorNodeRightNode && !isFirstEl &&
+            if (isFirstEl) {
+                cursorNode.insertBefore(document.createElement('p'), cursorNodeNode);
+                cursorNode.firstElementChild.appendChild(cursorNodeNode);
+            } else if (cursorNodeRightNode &&
                 cursorNodeRightNode.nodeType === Node.TEXT_NODE &&
                 nextSibling === cursorNodeRightNode) {
                 moveDest[0].insertBefore(document.createElement('br'), cursorNodeRightNode);
-            } else if (isFirstEl) {
-                const currentNode = cursorNodeNode.nodeType === 3 && cursorNodeNode.textContent !== '' ?  cursorNodeNode : cursorNode.firstElementChild;
-                cursorNode.insertBefore(document.createElement('p'),currentNode);
-                cursorNode.firstElementChild.appendChild(currentNode);
-                setCursorStart(cursorNode.firstElementChild);
             }
         }
     }
