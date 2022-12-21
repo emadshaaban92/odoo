@@ -414,7 +414,7 @@ class View(models.Model):
         """ Render the template. If website is enabled on request, then extend rendering context with website values. """
         self._handle_visibility(do_raise=True)
         new_context = dict(self._context)
-        if request and getattr(request, 'is_frontend', False):
+        if request and getattr(request, 'is_frontend', False) and not self._context.get('skip_branding'):
 
             editable = request.website.is_publisher()
             translatable = editable and self._context.get('lang') != request.website.default_lang_id.code

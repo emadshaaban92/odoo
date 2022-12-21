@@ -346,7 +346,7 @@ class WebsiteForum(WebsiteProfile):
         if request.env.user.forum_waiting_posts_count:
             return request.redirect("/forum/%s/ask" % slug(forum))
 
-        new_question = request.env['forum.post'].create({
+        new_question = request.env['forum.post'].with_context(skip_branding=True).create({
             'forum_id': forum.id,
             'name': post.get('post_name') or (post_parent and 'Re: %s' % (post_parent.name or '')) or '',
             'content': post.get('content', False),
