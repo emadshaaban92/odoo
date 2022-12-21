@@ -4,6 +4,7 @@ odoo.define('board.AddToGoogleSpreadsheetMenu', function (require) {
     const Dialog = require('web.OwlDialog');
     const Domain = require('web.Domain');
     const FavoriteMenu = require('web.FavoriteMenu');
+    const { DROPDOWN } = require("@web/core/dropdown/dropdown");
 
     const { Component } = owl;
     const { useState } = owl.hooks;
@@ -26,6 +27,14 @@ odoo.define('board.AddToGoogleSpreadsheetMenu', function (require) {
             });
         }
 
+        onDialogClosed() {
+            this.state.showDialog = false;
+            const dropdown = this.env[DROPDOWN];
+            if (dropdown) {
+                dropdown.closeAllParents();
+            }
+        }
+
         //---------------------------------------------------------------------
         // Handlers
         //---------------------------------------------------------------------
@@ -40,7 +49,7 @@ odoo.define('board.AddToGoogleSpreadsheetMenu', function (require) {
             const domain = Domain.prototype.arrayToString(searchQuery.domain);
             const groupBys = searchQuery.groupBy.join(" ");
             const listViewId = listView ? listView.viewID : false;
-            const result = await this.rpc({
+            const result = await this.env.services.rpc({
                 model: 'google.drive.config',
                 method: 'set_spreadsheet',
                 args: [modelName, domain, groupBys, listViewId],
@@ -54,6 +63,11 @@ odoo.define('board.AddToGoogleSpreadsheetMenu', function (require) {
                 return;
             }
             if (result.url) {
+                const dropdown = this.env[DROPDOWN];
+                if (dropdown) {
+                    dropdown.closeAllParents();
+                }
+
                 // According to MDN doc, one should not use _blank as title.
                 // todo: find a good name for the new window
                 window.open(result.url, '_blank');
