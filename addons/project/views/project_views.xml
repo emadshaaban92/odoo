@@ -1190,10 +1190,10 @@
                         <h1 class="d-flex justify-content-between align-items-center">
                             <div class="d-flex w-100">
                                 <field name="priority" widget="priority_switch" class="me-3"/>
-                                <field name="name" class="o_task_name text-truncate" placeholder="Task Title..."/>
+                                <field name="name" class="o_task_name text-truncate oe_inline" placeholder="Task Title..."/>
                             </div>
                             
-                            <field name="state" widget="project_task_state_selection" class=""/>
+                            <field name="state" widget="project_task_state_selection_form" class=""/>
                             
                         </h1>
                         <h2>
@@ -1262,7 +1262,7 @@
                                     <field name="display_project_id" string="Project" optional="hide" options="{'no_open': 1}"/>
                                     <field name="milestone_id"
                                         optional="hide"
-                                        context="{'default_project_id': display_project_id or project_id}"
+                                        context="{'dalign-items-centerefault_project_id': display_project_id or project_id}"
                                         attrs="{'invisible': [('allow_milestones', '=', False)], 'column_invisible': [('parent.allow_milestones', '=', False)]}"
                                     />
                                     <field name="partner_id" optional="hide"/>
