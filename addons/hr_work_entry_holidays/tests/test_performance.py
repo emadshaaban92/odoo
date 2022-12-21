@@ -6,6 +6,7 @@ from odoo.addons.hr_work_entry_holidays.tests.common import TestWorkEntryHoliday
 from odoo.tests.common import users, warmup, tagged
 
 
+@tagged('work_entry_holidays_perf')
 class TestWorkEntryHolidaysPerformance(TestWorkEntryHolidaysBase):
 
     @classmethod
@@ -111,7 +112,7 @@ class TestWorkEntryHolidaysPerformancesBigData(TestWorkEntryHolidaysBase):
     def test_work_entries_generation_perf(self):
         # Test Case 7: Try to generate work entries for
         # a hundred employees over a month
-        with self.assertQueryCount(__system__=2607, admin=2807):
+        with self.assertQueryCount(__system__=406, admin=406):
             work_entries = self.contracts._generate_work_entries(date(2020, 7, 1), date(2020, 8, 31))
 
         # Original work entries to generate when we don't adapt date_generated_from and
