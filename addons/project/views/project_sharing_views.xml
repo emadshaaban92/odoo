@@ -245,14 +245,7 @@
         <field name="mode">primary</field>
         <field name="priority">999</field>
         <field name="arch" type="xml">
-            <field name="display_project_id" position="replace"/>
-            <field name="company_id" position="replace"/>
-            <filter name="my_tasks" position="replace"/>
-            <filter name="favorite_projects" position="replace"/>
-            <xpath expr="//filter[@name='message_needaction']/following-sibling::separator[1]" position="replace"/>
-            <filter name="message_needaction" position="replace"/>
-            <filter name="project" position="replace"/>
-            <filter name="company_id" position="replace"/>
+            <search position="inside"/>
         </field>
     </record>
 
@@ -262,11 +255,6 @@
         <field name="view_mode">kanban,tree,form</field>
         <field name="search_view_id" ref="project.project_sharing_project_task_view_search"/>
         <field name="domain">[('display_project_id', '=', active_id)]</field>
-        <field name="context">{
-            'default_project_id': active_id,
-            'delete': 0,
-            'sale_show_partner_name': True,
-        }</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 No tasks found. Let's create one!

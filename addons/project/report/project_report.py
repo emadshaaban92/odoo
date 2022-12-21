@@ -49,7 +49,6 @@ class ReportProjectTaskUser(models.Model):
         column1='project_task_id', column2='project_tags_id',
         string='Tags', readonly=True)
     parent_id = fields.Many2one('project.task', string='Parent Task', readonly=True)
-    ancestor_id = fields.Many2one('project.task', string="Ancestor Task", readonly=True)
     # We are explicitly not using a related field in order to prevent the recomputing caused by the depends as the model is a report.
     rating_last_text = fields.Selection(RATING_TEXT, string="Rating Last Text", compute="_compute_rating_last_text", search="_search_rating_last_text")
     personal_stage_type_ids = fields.Many2many('project.task.type', relation='project_task_user_rel',
@@ -62,8 +61,6 @@ class ReportProjectTaskUser(models.Model):
         column2='task_id', string='Block', readonly=True,
         domain="[('allow_task_dependencies', '=', True), ('id', '!=', id)]")
     description = fields.Text(readonly=True)
-    my_activity_user_id = fields.Many2one('res.users', readonly=True)
-    my_activity_date_deadline = fields.Date(readonly=True)
 
     def _compute_rating_last_text(self):
         for task_analysis in self:
@@ -89,7 +86,6 @@ class ReportProjectTaskUser(models.Model):
                 t.company_id,
                 t.partner_id,
                 t.parent_id,
-                t.ancestor_id,
                 t.stage_id,
                 t.is_closed,
                 t.kanban_state,
@@ -105,9 +101,7 @@ class ReportProjectTaskUser(models.Model):
                 t.working_hours_close,
                 (extract('epoch' from (t.date_deadline-(now() at time zone 'UTC'))))/(3600*24) as delay_endings_days,
                 CASE WHEN t.project_id IS NOT NULL OR t.parent_id IS NOT NULL THEN false ELSE true END as is_private,
-                COUNT(td.task_id) as dependent_ids_count,
-                ma.user_id as my_activity_user_id,
-                MIN(ma.date_deadline) as my_activity_date_deadline
+                COUNT(td.task_id) as dependent_ids_count
         """
 
     def _group_by(self):
@@ -120,7 +114,6 @@ class ReportProjectTaskUser(models.Model):
                 t.date_last_stage_update,
                 t.date_deadline,
                 t.project_id,
-                t.ancestor_id,
                 t.priority,
                 t.name,
                 t.company_id,
@@ -136,8 +129,7 @@ class ReportProjectTaskUser(models.Model):
                 t.working_hours_close,
                 t.milestone_id,
                 pm.id,
-                td.depends_on_id,
-                ma.user_id
+                td.depends_on_id
         """
 
     def _from(self):
@@ -151,8 +143,6 @@ class ReportProjectTaskUser(models.Model):
                           AND pm.is_reached = False
                           AND pm.deadline <= CAST(now() AS DATE)
                     LEFT JOIN task_dependencies_rel td ON td.depends_on_id = t.id
-                    LEFT JOIN mail_activity ma ON ma.res_id = t.id
-                          AND ma.res_model = 'project.task'
         """
 
     def _where(self):

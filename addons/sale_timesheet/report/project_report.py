@@ -4,7 +4,6 @@ from odoo import fields, models
 
 
 class ReportProjectTaskUser(models.Model):
-    _name = 'report.project.task.user'
     _inherit = 'report.project.task.user'
 
     remaining_hours_so = fields.Float('Remaining Hours on SO', readonly=True)

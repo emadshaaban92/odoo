@@ -41,7 +41,7 @@
         <record id="view_task_project_user_search" model="ir.ui.view">
             <field name="name">report.project.task.user.search</field>
             <field name="model">report.project.task.user</field>
-            <field name="inherit_id" ref="project.view_task_search_form_base"/>
+            <field name="inherit_id" ref="project.view_task_search_form_project_fsm_base"/>
             <field name="mode">primary</field>
             <field name="arch" type="xml">
                 <search position="attributes">
@@ -50,10 +50,6 @@
                 <field name="display_project_id" position="attributes">
                     <attribute name="name">project_id</attribute>
                 </field>
-                <filter name="message_needaction" position="replace"/>
-                <filter name="activities_overdue" position="replace"/>
-                <filter name="activities_today" position="replace"/>
-                <filter name="activities_upcoming_all" position="replace"/>
             </field>
         </record>
 
@@ -61,7 +57,6 @@
             <field name="name">Tasks Analysis</field>
             <field name="res_model">report.project.task.user</field>
             <field name="view_mode">graph,pivot</field>
-            <field name="domain">['|', ('my_activity_user_id', '=', False), ('my_activity_user_id', '=', uid)]</field>
             <field name="search_view_id" ref="view_task_project_user_search"/>
             <field name="context">{'group_by_no_leaf':1, 'group_by':[], 'graph_measure': '__count__'}</field>
             <field name="help" type="html">
