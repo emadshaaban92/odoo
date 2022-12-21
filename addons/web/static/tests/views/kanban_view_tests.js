@@ -12104,7 +12104,8 @@ QUnit.module("Views", (hooks) => {
         assert.containsNone(target, ".o_kanban_record.o_dragged");
 
         // Drag first record of first group to the right
-        await drag(".o_kanban_record").moveTo(".o_kanban_group:nth-child(3) .o_kanban_record");
+        let dragActions = await drag(".o_kanban_record");
+        await dragActions.moveTo(".o_kanban_group:nth-child(3) .o_kanban_record");
 
         assert.strictEqual(content.scrollLeft, 0);
 
@@ -12128,7 +12129,8 @@ QUnit.module("Views", (hooks) => {
         assert.containsNone(target, ".o_kanban_record.o_dragged");
 
         // Drag first record of last group to the left
-        await drag(".o_kanban_group:nth-child(3) .o_kanban_record").moveTo(".o_kanban_record");
+        dragActions = await drag(".o_kanban_group:nth-child(3) .o_kanban_record");
+        await dragActions.moveTo(".o_kanban_record");
 
         // next frame (normal time delta)
         await nextAnimationFrame(16);

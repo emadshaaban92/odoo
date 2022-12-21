@@ -124,7 +124,8 @@ QUnit.module("Draggable", ({ beforeEach }) => {
         assert.verifySteps([]);
 
         // First item after 2nd item
-        const { drop } = await drag(".item:first-child").moveTo(".item:nth-child(2)");
+        const { drop, moveTo } = await drag(".item:first-child");
+        await moveTo(".item:nth-child(2)");
 
         assert.hasClass(target.querySelector(".item"), "o_dragged");
 

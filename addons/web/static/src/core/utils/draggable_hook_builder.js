@@ -576,12 +576,12 @@ export function makeDraggableHook(hookParams) {
                     return;
                 }
 
-                if (state.dragging) {
-                    updateElementPosition();
-                    callBuildHandler("onDrag");
-                } else {
+                if (!state.dragging) {
                     dragStart();
                 }
+
+                updateElementPosition();
+                callBuildHandler("onDrag");
             };
 
             /**

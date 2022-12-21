@@ -717,7 +717,8 @@ function getDifferentParents(n1, n2) {
  * @param {"top" | "bottom" | "left" | "right"} [position]
  */
 export async function dragAndDrop(from, target, position) {
-    await drag(from).drop(target, position);
+    const { drop } = await drag(from);
+    await drop(target, position);
 }
 
 /**
@@ -732,21 +733,37 @@ export async function dragAndDrop(from, target, position) {
  *
  * @param {HTMLElement | string} from
  */
-export function drag(from) {
-    const cancel = async () => {
-        await triggerEvent(window, null, "keydown", { key: "Escape" });
+export async function drag(from, endDrag) {
+    const assertIsDragging = (fn) => {
+        return {
+            async [fn.name](...args) {
+                if (dragEndReason) {
+                    throw new Error(
+                        `Cannot execute drag helper '${fn.name}': drag sequence has been ended by '${dragEndReason}'.`
+                    );
+                }
+                await fn(...args);
+                if (endDrag) {
+                    dragEndReason = fn.name;
+                }
+            },
+        }[fn.name];
     };
+
+    const cancel = assertIsDragging(async function cancel() {
+        await triggerEvent(window, null, "keydown", { key: "Escape" });
+    }, true);
 
     /**
      * @param {HTMLElement | string} [target]
      * @param {"top" | "bottom" | "left" | "right"} [position]
      */
-    const drop = async (target, position) => {
+    const drop = assertIsDragging(async function drop(target, position) {
         if (target) {
             await moveTo(target, position);
         }
         await triggerEvent(from, null, "mouseup", targetPosition);
-    };
+    }, true);
 
     /**
      * @param {HTMLElement | string} target
@@ -783,7 +800,7 @@ export function drag(from) {
      * @param {HTMLElement | string} [target]
      * @param {"top" | "bottom" | "left" | "right"} [position]
      */
-    const moveTo = async (target, position) => {
+    const moveTo = assertIsDragging(async function moveTo(target, position) {
         if (!target) {
             return;
         }
@@ -794,17 +811,17 @@ export function drag(from) {
         targetPosition = getTargetPosition(target, position);
 
         // Move, enter and drop the element on the target
-        triggerEvent(window, null, "mousemove", targetPosition);
+        await triggerEvent(window, null, "mousemove", targetPosition);
+
         // "mouseenter" is fired on every parent of `target` that do not contain
         // `from` (typically: different parent lists).
         for (const parent of getDifferentParents(from, target)) {
             triggerEvent(parent, null, "mouseenter", targetPosition);
         }
-
         await nextTick();
 
         return dragHelpers;
-    };
+    }, false);
 
     const dragHelpers = { cancel, drop, moveTo };
     const fixture = getFixture();
@@ -813,10 +830,11 @@ export function drag(from) {
 
     const fromRect = from.getBoundingClientRect();
     let targetPosition;
+    let dragEndReason = null;
 
     // Mouse down on main target
 
-    triggerEvent(from, null, "mousedown", {
+    await triggerEvent(from, null, "mousedown", {
         clientX: fromRect.x + fromRect.width / 2,
         clientY: fromRect.y + fromRect.height / 2,
     });
