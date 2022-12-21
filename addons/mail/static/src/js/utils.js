@@ -145,7 +145,7 @@ function inline(node, transform_children) {
 // Parses text to find email: Tagada <address@mail.fr> -> [Tagada, address@mail.fr] or False
 function parseEmail(text) {
     if (text) {
-        var result = text.match(/(.*)<(.*@.*)>/);
+        var result = text.match(/[\s"]*([^"]*)[^<]*<(.*@.*)>/);
         if (result) {
             return [_.str.trim(result[1]), _.str.trim(result[2])];
         }
