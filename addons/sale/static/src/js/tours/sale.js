@@ -4,14 +4,16 @@ odoo.define('sale.tour', function(require) {
 const {_t} = require('web.core');
 const {Markup} = require('web.utils');
 var tour = require('web_tour.tour');
+var { registry } = require("@web/core/registry");
 
 const { markup } = owl;
 
-tour.register("sale_tour", {
+registry.category("tours").add("sale_tour", {
+    name: "sale_tour",
     url: "/web",
     rainbowMan: false,
     sequence: 20,
-}, [tour.stepUtils.showAppsMenuItem(), {
+    steps: [tour.stepUtils.showAppsMenuItem(), {
     trigger: ".o_app[data-menu-xmlid='sale.sale_menu_root']",
     content: _t("Open Sales app to send your first quotation in a few clicks."),
     position: "right",
@@ -66,14 +68,15 @@ tour.register("sale_tour", {
     extra_trigger: ".o_sale_order",
     content: _t("Now, we'll create a sample quote."),
     position: "bottom",
-}]);
+}]});
 
-tour.register("sale_quote_tour", {
+registry.category("tours").add("sale_quote_tour", {
+        name: "sale_quote_tour",
         url: "/web#action=sale.action_quotations_with_onboarding&view_type=form",
         rainbowMan: true,
         rainbowManMessage: markup(_t("<b>Congratulations</b>, your first quotation is sent!<br>Check your email to validate the quote.")),
         sequence: 30,
-    }, [{
+    steps: [{
         trigger: ".o_field_res_partner_many2one[name='partner_id']",
         extra_trigger: ".o_sale_order",
         content: _t("Write a company name to create one, or see suggestions."),
@@ -112,11 +115,18 @@ tour.register("sale_quote_tour", {
         trigger: "a:contains('DESK0001')",
         auto: true,
     }, {
-        trigger: ".o_field_widget[name='price_unit'] ",
+        trigger: ".o_field_text[name='name'] textarea:propValueContains(DESK0001)",
+        run: () => {},
+        auto: true,
+    }, {
+        trigger: ".o_field_widget[name='price_unit'] input",
         extra_trigger: ".fa-arrow-right",  // Wait for product creation
         content: Markup(_t("<b>Set a price</b>.")),
         position: "right",
         run: "text 10.0"
+    }, {
+        trigger: ".o_field_monetary[name='price_subtotal']:contains(10.00)",
+        auto: true,
     },
     ...tour.stepUtils.statusbarButtonsSteps("Send by Email", Markup(_t("<b>Send the quote</b> to yourself and check what the customer will receive.")), ".o_statusbar_buttons button[name='action_quotation_send']"),
     {
@@ -127,6 +137,6 @@ tour.register("sale_quote_tour", {
         extra_trigger: ".modal-footer button[name='action_send_mail']",
         content: _t("Let's send the quote."),
         position: "bottom",
-    }]);
+    }]});
 
 });
