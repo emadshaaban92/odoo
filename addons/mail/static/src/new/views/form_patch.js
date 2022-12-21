@@ -8,6 +8,7 @@ import { FormController } from "@web/views/form/form_controller";
 import { FormRenderer } from "@web/views/form/form_renderer";
 import { Chatter } from "./chatter";
 import { useChildSubEnv } from "@odoo/owl";
+import { FormCompiler } from "@web/views/form/form_compiler";
 
 FormController.components.Chatter = Chatter;
 FormRenderer.components.Chatter = Chatter;
@@ -24,6 +25,7 @@ patch(FormController.prototype, "mail/new", {
         if (xmlDocChatter) {
             const doc = archXml.ownerDocument;
             const rootT = doc.createElement("t");
+            rootT.setAttribute("chatter", "");
             rootT.setAttribute("t-if", "this.env.hasChatter()");
             const chatterTag = doc.createElement("Chatter");
             chatterTag.setAttribute("resId", "this.props.record.resId");
@@ -61,5 +63,19 @@ patch(FormController.prototype, "mail/new", {
         return Boolean(
             messageOptions["open_attachments"] || messageFollowerOptions["open_attachments"]
         );
+    },
+});
+
+patch(FormCompiler.prototype, "mail/new", {
+    compileGenericNode(el, params) {
+        if (el.hasAttribute("chatter")) {
+            return el;
+        }
+        return this._super(el, params);
+    },
+    validateNode(node) {
+        if (!node.hasAttribute("chatter")) {
+            return this._super(node);
+        }
     },
 });
