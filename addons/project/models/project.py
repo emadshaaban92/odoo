@@ -71,10 +71,10 @@ PROJECT_TASK_WRITABLE_FIELDS = {
 }
 
 BLOCKING_STATES = [
-    'In Progress', 
-    'Waiting', 
-    'Pending approval', 
-    'Changes requested'
+    'in_progress', 
+    'waiting', 
+    'pending_approval', 
+    'changes_requested'
 ]
 
 STATES_KEY = {
@@ -1434,6 +1434,7 @@ class Task(models.Model):
             for dependent_task in task.depend_on_ids:
                 if dependent_task.state in BLOCKING_STATES:
                     task.write({'state':'waiting'})
+                    return
             default_state = 'pending_approval' if task.state_approval_mode else 'in_progress'
             task.write({'state':default_state})
 
@@ -1461,6 +1462,9 @@ class Task(models.Model):
         if self.state_id != self.env['project.task.state'].search([('key', '=', STATES_KEY['Waiting'])]):   #waiting state
             default_state = 'Pending approval' if self.state_approval_mode else 'In Progress'
             self.write({'state_id': self.env['project.task.state'].search([('key', '=', STATES_KEY[default_state])])})
+        if self.state != 'waiting':
+            default_state = 'pending_approval' if self.state_approval_mode else 'in_progress'
+            self.write({'state': default_state})
 
     #@api.depends('project_id')
     #def _compute_state(self):

@@ -80,8 +80,7 @@
                         <filter string="Ancestor Task" name="groupby_ancestor_task" context="{'group_by': 'ancestor_id'}" groups="project.group_subtask_project"/>
                         <filter string="Milestone" name="milestone" context="{'group_by': 'milestone_id'}" groups="project.group_project_milestone"/>
                         <filter string="Customer" name="customer" context="{'group_by': 'partner_id'}"/>
-                        <filter string="Kanban State" name="kanban_state" context="{'group_by': 'kanban_state'}"/>
-                        <filter string="State" name="state_id" context="{'group_by': 'state_id'}"/>
+                        <filter string="State" name="state" context="{'group_by': 'state'}"/>
                         <filter string="Deadline" name="date_deadline" context="{'group_by': 'date_deadline'}"/>
                         <filter string="Creation Date" name="group_create_date" context="{'group_by': 'create_date'}"/>
                     </group>
@@ -1116,6 +1115,7 @@
                     <field name="state_key" invisible="1"/>
                     <field name="state_id" invisible="1"/>
                     <header>
+                        <!--
                         <button name="action_toggle_approve_state" string="Approve" type="object" class="" attrs="{'invisible' : &quot;['|', ('state_approval_mode', '=', False), ('state_key','=',5)]&quot;}" icon="fa-check"/>
                         <button name="action_toggle_approve_state" string="Approved" type="object" class="oe_highlight" attrs="{'invisible' : &quot;['|', ('state_approval_mode', '=', False), ('state_key','!=',5)]&quot;}" icon="fa-check"/>
                         <button name="action_toggle_request_changes_state" string="Request changes" type="object" class="" attrs="{'invisible' : &quot;['|', ('state_approval_mode', '=', False), ('state_key','=',7)]&quot;}" icon="fa-repeat"/>
@@ -1124,6 +1124,7 @@
                         <button name="action_toggle_reject_state" string="Rejected" type="object" class="oe_highlight" attrs="{'invisible' : &quot;['|', ('state_approval_mode', '=', False), ('state_key','!=',6)]&quot;}" icon="fa-close"/>
                         <button name="action_toggle_mark_as_done" string="Mark as done" type="object" class="" attrs="{'invisible' : &quot;['|', ('state_approval_mode', '=', True), ('state_key','=',2)]&quot;}" icon="fa-check"/>
                         <button name="action_toggle_mark_as_done" string="Done" type="object" class="oe_highlight" attrs="{'invisible' : &quot;['|', ('state_approval_mode', '=', True), ('state_key','!=',2)]&quot;}" icon="fa-check"/>
+                        -->
                         <button name="action_assign_to_me" string="Assign to Me" type="object" class="oe_highlight" attrs="{'invisible' : &quot;['|', ('user_ids', 'in', uid), ('user_ids', '!=', [])]&quot;}" data-hotkey="q"/>
                         <button name="action_assign_to_me" string="Assign to Me" type="object" attrs="{'invisible': &quot;['|', ('user_ids', 'in', uid), ('user_ids', '=', [])]&quot;}" data-hotkey="q"/>
                         <field name="stage_id" widget="statusbar" options="{'clickable': '1', 'fold_field': 'fold'}" attrs="{'invisible': [('project_id', '=', False), ('stage_id', '=', False)]}"/>
@@ -1192,16 +1193,14 @@
                                 <field name="name" class="o_task_name text-truncate" placeholder="Task Title..."/>
                             </div>
                             
-                            <field name="state" widget="state_selection" class=""/>
+                            <field name="state" widget="project_task_state_selection" class=""/>
                             
                         </h1>
                         <h2>
-                            State Key:
-                            <field name="state_key"/>
                             Approval Mode:
                             <field name="state_approval_mode" class="" string="Approval mode"/>
                             State: 
-                            <field name="state_id" class="" string="State: " domain="[('approval_mode', '=', state_approval_mode), ('user_trigger_possible', '=', True)]"/>
+                            <field name="state" class="" string="State: "/>
                         </h2>
                     </div>
                     <group>
@@ -1491,7 +1490,7 @@
                                                 <i title="state approval" t-attf-class="{{record.state_approval_mode.raw_value ? 'fa fa-arrow-up' : 'fa fa-arrow-down'}}"/>
                                         
                                             -->
-                                            <field name="state_id" widget="project_task_state_selection_m2o"/>
+                                            <field name="state" widget="project_task_state_selection"/>
                                         <strong class="o_kanban_record_title">
                                             <s t-if="!record.active.raw_value">
                                             <field name="name" widget="name_with_subtask_count"/>
@@ -1550,8 +1549,8 @@
                                     </div>
                                     <div class="oe_kanban_bottom_right" t-if="!selection_mode">
                                     <!--
-                                        <field name="kanban_state" widget="state_selection" groups="base.group_user"/>-->
-                                        <field name="state" widget="project_task_state_selection"/>
+                                        <field name="kanban_state" widget="state_selection" groups="base.group_user"/>
+                                        <field name="state_id" widget="project_task_state_selection_m2o"/>-->
 
                                         <t t-if="record.user_ids.raw_value"><field name="user_ids" widget="many2many_avatar_user"/></t>
                                     </div>
@@ -1604,8 +1603,8 @@
                     <field name="legend_blocked" invisible="1"/>
                     <!--
                     <field name="kanban_state" widget="state_selection" optional="show" options="{'hide_label': True}" nolabel="1" required="0"/>
-                    -->
                     <field name="state_id" widget="project_task_state_selection_m2o" optional="show" readonly="not context.get('default_project_id')" options="{'hide_label': True}" nolabel="1" />
+                    -->
                     
                     <field name="stage_id" invisible="context.get('set_visible',False)" optional="show" readonly="not context.get('default_project_id')"/>
                     <field name="recurrence_id" invisible="1" />
@@ -1637,7 +1636,7 @@
                     <field name="kanban_state"/>
                     <field name="state_name"/>
                     -->
-                    <field name="state_id"/>
+                    <field name="state"/>
                 </calendar>
             </field>
         </record>
@@ -1886,7 +1885,7 @@
             <field name="context">{'project_id':active_id}</field>
         </record>
 
-        
+        <!--
         <record id="action_toggle_approval_mode" model="ir.actions.server">
             <field name="name">Toggle approval mode</field>
             <field name="model_id" ref="model_project_task"/>
@@ -1897,6 +1896,7 @@
                 action = model.action_toggle_approval_mode()
             </field>
         </record>
+        -->
 
         <record id="action_view_task_from_milestone" model="ir.actions.act_window">
             <field name="name">Tasks</field>
