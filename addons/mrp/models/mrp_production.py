@@ -38,7 +38,7 @@ class MrpProduction(models.Model):
     def _get_default_is_locked(self):
         return not self.user_has_groups('mrp.group_unlocked_by_default')
 
-    name = fields.Char('Reference', copy=False, readonly=True)
+    name = fields.Char('Reference', default='New', copy=False, readonly=True)
     priority = fields.Selection(
         PROCUREMENT_PRIORITIES, string='Priority', default='0',
         help="Components will be reserved first for the MO with the highest priorities.")
@@ -52,6 +52,7 @@ class MrpProduction(models.Model):
         'product.product', 'Product',
         domain="""[
             ('type', 'in', ['product', 'consu']),
+            ('id', 'not in', disabled_product_ids),
             '|',
                 ('company_id', '=', False),
                 ('company_id', '=', company_id)
@@ -131,7 +132,7 @@ class MrpProduction(models.Model):
                         ('product_id','=',False),
         ('type', '=', 'normal')]""",
         check_company=True, compute='_compute_bom_id', store=True, precompute=True,
-        help="Bill of Materials allow you to define the list of required components to make a finished product.")
+        help="Bills of Materials, also called recipes, are used to autocomplete components and work order instructions.")
 
     state = fields.Selection([
         ('draft', 'Draft'),
@@ -243,6 +244,7 @@ class MrpProduction(models.Model):
         compute='_compute_show_allocation',
         help='Technical Field used to decide whether the button "Allocation" should be displayed.')
     allow_workorder_dependencies = fields.Boolean('Allow Work Order Dependencies')
+    disabled_product_ids = fields.Many2many('product.product', compute='_compute_disabled_product_ids')
 
     _sql_constraints = [
         ('name_uniq', 'unique(name, company_id)', 'Reference must be unique per Company!'),
@@ -733,6 +735,11 @@ class MrpProduction(models.Model):
                 production.move_finished_ids = [
                     Command.delete(move.id) for move in production.move_finished_ids if move.bom_line_id
                 ]
+
+    @api.depends('move_raw_ids')
+    def _compute_disabled_product_ids(self):
+        for production in self:
+            production.disabled_product_ids = production.move_raw_ids.product_id
 
     @api.onchange('qty_producing', 'lot_producing_id')
     def _onchange_producing(self):
