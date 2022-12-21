@@ -1,0 +1,7 @@
+/* Allows to remove margin on many2one field internal div to align them with other field selection */
+.o_field_remove_extra_lines_margins_lr {
+    .o_field_many2one_extra {
+        margin-right: 0 !important;
+        margin-left: 0 !important;
+    }
+}
