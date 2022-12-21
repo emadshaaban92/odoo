@@ -34,6 +34,7 @@ class MassMailing(models.Model):
                 'create': False,
                 'search_default_group_by_create_date_day': True,
                 'crm_lead_view_hide_month': True,
+                'no_crm_lead_generation': True
             },
             'domain': [('source_id', 'in', self.source_id.ids)],
             'help': Markup('<p class="o_view_nocontent_smiling_face">%s</p><p>%s</p>') % (

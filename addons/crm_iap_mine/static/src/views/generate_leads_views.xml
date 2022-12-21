@@ -2,7 +2,7 @@
 
 <templates>
     <t t-name="LeadMiningRequest.generate_leads_button" owl="1">
-        <button t-if="isSalesManager" type="button" class="btn btn-secondary o_button_generate_leads" t-on-click="onClickGenerateLead">
+        <button t-if="useLeadGeneration and isSalesManager" type="button" class="btn btn-secondary o_button_generate_leads" t-on-click="onClickGenerateLead">
             Generate Leads
         </button>
     </t>

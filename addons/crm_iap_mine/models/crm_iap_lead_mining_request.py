@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
+import ast
 import logging
 
 from odoo import api, fields, models, _
@@ -329,12 +330,16 @@ class CRMLeadMiningRequest(models.Model):
         self.ensure_one()
         action = self.env["ir.actions.actions"]._for_xml_id("crm.crm_lead_all_leads")
         action['domain'] = [('id', 'in', self.lead_ids.ids), ('type', '=', 'lead')]
+        action['context'] = dict(ast.literal_eval(action.get('context')), create=False, no_crm_lead_generation=True)
         return action
 
     def action_get_opportunity_action(self):
         self.ensure_one()
         action = self.env["ir.actions.actions"]._for_xml_id("crm.crm_lead_opportunities")
         action['domain'] = [('id', 'in', self.lead_ids.ids), ('type', '=', 'opportunity')]
+        context = action.get('context', '{}')
+        context = context.replace('uid', str(self.env.uid))
+        action['context'] = dict(ast.literal_eval(context), create=False, no_crm_lead_generation=True)
         return action
 
     def action_buy_credits(self):

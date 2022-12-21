@@ -7,7 +7,10 @@ import { crmKanbanView } from "@crm/views/crm_kanban/crm_kanban_view";
 patch(crmKanbanView.Controller.prototype, "crm_iap_lead_mining_request_kanban", {
     setup() {
         this._super(...arguments);
-        useGenerateLeadsButton();
+        this.useLeadGeneration = !this.props.context.no_crm_lead_generation;
+        if (this.useLeadGeneration) {
+            useGenerateLeadsButton();
+        }
     },
 });
 crmKanbanView.buttonTemplate = "LeadMiningRequestKanbanView.buttons";

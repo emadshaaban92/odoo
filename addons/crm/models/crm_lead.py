@@ -1210,7 +1210,8 @@ class Lead(models.Model):
         action['domain'] = [('id', 'in', self.duplicate_lead_ids.ids)]
         action['context'] = {
             'active_test': False,
-            'create': False
+            'create': False,
+            'no_crm_lead_generation': True
         }
         return action
 

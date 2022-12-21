@@ -26,5 +26,5 @@ class UtmCampaign(models.Model):
         action = self.env['ir.actions.act_window']._for_xml_id(view)
         action['view_mode'] = 'tree,kanban,graph,pivot,form,calendar'
         action['domain'] = [('campaign_id', 'in', self.ids)]
-        action['context'] = {'active_test': False, 'create': False}
+        action['context'] = {'active_test': False, 'create': False, 'no_crm_lead_generation': True}
         return action
