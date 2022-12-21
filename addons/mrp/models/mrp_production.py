@@ -245,6 +245,8 @@ class MrpProduction(models.Model):
         help='Technical Field used to decide whether the button "Allocation" should be displayed.')
     allow_workorder_dependencies = fields.Boolean('Allow Work Order Dependencies')
     disabled_product_ids = fields.Many2many('product.product', compute='_compute_disabled_product_ids')
+    show_produce = fields.Boolean(compute='_compute_show_produce', help='Technical field to check if produce button can be shown')
+    show_produce_all = fields.Boolean(compute='_compute_show_produce', help='Technical field to check if produce all button can be shown')
 
     _sql_constraints = [
         ('name_uniq', 'unique(name, company_id)', 'Reference must be unique per Company!'),
@@ -736,6 +738,14 @@ class MrpProduction(models.Model):
                     Command.delete(move.id) for move in production.move_finished_ids if move.bom_line_id
                 ]
 
+    @api.depends('state', 'product_qty', 'qty_producing')
+    def _compute_show_produce(self):
+        for production in self:
+            state_ok = production.state in ('confirmed', 'progress', 'to_close')
+            qty_none_or_all = production.qty_producing in (0, production.product_qty)
+            production.show_produce_all = state_ok and qty_none_or_all
+            production.show_produce = state_ok and not qty_none_or_all
+
     @api.depends('move_raw_ids')
     def _compute_disabled_product_ids(self):
         for production in self:
@@ -1224,19 +1234,6 @@ class MrpProduction(models.Model):
         if self.product_id.tracking == 'serial':
             self._set_qty_producing()
 
-    def _action_generate_immediate_wizard(self):
-        view = self.env.ref('mrp.view_immediate_production')
-        return {
-            'name': _('Immediate Production?'),
-            'type': 'ir.actions.act_window',
-            'view_mode': 'form',
-            'res_model': 'mrp.immediate.production',
-            'views': [(view.id, 'form')],
-            'view_id': view.id,
-            'target': 'new',
-            'context': dict(self.env.context, default_mo_ids=[(4, mo.id) for mo in self]),
-        }
-
     def action_confirm(self):
         self._check_company()
         for production in self:
@@ -1356,7 +1353,7 @@ class MrpProduction(models.Model):
         :rtype: list
         """
         issues = []
-        if self.env.context.get('skip_consumption', False) or self.env.context.get('skip_immediate', False):
+        if self.env.context.get('skip_consumption', False):
             return issues
         for order in self:
             if order.consumption == 'flexible' or not order.bom_id or not order.bom_id.bom_line_ids:
@@ -1762,8 +1759,6 @@ class MrpProduction(models.Model):
     def button_mark_done(self):
         self._button_mark_done_sanity_checks()
 
-        if not self.env.context.get('button_mark_done_production_ids'):
-            self = self.with_context(button_mark_done_production_ids=self.ids)
         res = self._pre_button_mark_done()
         if res is not True:
             return res
@@ -1837,7 +1832,7 @@ class MrpProduction(models.Model):
         action = {
             'res_model': 'mrp.production',
             'type': 'ir.actions.act_window',
-            'context': dict(context, mo_ids_to_backorder=None, button_mark_done_production_ids=None)
+            'context': dict(context, mo_ids_to_backorder=None)
         }
         if len(backorders) == 1:
             action.update({
@@ -1853,19 +1848,44 @@ class MrpProduction(models.Model):
         return action
 
     def _pre_button_mark_done(self):
-        productions_to_immediate = self._check_immediate()
-        if productions_to_immediate:
-            return productions_to_immediate._action_generate_immediate_wizard()
-
+        remaining = self.browse()
+        precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
         for production in self:
-            if float_is_zero(production.qty_producing, precision_rounding=production.product_uom_id.rounding):
-                raise UserError(_('The quantity to produce must be positive!'))
-            if production.move_raw_ids and not any(production.move_raw_ids.mapped('quantity_done')):
-                raise UserError(_("You must indicate a non-zero amount consumed for at least one of your components"))
-
-        consumption_issues = self._get_consumption_issues()
-        if consumption_issues:
-            return self._action_generate_consumption_wizard(consumption_issues)
+            if not (float_is_zero(production.qty_producing, precision_digits=precision)
+                    and all(float_is_zero(ml.qty_done, precision_digits=precision) for
+                            ml in production.move_raw_ids.move_line_ids.filtered(lambda m: m.state not in ('done', 'cancel')))):
+                remaining |= production
+                continue
+            missing_lot_id_products = ""
+            if production.product_tracking in ('lot', 'serial') and not production.lot_producing_id:
+                production.action_generate_serial()
+            if production.product_tracking == 'serial' and float_compare(production.qty_producing, 1, precision_rounding=production.product_uom_id.rounding) == 1:
+                production.qty_producing = 1
+            else:
+                production.qty_producing = production.product_qty - production.qty_produced
+            production._set_qty_producing()
+            for move in production.move_raw_ids.filtered(lambda m: m.state not in ['done', 'cancel']):
+                rounding = move.product_uom.rounding
+                for move_line in move.move_line_ids:
+                    if move_line.reserved_uom_qty:
+                        move_line.qty_done = min(move_line.reserved_uom_qty, move_line.move_id.should_consume_qty)
+                    if float_compare(move.quantity_done, move.should_consume_qty, precision_rounding=rounding) >= 0:
+                        break
+                if float_compare(move.product_uom_qty, move.quantity_done, precision_rounding=move.product_uom.rounding) == 1:
+                    if move.has_tracking in ('serial', 'lot'):
+                        missing_lot_id_products += "\n  - %s" % move.product_id.display_name
+            if missing_lot_id_products:
+                error_msg = _('You need to supply Lot/Serial Number for products:') + missing_lot_id_products
+                raise UserError(error_msg)
+        if remaining:
+            for production in remaining:
+                if float_is_zero(production.qty_producing, precision_rounding=production.product_uom_id.rounding):
+                    raise UserError(_('The quantity to produce must be positive!'))
+                if production.move_raw_ids and not any(production.move_raw_ids.mapped('quantity_done')):
+                    raise UserError(_("You must indicate a non-zero amount consumed for at least one of your components"))
+            consumption_issues = remaining._get_consumption_issues()
+            if consumption_issues:
+                return remaining._action_generate_consumption_wizard(consumption_issues)
 
         quantity_issues = self._get_quantity_produced_issues()
         if quantity_issues:
@@ -2184,18 +2204,6 @@ class MrpProduction(models.Model):
         # Check presence of same sn in current production
         duplicates = co_prod_move_lines.filtered(lambda ml: ml.qty_done and ml.lot_id == lot)
         return bool(duplicates)
-
-    def _check_immediate(self):
-        immediate_productions = self.browse()
-        if self.env.context.get('skip_immediate'):
-            return immediate_productions
-        pd = self.env['decimal.precision'].precision_get('Product Unit of Measure')
-        for production in self:
-            if all(float_is_zero(ml.qty_done, precision_digits=pd) for
-                    ml in production.move_raw_ids.move_line_ids.filtered(lambda m: m.state not in ('done', 'cancel'))
-                    ) and float_is_zero(production.qty_producing, precision_digits=pd):
-                immediate_productions |= production
-        return immediate_productions
 
     def _pre_action_split_merge_hook(self, merge=False, split=False):
         if not merge and not split:
