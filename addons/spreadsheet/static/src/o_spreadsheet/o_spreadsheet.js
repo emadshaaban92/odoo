@@ -37792,6 +37792,137 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         }
     }
 
+    class DOMDndHelper {
+        constructor(args) {
+            this.edgeScrollOffset = 0;
+            this.items = args.items.map((item) => ({ ...item, positionAtStart: item.position }));
+            this.draggedSheetId = args.draggedItemId;
+            this.containerEl = args.containerEl;
+            this.onChange = args.onChange;
+            this.onCancel = args.onCancel;
+            this.onDragEnd = args.onDragEnd;
+            this.initialMousePosition = args.mouseX;
+            this.currentMousePosition = args.mouseX;
+            this.minPosition = this.items[0].position;
+            this.maxPosition =
+                this.items[this.items.length - 1].position + this.items[this.items.length - 1].size;
+            startDnd(this.onMouseMove.bind(this), this.onMouseUp.bind(this));
+        }
+        onMouseMove(ev) {
+            if (ev.button !== 0) {
+                this.onCancel();
+                return;
+            }
+            const mousePosition = ev.clientX;
+            if (mousePosition < this.containerRect.left || mousePosition > this.containerRect.right) {
+                this.startEdgeScroll(mousePosition < this.containerRect.left ? -1 : 1);
+                return;
+            }
+            else {
+                this.stopEdgeScroll();
+            }
+            this.moveDraggedItemToPosition(mousePosition + this.edgeScrollOffset);
+        }
+        moveDraggedItemToPosition(mousePosition) {
+            this.currentMousePosition = mousePosition;
+            const hoveredSheetIndex = this.getHoveredItemIndex(mousePosition, this.items);
+            const draggedItemIndex = this.items.findIndex((item) => item.id === this.draggedSheetId);
+            const draggedItem = this.items[draggedItemIndex];
+            if (this.deadZone && this.isInZone(mousePosition, this.deadZone)) {
+                this.onChange(this.getItemsPositions());
+                return;
+            }
+            else if (this.isInZone(mousePosition, {
+                start: draggedItem.position,
+                end: draggedItem.position + draggedItem.size,
+            })) {
+                this.deadZone = undefined;
+            }
+            if (draggedItemIndex === hoveredSheetIndex) {
+                this.onChange(this.getItemsPositions());
+                return;
+            }
+            const leftIndex = Math.min(draggedItemIndex, hoveredSheetIndex);
+            const rightIndex = Math.max(draggedItemIndex, hoveredSheetIndex);
+            const direction = Math.sign(hoveredSheetIndex - draggedItemIndex);
+            let draggedItemMoveSize = 0;
+            for (let i = leftIndex; i <= rightIndex; i++) {
+                if (i === draggedItemIndex) {
+                    continue;
+                }
+                this.items[i].position -= direction * draggedItem.size;
+                draggedItemMoveSize += this.items[i].size;
+            }
+            draggedItem.position += direction * draggedItemMoveSize;
+            this.items.sort((item1, item2) => item1.position - item2.position);
+            this.deadZone =
+                direction > 0
+                    ? { start: mousePosition, end: draggedItem.position }
+                    : { start: draggedItem.position + draggedItem.size, end: mousePosition };
+            this.onChange(this.getItemsPositions());
+        }
+        onMouseUp(ev) {
+            if (ev.button !== 0) {
+                this.onCancel();
+                return;
+            }
+            const targetSheetIndex = this.items.findIndex((item) => item.id === this.draggedSheetId);
+            this.onDragEnd(this.draggedSheetId, targetSheetIndex);
+            this.stopEdgeScroll();
+        }
+        startEdgeScroll(direction) {
+            if (this.edgeScrollIntervalId)
+                return;
+            this.edgeScrollIntervalId = window.setInterval(() => {
+                let newPosition = this.currentMousePosition + direction * 3;
+                if (newPosition < this.minPosition) {
+                    newPosition = this.minPosition;
+                }
+                else if (newPosition > this.maxPosition) {
+                    newPosition = this.maxPosition;
+                }
+                this.edgeScrollOffset += newPosition - this.currentMousePosition;
+                this.moveDraggedItemToPosition(newPosition);
+            }, 5);
+        }
+        stopEdgeScroll() {
+            window.clearInterval(this.edgeScrollIntervalId);
+            this.edgeScrollIntervalId = undefined;
+        }
+        /**
+         * Get the index of the item the given mouse position is inside.
+         * If the mouse is outside the container, return the first or last item index.
+         */
+        getHoveredItemIndex(mousePosition, items) {
+            if (mousePosition <= this.minPosition)
+                return 0;
+            if (mousePosition >= this.maxPosition)
+                return items.length - 1;
+            return items.findIndex((item) => item.position <= mousePosition && item.position + item.size > mousePosition);
+        }
+        getItemsPositions() {
+            const positions = {};
+            for (let item of this.items) {
+                if (item.id !== this.draggedSheetId) {
+                    positions[item.id] = item.position - item.positionAtStart;
+                    continue;
+                }
+                let mouseOffset = this.currentMousePosition - this.initialMousePosition;
+                let left = mouseOffset;
+                left = Math.max(this.minPosition - item.positionAtStart, left);
+                left = Math.min(this.maxPosition - item.positionAtStart - item.size, left);
+                positions[item.id] = left;
+            }
+            return positions;
+        }
+        get containerRect() {
+            return this.containerEl.getBoundingClientRect();
+        }
+        isInZone(position, zone) {
+            return position >= zone.start && position <= zone.end;
+        }
+    }
+
     css /* scss */ `
   .o-spreadsheet-bottom-bar {
     background-color: ${BACKGROUND_GRAY_COLOR};
@@ -37826,7 +37957,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
       align-items: center;
       max-width: 80%;
       overflow: hidden;
-      padding-left: 1px;
+      padding: 0px 2px;
     }
 
     .o-sheet {
@@ -37837,27 +37968,20 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
       line-height: ${BOTTOMBAR_HEIGHT}px;
       user-select: none;
       white-space: nowrap;
-      background-color: ${BACKGROUND_GRAY_COLOR};
 
       border-left: 1px solid #c1c1c1;
-
-      &:last-child {
-        border-right: 1px solid #c1c1c1;
-      }
+      border-right: 1px solid #c1c1c1;
+      margin-right: -1px;
 
       &.dragging {
-        left: 0px;
-        border-right: 1px solid #c1c1c1;
-        margin-right: -1px;
-
         position: relative;
+        left: 0px;
         transition: left 0.5s;
         cursor: move;
       }
 
       &.dragged {
         transition: left 0s;
-        background-color: rgba(0, 0, 0, 0.08);
         z-index: 1000;
       }
 
@@ -37905,24 +38029,24 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         constructor() {
             super(...arguments);
             this.bottomBarRef = owl.useRef("bottomBar");
+            this.sheetListRef = owl.useRef("allSheetsDiv");
             this.menuState = owl.useState({ isOpen: false, position: null, menuItems: [] });
             this.sheetState = owl.useState({
                 sheetList: this.getVisibleSheets(),
-                dnd: undefined,
+                isDnd: false,
+                sheetPositions: undefined,
             });
             this.selectedStatisticFn = "";
         }
         setup() {
             owl.onMounted(() => this.focusSheet());
             owl.onPatched(() => {
-                if (!this.sheetState.dnd)
-                    document.body.style.cursor = "";
                 this.focusSheet();
             });
             owl.onWillUpdateProps(() => {
                 const visibleSheets = this.getVisibleSheets();
                 // Cancel sheet dragging when there is a change in the sheets
-                if (this.sheetState.dnd && !deepEquals(this.sheetState.sheetList, visibleSheets)) {
+                if (this.sheetState.isDnd && !deepEquals(this.sheetState.sheetList, visibleSheets)) {
                     this.stopDragging();
                 }
                 this.sheetState.sheetList = visibleSheets;
@@ -37930,7 +38054,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         }
         isDragged(sheetId) {
             var _a;
-            return ((_a = this.sheetState.dnd) === null || _a === void 0 ? void 0 : _a.draggedSheetId) === sheetId;
+            return ((_a = this.dndHelper) === null || _a === void 0 ? void 0 : _a.draggedSheetId) === sheetId;
         }
         focusSheet() {
             const div = this.bottomBarRef.el.querySelector(`[data-id="${this.env.model.getters.getActiveSheetId()}"]`);
@@ -38017,81 +38141,33 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         onSheetMouseDown(sheetId, event) {
             if (event.button !== 0)
                 return;
+            this.closeContextMenu();
             const mouseX = event.clientX;
             document.body.style.cursor = "move";
             this.activateSheet(sheetId);
             const visibleSheets = this.getVisibleSheets();
             const sheetRects = this.getSheetItemRects();
-            this.sheetState.dnd = {
-                draggedSheetId: sheetId,
-                sheets: visibleSheets.map((sheet, index) => ({
-                    sheetId: sheet.id,
-                    width: sheetRects[index].width,
-                    x: sheetRects[index].x,
-                    startingX: sheetRects[index].x,
-                })),
-                currentMouseX: mouseX,
-                deadZone: undefined,
-                initialMouseX: mouseX,
-            };
-            this.closeContextMenu();
-            startDnd(this.dragSheetMouseMove.bind(this), this.dragSheetMouseUp.bind(this));
+            const sheets = visibleSheets.map((sheet, index) => ({
+                id: sheet.id,
+                size: sheetRects[index].width - 1,
+                position: sheetRects[index].x - 1 * index,
+            }));
+            this.dndHelper = new DOMDndHelper({
+                draggedItemId: sheetId,
+                mouseX,
+                items: sheets,
+                containerEl: this.sheetListRef.el,
+                onChange: (newPositions) => {
+                    this.sheetState.isDnd = true;
+                    this.sheetState.sheetPositions = newPositions;
+                },
+                onCancel: () => this.stopDragging(),
+                onDragEnd: (sheetId, finalIndex) => this.onDragEnd(sheetId, finalIndex),
+            });
         }
-        dragSheetMouseMove(event) {
-            const dndState = this.sheetState.dnd;
-            if (!dndState || event.button !== 0) {
-                this.stopDragging();
-                return;
-            }
-            const mouseX = event.clientX;
-            const hoveredSheetIndex = this.getHoveredSheetIndex(mouseX, dndState.sheets.map((sheet) => sheet.x));
-            const draggedSheetIndex = dndState.sheets.findIndex((sheet) => sheet.sheetId === dndState.draggedSheetId);
-            const draggedSheet = dndState.sheets[draggedSheetIndex];
-            dndState.currentMouseX = mouseX;
-            if (dndState.deadZone && mouseX >= dndState.deadZone.start && mouseX <= dndState.deadZone.end) {
-                return;
-            }
-            else if (mouseX >= draggedSheet.x && mouseX <= draggedSheet.x + draggedSheet.width) {
-                dndState.deadZone = undefined;
-            }
-            if (draggedSheetIndex === hoveredSheetIndex)
-                return;
-            const startIndex = Math.min(draggedSheetIndex, hoveredSheetIndex);
-            const endIndex = Math.max(draggedSheetIndex, hoveredSheetIndex);
-            const dir = Math.sign(hoveredSheetIndex - draggedSheetIndex);
-            let movedWidth = 0;
-            for (let i = startIndex; i <= endIndex; i++) {
-                if (i === draggedSheetIndex) {
-                    continue;
-                }
-                dndState.sheets[i].x -= dir * draggedSheet.width;
-                movedWidth += dndState.sheets[i].width;
-            }
-            draggedSheet.x += dir * movedWidth;
-            dndState.deadZone =
-                dir > 0
-                    ? { start: mouseX, end: draggedSheet.x }
-                    : { start: draggedSheet.x + draggedSheet.width, end: mouseX };
-            dndState.sheets.sort((sheet1, sheet2) => sheet1.x - sheet2.x);
-        }
-        getHoveredSheetIndex(mouseX, xs) {
-            let hoveredSheetIndex = -1;
-            for (let x of xs) {
-                if (x > mouseX) {
-                    break;
-                }
-                hoveredSheetIndex++;
-            }
-            return Math.max(0, hoveredSheetIndex);
-        }
-        dragSheetMouseUp(event) {
-            const dndState = this.sheetState.dnd;
-            if (!dndState || event.button !== 0)
-                return;
-            const sheetId = dndState.draggedSheetId;
+        onDragEnd(sheetId, finalIndex) {
             const originalIndex = this.sheetState.sheetList.findIndex((sheet) => sheet.id === sheetId);
-            const targetSheetIndex = dndState.sheets.findIndex((sheet) => sheet.sheetId === sheetId);
-            const delta = targetSheetIndex - originalIndex;
+            const delta = finalIndex - originalIndex;
             if (sheetId && delta !== 0) {
                 this.env.model.dispatch("MOVE_SHEET", {
                     sheetId: sheetId,
@@ -38101,31 +38177,19 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             this.stopDragging();
         }
         getSheetItemStyle(id) {
-            var _a;
-            const dndState = this.sheetState.dnd;
-            const sheet = (_a = this.sheetState.dnd) === null || _a === void 0 ? void 0 : _a.sheets.find((sheet) => sheet.sheetId === id);
-            if (!dndState || !sheet)
+            if (!this.sheetState.sheetPositions)
                 return "";
-            if (id !== dndState.draggedSheetId) {
-                return cssPropertiesToCss({
-                    left: `${Math.floor(sheet ? sheet.x - sheet.startingX : 0)}px`,
-                });
-            }
-            const firstSheetX = dndState.sheets[0].x;
-            const lastSheet = dndState.sheets[dndState.sheets.length - 1];
-            const lastSheetX = lastSheet.x + lastSheet.width;
-            let mouseOffset = dndState.currentMouseX - dndState.initialMouseX;
-            let left = mouseOffset;
-            left = Math.max(firstSheetX - sheet.startingX, left);
-            left = Math.min(lastSheetX - sheet.startingX - sheet.width, left);
+            const left = this.sheetState.sheetPositions[id];
             return cssPropertiesToCss({
-                left: `${Math.floor(left)}px`,
+                left: `${left}px`,
             });
         }
         stopDragging() {
             document.body.style.cursor = "";
             this.sheetState.sheetList = this.getVisibleSheets();
-            this.sheetState.dnd = undefined;
+            this.sheetState.isDnd = false;
+            this.sheetState.sheetPositions = undefined;
+            this.dndHelper = undefined;
         }
         getSheetItemRects() {
             return Array.from(document.querySelectorAll(`.o-sheet.o-sheet-item`)).map((sheetEl) => sheetEl.getBoundingClientRect());
@@ -43135,8 +43199,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-12-13T15:52:13.067Z';
-    exports.__info__.hash = '2986007';
+    exports.__info__.date = '2022-12-21T12:52:50.771Z';
+    exports.__info__.hash = 'f512322';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
