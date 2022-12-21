@@ -797,8 +797,8 @@ export function drag(from) {
         triggerEvent(window, null, "mousemove", targetPosition);
         // "mouseenter" is fired on every parent of `target` that do not contain
         // `from` (typically: different parent lists).
-        for (const target of getDifferentParents(from, target)) {
-            triggerEvent(target, null, "mouseenter", targetPosition);
+        for (const parent of getDifferentParents(from, target)) {
+            triggerEvent(parent, null, "mouseenter", targetPosition);
         }
 
         await nextTick();
