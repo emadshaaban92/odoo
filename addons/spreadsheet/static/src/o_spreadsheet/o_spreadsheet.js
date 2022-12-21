@@ -37825,7 +37825,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         }
         moveDraggedItemToPosition(mousePosition) {
             this.currentMousePosition = mousePosition;
-            const hoveredSheetIndex = this.getHoveredItemIndex(mousePosition, this.items);
+            const hoveredItemIndex = this.getHoveredItemIndex(mousePosition, this.items);
             const draggedItemIndex = this.items.findIndex((item) => item.id === this.draggedSheetId);
             const draggedItem = this.items[draggedItemIndex];
             if (this.deadZone && this.isInZone(mousePosition, this.deadZone)) {
@@ -37838,18 +37838,20 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             })) {
                 this.deadZone = undefined;
             }
-            if (draggedItemIndex === hoveredSheetIndex) {
+            if (draggedItemIndex === hoveredItemIndex) {
                 this.onChange(this.getItemsPositions());
                 return;
             }
-            const leftIndex = Math.min(draggedItemIndex, hoveredSheetIndex);
-            const rightIndex = Math.max(draggedItemIndex, hoveredSheetIndex);
-            const direction = Math.sign(hoveredSheetIndex - draggedItemIndex);
+            const leftIndex = Math.min(draggedItemIndex, hoveredItemIndex);
+            const rightIndex = Math.max(draggedItemIndex, hoveredItemIndex);
+            const direction = Math.sign(hoveredItemIndex - draggedItemIndex);
             let draggedItemMoveSize = 0;
             for (let i = leftIndex; i <= rightIndex; i++) {
                 if (i === draggedItemIndex) {
                     continue;
                 }
+                if (!this.items[i])
+                    debugger;
                 this.items[i].position -= direction * draggedItem.size;
                 draggedItemMoveSize += this.items[i].size;
             }
@@ -37898,7 +37900,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 return 0;
             if (mousePosition >= this.maxPosition)
                 return items.length - 1;
-            return items.findIndex((item) => item.position <= mousePosition && item.position + item.size > mousePosition);
+            return items.findIndex((item) => mousePosition >= item.position && item.position + item.size > mousePosition);
         }
         getItemsPositions() {
             const positions = {};
@@ -38150,7 +38152,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             const sheets = visibleSheets.map((sheet, index) => ({
                 id: sheet.id,
                 size: sheetRects[index].width - 1,
-                position: sheetRects[index].x - 1 * index,
+                position: sheetRects[index].x - 1,
             }));
             this.dndHelper = new DOMDndHelper({
                 draggedItemId: sheetId,
@@ -43199,8 +43201,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-12-21T12:52:50.771Z';
-    exports.__info__.hash = 'f512322';
+    exports.__info__.date = '2022-12-21T14:01:52.962Z';
+    exports.__info__.hash = '7182369';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
