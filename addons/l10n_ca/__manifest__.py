@@ -3,7 +3,7 @@
 
 {
     'name': 'Canada - Accounting',
-    'author': 'Savoir-faire Linux',
+    'author': 'Savoir-faire Linux; Odoo SA',
     'website': 'https://www.savoirfairelinux.com',
     'category': 'Accounting/Localizations/Account Charts',
     'description': """
@@ -47,6 +47,7 @@ position.
         'data/fiscal_templates_data.xml',
         'data/account_chart_template_configure_data.xml',
         'data/res_company_data.xml',
+        'data/tax_report_data.xml',
         'views/res_partner_view.xml',
         'views/res_company_view.xml',
         'views/report_invoice.xml',

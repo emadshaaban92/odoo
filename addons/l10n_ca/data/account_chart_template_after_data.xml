@@ -1,18 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Chart template for en -->
-    <record id="ca_en_chart_template_en" model="account.chart.template">
-        <field name="property_account_receivable_id" ref="chart1151_en"/>
-        <field name="property_account_payable_id" ref="chart2111_en"/>
-        <field name="property_account_income_categ_id" ref="chart411_en"/>
-        <field name="property_account_expense_categ_id" ref="chart5111_en"/>
-        <field name="property_stock_account_input_categ_id" ref="chart2171_en"/>
-        <field name="property_stock_account_output_categ_id" ref="chart1145_en"/>
-        <field name="property_stock_valuation_account_id" ref="chart1141_en"/>
-        <field name="income_currency_exchange_account_id" ref="chart42_en"/>
-        <field name="expense_currency_exchange_account_id" ref="chart55_en"/>
-        <field name="default_pos_receivable_account_id" ref="chart11511_en" />
-        <field name="account_journal_early_pay_discount_loss_account_id" ref="chart550001_en"/>
-        <field name="account_journal_early_pay_discount_gain_account_id" ref="chart420001_en"/>
+    <record id="l10n_ca_chart_template" model="account.chart.template">
+        <field name="property_account_receivable_id" ref="ca_1151"/>
+        <field name="property_account_payable_id" ref="ca_2111"/>
+        <field name="property_account_income_categ_id" ref="ca_411"/>
+        <field name="property_account_expense_categ_id" ref="ca_5111"/>
+        <field name="property_stock_account_input_categ_id" ref="ca_2171"/>
+        <field name="property_stock_account_output_categ_id" ref="ca_1145"/>
+        <field name="property_stock_valuation_account_id" ref="ca_1141"/>
+        <field name="income_currency_exchange_account_id" ref="ca_420001"/>
+        <field name="expense_currency_exchange_account_id" ref="ca_550001"/>
+        <field name="default_pos_receivable_account_id" ref="ca_11511"/>
+        <field name="account_journal_early_pay_discount_loss_account_id" ref="ca_550002"/>
+        <field name="account_journal_early_pay_discount_gain_account_id" ref="ca_420002"/>
     </record>
 </odoo>

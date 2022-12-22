@@ -16,7 +16,7 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: l10n_ca
-#: model:account.fiscal.position.template,name:l10n_ca.fiscal_position_template_ab_en
+#: model:account.fiscal.position.template,name:l10n_ca.fiscal_position_template_ab
 msgid "Alberta (AB)"
 msgstr ""
 
@@ -36,7 +36,7 @@ msgid "Bonus to pay"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.fiscal.position.template,name:l10n_ca.fiscal_position_template_bc_en
+#: model:account.fiscal.position.template,name:l10n_ca.fiscal_position_template_bc
 msgid "British Columbia (BC)"
 msgstr ""
 
@@ -56,7 +56,7 @@ msgid "CPP - Employer Contribution"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.chart.template,name:l10n_ca.ca_en_chart_template_en
+#: model:account.chart.template,name:l10n_ca.l10n_ca_chart_template
 msgid "Canada - Chart of Accounts"
 msgstr ""
 
@@ -137,65 +137,65 @@ msgid "Fiscal Country"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.tax.template,description:l10n_ca.gstpst_bc_purc_en
-#: model:account.tax.template,description:l10n_ca.gstpst_bc_sale_en
-#: model:account.tax.template,description:l10n_ca.gstpst_mb_purc_en
-#: model:account.tax.template,description:l10n_ca.gstpst_mb_sale_en
-#: model:account.tax.template,description:l10n_ca.gstpst_sk_purc_en
-#: model:account.tax.template,description:l10n_ca.gstpst_sk_sale_en
+#: model:account.tax.template,description:l10n_ca.gstpst_bc_purc
+#: model:account.tax.template,description:l10n_ca.gstpst_bc_sale
+#: model:account.tax.template,description:l10n_ca.gstpst_mb_purc
+#: model:account.tax.template,description:l10n_ca.gstpst_mb_sale
+#: model:account.tax.template,description:l10n_ca.gstpst_sk_purc
+#: model:account.tax.template,description:l10n_ca.gstpst_sk_sale
 msgid "GST + PST"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.tax.template,name:l10n_ca.gstpst_bc_purc_en
+#: model:account.tax.template,name:l10n_ca.gstpst_bc_purc
 msgid "GST + PST for purchases (BC)"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.tax.template,name:l10n_ca.gstpst_mb_purc_en
+#: model:account.tax.template,name:l10n_ca.gstpst_mb_purc
 msgid "GST + PST for purchases (MB)"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.tax.template,name:l10n_ca.gstpst_sk_purc_en
+#: model:account.tax.template,name:l10n_ca.gstpst_sk_purc
 msgid "GST + PST for purchases (SK)"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.tax.template,name:l10n_ca.gstpst_bc_sale_en
+#: model:account.tax.template,name:l10n_ca.gstpst_bc_sale
 msgid "GST + PST for sales (BC)"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.tax.template,name:l10n_ca.gstpst_mb_sale_en
+#: model:account.tax.template,name:l10n_ca.gstpst_mb_sale
 msgid "GST + PST for sales (MB)"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.tax.template,name:l10n_ca.gstpst_sk_sale_en
+#: model:account.tax.template,name:l10n_ca.gstpst_sk_sale
 msgid "GST + PST for sales (SK)"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.tax.template,description:l10n_ca.gstqst_purc_en
-#: model:account.tax.template,description:l10n_ca.gstqst_sale_en
+#: model:account.tax.template,description:l10n_ca.gstqst_purc
+#: model:account.tax.template,description:l10n_ca.gstqst_sale
 msgid "GST + QST"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.tax.template,name:l10n_ca.gstqst_purc_en
+#: model:account.tax.template,name:l10n_ca.gstqst_purc
 msgid "GST + QST for purchases"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.tax.template,name:l10n_ca.gstqst_sale_en
+#: model:account.tax.template,name:l10n_ca.gstqst_sale
 msgid "GST + QST for sales"
 msgstr ""
 
 #. module: l10n_ca
 #: model:account.tax.group,name:l10n_ca.tax_group_gst_5
-#: model:account.tax.template,description:l10n_ca.gst_purc_en
-#: model:account.tax.template,description:l10n_ca.gst_sale_en
+#: model:account.tax.template,description:l10n_ca.gst_purc
+#: model:account.tax.template,description:l10n_ca.gst_sale
 #: model:account.tax.template,description:l10n_ca.gstpst_purc_bc_gst_en
 #: model:account.tax.template,description:l10n_ca.gstpst_purc_mb_gst_en
 #: model:account.tax.template,description:l10n_ca.gstpst_purc_sk_gst_en
@@ -218,7 +218,7 @@ msgid "GST 8%"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.tax.template,name:l10n_ca.gst_purc_en
+#: model:account.tax.template,name:l10n_ca.gst_purc
 msgid "GST for purchases - 5%"
 msgstr ""
 
@@ -243,7 +243,7 @@ msgid "GST for purchases - 5% (SK)"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.tax.template,name:l10n_ca.gst_sale_en
+#: model:account.tax.template,name:l10n_ca.gst_sale
 msgid "GST for sales - 5%"
 msgstr ""
 
@@ -294,8 +294,8 @@ msgstr ""
 
 #. module: l10n_ca
 #: model:account.tax.group,name:l10n_ca.tax_group_hst_13
-#: model:account.tax.template,description:l10n_ca.hst13_purc_en
-#: model:account.tax.template,description:l10n_ca.hst13_sale_en
+#: model:account.tax.template,description:l10n_ca.hst13_purc
+#: model:account.tax.template,description:l10n_ca.hst13_sale
 msgid "HST 13%"
 msgstr ""
 
@@ -306,28 +306,28 @@ msgstr ""
 
 #. module: l10n_ca
 #: model:account.tax.group,name:l10n_ca.tax_group_hst_15
-#: model:account.tax.template,description:l10n_ca.hst15_purc_en
-#: model:account.tax.template,description:l10n_ca.hst15_sale_en
+#: model:account.tax.template,description:l10n_ca.hst15_purc
+#: model:account.tax.template,description:l10n_ca.hst15_sale
 msgid "HST 15%"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.tax.template,name:l10n_ca.hst13_purc_en
+#: model:account.tax.template,name:l10n_ca.hst13_purc
 msgid "HST for purchases - 13%"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.tax.template,name:l10n_ca.hst15_purc_en
+#: model:account.tax.template,name:l10n_ca.hst15_purc
 msgid "HST for purchases - 15%"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.tax.template,name:l10n_ca.hst13_sale_en
+#: model:account.tax.template,name:l10n_ca.hst13_sale
 msgid "HST for sales - 13%"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.tax.template,name:l10n_ca.hst15_sale_en
+#: model:account.tax.template,name:l10n_ca.hst15_sale
 msgid "HST for sales - 15%"
 msgstr ""
 
@@ -387,7 +387,7 @@ msgid "Inside Sales"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.fiscal.position.template,name:l10n_ca.fiscal_position_template_intl_en
+#: model:account.fiscal.position.template,name:l10n_ca.fiscal_position_template_intl
 msgid "International (INTL)"
 msgstr ""
 
@@ -422,12 +422,12 @@ msgid "Labour Standards to pay"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.account.template,name:l10n_ca.ca_en_chart_template_en_liquidity_transfer
+#: model:account.account.template,name:l10n_ca.l10n_ca_chart_template_liquidity_transfer
 msgid "Liquidity Transfer"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.fiscal.position.template,name:l10n_ca.fiscal_position_template_mb_en
+#: model:account.fiscal.position.template,name:l10n_ca.fiscal_position_template_mb
 msgid "Manitoba (MB)"
 msgstr ""
 
@@ -442,12 +442,12 @@ msgid "NON-OPERATING INCOMES"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.fiscal.position.template,name:l10n_ca.fiscal_position_template_nb_en
+#: model:account.fiscal.position.template,name:l10n_ca.fiscal_position_template_nb
 msgid "New Brunswick (NB)"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.fiscal.position.template,name:l10n_ca.fiscal_position_template_nl_en
+#: model:account.fiscal.position.template,name:l10n_ca.fiscal_position_template_nl
 msgid "Newfoundland and Labrador (NL)"
 msgstr ""
 
@@ -457,22 +457,22 @@ msgid "Non-Harmonized Provinces Sales"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.fiscal.position.template,name:l10n_ca.fiscal_position_template_nt_en
+#: model:account.fiscal.position.template,name:l10n_ca.fiscal_position_template_nt
 msgid "Northwest Territories (NT)"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.fiscal.position.template,name:l10n_ca.fiscal_position_template_ns_en
+#: model:account.fiscal.position.template,name:l10n_ca.fiscal_position_template_ns
 msgid "Nova Scotia (NS)"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.fiscal.position.template,name:l10n_ca.fiscal_position_template_nu_en
+#: model:account.fiscal.position.template,name:l10n_ca.fiscal_position_template_nu
 msgid "Nunavut (NU)"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.fiscal.position.template,name:l10n_ca.fiscal_position_template_on_en
+#: model:account.fiscal.position.template,name:l10n_ca.fiscal_position_template_on
 msgid "Ontario (ON)"
 msgstr ""
 
@@ -486,51 +486,51 @@ msgstr ""
 
 #. module: l10n_ca
 #: model:account.tax.group,name:l10n_ca.tax_group_pst_5
-#: model:account.tax.template,description:l10n_ca.pst_sk_purc_en
-#: model:account.tax.template,description:l10n_ca.pst_sk_sale_en
+#: model:account.tax.template,description:l10n_ca.pst_sk_purc
+#: model:account.tax.template,description:l10n_ca.pst_sk_sale
 msgid "PST 5%"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.tax.template,description:l10n_ca.pst_bc_purc_en
-#: model:account.tax.template,description:l10n_ca.pst_bc_sale_en
+#: model:account.tax.template,description:l10n_ca.pst_bc_purc
+#: model:account.tax.template,description:l10n_ca.pst_bc_sale
 msgid "PST 7%"
 msgstr ""
 
 #. module: l10n_ca
 #: model:account.tax.group,name:l10n_ca.tax_group_pst_8
-#: model:account.tax.template,description:l10n_ca.pst_mb_purc_en
-#: model:account.tax.template,description:l10n_ca.pst_mb_sale_en
+#: model:account.tax.template,description:l10n_ca.pst_mb_purc
+#: model:account.tax.template,description:l10n_ca.pst_mb_sale
 msgid "PST 8%"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.tax.template,name:l10n_ca.pst_sk_purc_en
+#: model:account.tax.template,name:l10n_ca.pst_sk_purc
 msgid "PST for purchases - 5% (SK)"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.tax.template,name:l10n_ca.pst_bc_purc_en
+#: model:account.tax.template,name:l10n_ca.pst_bc_purc
 msgid "PST for purchases - 7% (BC)"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.tax.template,name:l10n_ca.pst_mb_purc_en
+#: model:account.tax.template,name:l10n_ca.pst_mb_purc
 msgid "PST for purchases - 8% (MB)"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.tax.template,name:l10n_ca.pst_sk_sale_en
+#: model:account.tax.template,name:l10n_ca.pst_sk_sale
 msgid "PST for sales - 5% (SK)"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.tax.template,name:l10n_ca.pst_bc_sale_en
+#: model:account.tax.template,name:l10n_ca.pst_bc_sale
 msgid "PST for sales - 7% (BC)"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.tax.template,name:l10n_ca.pst_mb_sale_en
+#: model:account.tax.template,name:l10n_ca.pst_mb_sale
 msgid "PST for sales - 8% (MB)"
 msgstr ""
 
@@ -564,7 +564,7 @@ msgid "Parental Insurance Plan - Employer Contribution"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.fiscal.position.template,name:l10n_ca.fiscal_position_template_pe_en
+#: model:account.fiscal.position.template,name:l10n_ca.fiscal_position_template_pe
 msgid "Prince Edward Islands (PE)"
 msgstr ""
 
@@ -610,23 +610,23 @@ msgstr ""
 
 #. module: l10n_ca
 #: model:account.tax.group,name:l10n_ca.tax_group_qst_9975
-#: model:account.tax.template,description:l10n_ca.qst_purc_en
-#: model:account.tax.template,description:l10n_ca.qst_sale_en
+#: model:account.tax.template,description:l10n_ca.qst_purc
+#: model:account.tax.template,description:l10n_ca.qst_sale
 msgid "QST 9.975%"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.tax.template,name:l10n_ca.qst_purc_en
+#: model:account.tax.template,name:l10n_ca.qst_purc
 msgid "QST for purchases - 9.975%"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.tax.template,name:l10n_ca.qst_sale_en
+#: model:account.tax.template,name:l10n_ca.qst_sale
 msgid "QST for sales - 9.975%"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.fiscal.position.template,name:l10n_ca.fiscal_position_template_qc_en
+#: model:account.fiscal.position.template,name:l10n_ca.fiscal_position_template_qc
 msgid "Quebec (QC)"
 msgstr ""
 
@@ -651,7 +651,7 @@ msgid "Salaries to pay"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.fiscal.position.template,name:l10n_ca.fiscal_position_template_sk_en
+#: model:account.fiscal.position.template,name:l10n_ca.fiscal_position_template_sk
 msgid "Saskatchewan (SK)"
 msgstr ""
 
@@ -698,6 +698,6 @@ msgid "Vendors Account"
 msgstr ""
 
 #. module: l10n_ca
-#: model:account.fiscal.position.template,name:l10n_ca.fiscal_position_template_yt_en
+#: model:account.fiscal.position.template,name:l10n_ca.fiscal_position_template_yt
 msgid "Yukon (YT)"
 msgstr ""
