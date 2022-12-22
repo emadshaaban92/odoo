@@ -1,0 +1,43 @@
+.o_state_box {
+    background: lightblue;
+    display: flex;
+    width: max-content;
+    padding: 10px;
+    gap: 10px;
+    justify-content: right;
+    align-items: center;
+}
+.o_switch_mode_button {
+    //background: lightgreen;
+
+    /*width:250px;  or whatever width you want. */
+    /*max-width:250px; /* or whatever width you want. */
+}
+
+.o_state_display {
+    background: lightcoral; 
+    width: 4em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    .o-dropdown {
+        width: 100%;
+    }
+}
+
+.o_state_approval_dropdown {
+    width: 100%;
+    display:block;
+
+}
+
+.o_state_approval_button {
+    justify-content: center;
+    width:100%;
+    display:block;
+}
+
+.o_state_non_approval_button {
+    width:100%;
+    display:block;
+}

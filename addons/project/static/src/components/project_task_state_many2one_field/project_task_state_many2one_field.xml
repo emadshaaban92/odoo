@@ -1,0 +1,55 @@
+<templates>
+    <t t-name="project.ProjectTaskStateMany2OneField" t-inherit="web.StateSelectionField" t-inherit-mode="primary" owl="1">
+    
+        <xpath expr="//t[@t-if='isReadonly']" position="replace">
+                <t t-if="!isApproval">
+
+                        <t t-if="this.props.value[1] != 'Waiting'">
+
+                            <button class="d-flex align-items-center btn fw-normal p-0" t-on-click.stop="toggleState">
+                                <i t-attf-class="fa {{ stateIcon(currentValue) }} {{ stateColor(currentValue) }}"></i>
+                            </button>  
+                        </t>
+                        <t t-else="">
+                            <i class="fa fa-hourglass-o"></i>
+                        </t>
+                        <!--
+                        <t t-elif="this.props.value[1] === 'In Progress'">
+                            <button class="d-flex align-items-center btn fw-normal p-0" t-on-click.stop="toggleState">
+                                <i t-attf-class="fa {{ stateIcon(currentValue) }} "></i>
+                            </button>
+                        </t>
+                        <t t-else="">
+                            <i class="fa fa-hourglass-o"></i>
+                        </t>
+                        -->
+                        <!--
+                        <span t-attf-class="o_status o_status_green"/>
+                        <span t-if="showLabel" class="o_status_label ms-1" t-esc="label"/>
+                        -->
+                </t>  
+        </xpath>
+            <xpath expr="//t/div[@class='d-flex align-items-center']" position="replace">
+                <div class="d-flex align-items-center">
+                    <span t-attf-class="fa {{ stateIcon(currentValue) }} {{ stateColor(currentValue) }}"/>
+                </div>
+                        <!--
+                <span t-if="showLabel" class="o_status_label ms-1" t-esc="label"/>
+                        -->
+            </xpath>
+                        
+
+            <xpath expr="//DropdownItem" position="attributes">
+                <attribute name='onSelected'>() => this.onSelectedDD(option)</attribute>
+            </xpath>
+                        
+
+            <xpath expr="//DropdownItem/div[@class='d-flex align-items-center']" position="replace">
+                <div class="d-flex align-items-center">
+                    <span t-attf-class="fa {{ stateIcon(option) }} {{ stateColor(option) }}"/>
+                    <span t-attf-class="ms-2 {{ stateColor(option) }}" t-esc="option[1]"/>
+                </div>
+            </xpath>
+    </t>
+
+</templates>

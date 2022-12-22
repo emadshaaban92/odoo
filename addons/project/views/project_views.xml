@@ -1192,9 +1192,9 @@
                                 <field name="priority" widget="priority_switch" class="me-3"/>
                                 <field name="name" class="o_task_name text-truncate oe_inline" placeholder="Task Title..."/>
                             </div>
-                            
-                            <field name="state" widget="project_task_state_selection_form" class=""/>
-                            
+                            <div class="">
+                                <field name="state" widget="project_task_state_selection_form" class=""/>
+                            </div>
                         </h1>
                         <h2>
                             Approval Mode:

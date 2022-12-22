@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="project_wizard_confirmation_form" model="ir.ui.view">
+        <field name="name">project.wizard.confirmation.form</field>
+        <field name="model">project.wizard.confirmation</field>
+        <field name="type">form</field>
+        <field name="arch" type="xml">
+            <form string="Confirm dialog">
+                <h3>
+                This task is still blocked by the following tasks:
+                <field name="depend_on_task_string"/>
+                </h3>
+                <footer>
+                    <button class="oe_highlight" type="object" name="confirm" string="Confirm" />
+                    <button string="Cancel" class="oe_link" special="cancel" />
+                </footer>
+            </form >
+        </field>
+    </record>
+
+    <record id="action_project_wizard_confirmation_form" model="ir.actions.act_window">
+        <field name="name">Confirm state change?</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">project.wizard.confirmation</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="project.model_project_task"/>      
+        <field name="binding_view_types">list</field>
+    </record>
+</odoo>
