@@ -8,5 +8,8 @@
     'license': 'LGPL-3',
     'category': 'Hidden',
     'depends': ['sale_project', 'sale_expense', 'project_hr_expense'],
+    'demo': [
+        'data/project_sale_expense_demo.xml',
+    ],
     'auto_install': True,
 }

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="office_furniture_sheet3" model="hr.expense.sheet">
+            <field name="name">Customer Lunch</field>
+            <field name="employee_id" ref="hr.employee_al"/>
+            <field name="state">approve</field>
+        </record>
+        <record id="funiture_expense" model="hr.expense">
+            <field name="name">Customer Lunch Food Expense</field>
+            <field name="employee_id" ref="hr.employee_admin"/>
+            <field name="analytic_distribution" eval="{ref('analytic.analytic_our_super_product'): 100}"/>
+            <field name="product_id" ref="hr_expense.expense_product_meal"/>
+            <field eval="700.0" name="unit_amount"/>
+            <field name="sale_order_id" ref="sale_project.sale_order_4"/>
+            <field name="product_uom_id" ref="uom.product_uom_unit"/>
+            <field eval="1.0" name="quantity"/>
+            <field eval="289.0" name="total_amount"/>
+            <field name="date" eval="time.strftime('%Y-%m')+'-12'"/>
+            <field name="sheet_id" ref="office_furniture_sheet3"/>
+        </record>
+    </data>
+</odoo>

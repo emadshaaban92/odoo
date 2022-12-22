@@ -7,5 +7,23 @@
         <record id="hr_expense.travel_demo_by_car_expense" model="hr.expense">
             <field name="analytic_distribution" eval="{ref('project.analytic_office_design'): 100}"/>
         </record>
+
+        <record id="office_furniture_sheet2" model="hr.expense.sheet">
+            <field name="name">Office furniture expense</field>
+            <field name="employee_id" ref="hr.employee_al"/>
+            <field name="state">approve</field>
+        </record>
+        <record id="funiture_expense" model="hr.expense">
+            <field name="name">Furniture Expense</field>
+            <field name="employee_id" ref="hr.employee_admin"/>
+            <field name="analytic_distribution" eval="{ref('project.analytic_office_design'): 100}"/>
+            <field name="product_id" ref="hr_expense.expense_product_meal"/>
+            <field eval="700.0" name="unit_amount"/>
+            <field name="product_uom_id" ref="uom.product_uom_unit"/>
+            <field eval="1.0" name="quantity"/>
+            <field eval="289.0" name="total_amount"/>
+            <field name="date" eval="time.strftime('%Y-%m')+'-12'"/>
+            <field name="sheet_id" ref="office_furniture_sheet2"/>
+        </record>
     </data>
 </odoo>
