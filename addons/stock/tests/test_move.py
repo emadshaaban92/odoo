@@ -4468,6 +4468,44 @@ class StockMove(TransactionCase):
         self.assertEqual(move1.quantity_done, 1)
         self.assertEqual(move2.quantity_done, 1)
 
+    def test_set_quantity_done_tracked_products(self):
+        """ setting quantity_done should only affect products not tracke by serial number"""
+
+        expected_quantity = {
+            "none": 1,
+            "serial": 0,
+            "lot": 1,
+        }
+
+        for tracking, quantity in expected_quantity.items():
+            product = self.env['product.product'].create({
+                'name': 'Product ' + tracking,
+                'list_price': 600,
+                'type': 'product',
+                'tracking': tracking,
+            })
+            move = self.env['stock.move'].create({
+                'name': 'test_set_quantity_done_tracked_' + tracking,
+                'location_id': self.supplier_location.id,
+                'location_dest_id': self.stock_location.id,
+                'product_id': product.id,
+                'product_uom': self.uom_unit.id,
+                'product_uom_qty': 1.0,
+            })
+            move._action_confirm()
+
+            ml = move.move_line_ids
+            self.assertEqual(len(ml), 1)
+            self.assertEqual(ml.reserved_qty, 1)
+            self.assertEqual(ml.qty_done, 0)
+
+            # trigger inverse (_quantity_done_set)
+            move.quantity_done = 1
+
+            self.assertEqual(len(ml), 1)
+            self.assertEqual(ml.reserved_qty, 1)
+            self.assertEqual(ml.qty_done, quantity)
+
     def test_initial_demand_1(self):
         """ Check that the initial demand is set to 0 when creating a move by hand, and
         that changing the product on the move do not reset the initial demand.

@@ -398,7 +398,8 @@ class StockMove(models.Model):
                 return
             if move.reserved_availability < move.quantity_done and move.state not in ['done', 'cancel']:
                 move._action_assign(force_qty=move.quantity_done)
-            move._set_quantity_done(quantity)
+            if move.product_id.tracking != 'serial':
+                move._set_quantity_done(quantity)
 
         err = []
         for move in self:
