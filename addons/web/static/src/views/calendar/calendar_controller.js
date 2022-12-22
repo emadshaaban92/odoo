@@ -1,12 +1,11 @@
 /** @odoo-module **/
 
 import { ConfirmationDialog } from "@web/core/confirmation_dialog/confirmation_dialog";
-import { Dropdown } from "@web/core/dropdown/dropdown";
-import { DropdownItem } from "@web/core/dropdown/dropdown_item";
 import { _lt, _t } from "@web/core/l10n/translation";
 import { useOwnedDialogs, useService } from "@web/core/utils/hooks";
 import { Layout } from "@web/search/layout";
 import { useModel } from "@web/views/model";
+import { ViewScaleButton } from "@web/views/view_components/view_scale_button";
 import { FormViewDialog } from "@web/views/view_dialogs/form_view_dialog";
 import { useSetupView } from "@web/views/view_hook";
 import { CalendarDatePicker } from "./date_picker/calendar_date_picker";
@@ -89,8 +88,14 @@ export class CalendarController extends Component {
             toggleSideBar: () => (this.state.showSideBar = !this.state.showSideBar),
         };
     }
-    get scaleLabels() {
-        return SCALE_LABELS;
+    get scales() {
+        const scales = {};
+        this.model.scales.forEach((key) => {
+            scales[key] = {
+                description: SCALE_LABELS[key],
+            };
+        });
+        return scales;
     }
     get showCalendar() {
         return !this.env.isSmall || !this.state.showSideBar;
@@ -215,7 +220,6 @@ CalendarController.components = {
     MobileFilterPanel: CalendarMobileFilterPanel,
     QuickCreate: CalendarQuickCreate,
     Layout,
-    Dropdown,
-    DropdownItem,
+    ViewScaleButton,
 };
 CalendarController.template = "web.CalendarController";

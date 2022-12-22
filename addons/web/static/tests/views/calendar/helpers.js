@@ -498,8 +498,8 @@ export async function resizeEventToTime(target, eventId, dateTime) {
 }
 
 export async function changeScale(target, scale) {
-    await click(target, `.o_calendar_scale_buttons .scale_button_selection`);
-    await click(target, `.o_calendar_scale_buttons .o_calendar_button_${scale}`);
+    await click(target, `.o_view_scale_button .scale_button_selection`);
+    await click(target, `.o_view_scale_button .o_scale_button_${scale}`);
     await nextTick();
 }
 
