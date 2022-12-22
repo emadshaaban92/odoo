@@ -5943,6 +5943,30 @@
             })),
         };
     }
+    /**
+     * Aggregates data based on labels
+     */
+    function aggregateDataForLabels(labels, datasets) {
+        const parseNumber = (value) => (typeof value === "number" ? value : 0);
+        const labelSet = new Set(labels);
+        const labelMap = {};
+        labelSet.forEach((label) => {
+            labelMap[label] = new Array(datasets.length).fill(0);
+        });
+        for (const indexOfLabel of range(0, labels.length)) {
+            const label = labels[indexOfLabel];
+            for (const indexOfDataset of range(0, datasets.length)) {
+                labelMap[label][indexOfDataset] += parseNumber(datasets[indexOfDataset].data[indexOfLabel]);
+            }
+        }
+        return {
+            labels: Object.keys(labelMap),
+            dataSetsValues: datasets.map((dataset, indexOfDataset) => ({
+                ...dataset,
+                data: Object.values(labelMap).map((dataOfLabel) => dataOfLabel[indexOfDataset]),
+            })),
+        };
+    }
     function truncateLabel(label) {
         if (!label) {
             return "";
@@ -6090,6 +6114,7 @@
             this.verticalAxisPosition = definition.verticalAxisPosition;
             this.legendPosition = definition.legendPosition;
             this.stacked = definition.stacked;
+            this.aggregated = definition.aggregated;
         }
         static transformDefinition(definition, executed) {
             return transformChartDefinitionWithDataSetsWithZone(definition, executed);
@@ -6103,6 +6128,7 @@
                 dataSets: context.range ? context.range : [],
                 dataSetsHaveTitle: false,
                 stacked: false,
+                aggregated: false,
                 legendPosition: "top",
                 title: context.title || "",
                 type: "bar",
@@ -6146,9 +6172,13 @@
                     : undefined,
                 title: this.title,
                 stacked: this.stacked,
+                aggregated: this.aggregated,
             };
         }
         getDefinitionForExcel() {
+            // Excel does not support aggregating labels
+            if (this.aggregated)
+                return undefined;
             const dataSets = this.dataSets
                 .map((ds) => toExcelDataset(this.getters, ds))
                 .filter((ds) => ds.range !== ""); // && range !== INCORRECT_RANGE_STRING ? show incorrect #ref ?
@@ -6220,6 +6250,9 @@
         let labels = labelValues.formattedValues;
         let dataSetsValues = getChartDatasetValues(getters, chart.dataSets);
         ({ labels, dataSetsValues } = filterEmptyDataPoints(labels, dataSetsValues));
+        if (chart.aggregated) {
+            ({ labels, dataSetsValues } = aggregateDataForLabels(labels, dataSetsValues));
+        }
         const config = getBarConfiguration(chart, labels);
         const colors = new ChartColors();
         for (let { label, data } of dataSetsValues) {
@@ -6379,6 +6412,7 @@
             this.legendPosition = definition.legendPosition;
             this.labelsAsText = definition.labelsAsText;
             this.stacked = definition.stacked;
+            this.aggregated = definition.aggregated;
         }
         static validateChartDefinition(validator, definition) {
             return validator.checkValidations(definition, checkDataset, checkLabelRange);
@@ -6398,6 +6432,7 @@
                 verticalAxisPosition: "left",
                 labelRange: context.auxiliaryRange || undefined,
                 stacked: false,
+                aggregated: false,
             };
         }
         getDefinition() {
@@ -6417,6 +6452,7 @@
                 title: this.title,
                 labelsAsText: this.labelsAsText,
                 stacked: this.stacked,
+                aggregated: this.aggregated,
             };
         }
         getContextCreation() {
@@ -6438,6 +6474,9 @@
             return new LineChart(definition, this.sheetId, this.getters);
         }
         getDefinitionForExcel() {
+            // Excel does not support aggregating labels
+            if (this.aggregated)
+                return undefined;
             const dataSets = this.dataSets
                 .map((ds) => toExcelDataset(this.getters, ds))
                 .filter((ds) => ds.range !== ""); // && range !== INCORRECT_RANGE_STRING ? show incorrect #ref ?
@@ -6581,6 +6620,9 @@
         ({ labels, dataSetsValues } = filterEmptyDataPoints(labels, dataSetsValues));
         if (axisType === "time") {
             ({ labels, dataSetsValues } = fixEmptyLabelsForDateCharts(labels, dataSetsValues));
+        }
+        if (chart.aggregated) {
+            ({ labels, dataSetsValues } = aggregateDataForLabels(labels, dataSetsValues));
         }
         const config = getLineConfiguration(chart, labels);
         const labelFormat = getLabelFormat(getters, chart.labelRange);
@@ -6746,6 +6788,7 @@
                 dataSets,
                 labelsAsText: false,
                 stacked: false,
+                aggregated: false,
                 labelRange: labelRangeXc,
                 type: "line",
                 background: BACKGROUND_CHART_COLOR,
@@ -6761,6 +6804,7 @@
             type: "bar",
             background: BACKGROUND_CHART_COLOR,
             stacked: false,
+            aggregated: false,
             dataSetsHaveTitle,
             verticalAxisPosition: "left",
             legendPosition: newLegendPos,
@@ -7059,6 +7103,7 @@
             this.labelRange = createRange(getters, sheetId, definition.labelRange);
             this.background = definition.background;
             this.legendPosition = definition.legendPosition;
+            this.aggregated = definition.aggregated;
         }
         static transformDefinition(definition, executed) {
             return transformChartDefinitionWithDataSetsWithZone(definition, executed);
@@ -7075,6 +7120,7 @@
                 title: context.title || "",
                 type: "pie",
                 labelRange: context.auxiliaryRange || undefined,
+                aggregated: false,
             };
         }
         getDefinition() {
@@ -7101,6 +7147,7 @@
                     ? this.getters.getRangeString(labelRange, targetSheetId || this.sheetId)
                     : undefined,
                 title: this.title,
+                aggregated: this.aggregated,
             };
         }
         copyForSheetId(sheetId) {
@@ -7114,6 +7161,9 @@
             return new PieChart(definition, sheetId, this.getters);
         }
         getDefinitionForExcel() {
+            // Excel does not support aggregating labels
+            if (this.aggregated)
+                return undefined;
             const dataSets = this.dataSets
                 .map((ds) => toExcelDataset(this.getters, ds))
                 .filter((ds) => ds.range !== ""); // && range !== INCORRECT_RANGE_STRING ? show incorrect #ref ?
@@ -7173,6 +7223,9 @@
         let labels = labelValues.formattedValues;
         let dataSetsValues = getChartDatasetValues(getters, chart.dataSets);
         ({ labels, dataSetsValues } = filterEmptyDataPoints(labels, dataSetsValues));
+        if (chart.aggregated) {
+            ({ labels, dataSetsValues } = aggregateDataForLabels(labels, dataSetsValues));
+        }
         const config = getPieConfiguration(chart, labels);
         const colors = new ChartColors();
         for (let { label, data } of dataSetsValues) {
@@ -9303,6 +9356,11 @@
                 labelRange: this.labelRange,
             });
         }
+        onUpdateAggregated(ev) {
+            this.props.updateChart({
+                aggregated: ev.target.checked,
+            });
+        }
     }
     LineBarPieConfigPanel.template = "o-spreadsheet-LineBarPieConfigPanel";
     LineBarPieConfigPanel.components = { SelectionInput };
@@ -9316,6 +9374,11 @@
         onUpdateStacked(ev) {
             this.props.updateChart({
                 stacked: ev.target.checked,
+            });
+        }
+        onUpdateAggregated(ev) {
+            this.props.updateChart({
+                aggregated: ev.target.checked,
             });
         }
     }
@@ -9785,6 +9848,11 @@
         onUpdateStacked(ev) {
             this.props.updateChart({
                 stacked: ev.target.checked,
+            });
+        }
+        onUpdateAggregated(ev) {
+            this.props.updateChart({
+                aggregated: ev.target.checked,
             });
         }
     }
@@ -22744,7 +22812,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 left: `${this.props.leftOffset + x}px`,
                 bottom: "0px",
                 height: `${SCROLLBAR_WIDTH$1}px`,
-                right: `${SCROLLBAR_WIDTH$1}px`,
+                right: `0px`,
             };
         }
         onScroll(offset) {
@@ -22789,7 +22857,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 top: `${this.props.topOffset + y}px`,
                 right: "0px",
                 width: `${SCROLLBAR_WIDTH$1}px`,
-                bottom: `${SCROLLBAR_WIDTH$1}px`,
+                bottom: `0px`,
             };
         }
         onScroll(offset) {
@@ -24627,6 +24695,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             verticalAxisPosition: chartData.verticalAxisPosition,
             legendPosition: chartData.legendPosition,
             stacked: chartData.stacked || false,
+            aggregated: false,
             labelsAsText: false,
         };
     }
@@ -31199,6 +31268,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             this.isUpToDate = false;
             this.evaluatedCells = {};
             this.evalContext = config.external;
+            this.lazyEvaluation = config.lazyEvaluation;
         }
         // ---------------------------------------------------------------------------
         // Command Handling
@@ -31299,6 +31369,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 this.evaluatedCells[sheetId][col] = {};
             }
             this.evaluatedCells[sheetId][col][row] = evaluatedCell;
+            if (!this.lazyEvaluation) {
+                this.evaluatedCells[sheetId][col][row]();
+            }
         }
         *getAllCells() {
             // use a generator function to avoid re-building a new object
@@ -38519,6 +38592,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     font-size: 13px;
     line-height: 1.2;
     user-select: none;
+    font-weight: 500;
+    color: #4a4f59;
 
     .o-topbar-top {
       border-bottom: 1px solid #e0e2e4;
@@ -38571,17 +38646,17 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         display: flex;
         flex-shrink: 0;
         margin-left: 16px;
-        color: #333;
         cursor: default;
 
         .o-tool {
           display: flex;
+          justify-content: center;
           align-items: center;
           margin: 2px;
           padding: 0px 3px;
           border-radius: 2px;
           cursor: pointer;
-          min-width: fit-content;
+          min-width: 20px;
         }
 
         .o-tool-outlined {
@@ -38592,9 +38667,17 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
           margin-right: 8px;
         }
 
-        .o-tool.active,
+        .o-tool.active {
+          background-color: #e6f4ea;
+          color: #006c24;
+          svg path,
+          polygon,
+          rect {
+            fill: #006c24;
+          }
+        }
         .o-tool:not(.o-disabled):hover {
-          background-color: #f1f3f4;
+          background-color: #017d831a;
         }
 
         .o-with-color > span {
@@ -42784,6 +42867,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 moveClient: () => { },
                 snapshotRequested: false,
                 notifyUI: (payload) => this.trigger("notify-ui", payload),
+                lazyEvaluation: "lazyEvaluation" in config ? config.lazyEvaluation : true,
             };
         }
         setupCorePluginConfig() {
@@ -42805,6 +42889,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 moveClient: this.session.move.bind(this.session),
                 external: this.config.external,
                 uiActions: this.config,
+                lazyEvaluation: this.config.lazyEvaluation,
             };
         }
         // ---------------------------------------------------------------------------
@@ -42966,6 +43051,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         computeTextWidth,
         createEmptyWorkbookData,
         createEmptySheet,
+        createEmptyExcelSheet,
         getDefaultChartJsRuntime,
         chartFontColor,
         getMenuChildren,
@@ -43038,8 +43124,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-12-20T11:01:03.280Z';
-    exports.__info__.hash = '7daa2dd';
+    exports.__info__.date = '2022-12-22T12:40:05.521Z';
+    exports.__info__.hash = '115b218';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
