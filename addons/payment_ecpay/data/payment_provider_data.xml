@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+
+    <record id="payment_provider_ecpay" model="payment.provider">
+        <field name="name">Ecpay</field>
+        <field name="code">ecpay</field>
+        <field name="redirect_form_view_id" ref="redirect_form"/>
+        <field name="display_as">Credit Card (powered by Ecpay)</field>
+        <field name="image_128" type="base64" file="payment_ecpay/static/description/icon.png"/>
+        <field name="module_id" ref="base.module_payment_ecpay"/>
+        <field name="payment_icon_ids"
+               eval="[(6, 0, [
+                    ref('payment.payment_icon_cc_mastercard'),
+                    ref('payment.payment_icon_cc_visa'),
+                    ref('payment.payment_icon_cc_unionpay'),
+               ])]"/>
+    </record>
+
+</odoo>
