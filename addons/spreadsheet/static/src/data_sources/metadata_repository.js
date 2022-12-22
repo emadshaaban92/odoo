@@ -34,21 +34,18 @@ const { EventBus } = owl;
  * the proxy returns directly (undefined) and a request for a name_get will
  * be triggered. All the requests created are batched and send, with only one
  * request per model, after a clock cycle.
- * At the end of this process, an event is triggered (labels-fetched)
  */
 export class MetadataRepository extends EventBus {
-    constructor(orm) {
+    constructor(orm, serverData) {
         super();
         this.orm = orm.silent;
 
-        this.serverData = new ServerData(this.orm, {
-            whenDataIsFetched: () => this.trigger("labels-fetched"),
-        });
+        this.serverData = serverData;
 
         this.labelsRepository = new LabelsRepository();
 
         this.displayNameRepository = new DisplayNameRepository(this.orm, {
-            whenDataIsFetched: () => this.trigger("labels-fetched"),
+            whenDataIsFetched: () => this.trigger("data-fetched"),
         });
     }
 

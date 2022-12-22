@@ -2,6 +2,7 @@
 
 import { nextTick } from "@web/../tests/helpers/utils";
 import { MetadataRepository } from "@spreadsheet/data_sources/metadata_repository";
+import { ServerData } from "../../src/data_sources/server_data";
 
 QUnit.module("spreadsheet > Metadata Repository", {}, () => {
     QUnit.test("Fields_get are only loaded once", async function (assert) {
@@ -16,7 +17,11 @@ QUnit.module("spreadsheet > Metadata Repository", {}, () => {
             },
         };
 
-        const metadataRepository = new MetadataRepository(orm);
+        const serverData = new ServerData(orm.silent, {
+            whenDataIsFetched: () => {},
+        });
+
+        const metadataRepository = new MetadataRepository(orm, serverData);
 
         const first = await metadataRepository.fieldsGet("A");
         const second = await metadataRepository.fieldsGet("A");
@@ -44,7 +49,11 @@ QUnit.module("spreadsheet > Metadata Repository", {}, () => {
             },
         };
 
-        const metadataRepository = new MetadataRepository(orm);
+        const serverData = new ServerData(orm.silent, {
+            whenDataIsFetched: () => {},
+        });
+
+        const metadataRepository = new MetadataRepository(orm, serverData);
 
         const first = await metadataRepository.modelDisplayName("A");
         const second = await metadataRepository.modelDisplayName("A");
@@ -60,7 +69,14 @@ QUnit.module("spreadsheet > Metadata Repository", {}, () => {
     QUnit.test("Register label correctly memorize labels", function (assert) {
         assert.expect(2);
 
-        const metadataRepository = new MetadataRepository({ silent: {} });
+        const serverData = new ServerData(
+            {},
+            {
+                whenDataIsFetched: () => {},
+            }
+        );
+
+        const metadataRepository = new MetadataRepository({ silent: {} }, serverData);
 
         assert.strictEqual(metadataRepository.getLabel("model", "field", "value"), undefined);
         const label = "label";
@@ -79,10 +95,12 @@ QUnit.module("spreadsheet > Metadata Repository", {}, () => {
             },
         };
 
-        const metadataRepository = new MetadataRepository(orm);
-        metadataRepository.addEventListener("labels-fetched", () => {
-            assert.step("labels-fetched");
+        const serverData = new ServerData(orm.silent, {
+            whenDataIsFetched: () => assert.step("data-fetched"),
         });
+
+        const metadataRepository = new MetadataRepository(orm, serverData);
+        metadataRepository.addEventListener("data-fetched", () => assert.step("data-fetched"));
 
         assert.throws(() => metadataRepository.getRecordDisplayName("A", 1), /Data is loading/);
         assert.throws(() => metadataRepository.getRecordDisplayName("A", 1), /Data is loading/);
@@ -91,12 +109,7 @@ QUnit.module("spreadsheet > Metadata Repository", {}, () => {
         assert.verifySteps([]);
 
         await nextTick();
-        assert.verifySteps([
-            "name_get-A-[1,2]",
-            "name_get-B-[1]",
-            "labels-fetched",
-            "labels-fetched",
-        ]);
+        assert.verifySteps(["name_get-A-[1,2]", "name_get-B-[1]", "data-fetched", "data-fetched"]);
 
         assert.strictEqual(metadataRepository.getRecordDisplayName("A", 1), "1");
         assert.strictEqual(metadataRepository.getRecordDisplayName("A", 2), "2");
@@ -114,7 +127,11 @@ QUnit.module("spreadsheet > Metadata Repository", {}, () => {
             },
         };
 
-        const metadataRepository = new MetadataRepository(orm);
+        const serverData = new ServerData(orm.silent, {
+            whenDataIsFetched: () => {},
+        });
+
+        const metadataRepository = new MetadataRepository(orm, serverData);
 
         assert.throws(() => metadataRepository.getRecordDisplayName("A", 1));
         assert.verifySteps([]);
@@ -143,7 +160,11 @@ QUnit.module("spreadsheet > Metadata Repository", {}, () => {
                 },
             };
 
-            const metadataRepository = new MetadataRepository(orm);
+            const serverData = new ServerData(orm.silent, {
+                whenDataIsFetched: () => {},
+            });
+
+            const metadataRepository = new MetadataRepository(orm, serverData);
 
             assert.throws(() => metadataRepository.getRecordDisplayName("A", 1), /Data is loading/);
             assert.throws(() => metadataRepository.getRecordDisplayName("B", 1), /Data is loading/);

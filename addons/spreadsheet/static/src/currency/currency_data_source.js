@@ -1,7 +1,6 @@
 /** @odoo-module */
 
 import { _t } from "@web/core/l10n/translation";
-import { ServerData } from "../data_sources/server_data";
 
 /**
  * @typedef Currency
@@ -13,9 +12,7 @@ import { ServerData } from "../data_sources/server_data";
  */
 export class CurrencyDataSource {
     constructor(services) {
-        this.serverData = new ServerData(services.orm, {
-            whenDataIsFetched: () => services.notify(),
-        });
+        this.serverData = services.serverData;
     }
 
     /**

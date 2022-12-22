@@ -2,6 +2,7 @@
 
 import { LoadableDataSource } from "./data_source";
 import { MetadataRepository } from "./metadata_repository";
+import { ServerData } from "./server_data";
 
 const { EventBus } = owl;
 
@@ -18,8 +19,12 @@ export class DataSources extends EventBus {
     constructor(orm) {
         super();
         this._orm = orm;
-        this._metadataRepository = new MetadataRepository(orm);
-        this._metadataRepository.addEventListener("labels-fetched", () => this.notify());
+        this._serverData = new ServerData(orm.silent, {
+            whenDataIsFetched: () => this.notify(),
+        });
+        this._metadataRepository = new MetadataRepository(orm, this._serverData);
+        this._metadataRepository.addEventListener("data-fetched", () => this.notify());
+
         /** @type {Object.<string, any>} */
         this._dataSources = {};
     }
@@ -37,6 +42,7 @@ export class DataSources extends EventBus {
             {
                 orm: this._orm,
                 metadataRepository: this._metadataRepository,
+                serverData: this._serverData,
                 notify: () => this.notify(),
             },
             params

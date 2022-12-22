@@ -3,17 +3,13 @@ import { camelToSnakeObject, sum, toServerDateString } from "@spreadsheet/helper
 import { _t } from "@web/core/l10n/translation";
 import { sprintf } from "@web/core/utils/strings";
 
-import { ServerData } from "@spreadsheet/data_sources/server_data";
-
 /**
  * @typedef {import("./accounting_functions").DateRange} DateRange
  */
 
 export class AccountingDataSource {
     constructor(services) {
-        this.serverData = new ServerData(services.orm, {
-            whenDataIsFetched: () => services.notify(),
-        });
+        this.serverData = services.serverData;
     }
 
     /**
