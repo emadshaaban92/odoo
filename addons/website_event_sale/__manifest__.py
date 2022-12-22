@@ -22,6 +22,10 @@ Sell event tickets through eCommerce app.
         'web.assets_tests': [
             'website_event_sale/static/tests/**/*',
         ],
+        'web.assets_frontend': [
+            'website_event_sale/static/src/scss/website_event_sale_templates.scss',
+            'website_event_sale/static/src/js/website_event_sale_ticket_details.js',
+        ],
     },
     'license': 'LGPL-3',
 }
