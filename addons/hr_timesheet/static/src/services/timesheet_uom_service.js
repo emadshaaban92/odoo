@@ -13,7 +13,7 @@ export const timesheetUOMService = {
             get _timesheetUOMId() {
                 return company.currentCompany.timesheet_uom_id;
             },
-            get _timesheetWidget() {
+            get timesheetWidget() {
                 let timesheet_widget = "float_factor";
                 if (this._timesheetUOMId in session.uom_ids) {
                     timesheet_widget = session.uom_ids[this._timesheetUOMId].timesheet_widget;
@@ -21,30 +21,30 @@ export const timesheetUOMService = {
                 return timesheet_widget;
             },
             get timesheetComponent() {
-                return registry.category("fields").get(this._timesheetWidget, FloatFactorField);
+                return registry.category("fields").get(this.timesheetWidget, FloatFactorField);
             },
             getTimesheetComponentProps(props) {
                 const factorDependantComponents = ["float_toggle", "float_factor"];
-                return factorDependantComponents.includes(this._timesheetWidget) ? this._getFactorCompanyDependentProps(props) : props;
+                return factorDependantComponents.includes(this.timesheetWidget) ? this._getFactorCompanyDependentProps(props) : props;
             },
             _getFactorCompanyDependentProps(props) {
                 const factor = company.currentCompany.timesheet_uom_factor || props.factor;
                 return { ...props, factor };
             },
             get formatter(){
-                if (this._timesheetWidget === "float_time") {
-                    return formatFloatTime
+                if (this.timesheetWidget === "float_time") {
+                    return formatFloatTime;
                 }
                 const factor = company.currentCompany.timesheet_uom_factor || 1;
-                if (this._timesheetWidget === "float_toggle") {
+                if (this.timesheetWidget === "float_toggle") {
                     return (value, options = {}) => formatFloat(value * factor, options);
                 }
-                if (this._timesheetWidget === "float_factor") {
+                if (this.timesheetWidget === "float_factor") {
                     return (value, options = {}) => formatFloatFactor(value, Object.assign({ factor }, options));
                 }
             }
-        }
+        };
     }
 };
 
-registry.category("services").add("timesheetUOM", timesheetUOMService);
+registry.category("services").add("new_timesheet_uom", timesheetUOMService);

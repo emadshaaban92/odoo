@@ -7,7 +7,6 @@ import { FloatFactorField } from "@web/views/fields/float_factor/float_factor_fi
 import { FloatToggleField } from "@web/views/fields/float_toggle/float_toggle_field";
 import { FloatTimeField } from "@web/views/fields/float_time/float_time_field";
 import { standardFieldProps } from "@web/views/fields/standard_field_props";
-import {timesheetUOMService} from "@hr_timesheet/services/timesheet_uom_service";
 
 const { Component } = owl;
 
@@ -15,7 +14,7 @@ const { Component } = owl;
 export class TimesheetUOM extends Component {
 
     setup() {
-        this.timesheetUOMService = useService("timesheetUOM");
+        this.timesheetUOMService = useService("new_timesheet_uom");
         this.companyService = useService("company");
     }
 
