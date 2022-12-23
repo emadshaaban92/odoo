@@ -42,12 +42,12 @@ class _Record extends Component {
     }
 
     getActiveFields() {
-        let activeFields = {};
         if (this.props.info.activeFields) {
+            const activeFields = {};
             for (const [fName, fInfo] of Object.entries(this.props.info.activeFields)) {
                 activeFields[fName] = { ...defaultActiveField, ...fInfo };
 
-                if (fInfo.widget && this.props.fields[fName].type.includes("2many")) {
+                if (this.props.fields[fName].type.includes("2many")) {
                     const Component = getFieldClassFromRegistry(
                         this.props.fields[fName].type,
                         fInfo.widget,
@@ -58,15 +58,31 @@ class _Record extends Component {
                     }
                 }
             }
-        } else {
-            activeFields = Object.fromEntries(
-                this.props.info.fieldNames.map((f) => [f, { ...defaultActiveField }])
-            );
+            return activeFields;
         }
-        return activeFields;
+        return Object.fromEntries(
+            this.props.info.fieldNames.map((f) => [f, { ...defaultActiveField }])
+        );
+    }
+
+    getFieldProps(fName) {
+        const activeField = this.model.root.activeFields[fName];
+        const field = this.props.fields[fName];
+        const props = {
+            name: fName,
+            type: activeField.widget || field.type,
+            record: this.model.root,
+        };
+
+        if (field.type.includes("2many")) {
+            props.fieldInfo = activeField;
+            props.relation = field.relation;
+        }
+
+        return props;
     }
 }
-_Record.template = xml`<t t-slot="default" record="model.root"/>`;
+_Record.template = xml`<t t-slot="default" record="model.root" getFieldProps.bind="getFieldProps"/>`;
 
 export class Record extends Component {
     setup() {
