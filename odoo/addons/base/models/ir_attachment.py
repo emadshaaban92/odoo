@@ -342,20 +342,15 @@ class IrAttachment(models.Model):
                     pass
         return values
 
-    def _can_user_save_xml_image(self, user):
-        return False
-
     def _check_contents(self, values):
         mimetype = values['mimetype'] = self._compute_mimetype(values)
         xml_like = 'ht' in mimetype or ( # hta, html, xhtml, etc.
                 'xml' in mimetype and    # other xml (svg, text/xml, etc)
                 not 'openxmlformats' in mimetype)  # exception for Office formats
-        xml_image_like = xml_like and 'image' in mimetype
         user = self.env.context.get('binary_field_real_user', self.env.user)
         if not isinstance(user, self.pool['res.users']):
             raise UserError(_("binary_field_real_user should be a res.users record."))
         force_text = xml_like and (
-            not (xml_image_like and self._can_user_save_xml_image(user))) and (
             self.env.context.get('attachments_mime_plainxml') or
             not self.env['ir.ui.view'].with_user(user).check_access_rights('write', False))
         if force_text:

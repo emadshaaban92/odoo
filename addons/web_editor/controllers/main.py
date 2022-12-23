@@ -491,7 +491,8 @@ class Web_Editor(http.Controller):
         if name:
             fields['name'] = name
         if request.env.user.has_group('website.group_website_publisher'):
-            attachment = attachment.sudo()
+            context = {'binary_field_real_user': request.env['res.users'].sudo().browse([SUPERUSER_ID])}
+            attachment = attachment.sudo().with_context(context)
         attachment = attachment.copy(fields)
         if attachment.url:
             # Don't keep url if modifying static attachment because static images
