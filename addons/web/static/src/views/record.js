@@ -14,8 +14,9 @@ class _Record extends Component {
                 fieldNames.map((f) => [f, { attrs: {}, options: {}, domain: "[]" }])
             );
 
+        const resId = this.props.info.resId || this.props.info.initialValues?.id;
         this.model = useModel(RelationalModel, {
-            resId: this.props.info.resId,
+            resId,
             resModel: this.props.info.resModel,
             fields: this.props.fields,
             viewMode: "form",
@@ -26,7 +27,7 @@ class _Record extends Component {
         });
         onWillUpdateProps(async (nextProps) => {
             await this.model.load({
-                resId: nextProps.info.resId,
+                resId: nextProps.info.resId ?? resId,
                 mode: nextProps.info.mode,
             });
         });
