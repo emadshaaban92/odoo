@@ -213,7 +213,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11234'),
+                'account_id': ref('account_15020030'),
                 'tag_ids': [ref('tax_tag_igst')],
             }),
         ]"/>
@@ -224,7 +224,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10053'),
+                'account_id': ref('account_24040020'),
                 'tag_ids': [ref('tax_tag_igst')],
             }),
         ]"/>
@@ -244,7 +244,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11234'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_igst')],
             }),
         ]"/>
@@ -255,7 +255,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10053'),
+                'account_id': ref('account_24040020'),
                 'tag_ids': [ref('tax_tag_igst')],
             }),
         ]"/>
@@ -275,7 +275,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11234'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_igst')],
             }),
         ]"/>
@@ -286,7 +286,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10053'),
+                'account_id': ref('account_24040020'),
                 'tag_ids': [ref('tax_tag_igst')],
             }),
         ]"/>
@@ -306,7 +306,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11234'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_igst')],
             }),
         ]"/>
@@ -317,7 +317,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10053'),
+                'account_id': ref('account_24040020'),
                 'tag_ids': [ref('tax_tag_igst')],
             }),
         ]"/>
@@ -337,7 +337,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11234'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_igst')],
             }),
         ]"/>
@@ -348,7 +348,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10053'),
+                'account_id': ref('account_24040020'),
                 'tag_ids': [ref('tax_tag_igst')],
             }),
         ]"/>
@@ -368,7 +368,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11234'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_igst')],
             }),
         ]"/>
@@ -379,7 +379,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10053'),
+                'account_id': ref('account_24040020'),
                 'tag_ids': [ref('tax_tag_igst')],
             }),
         ]"/>
@@ -399,7 +399,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11232'),
+                'account_id': ref('account_15020010'),
                 'tag_ids': [ref('tax_tag_sgst')],
             }),
         ]"/>
@@ -410,7 +410,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10051'),
+                'account_id': ref('account_24040000'),
                 'tag_ids': [ref('tax_tag_sgst')],
             })
         ]"/>
@@ -430,7 +430,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11233'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_cgst')],
             })
         ]"/>
@@ -441,7 +441,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10052'),
+                'account_id': ref('account_24040010'),
                 'tag_ids': [ref('tax_tag_cgst')],
             })
         ]"/>
@@ -471,7 +471,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11232'),
+                'account_id': ref('account_15020010'),
                 'tag_ids': [ref('tax_tag_sgst')],
             })
         ]"/>
@@ -482,7 +482,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10051'),
+                'account_id': ref('account_24040000'),
                 'tag_ids': [ref('tax_tag_sgst')],
             })
         ]"/>
@@ -502,7 +502,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11233'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_cgst')],
             })
         ]"/>
@@ -513,7 +513,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10052'),
+                'account_id': ref('account_24040010'),
                 'tag_ids': [ref('tax_tag_cgst')],
             })
         ]"/>
@@ -543,7 +543,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11232'),
+                'account_id': ref('account_15020010'),
                 'tag_ids': [ref('tax_tag_sgst')],
             })
         ]"/>
@@ -554,7 +554,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10051'),
+                'account_id': ref('account_24040000'),
                 'tag_ids': [ref('tax_tag_sgst')],
             })
         ]"/>
@@ -574,7 +574,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11233'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_cgst')],
             })
         ]"/>
@@ -585,7 +585,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10052'),
+                'account_id': ref('account_24040010'),
                 'tag_ids': [ref('tax_tag_cgst')],
             })
         ]"/>
@@ -615,7 +615,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11232'),
+                'account_id': ref('account_15020010'),
                 'tag_ids': [ref('tax_tag_sgst')],
             })
         ]"/>
@@ -626,7 +626,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10051'),
+                'account_id': ref('account_24040000'),
                 'tag_ids': [ref('tax_tag_sgst')],
             })
         ]"/>
@@ -646,7 +646,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11233'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_cgst')],
             })
         ]"/>
@@ -657,7 +657,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10052'),
+                'account_id': ref('account_24040010'),
                 'tag_ids': [ref('tax_tag_cgst')],
             })
         ]"/>
@@ -687,7 +687,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11232'),
+                'account_id': ref('account_15020010'),
                 'tag_ids': [ref('tax_tag_sgst')],
             })
         ]"/>
@@ -698,7 +698,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10051'),
+                'account_id': ref('account_24040000'),
                 'tag_ids': [ref('tax_tag_sgst')],
             })
         ]"/>
@@ -718,7 +718,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11233'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_cgst')],
             })
         ]"/>
@@ -729,7 +729,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10052'),
+                'account_id': ref('account_24040010'),
                 'tag_ids': [ref('tax_tag_cgst')],
             }),
         ]"/>
@@ -759,7 +759,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11232'),
+                'account_id': ref('account_15020010'),
                 'tag_ids': [ref('tax_tag_sgst')],
             })
         ]"/>
@@ -770,7 +770,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10051'),
+                'account_id': ref('account_24040000'),
                 'tag_ids': [ref('tax_tag_sgst')],
             })
         ]"/>
@@ -790,7 +790,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11233'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_cgst')],
             })
         ]"/>
@@ -801,7 +801,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10052'),
+                'account_id': ref('account_24040010'),
                 'tag_ids': [ref('tax_tag_cgst')],
             })
         ]"/>
@@ -1007,7 +1007,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10053'),
+                'account_id': ref('account_24040020'),
                 'tag_ids': [ref('tax_tag_igst')],
             }),
         ]"/>
@@ -1018,7 +1018,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11234'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_igst')],
             }),
         ]"/>
@@ -1038,7 +1038,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10053'),
+                'account_id': ref('account_24040020'),
                 'tag_ids': [ref('tax_tag_igst')],
             }),
         ]"/>
@@ -1049,7 +1049,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11234'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_igst')],
             }),
         ]"/>
@@ -1069,7 +1069,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10053'),
+                'account_id': ref('account_24040020'),
                 'tag_ids': [ref('tax_tag_igst')],
             }),
         ]"/>
@@ -1080,7 +1080,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11234'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_igst')],
             }),
         ]"/>
@@ -1100,7 +1100,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10053'),
+                'account_id': ref('account_24040020'),
                 'tag_ids': [ref('tax_tag_igst')],
             }),
         ]"/>
@@ -1111,7 +1111,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11234'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_igst')],
             }),
         ]"/>
@@ -1131,7 +1131,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10053'),
+                'account_id': ref('account_24040020'),
                 'tag_ids': [ref('tax_tag_igst')],
             }),
         ]"/>
@@ -1142,7 +1142,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11234'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_igst')],
             }),
         ]"/>
@@ -1162,7 +1162,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10053'),
+                'account_id': ref('account_24040020'),
                 'tag_ids': [ref('tax_tag_igst')],
             }),
         ]"/>
@@ -1173,7 +1173,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11234'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_igst')],
             }),
         ]"/>
@@ -1193,7 +1193,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10051'),
+                'account_id': ref('account_24040000'),
                 'tag_ids': [ref('tax_tag_sgst')],
             })
         ]"/>
@@ -1204,7 +1204,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11232'),
+                'account_id': ref('account_15020010'),
                 'tag_ids': [ref('tax_tag_sgst')],
             })
         ]"/>
@@ -1224,7 +1224,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10052'),
+                'account_id': ref('account_24040010'),
                 'tag_ids': [ref('tax_tag_cgst')],
             })
         ]"/>
@@ -1235,7 +1235,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11233'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_cgst')],
             })
         ]"/>
@@ -1265,7 +1265,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10051'),
+                'account_id': ref('account_24040000'),
                 'tag_ids': [ref('tax_tag_sgst')],
             })
         ]"/>
@@ -1276,7 +1276,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11232'),
+                'account_id': ref('account_15020010'),
                 'tag_ids': [ref('tax_tag_sgst')],
             })
         ]"/>
@@ -1296,7 +1296,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10052'),
+                'account_id': ref('account_24040010'),
                 'tag_ids': [ref('tax_tag_cgst')],
             })
         ]"/>
@@ -1307,7 +1307,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11233'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_cgst')],
             })
         ]"/>
@@ -1337,7 +1337,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10051'),
+                'account_id': ref('account_24040000'),
                 'tag_ids': [ref('tax_tag_sgst')],
             })
         ]"/>
@@ -1348,7 +1348,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11232'),
+                'account_id': ref('account_15020010'),
                 'tag_ids': [ref('tax_tag_sgst')],
             })
         ]"/>
@@ -1368,7 +1368,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10052'),
+                'account_id': ref('account_24040010'),
                 'tag_ids': [ref('tax_tag_cgst')],
             })
         ]"/>
@@ -1379,7 +1379,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11233'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_cgst')],
             })
         ]"/>
@@ -1409,7 +1409,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10051'),
+                'account_id': ref('account_24040000'),
                 'tag_ids': [ref('tax_tag_sgst')],
             })
         ]"/>
@@ -1420,7 +1420,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11232'),
+                'account_id': ref('account_15020010'),
                 'tag_ids': [ref('tax_tag_sgst')],
             })
         ]"/>
@@ -1440,7 +1440,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10052'),
+                'account_id': ref('account_24040010'),
                 'tag_ids': [ref('tax_tag_cgst')],
             })
         ]"/>
@@ -1451,7 +1451,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11233'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_cgst')],
             })
         ]"/>
@@ -1481,7 +1481,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10051'),
+                'account_id': ref('account_24040000'),
                 'tag_ids': [ref('tax_tag_sgst')],
             })
         ]"/>
@@ -1492,7 +1492,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11232'),
+                'account_id': ref('account_15020010'),
                 'tag_ids': [ref('tax_tag_sgst')],
             })
         ]"/>
@@ -1512,7 +1512,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10052'),
+                'account_id': ref('account_24040010'),
                 'tag_ids': [ref('tax_tag_cgst')],
             }),
         ]"/>
@@ -1523,7 +1523,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11233'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_cgst')],
             })
         ]"/>
@@ -1553,7 +1553,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10051'),
+                'account_id': ref('account_24040000'),
                 'tag_ids': [ref('tax_tag_sgst')],
             })
         ]"/>
@@ -1564,7 +1564,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11232'),
+                'account_id': ref('account_15020010'),
                 'tag_ids': [ref('tax_tag_sgst')],
             })
         ]"/>
@@ -1584,7 +1584,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10052'),
+                'account_id': ref('account_24040010'),
                 'tag_ids': [ref('tax_tag_cgst')],
             })
         ]"/>
@@ -1595,7 +1595,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p11233'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_cgst')],
             })
         ]"/>
@@ -1627,7 +1627,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
@@ -1643,7 +1643,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
@@ -1669,7 +1669,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
@@ -1685,7 +1685,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
@@ -1725,7 +1725,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
@@ -1741,7 +1741,7 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
@@ -1767,12 +1767,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p11234'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_igst_rc')],
             }),
         ]"/>
@@ -1783,12 +1783,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p10053'),
+                'account_id': ref('account_24040020'),
                 'tag_ids': [ref('tax_tag_igst_rc')],
             }),
         ]"/>
@@ -1809,12 +1809,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p11234'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_igst_rc')],
             }),
         ]"/>
@@ -1825,12 +1825,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p10053'),
+                'account_id': ref('account_24040020'),
                 'tag_ids': [ref('tax_tag_igst_rc')],
             }),
         ]"/>
@@ -1851,12 +1851,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p11234'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_igst_rc')],
             }),
         ]"/>
@@ -1867,12 +1867,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p10053'),
+                'account_id': ref('account_24040020'),
                 'tag_ids': [ref('tax_tag_igst_rc')],
             }),
         ]"/>
@@ -1893,12 +1893,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p11234'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_igst_rc')],
             }),
         ]"/>
@@ -1909,12 +1909,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p10053'),
+                'account_id': ref('account_24040020'),
                 'tag_ids': [ref('tax_tag_igst_rc')],
             }),
         ]"/>
@@ -1935,12 +1935,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p11234'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_igst_rc')],
             }),
         ]"/>
@@ -1951,12 +1951,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p10053'),
+                'account_id': ref('account_24040020'),
                 'tag_ids': [ref('tax_tag_igst_rc')],
             }),
         ]"/>
@@ -1977,12 +1977,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p11234'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_igst_rc')],
             }),
         ]"/>
@@ -1993,12 +1993,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p10053'),
+                'account_id': ref('account_24040020'),
                 'tag_ids': [ref('tax_tag_igst_rc')],
             }),
         ]"/>
@@ -2019,12 +2019,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p11232'),
+                'account_id': ref('account_15020010'),
                 'tag_ids': [ref('tax_tag_sgst_rc')],
             })
         ]"/>
@@ -2035,12 +2035,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p10051'),
+                'account_id': ref('account_24040000'),
                 'tag_ids': [ref('tax_tag_sgst_rc')],
             })
         ]"/>
@@ -2061,12 +2061,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p11233'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_cgst_rc')],
             })
         ]"/>
@@ -2077,12 +2077,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p10052'),
+                'account_id': ref('account_24040010'),
                 'tag_ids': [ref('tax_tag_cgst_rc')],
             })
         ]"/>
@@ -2114,12 +2114,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p11232'),
+                'account_id': ref('account_15020010'),
                 'tag_ids': [ref('tax_tag_sgst_rc')],
             })
         ]"/>
@@ -2130,12 +2130,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p10051'),
+                'account_id': ref('account_24040000'),
                 'tag_ids': [ref('tax_tag_sgst_rc')],
             })
         ]"/>
@@ -2156,12 +2156,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p11233'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_cgst_rc')],
             })
         ]"/>
@@ -2172,12 +2172,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p10052'),
+                'account_id': ref('account_24040010'),
                 'tag_ids': [ref('tax_tag_cgst_rc')],
             })
         ]"/>
@@ -2209,12 +2209,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p11232'),
+                'account_id': ref('account_15020010'),
                 'tag_ids': [ref('tax_tag_sgst_rc')],
             }),          ]"/>
         <field name="refund_repartition_line_ids" eval="[(5, 0, 0),
@@ -2224,12 +2224,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p10051'),
+                'account_id': ref('account_24040000'),
                 'tag_ids': [ref('tax_tag_sgst_rc')],
             }),
         ]"/>
@@ -2250,12 +2250,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p11233'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_cgst_rc')],
             }),
         ]"/>
@@ -2266,12 +2266,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p10052'),
+                'account_id': ref('account_24040010'),
                 'tag_ids': [ref('tax_tag_cgst_rc')],
             }),
         ]"/>
@@ -2303,12 +2303,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p11232'),
+                'account_id': ref('account_15020010'),
                 'tag_ids': [ref('tax_tag_sgst_rc')],
             }),
         ]"/>
@@ -2319,12 +2319,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p10051'),
+                'account_id': ref('account_24040000'),
                 'tag_ids': [ref('tax_tag_sgst_rc')],
             }),
         ]"/>
@@ -2345,12 +2345,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p11233'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_cgst_rc')],
             }),
         ]"/>
@@ -2361,12 +2361,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p10052'),
+                'account_id': ref('account_24040010'),
                 'tag_ids': [ref('tax_tag_cgst_rc')],
             }),
         ]"/>
@@ -2398,12 +2398,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p11232'),
+                'account_id': ref('account_15020010'),
                 'tag_ids': [ref('tax_tag_sgst_rc')],
             }),
         ]"/>
@@ -2414,12 +2414,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p10051'),
+                'account_id': ref('account_24040000'),
                 'tag_ids': [ref('tax_tag_sgst_rc')],
             }),
         ]"/>
@@ -2440,12 +2440,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p11233'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_cgst_rc')],
             }),
         ]"/>
@@ -2456,12 +2456,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p10052'),
+                'account_id': ref('account_24040010'),
                 'tag_ids': [ref('tax_tag_cgst_rc')],
             }),
         ]"/>
@@ -2493,12 +2493,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p11232'),
+                'account_id': ref('account_15020010'),
                 'tag_ids': [ref('tax_tag_sgst_rc')],
             }),
         ]"/>
@@ -2509,12 +2509,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p10051'),
+                'account_id': ref('account_24040000'),
                 'tag_ids': [ref('tax_tag_sgst_rc')],
             })
         ]"/>
@@ -2535,12 +2535,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p11233'),
+                'account_id': ref('account_15020020'),
                 'tag_ids': [ref('tax_tag_cgst_rc')],
             }),
         ]"/>
@@ -2551,12 +2551,12 @@ if tax &gt; result:result=tax</field>
             }),
             (0,0, {
                 'repartition_type': 'tax',
-                'account_id': ref('p10057'),
+                'account_id': ref('account_24040030'),
             }),
             (0,0, {
                 'factor_percent': -100,
                 'repartition_type': 'tax',
-                'account_id': ref('p10052'),
+                'account_id': ref('account_24040010'),
                 'tag_ids': [ref('tax_tag_cgst_rc')],
             }),
         ]"/>
