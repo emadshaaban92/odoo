@@ -1,5 +1,6 @@
 {
     "name": "Taiwan - Accounting",
+    'icon': '/account/static/description/l10n.png;tw',
     "author": "Odoo PS",
     "version": "1.0",
     "category": "Accounting/Localizations/Account Charts",
@@ -27,7 +28,6 @@ This is the base module to manage the accounting chart for Taiwan in Odoo.
     'demo': [
         'demo/demo_company.xml',
     ],
-    "icon": "/base/static/img/country_flags/tw.png",
     "post_init_hook": "load_translations",
     "license": "LGPL-3",
 }

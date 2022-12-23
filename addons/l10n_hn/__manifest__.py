@@ -9,6 +9,7 @@
 
 {
     'name': 'Honduras - Accounting',
+    'icon': '/account/static/description/l10n.png;hn',
     'version': '0.2',
     'category': 'Accounting/Localizations/Account Charts',
     'description': """

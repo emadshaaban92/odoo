@@ -3,7 +3,7 @@
 
 {
     'name': 'Indian - Purchase Report(GST)',
-    'icon': '/l10n_in/static/description/icon.png',
+    'icon': '/base/static/description/icon.png;in',
     'version': '1.0',
     'description': """GST Purchase Report""",
     'category': 'Accounting/Localizations/Purchase',

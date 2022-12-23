@@ -3,6 +3,7 @@
 
 {
     "name": "Finnish Localization",
+    'icon': '/account/static/description/l10n.png;fi',
     "version": "13.0.1",
     "author": "Avoin.Systems, "
               "Tawasta, "

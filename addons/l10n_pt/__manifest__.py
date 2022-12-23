@@ -1,5 +1,6 @@
 {
     'name': 'Portugal - Accounting',
+    'icon': '/account/static/description/l10n.png;pt',
     'version': '1.0',
     'author': 'Odoo',
     'category': 'Accounting/Localizations/Account Charts',

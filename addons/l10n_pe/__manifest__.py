@@ -1,6 +1,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 {
     'name': 'Peru - Accounting',
+    'icon': '/account/static/description/l10n.png;pe',
     "version": "2.0",
     'summary': "PCGE Simplified",
     'category': 'Accounting/Localizations/Account Charts',

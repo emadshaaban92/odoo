@@ -3,6 +3,7 @@
 
 {
     'name': 'Israel - Accounting',
+    'icon': '/account/static/description/l10n.png;il',
     'version': '1.0',
     'category': 'Accounting/Localizations/Account Charts',
     'description': """

@@ -2,6 +2,7 @@
 
 {
     'name': 'Czech - Accounting',
+    'icon': '/account/static/description/l10n.png;cz',
     'version': '1.0',
     'author': '26HOUSE',
     'website': 'http://www.26house.com',

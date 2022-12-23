@@ -5,6 +5,7 @@
 
 {
     'name': 'France - Accounting',
+    'icon': '/account/static/description/l10n.png;fr',
     'version': '2.1',
     'category': 'Accounting/Localizations/Account Charts',
     'description': """

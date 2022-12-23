@@ -3,6 +3,7 @@
 
 {
     'name': 'Hungary - Accounting',
+    'icon': '/account/static/description/l10n.png;hu',
     'version': '3.0',
     'category': 'Accounting/Localizations/Account Charts',
     'description': """

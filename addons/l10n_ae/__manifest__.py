@@ -2,6 +2,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 {
     'name': 'United Arab Emirates - Accounting',
+    'icon': '/account/static/description/l10n.png;ae',
     'author': 'Tech Receptives',
     'category': 'Accounting/Localizations/Account Charts',
     'description': """

@@ -5,6 +5,7 @@
 
 {
     'name': 'Japan - Accounting',
+    'icon': '/account/static/description/l10n.png;jp',
     'version': '2.2',
     'category': 'Accounting/Localizations/Account Charts',
     'description': """

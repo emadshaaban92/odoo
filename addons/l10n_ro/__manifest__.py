@@ -10,6 +10,7 @@
 
 {
     "name": "Romania - Accounting",
+    'icon': '/account/static/description/l10n.png;ro',
     "author": "Fekete Mihai (NextERP Romania SRL), Odoo S.A.",
     'category': 'Accounting/Localizations/Account Charts',
     'version': '1.0',

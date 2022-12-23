@@ -8,6 +8,7 @@
 
 {
     "name": "Mexico - Accounting",
+    'icon': '/account/static/description/l10n.png;mx',
     "version": "2.0",
     "author": "Vauxoo",
     'category': 'Accounting/Localizations/Account Charts',

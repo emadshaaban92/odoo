@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': "Egyptian E-Invoice Integration",
+    'icon': '/base/static/description/icon.png;eg',
     'summary': """
             Egyptian Tax Authority Invoice Integration
         """,

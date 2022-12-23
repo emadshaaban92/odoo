@@ -2,6 +2,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 {
     'name': 'Bulgaria - Accounting',
+    'icon': '/account/static/description/l10n.png;ae',
     'version': '1.0',
     'category': 'Accounting/Localizations/Account Charts',
     'description': """

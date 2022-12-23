@@ -3,6 +3,7 @@
 
 {
     'name': 'Kenya - Accounting',
+    'icon': '/account/static/description/l10n.png;ke',
     'version': '1.0',
     'category': 'Accounting/Localizations/Account Charts',
     'description': """

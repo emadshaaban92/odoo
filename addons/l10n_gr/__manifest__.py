@@ -5,6 +5,7 @@
 
 {
     'name': 'Greece - Accounting',
+    'icon': '/account/static/description/l10n.png;gr',
     'author': 'P. Christeas, Odoo S.A.',
     'website': 'http://openerp.hellug.gr/',
     'category': 'Accounting/Localizations/Account Charts',

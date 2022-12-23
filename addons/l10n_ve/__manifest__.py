@@ -8,6 +8,7 @@
 
 {
     'name' : 'Venezuela - Accounting',
+    'icon': '/account/static/description/l10n.png;ve',
     'author': 'Odoo S.A., Vauxoo',
     'category': 'Accounting/Localizations/Account Charts',
     'description':

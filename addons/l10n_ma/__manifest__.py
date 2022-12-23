@@ -5,6 +5,7 @@
 
 {
     'name': 'Morocco - Accounting',
+    'icon': '/account/static/description/l10n.png;ma',
     'author': 'kazacube',
     'category': 'Accounting/Localizations/Account Charts',
     'description': """

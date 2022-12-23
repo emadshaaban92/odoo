@@ -3,6 +3,7 @@
 
 {
     'name': 'Thailand - Accounting',
+    'icon': '/account/static/description/l10n.png;th',
     'version': '2.0',
     'category': 'Accounting/Localizations/Account Charts',
     'description': """

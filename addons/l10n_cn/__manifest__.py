@@ -9,6 +9,7 @@
 
 {
     'name': 'China - Accounting',
+    'icon': '/account/static/description/l10n.png;cn',
     'version': '1.8',
     'category': 'Accounting/Localizations/Account Charts',
     'author': 'www.openerp-china.org',
@@ -32,7 +33,7 @@ State Data/省份数据
 
     修改小企业会计税率
 
-We added the option to print a voucher which will also 
+We added the option to print a voucher which will also
 print the amount in words (special Chinese characters for numbers)
 correctly when the cn2an library is installed. (e.g. with pip3 install cn2an)
     """,

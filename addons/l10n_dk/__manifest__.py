@@ -3,6 +3,7 @@
 
 {
     'name': 'Denmark - Accounting',
+    'icon': '/account/static/description/l10n.png;dk',
     'version': '1.0',
     'author': 'Odoo House ApS, VK DATA ApS',
     'website': 'http://odoodanmark.dk',

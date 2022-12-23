@@ -3,6 +3,7 @@
 
 {
     "name" : "Mongolia - Accounting",
+    'icon': '/account/static/description/l10n.png;mn',
     "version" : "1.0",
     'category': 'Accounting/Localizations/Account Charts',
     "author" : "BumanIT LLC, Odoo S.A.",

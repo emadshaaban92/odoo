@@ -2,12 +2,13 @@
 
 {
     'name': 'Slovak - Accounting',
+    'icon': '/account/static/description/l10n.png;sk',
     'version': '1.0',
     'author': '26HOUSE',
     'website': 'http://www.26house.com',
     'category': 'Accounting/Localizations/Account Charts',
     'description': """
-Slovakia accounting chart and localization: Chart of Accounts 2020, basic VAT rates + 
+Slovakia accounting chart and localization: Chart of Accounts 2020, basic VAT rates +
 fiscal positions.
 
 Tento modul definuje:
@@ -17,9 +18,9 @@ Tento modul definuje:
 
 • Základné fiškálne pozície pre slovenskú legislatívu
 
- 
+
 Pre viac informácií kontaktujte info@26house.com alebo navštívte https://www.26house.com.
-    
+
     """,
     'depends': [
         'account',

@@ -4,6 +4,7 @@
 
 {
     'name': 'Ukraine - Accounting',
+    'icon': '/account/static/description/l10n.png;ua',
     'author': 'ERP Ukraine',
     'website': 'https://erp.co.ua',
     'version': '1.4',

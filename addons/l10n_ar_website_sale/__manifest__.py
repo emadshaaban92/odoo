@@ -1,6 +1,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 {
     'name': 'Argentinean eCommerce',
+    'icon': '/base/static/description/icon.png;ar',
     'version': '1.0',
     'category': 'Accounting/Localizations/Website',
     'sequence': 14,

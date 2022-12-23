@@ -4,6 +4,7 @@
 
 {
     'name': 'South Africa - Accounting',
+    'icon': '/account/static/description/l10n.png;za',
     'version': '1.0',
     'category': 'Accounting/Localizations/Account Charts',
     'description': """

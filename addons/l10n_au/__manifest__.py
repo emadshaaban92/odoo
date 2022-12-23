@@ -5,6 +5,7 @@
 
 {
     'name': 'Australian - Accounting',
+    'icon': '/account/static/description/l10n.png;au',
     'version': '1.1',
     'category': 'Accounting/Localizations/Account Charts',
     'description': """

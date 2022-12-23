@@ -2,6 +2,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 {
     'name': 'Saudi Arabia - Point of Sale',
+    'icon': '/base/static/description/icon.png;sa',
     'category': 'Accounting/Localizations/Point of Sale',
     'description': """
 K.S.A. POS Localization

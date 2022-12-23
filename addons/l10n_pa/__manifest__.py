@@ -5,6 +5,7 @@
 
 {
     "name": "Panama - Accounting",
+    'icon': '/account/static/description/l10n.png;pa',
     "description": """
 Panamenian accounting chart and tax localization.
 

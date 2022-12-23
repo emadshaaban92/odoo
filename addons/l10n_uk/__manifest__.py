@@ -5,6 +5,7 @@
 
 {
     'name': 'United Kingdom - Accounting',
+    'icon': '/account/static/description/l10n.png;gb',
     'version': '1.0',
     'category': 'Accounting/Localizations/Account Charts',
     'description': """

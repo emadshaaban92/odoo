@@ -3,6 +3,7 @@
 
 {
     'name': 'Hong Kong - Accounting',
+    'icon': '/account/static/description/l10n.png;hk',
     'version': '1.0',
     'category': 'Accounting/Localizations/Account Charts',
     'description': """ This is the base module to manage chart of accounting and localization for Hong Kong """,

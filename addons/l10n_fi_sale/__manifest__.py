@@ -3,6 +3,7 @@
 
 {
     'name': 'Finland - Sale',
+    'icon': '/base/static/description/icon.png;fi',
     'version': '1.0',
     'description': """Finland Sale""",
     'category': 'Localization',

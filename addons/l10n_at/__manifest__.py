@@ -10,6 +10,7 @@
 
 {
     "name": "Austria - Accounting",
+    'icon': '/account/static/description/l10n.png;at',
     "version": "3.0",
     "author": "WT-IO-IT GmbH, Wolfgang Taferner",
     "website": "https://www.wt-io-it.at",

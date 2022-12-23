@@ -3,6 +3,7 @@
 
 {
     'name': 'Turkey - Accounting',
+    'icon': '/account/static/description/l10n.png;tr',
     'version': '1.0',
     'category': 'Accounting/Localizations/Account Charts',
     'description': """

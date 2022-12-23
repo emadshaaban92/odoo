@@ -3,6 +3,7 @@
 
 {
     'name': 'Indonesian - Accounting',
+    'icon': '/account/static/description/l10n.png;id',
     'version': '1.0',
     'category': 'Accounting/Localizations/Account Charts',
     'description': """

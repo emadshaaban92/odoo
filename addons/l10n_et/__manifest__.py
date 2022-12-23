@@ -5,6 +5,7 @@
 
 {
     'name': 'Ethiopia - Accounting',
+    'icon': '/account/static/description/l10n.png;et',
     'version': '2.0',
     'category': 'Accounting/Localizations/Account Charts',
     'description': """

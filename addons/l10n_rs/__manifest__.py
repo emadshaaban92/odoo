@@ -3,6 +3,7 @@
 
 {
     "name": "Serbia - Accounting",
+    'icon': '/account/static/description/l10n.png;rs',
     "version": "1.0",
     "category": "Accounting/Localizations/Account Charts",
     "description": """

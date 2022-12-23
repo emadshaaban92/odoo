@@ -2,6 +2,7 @@
 
 {
     "name": "Philippines - Accounting",
+    'icon': '/account/static/description/l10n.png;ph',
     "summary": """
         This is the module to manage the accounting chart for The Philippines.
     """,
@@ -31,5 +32,4 @@
         "security/ir.model.access.csv",
     ],
     "license": "LGPL-3",
-    "icon": "/base/static/img/country_flags/ph.png",
 }

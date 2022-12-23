@@ -3,6 +3,7 @@
 
 {
     "name": "Slovenian - Accounting",
+    'icon': '/account/static/description/l10n.png;sl',
     "version": "1.1",
     "category": "Accounting/Localizations/Account Charts",
     "description": """

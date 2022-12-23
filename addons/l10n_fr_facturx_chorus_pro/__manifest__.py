@@ -3,6 +3,7 @@
 
 {
     'name': 'France - Factur-X integration with Chorus Pro',
+    'icon': '/base/static/description/icon.png;fr',
     'version': '1.0',
     'category': 'Accounting/Localizations/EDI',
     'description': """

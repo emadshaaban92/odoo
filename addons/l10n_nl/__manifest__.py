@@ -5,6 +5,7 @@
 
 {
     'name': 'Netherlands - Accounting',
+    'icon': '/account/static/description/l10n.png;nl',
     'version': '3.0',
     'category': 'Accounting/Localizations/Account Charts',
     'author': 'Onestein',

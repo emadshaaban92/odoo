@@ -1,5 +1,6 @@
 {
     'name': "Egypt - Accounting",
+    'icon': '/account/static/description/l10n.png;eg',
     'description': """
 This is the base module to manage the accounting chart for Egypt in Odoo.
 ==============================================================================
