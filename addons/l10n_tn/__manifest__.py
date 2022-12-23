@@ -19,6 +19,9 @@ This is the module to manage the accounting chart for Tunisia in Odoo.
         'data/account.group.template.csv',
         'data/account_chart_template_data.xml',
         'data/account_chart_template_configure_data.xml',
+        'data/account_tax_group_data.xml',
+        'data/tax_report_data.xml',
+        'data/account_tax_data.xml',
     ],
     'demo': [
         'demo/demo_company.xml',

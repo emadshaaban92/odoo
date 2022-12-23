@@ -3,19 +3,19 @@
     <data noupdate="1">
 
         <!-- Account Tax Group -->
-        <record id="tax_group_tva_0" model="account.tax.group">
+        <record id="tax_group_vat_0" model="account.tax.group">
             <field name="name">TVA 0%</field>
         </record>
-        <record id="tax_group_tva_7" model="account.tax.group">
+        <record id="tax_group_vat_7" model="account.tax.group">
             <field name="name">TVA 7%</field>
         </record>
-        <record id="tax_group_tva_13" model="account.tax.group">
+        <record id="tax_group_vat_13" model="account.tax.group">
             <field name="name">TVA 13%</field>
         </record>
-        <record id="tax_group_tva_19" model="account.tax.group">
+        <record id="tax_group_vat_19" model="account.tax.group">
             <field name="name">TVA 19%</field>
         </record>
-        <record id="tax_group_tva_29" model="account.tax.group">
+        <record id="tax_group_vat_29" model="account.tax.group">
             <field name="name">TVA 29%</field>
         </record>
 
