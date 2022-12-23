@@ -15,7 +15,7 @@
             <field name="invoice_repartition_line_ids" eval="[(5,0,0),
                 (0,0, {
                     'repartition_type': 'base',
-                    'plus_report_expression_ids': [ref('account_tax_report_2A3_ingrs_local_vnts_tag')],
+                    'plus_report_expression_ids': [ref('account_tax_report_2A4_base_tag')],
                 }),
 
                 (0,0, {'repartition_type': 'tax'}),
@@ -23,7 +23,7 @@
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
                 (0,0, {
                     'repartition_type': 'base',
-                    'minus_report_expression_ids': [ref('account_tax_report_2A3_ingrs_local_vnts_tag')],
+                    'minus_report_expression_ids': [ref('account_tax_report_2A4_base_tag')],
                 }),
 
                 (0,0, {'repartition_type': 'tax'}),
@@ -63,25 +63,25 @@
             <field name="invoice_repartition_line_ids" eval="[(5,0,0),
                 (0,0, {
                     'repartition_type': 'base',
-                    'plus_report_expression_ids': [ref('account_tax_report_2b6_grvd_tag')],
+                    'plus_report_expression_ids': [ref('account_tax_report_2B11_base_tag')],
                 }),
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030102'),
-                    'plus_report_expression_ids': [ref('account_tax_report_itbs_18_casilla_tag')],
+                    'account_id': ref('l10n_do_21030102'),
+                    'plus_report_expression_ids': [ref('account_tax_report_3_16_tax_tag')],
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
                 (0,0, {
                     'repartition_type': 'base',
-                    'minus_report_expression_ids': [ref('account_tax_report_2b6_grvd_tag')],
+                    'minus_report_expression_ids': [ref('account_tax_report_2B11_base_tag')],
                 }),
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030102'),
-                    'minus_report_expression_ids': [ref('account_tax_report_itbs_18_casilla_tag')],
+                    'account_id': ref('l10n_do_21030102'),
+                    'minus_report_expression_ids': [ref('account_tax_report_3_16_tax_tag')],
                 }),
             ]"/>
         </record>
@@ -98,25 +98,25 @@
             <field name="invoice_repartition_line_ids" eval="[(5,0,0),
                 (0,0, {
                     'repartition_type': 'base',
-                    'plus_report_expression_ids': [ref('account_tax_report_2b6_grvd_tag')],
+                    'plus_report_expression_ids': [ref('account_tax_report_2B11_base_tag')],
                 }),
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030102'),
-                    'plus_report_expression_ids': [ref('account_tax_report_itbs_18_casilla_tag')],
+                    'account_id': ref('l10n_do_21030102'),
+                    'plus_report_expression_ids': [ref('account_tax_report_3_16_tax_tag')],
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
                 (0,0, {
                     'repartition_type': 'base',
-                    'minus_report_expression_ids': [ref('account_tax_report_2b6_grvd_tag')],
+                    'minus_report_expression_ids': [ref('account_tax_report_2B11_base_tag')],
                 }),
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030102'),
-                    'minus_report_expression_ids': [ref('account_tax_report_itbs_18_casilla_tag')],
+                    'account_id': ref('l10n_do_21030102'),
+                    'minus_report_expression_ids': [ref('account_tax_report_3_16_tax_tag')],
                 }),
             ]"/>
         </record>
@@ -135,7 +135,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030503'),
+                    'account_id': ref('l10n_do_21030503'),
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -143,7 +143,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030503'),
+                    'account_id': ref('l10n_do_21030503'),
                 }),
             ]"/>
         </record>
@@ -162,8 +162,8 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_11080101'),
-                    'plus_report_expression_ids': [ref('account_tax_report_itbs_pgdo_locales_tag')],
+                    'account_id': ref('l10n_do_11080101'),
+                    'plus_report_expression_ids': [ref('account_tax_report_3_17_tax_tag')],
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -171,8 +171,8 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_11080101'),
-                    'minus_report_expression_ids': [ref('account_tax_report_itbs_pgdo_locales_tag')],
+                    'account_id': ref('l10n_do_11080101'),
+                    'minus_report_expression_ids': [ref('account_tax_report_3_17_tax_tag')],
                 }),
             ]"/>
         </record>
@@ -191,8 +191,8 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_11080101'),
-                    'plus_report_expression_ids': [ref('account_tax_report_itbs_pgdo_locales_tag')],
+                    'account_id': ref('l10n_do_11080101'),
+                    'plus_report_expression_ids': [ref('account_tax_report_3_17_tax_tag')],
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -200,8 +200,8 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_11080101'),
-                    'minus_report_expression_ids': [ref('account_tax_report_itbs_pgdo_locales_tag')],
+                    'account_id': ref('l10n_do_11080101'),
+                    'minus_report_expression_ids': [ref('account_tax_report_3_17_tax_tag')],
                 }),
             ]"/>
         </record>
@@ -220,7 +220,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_11080101'),
+                    'account_id': ref('l10n_do_11080101'),
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -228,7 +228,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_11080101'),
+                    'account_id': ref('l10n_do_11080101'),
                 }),
             ]"/>
         </record>
@@ -247,7 +247,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_11080101'),
+                    'account_id': ref('l10n_do_11080101'),
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -255,7 +255,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_11080101'),
+                    'account_id': ref('l10n_do_11080101'),
                 }),
             ]"/>
         </record>
@@ -274,7 +274,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_11080101'),
+                    'account_id': ref('l10n_do_11080101'),
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -282,7 +282,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_11080101'),
+                    'account_id': ref('l10n_do_11080101'),
                 }),
             ]"/>
         </record>
@@ -301,7 +301,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_11080101'),
+                    'account_id': ref('l10n_do_11080101'),
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -309,7 +309,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_11080101'),
+                    'account_id': ref('l10n_do_11080101'),
                 }),
             ]"/>
         </record>
@@ -328,7 +328,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_11080101'),
+                    'account_id': ref('l10n_do_11080101'),
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -336,7 +336,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_11080101'),
+                    'account_id': ref('l10n_do_11080101'),
                 }),
             ]"/>
         </record>
@@ -355,7 +355,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_11080101'),
+                    'account_id': ref('l10n_do_11080101'),
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -363,7 +363,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_11080101'),
+                    'account_id': ref('l10n_do_11080101'),
                 }),
             ]"/>
         </record>
@@ -382,7 +382,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_52080900'),
+                    'account_id': ref('l10n_do_61080900'),
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -390,7 +390,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_52080900'),
+                    'account_id': ref('l10n_do_61080900'),
                 }),
             ]"/>
         </record>
@@ -409,8 +409,8 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_11080102'),
-                    'plus_report_expression_ids': [ref('account_tax_report_itbs_pgdo_locales_tag')],
+                    'account_id': ref('l10n_do_11080102'),
+                    'plus_report_expression_ids': [ref('account_tax_report_3_17_tax_tag')],
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -418,8 +418,8 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_11080102'),
-                    'minus_report_expression_ids': [ref('account_tax_report_itbs_pgdo_locales_tag')],
+                    'account_id': ref('l10n_do_11080102'),
+                    'minus_report_expression_ids': [ref('account_tax_report_3_17_tax_tag')],
                 }),
             ]"/>
         </record>
@@ -438,8 +438,8 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_11080102'),
-                    'plus_report_expression_ids': [ref('account_tax_report_itbs_pgdo_locales_tag')],
+                    'account_id': ref('l10n_do_11080102'),
+                    'plus_report_expression_ids': [ref('account_tax_report_3_17_tax_tag')],
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -447,8 +447,8 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_11080102'),
-                    'minus_report_expression_ids': [ref('account_tax_report_itbs_pgdo_locales_tag')],
+                    'account_id': ref('l10n_do_11080102'),
+                    'minus_report_expression_ids': [ref('account_tax_report_3_17_tax_tag')],
                 }),
             ]"/>
         </record>
@@ -467,8 +467,8 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_11080103'),
-                    'plus_report_expression_ids': [ref('account_tax_report_itbs_pgdo_imptcn_tag')],
+                    'account_id': ref('l10n_do_11080103'),
+                    'plus_report_expression_ids': [ref('account_tax_report_3_24_tax_tag')],
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -476,8 +476,8 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_11080103'),
-                    'minus_report_expression_ids': [ref('account_tax_report_itbs_pgdo_imptcn_tag')],
+                    'account_id': ref('l10n_do_11080103'),
+                    'minus_report_expression_ids': [ref('account_tax_report_3_24_tax_tag')],
                 }),
             ]"/>
         </record>
@@ -496,7 +496,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030102'),
+                    'account_id': ref('l10n_do_21030102'),
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -504,7 +504,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030102'),
+                    'account_id': ref('l10n_do_21030102'),
                 }),
             ]"/>
         </record>
@@ -523,7 +523,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_52070200'),
+                    'account_id': ref('l10n_do_61070200'),
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -531,7 +531,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_52070200'),
+                    'account_id': ref('l10n_do_61070200'),
                 }),
             ]"/>
         </record>
@@ -550,7 +550,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_52020200'),
+                    'account_id': ref('l10n_do_61020200'),
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -558,7 +558,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_52020200'),
+                    'account_id': ref('l10n_do_61020200'),
                 }),
             ]"/>
         </record>
@@ -577,7 +577,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_52020200'),
+                    'account_id': ref('l10n_do_61020200'),
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -585,7 +585,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_52020200'),
+                    'account_id': ref('l10n_do_61020200'),
                 }),
             ]"/>
         </record>
@@ -614,7 +614,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030201'),
+                    'account_id': ref('l10n_do_21030201'),
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -622,7 +622,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030201'),
+                    'account_id': ref('l10n_do_21030201'),
                 }),
             ]"/>
         </record>
@@ -639,25 +639,25 @@
             <field name="invoice_repartition_line_ids" eval="[(5,0,0),
                 (0,0, {
                     'repartition_type': 'base',
-                    'plus_report_expression_ids': [ref('account_tax_report_retcn_prsn_tag')],
+                    'plus_report_expression_ids': [ref('account_tax_report_A39_base_tag')],
                 }),
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030203'),
-                    'minus_report_expression_ids': [ref('account_tax_report_itbs_retcn_prsn_tag')],
+                    'account_id': ref('l10n_do_21030203'),
+                    'minus_report_expression_ids': [ref('account_tax_report_A50_tax_tag')],
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
                 (0,0, {
                     'repartition_type': 'base',
-                    'minus_report_expression_ids': [ref('account_tax_report_retcn_prsn_tag')],
+                    'minus_report_expression_ids': [ref('account_tax_report_A39_base_tag')],
                 }),
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030203'),
-                    'plus_report_expression_ids': [ref('account_tax_report_itbs_retcn_prsn_tag')],
+                    'account_id': ref('l10n_do_21030203'),
+                    'plus_report_expression_ids': [ref('account_tax_report_A50_tax_tag')],
                 }),
             ]"/>
         </record>
@@ -674,25 +674,25 @@
             <field name="invoice_repartition_line_ids" eval="[(5,0,0),
                 (0,0, {
                     'repartition_type': 'base',
-                    'plus_report_expression_ids': [ref('account_tax_report_retcn_prsn_tag')],
+                    'plus_report_expression_ids': [ref('account_tax_report_A39_base_tag')],
                 }),
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030202'),
-                    'minus_report_expression_ids': [ref('account_tax_report_itbs_retcn_prsn_tag')],
+                    'account_id': ref('l10n_do_21030202'),
+                    'minus_report_expression_ids': [ref('account_tax_report_A50_tax_tag')],
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
                 (0,0, {
                     'repartition_type': 'base',
-                    'minus_report_expression_ids': [ref('account_tax_report_retcn_prsn_tag')],
+                    'minus_report_expression_ids': [ref('account_tax_report_A39_base_tag')],
                 }),
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030202'),
-                    'plus_report_expression_ids': [ref('account_tax_report_itbs_retcn_prsn_tag')],
+                    'account_id': ref('l10n_do_21030202'),
+                    'plus_report_expression_ids': [ref('account_tax_report_A50_tax_tag')],
                 }),
             ]"/>
         </record>
@@ -711,7 +711,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030201'),
+                    'account_id': ref('l10n_do_21030201'),
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -719,7 +719,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030201'),
+                    'account_id': ref('l10n_do_21030201'),
                 }),
             ]"/>
         </record>
@@ -739,7 +739,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030201'),
+                    'account_id': ref('l10n_do_21030201'),
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -747,7 +747,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030201'),
+                    'account_id': ref('l10n_do_21030201'),
                 }),
             ]"/>
         </record>
@@ -766,7 +766,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030205'),
+                    'account_id': ref('l10n_do_21030205'),
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -774,7 +774,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030205'),
+                    'account_id': ref('l10n_do_21030205'),
                 }),
             ]"/>
         </record>
@@ -793,7 +793,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030301'),
+                    'account_id': ref('l10n_do_21030301'),
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -801,7 +801,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030301'),
+                    'account_id': ref('l10n_do_21030301'),
                 }),
             ]"/>
         </record>
@@ -820,7 +820,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030302'),
+                    'account_id': ref('l10n_do_21030302'),
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -828,7 +828,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030302'),
+                    'account_id': ref('l10n_do_21030302'),
                 }),
             ]"/>
         </record>
@@ -847,7 +847,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030303'),
+                    'account_id': ref('l10n_do_21030303'),
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -855,7 +855,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030303'),
+                    'account_id': ref('l10n_do_21030303'),
                 }),
             ]"/>
         </record>
@@ -874,7 +874,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030308'),
+                    'account_id': ref('l10n_do_21030308'),
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -882,7 +882,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030308'),
+                    'account_id': ref('l10n_do_21030308'),
                 }),
             ]"/>
         </record>
@@ -901,7 +901,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030306'),
+                    'account_id': ref('l10n_do_21030306'),
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -909,7 +909,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030306'),
+                    'account_id': ref('l10n_do_21030306'),
                 }),
             ]"/>
         </record>
@@ -928,7 +928,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030307'),
+                    'account_id': ref('l10n_do_21030307'),
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -936,7 +936,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_21030307'),
+                    'account_id': ref('l10n_do_21030307'),
                 }),
             ]"/>
         </record>
@@ -955,7 +955,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_11080302'),
+                    'account_id': ref('l10n_do_11080302'),
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -963,7 +963,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_11080302'),
+                    'account_id': ref('l10n_do_11080302'),
                 }),
             ]"/>
         </record>
@@ -1041,7 +1041,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_11080102'),
+                    'account_id': ref('l10n_do_11080102'),
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -1049,7 +1049,7 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_11080102'),
+                    'account_id': ref('l10n_do_11080102'),
                 }),
             ]"/>
         </record>
@@ -1067,8 +1067,8 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_51010500'),
-                    'plus_report_expression_ids': [ref('account_tax_report_itbs_pgdo_locales_tag')],
+                    'account_id': ref('l10n_do_51010500'),
+                    'plus_report_expression_ids': [ref('account_tax_report_3_17_tax_tag')],
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -1076,8 +1076,8 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_51010500'),
-                    'plus_report_expression_ids': [ref('account_tax_report_itbs_pgdo_locales_tag')],
+                    'account_id': ref('l10n_do_51010500'),
+                    'plus_report_expression_ids': [ref('account_tax_report_3_17_tax_tag')],
                 }),
             ]"/>
         </record>
@@ -1095,8 +1095,8 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_51010500'),
-                    'plus_report_expression_ids': [ref('account_tax_report_itbs_pgdo_locales_tag')],
+                    'account_id': ref('l10n_do_51010500'),
+                    'plus_report_expression_ids': [ref('account_tax_report_3_17_tax_tag')],
                 }),
             ]"/>
             <field name="refund_repartition_line_ids" eval="[(5,0,0),
@@ -1104,8 +1104,8 @@
 
                 (0,0, {
                     'repartition_type': 'tax',
-                    'account_id': ref('do_niif_51010500'),
-                    'plus_report_expression_ids': [ref('account_tax_report_itbs_pgdo_locales_tag')],
+                    'account_id': ref('l10n_do_51010500'),
+                    'plus_report_expression_ids': [ref('account_tax_report_3_17_tax_tag')],
                 }),
             ]"/>
         </record>
