@@ -817,6 +817,145 @@ if tax &gt; result:result=tax</field>
         <field name="sequence">0</field>
         <field name="children_tax_ids" eval="[(6, 0, [ref('sgst_sale_2_5'), ref('cgst_sale_2_5'),])]"/>
     </record>
+    <record id="igst_sale_18_rc" model="account.tax.template">
+        <field name="name">IGST 18% (RC)</field>
+        <field name="description">IGST 18%</field>
+        <field name="type_tax_use">sale</field>
+        <field name="amount_type">percent</field>
+        <field name="amount">18</field>
+        <field name="chart_template_id" ref="indian_chart_template_standard"/>
+        <field name="tax_group_id" ref="igst_group"/>
+        <field name="invoice_repartition_line_ids" eval="[(5, 0, 0),
+            (0,0, {
+                'repartition_type': 'base',
+                'tag_ids': [ref('tax_tag_base_igst_rc')],
+            }),
+            (0,0, {
+                'repartition_type': 'tax',
+                'account_id': ref('p11244'),
+                'tag_ids': [ref('tax_tag_igst')],
+            }),
+            (0,0, {
+                'factor_percent': -100,
+                'repartition_type': 'tax',
+                'account_id': ref('p10053'),
+                'tag_ids': [ref('tax_tag_igst_rc')],
+            }),
+        ]"/>
+        <field name="refund_repartition_line_ids" eval="[(5, 0, 0),
+            (0,0, {
+                'repartition_type': 'base',
+                'tag_ids': [ref('tax_tag_base_igst_rc')],
+            }),
+            (0,0, {
+                'repartition_type': 'tax',
+                'account_id': ref('p11244'),
+                'tag_ids': [ref('tax_tag_igst')],
+            }),
+            (0,0, {
+                'factor_percent': -100,
+                'repartition_type': 'tax',
+                'account_id': ref('p10053'),
+                'tag_ids': [ref('tax_tag_igst_rc')],
+            }),
+        ]"/>
+    </record>
+    <record id="sgst_sale_9_rc" model="account.tax.template">
+        <field name="name">SGST Sale 9% (RC)</field>
+        <field name="description">SGST 9%</field>
+        <field name="type_tax_use">none</field>
+        <field name="amount_type">percent</field>
+        <field name="amount">9</field>
+        <field name="chart_template_id" ref="indian_chart_template_standard"/>
+        <field name="tax_group_id" ref="sgst_group"/>
+        <field name="invoice_repartition_line_ids" eval="[(5, 0, 0),
+            (0,0, {
+                'repartition_type': 'base',
+                'tag_ids': [ref('tax_tag_base_sgst_rc')],
+            }),
+            (0,0, {
+                'repartition_type': 'tax',
+                'account_id': ref('p11244'),
+                'tag_ids': [ref('tax_tag_sgst')],
+            }),
+            (0,0, {
+                'factor_percent': -100,
+                'repartition_type': 'tax',
+                'account_id': ref('p10051'),
+                'tag_ids': [ref('tax_tag_sgst_rc')],
+            }),
+        ]"/>
+        <field name="refund_repartition_line_ids" eval="[(5, 0, 0),
+            (0,0, {
+                'repartition_type': 'base',
+                'tag_ids': [ref('tax_tag_base_sgst_rc')],
+            }),
+            (0,0, {
+                'repartition_type': 'tax',
+                'account_id': ref('p11244'),
+                'tag_ids': [ref('tax_tag_sgst')],
+            }),
+            (0,0, {
+                'factor_percent': -100,
+                'repartition_type': 'tax',
+                'account_id': ref('p10051'),
+                'tag_ids': [ref('tax_tag_sgst_rc')],
+            }),
+        ]"/>
+    </record>
+    <record id="cgst_sale_9_rc" model="account.tax.template">
+        <field name="name">CGST Sale 9% (RC)</field>
+        <field name="description">CGST 9%</field>
+        <field name="type_tax_use">none</field>
+        <field name="amount_type">percent</field>
+        <field name="amount">9</field>
+        <field name="chart_template_id" ref="indian_chart_template_standard"/>
+        <field name="tax_group_id" ref="cgst_group"/>
+        <field name="invoice_repartition_line_ids" eval="[(5, 0, 0),
+            (0,0, {
+                'repartition_type': 'base',
+                'tag_ids': [ref('tax_tag_base_cgst_rc')],
+            }),
+            (0,0, {
+                'repartition_type': 'tax',
+                'account_id': ref('p11244'),
+                'tag_ids': [ref('tax_tag_cgst')],
+            }),
+            (0,0, {
+                'factor_percent': -100,
+                'repartition_type': 'tax',
+                'account_id': ref('p10052'),
+                'tag_ids': [ref('tax_tag_cgst_rc')],
+            }),
+        ]"/>
+        <field name="refund_repartition_line_ids" eval="[(5, 0, 0),
+            (0,0, {
+                'repartition_type': 'base',
+                'tag_ids': [ref('tax_tag_base_cgst_rc')],
+            }),
+            (0,0, {
+                'repartition_type': 'tax',
+                'account_id': ref('p11244'),
+                'tag_ids': [ref('tax_tag_cgst')],
+            }),
+            (0,0, {
+                'factor_percent': -100,
+                'repartition_type': 'tax',
+                'account_id': ref('p10052'),
+                'tag_ids': [ref('tax_tag_cgst_rc')],
+            }),
+        ]"/>
+    </record>
+    <record id="gst_sale_18_rc" model="account.tax.template">
+        <field name="name">GST 18% (RC)</field>
+        <field name="description">GST 18%</field>
+        <field name="type_tax_use">sale</field>
+        <field name="amount_type">group</field>
+        <field name="amount">18</field>
+        <field name="chart_template_id" ref="indian_chart_template_standard"/>
+        <field name="tax_group_id" ref="gst_group"/>
+        <field name="children_tax_ids" eval="[(6, 0, [ref('sgst_sale_9_rc'), ref('cgst_sale_9_rc')])]"/>
+    </record>
     <record id="cess_purchase_5" model="account.tax.template">
         <field name="name">CESS Purchase 5%</field>
         <field name="description">CESS 5%</field>
@@ -1618,7 +1757,6 @@ if tax &gt; result:result=tax</field>
         <field name="amount_type">percent</field>
         <field name="amount">5</field>
         <field name="tax_group_id" ref="cess_group"/>
-        <field name="l10n_in_reverse_charge" eval="True"/>
         <field name="chart_template_id" ref="indian_chart_template_standard"/>
         <field name="invoice_repartition_line_ids" eval="[(5, 0, 0),
             (0,0, {
@@ -1660,7 +1798,6 @@ if tax &gt; result:result=tax</field>
         <field name="amount_type">fixed</field>
         <field name="amount">1.591</field>
         <field name="tax_group_id" ref="cess_group"/>
-        <field name="l10n_in_reverse_charge" eval="True"/>
         <field name="chart_template_id" ref="indian_chart_template_standard"/>
         <field name="invoice_repartition_line_ids" eval="[(5, 0, 0),
             (0,0, {
@@ -1704,7 +1841,6 @@ if tax &gt; result:result=tax</field>
         <field name="chart_template_id" ref="indian_chart_template_standard"/>
         <field name="children_tax_ids" eval="[(6, 0, [ref('cess_purchase_5_rc'),ref('cess_purchase_1591_rc'),])]"/>
         <field name="tax_group_id" ref="cess_group"/>
-        <field name="l10n_in_reverse_charge" eval="True"/>
     </record>
     <record id="cess_21_4170_higer_purchase_rc" model="account.tax.template">
         <field name="name">CESS 21% or RS.4170/THOUSAND (RC)</field>
@@ -1716,7 +1852,6 @@ if tax &gt; result:result=tax</field>
 tax=quantity * 4.17
 if tax &gt; result:result=tax</field>
         <field name="tax_group_id" ref="cess_group"/>
-        <field name="l10n_in_reverse_charge" eval="True"/>
         <field name="chart_template_id" ref="indian_chart_template_standard"/>
         <field name="invoice_repartition_line_ids" eval="[(5, 0, 0),
             (0,0, {
@@ -1759,7 +1894,6 @@ if tax &gt; result:result=tax</field>
         <field name="amount">1</field>
         <field name="chart_template_id" ref="indian_chart_template_standard"/>
         <field name="tax_group_id" ref="igst_group"/>
-        <field name="l10n_in_reverse_charge" eval="True"/>
         <field name="invoice_repartition_line_ids" eval="[(5, 0, 0),
             (0,0, {
                 'repartition_type': 'base',
@@ -1801,7 +1935,6 @@ if tax &gt; result:result=tax</field>
         <field name="amount">2</field>
         <field name="chart_template_id" ref="indian_chart_template_standard"/>
         <field name="tax_group_id" ref="igst_group"/>
-        <field name="l10n_in_reverse_charge" eval="True"/>
         <field name="invoice_repartition_line_ids" eval="[(5, 0, 0),
             (0,0, {
                 'repartition_type': 'base',
@@ -1843,7 +1976,6 @@ if tax &gt; result:result=tax</field>
         <field name="amount">28</field>
         <field name="chart_template_id" ref="indian_chart_template_standard"/>
         <field name="tax_group_id" ref="igst_group"/>
-        <field name="l10n_in_reverse_charge" eval="True"/>
         <field name="invoice_repartition_line_ids" eval="[(5, 0, 0),
             (0,0, {
                 'repartition_type': 'base',
@@ -1885,7 +2017,6 @@ if tax &gt; result:result=tax</field>
         <field name="amount">18</field>
         <field name="chart_template_id" ref="indian_chart_template_standard"/>
         <field name="tax_group_id" ref="igst_group"/>
-        <field name="l10n_in_reverse_charge" eval="True"/>
         <field name="invoice_repartition_line_ids" eval="[(5, 0, 0),
             (0,0, {
                 'repartition_type': 'base',
@@ -1927,7 +2058,6 @@ if tax &gt; result:result=tax</field>
         <field name="amount">12</field>
         <field name="chart_template_id" ref="indian_chart_template_standard"/>
         <field name="tax_group_id" ref="igst_group"/>
-        <field name="l10n_in_reverse_charge" eval="True"/>
         <field name="invoice_repartition_line_ids" eval="[(5, 0, 0),
             (0,0, {
                 'repartition_type': 'base',
@@ -1969,7 +2099,6 @@ if tax &gt; result:result=tax</field>
         <field name="amount">5</field>
         <field name="chart_template_id" ref="indian_chart_template_standard"/>
         <field name="tax_group_id" ref="igst_group"/>
-        <field name="l10n_in_reverse_charge" eval="True"/>
         <field name="invoice_repartition_line_ids" eval="[(5, 0, 0),
             (0,0, {
                 'repartition_type': 'base',
@@ -2011,7 +2140,6 @@ if tax &gt; result:result=tax</field>
         <field name="amount">0.5</field>
         <field name="chart_template_id" ref="indian_chart_template_standard"/>
         <field name="tax_group_id" ref="sgst_group"/>
-        <field name="l10n_in_reverse_charge" eval="True"/>
         <field name="invoice_repartition_line_ids" eval="[(5, 0, 0),
             (0,0, {
                 'repartition_type': 'base',
@@ -2053,7 +2181,6 @@ if tax &gt; result:result=tax</field>
         <field name="amount">0.5</field>
         <field name="chart_template_id" ref="indian_chart_template_standard"/>
         <field name="tax_group_id" ref="cgst_group"/>
-        <field name="l10n_in_reverse_charge" eval="True"/>
         <field name="invoice_repartition_line_ids" eval="[(5, 0, 0),
             (0,0, {
                 'repartition_type': 'base',
@@ -2095,7 +2222,6 @@ if tax &gt; result:result=tax</field>
         <field name="amount">1.0</field>
         <field name="chart_template_id" ref="indian_chart_template_standard"/>
         <field name="tax_group_id" ref="gst_group"/>
-        <field name="l10n_in_reverse_charge" eval="True"/>
         <field name="children_tax_ids" eval="[(6, 0, [ref('sgst_purchase_0_5_rc'),ref('cgst_purchase_0_5_rc'),])]"/>
     </record>
     <record id="sgst_purchase_1_2_rc" model="account.tax.template">
@@ -2106,7 +2232,6 @@ if tax &gt; result:result=tax</field>
         <field name="amount">1</field>
         <field name="chart_template_id" ref="indian_chart_template_standard"/>
         <field name="tax_group_id" ref="sgst_group"/>
-        <field name="l10n_in_reverse_charge" eval="True"/>
         <field name="invoice_repartition_line_ids" eval="[(5, 0, 0),
             (0,0, {
                 'repartition_type': 'base',
@@ -2148,7 +2273,6 @@ if tax &gt; result:result=tax</field>
         <field name="amount">1</field>
         <field name="chart_template_id" ref="indian_chart_template_standard"/>
         <field name="tax_group_id" ref="cgst_group"/>
-        <field name="l10n_in_reverse_charge" eval="True"/>
         <field name="invoice_repartition_line_ids" eval="[(5, 0, 0),
             (0,0, {
                 'repartition_type': 'base',
@@ -2190,7 +2314,6 @@ if tax &gt; result:result=tax</field>
         <field name="amount">2.0</field>
         <field name="chart_template_id" ref="indian_chart_template_standard"/>
         <field name="tax_group_id" ref="gst_group"/>
-        <field name="l10n_in_reverse_charge" eval="True"/>
         <field name="children_tax_ids" eval="[(6, 0, [ref('sgst_purchase_1_2_rc'),ref('cgst_purchase_1_2_rc'),])]"/>
     </record>
     <record id="sgst_purchase_14_rc" model="account.tax.template">
@@ -2201,7 +2324,6 @@ if tax &gt; result:result=tax</field>
         <field name="amount">14</field>
         <field name="chart_template_id" ref="indian_chart_template_standard"/>
         <field name="tax_group_id" ref="sgst_group"/>
-        <field name="l10n_in_reverse_charge" eval="True"/>
         <field name="invoice_repartition_line_ids" eval="[(5, 0, 0),
             (0,0, {
                 'repartition_type': 'base',
@@ -2242,7 +2364,6 @@ if tax &gt; result:result=tax</field>
         <field name="amount">14</field>
         <field name="chart_template_id" ref="indian_chart_template_standard"/>
         <field name="tax_group_id" ref="cgst_group"/>
-        <field name="l10n_in_reverse_charge" eval="True"/>
         <field name="invoice_repartition_line_ids" eval="[(5, 0, 0),
             (0,0, {
                 'repartition_type': 'base',
@@ -2284,7 +2405,6 @@ if tax &gt; result:result=tax</field>
         <field name="amount">28.0</field>
         <field name="chart_template_id" ref="indian_chart_template_standard"/>
         <field name="tax_group_id" ref="gst_group"/>
-        <field name="l10n_in_reverse_charge" eval="True"/>
         <field name="children_tax_ids" eval="[(6, 0, [ref('sgst_purchase_14_rc'),ref('cgst_purchase_14_rc'),])]"/>
     </record>
     <record id="sgst_purchase_9_rc" model="account.tax.template">
@@ -2295,7 +2415,6 @@ if tax &gt; result:result=tax</field>
         <field name="amount">9</field>
         <field name="chart_template_id" ref="indian_chart_template_standard"/>
         <field name="tax_group_id" ref="sgst_group"/>
-        <field name="l10n_in_reverse_charge" eval="True"/>
         <field name="invoice_repartition_line_ids" eval="[(5, 0, 0),
             (0,0, {
                 'repartition_type': 'base',
@@ -2337,7 +2456,6 @@ if tax &gt; result:result=tax</field>
         <field name="amount">9</field>
         <field name="chart_template_id" ref="indian_chart_template_standard"/>
         <field name="tax_group_id" ref="cgst_group"/>
-        <field name="l10n_in_reverse_charge" eval="True"/>
         <field name="invoice_repartition_line_ids" eval="[(5, 0, 0),
             (0,0, {
                 'repartition_type': 'base',
@@ -2379,7 +2497,6 @@ if tax &gt; result:result=tax</field>
         <field name="amount">18.0</field>
         <field name="chart_template_id" ref="indian_chart_template_standard"/>
         <field name="tax_group_id" ref="gst_group"/>
-        <field name="l10n_in_reverse_charge" eval="True"/>
         <field name="children_tax_ids" eval="[(6, 0, [ref('sgst_purchase_9_rc'),ref('cgst_purchase_9_rc'),])]"/>
     </record>
     <record id="sgst_purchase_6_rc" model="account.tax.template">
@@ -2390,7 +2507,6 @@ if tax &gt; result:result=tax</field>
         <field name="amount">6</field>
         <field name="chart_template_id" ref="indian_chart_template_standard"/>
         <field name="tax_group_id" ref="sgst_group"/>
-        <field name="l10n_in_reverse_charge" eval="True"/>
         <field name="invoice_repartition_line_ids" eval="[(5, 0, 0),
             (0,0, {
                 'repartition_type': 'base',
@@ -2432,7 +2548,6 @@ if tax &gt; result:result=tax</field>
         <field name="amount">6</field>
         <field name="chart_template_id" ref="indian_chart_template_standard"/>
         <field name="tax_group_id" ref="cgst_group"/>
-        <field name="l10n_in_reverse_charge" eval="True"/>
         <field name="invoice_repartition_line_ids" eval="[(5, 0, 0),
             (0,0, {
                 'repartition_type': 'base',
@@ -2474,7 +2589,6 @@ if tax &gt; result:result=tax</field>
         <field name="amount">12.0</field>
         <field name="chart_template_id" ref="indian_chart_template_standard"/>
         <field name="tax_group_id" ref="gst_group"/>
-        <field name="l10n_in_reverse_charge" eval="True"/>
         <field name="children_tax_ids" eval="[(6, 0, [ref('sgst_purchase_6_rc'),ref('cgst_purchase_6_rc'),])]"/>
     </record>
     <record id="sgst_purchase_2_5_rc" model="account.tax.template">
@@ -2485,7 +2599,6 @@ if tax &gt; result:result=tax</field>
         <field name="amount">2.5</field>
         <field name="chart_template_id" ref="indian_chart_template_standard"/>
         <field name="tax_group_id" ref="sgst_group"/>
-        <field name="l10n_in_reverse_charge" eval="True"/>
         <field name="invoice_repartition_line_ids" eval="[(5, 0, 0),
             (0,0, {
                 'repartition_type': 'base',
@@ -2527,7 +2640,6 @@ if tax &gt; result:result=tax</field>
         <field name="amount">2.5</field>
         <field name="chart_template_id" ref="indian_chart_template_standard"/>
         <field name="tax_group_id" ref="cgst_group"/>
-        <field name="l10n_in_reverse_charge" eval="True"/>
         <field name="invoice_repartition_line_ids" eval="[(5, 0, 0),
             (0,0, {
                 'repartition_type': 'base',
@@ -2569,7 +2681,6 @@ if tax &gt; result:result=tax</field>
         <field name="amount">5.0</field>
         <field name="chart_template_id" ref="indian_chart_template_standard"/>
         <field name="tax_group_id" ref="gst_group"/>
-        <field name="l10n_in_reverse_charge" eval="True"/>
         <field name="sequence">0</field>
         <field name="children_tax_ids" eval="[(6, 0, [ref('sgst_purchase_2_5_rc'),ref('cgst_purchase_2_5_rc'),])]"/>
     </record>

@@ -26,9 +26,3 @@ class AccountJournal(models.Model):
             name += "- %s" % (journal.l10n_in_gstin_partner_id.vat)
             result_dict[journal.id] = name
         return list(result_dict.items())
-
-
-class AccountTax(models.Model):
-    _inherit = 'account.tax'
-
-    l10n_in_reverse_charge = fields.Boolean("Reverse charge", help="Tick this if this tax is reverse charge. Only for Indian accounting")

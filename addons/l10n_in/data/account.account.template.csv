@@ -30,6 +30,7 @@
 "p11241","Wages Payable","11241","liability_current","l10n_in.indian_chart_template_standard","","False"
 "p11242","Interest Payable","11242","liability_current","l10n_in.indian_chart_template_standard","","False"
 "p11243","Notes Payable","11243","liability_current","l10n_in.indian_chart_template_standard","","False"
+"p11244","Reverse Charge Tax Payable","11244","asset_current","l10n_in.indian_chart_template_standard","","False"
 "p20011","Local Sales","20011","income","l10n_in.indian_chart_template_standard","","False"
 "p20012","Retail Sales","20012","income","l10n_in.indian_chart_template_standard","","False"
 "p20013","Export Sales","20013","income","l10n_in.indian_chart_template_standard","","False"
