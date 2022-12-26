@@ -72,15 +72,7 @@ export class ProjectTaskStateSelectionForm extends ProjectTaskStateSelection {
         }
         return this.options_normal.filter((o) => o !== "waiting");
     }
-
-    markAsUndone() {
-        return this.env._t("Undone");
-    }
-
-    doneText() {
-        return this.env._t("Done");
-    }
-
+    
     /**
      * @param {MouseEvent} ev
      */

@@ -47,7 +47,6 @@ PROJECT_TASK_READABLE_FIELDS = {
     'allow_milestones',
     'milestone_id',
     'has_late_and_unreached_milestone',
-    'state_id',
     'state',
     'state_approval_mode'
 }
@@ -65,7 +64,6 @@ PROJECT_TASK_WRITABLE_FIELDS = {
     'child_ids',
     'parent_id',
     'priority',
-    'state_id',
     'state',
     'state_approval_mode'
 }
@@ -76,16 +74,6 @@ BLOCKING_STATES = [
     'pending_approval', 
     'changes_requested'
 ]
-
-STATES_KEY = {
-    'In Progress': 1,
-    'Done': 2,
-    'Waiting': 3,
-    'Pending approval': 4,
-    'Approved': 5,
-    'Rejected': 6,
-    'Changes requested': 7
-}
 
 class ProjectTaskType(models.Model):
     _name = 'project.task.type'
@@ -1109,12 +1097,6 @@ class Task(models.Model):
             return self.env['project.project'].browse(self._context['default_project_id']).company_id
         return self.env.company
 
-    def _default_state_id(self):
-        for dependent_task in self.depend_on_ids:
-            if dependent_task.state_id in self.env['project.task.state'].search([('name', 'in', BLOCKING_STATES)]):
-                return self.env['project.task.state'].search([('key', '=', STATES_KEY['Waiting'])])
-        return self.env['project.task.state'].search([], limit=1)
-
     @api.model
     def _read_group_stage_ids(self, stages, domain, order):
         search_domain = [('id', 'in', stages.ids)]
@@ -1143,8 +1125,7 @@ class Task(models.Model):
     tag_ids = fields.Many2many('project.tags', string='Tags',
         help="You can only see tags that are already present in your project. If you try creating a tag that is already existing in other projects, it won't generate any duplicates.")
     
-    state_id = fields.Many2one('project.task.state', default=_default_state_id, readonly=False, compute='_compute_state_id', store=True,
-     tracking=True, change_default=True, recursive=True)
+
     state = fields.Selection([
         ('in_progress','In Progress'),
         ('done','Done'),
@@ -1156,9 +1137,6 @@ class Task(models.Model):
     ], string='Status', copy=False, default='in_progress', required=True, compute='_compute_state', readonly=False, store=True, recursive=True)
 
     state_approval_mode = fields.Boolean(default=False, store=True)
-    state_pre_block = fields.Char(help='Remember state before task block', store=True, copy=False)
-    state_key = fields.Integer(related='state_id.key', readonly=True)
-    state_name = fields.Char(related='state_id.name', readonly=True)
     state_forced = fields.Boolean(default=False)
     
     kanban_state = fields.Selection([
@@ -1246,7 +1224,7 @@ class Task(models.Model):
     legend_blocked = fields.Char(related='stage_id.legend_blocked', string='Kanban Blocked Explanation', readonly=True)
     legend_done = fields.Char(related='stage_id.legend_done', string='Kanban Valid Explanation', readonly=True)
     legend_normal = fields.Char(related='stage_id.legend_normal', string='Kanban Ongoing Explanation', readonly=True)
-    is_closed = fields.Boolean(related="state_id.closing", string="Closing Stage", store=True, index=True, help="Folded in Kanban stages are closing stages.")
+    is_closed = fields.Boolean(related="stage_id.fold", string="Closing Stage", store=True, index=True, help="Folded in Kanban stages are closing stages.")
     parent_id = fields.Many2one('project.task', string='Parent Task', index=True)
     ancestor_id = fields.Many2one('project.task', string='Ancestor Task', compute='_compute_ancestor_id', index='btree_not_null', recursive=True, store=True)
     child_ids = fields.One2many('project.task', 'parent_id', string="Sub-tasks")
@@ -1438,37 +1416,11 @@ class Task(models.Model):
             default_state = 'pending_approval' if task.state_approval_mode else 'in_progress'
             task.write({'state':default_state})
 
-
-    @api.depends('depend_on_ids.state_id')
-    def _compute_state_id(self):
-        for task in self:
-            #print(f'task: {task}'.center(50,'-'))
-        #dependent_tasks = self.env['project.task'].search([('depend_ids', 'in', self.ids)])
-            for dependent_task in task.depend_on_ids:
-                if dependent_task.state_id in self.env['project.task.state'].search([('name', 'in', BLOCKING_STATES)]): # 
-                    if task.state_id.key != STATES_KEY['Waiting']:
-                        task.state_pre_block = task.state_id.name
-                    #print("state_pre_block: {}".format(task.state_pre_block))
-                    task.write({'state_id': self.env['project.task.state'].search([('key', '=', STATES_KEY['Waiting'])])})
-                    return
-            default_state = "Pending approval" if task.state_approval_mode else "In Progress"
-            #print(default_state)
-            future_state = default_state if not task.state_pre_block else task.state_pre_block
-            #print(future_state)
-            task.write({'state_id': self.env['project.task.state'].search([('key', '=', STATES_KEY[future_state])])})
-
     @api.onchange('state_approval_mode')
     def _onchange_state_approval_mode(self):
-        if self.state_id != self.env['project.task.state'].search([('key', '=', STATES_KEY['Waiting'])]):   #waiting state
-            default_state = 'Pending approval' if self.state_approval_mode else 'In Progress'
-            self.write({'state_id': self.env['project.task.state'].search([('key', '=', STATES_KEY[default_state])])})
         if self.state != 'waiting':
             default_state = 'pending_approval' if self.state_approval_mode else 'in_progress'
             self.write({'state': default_state})
-
-    #@api.depends('project_id')
-    #def _compute_state(self):
-    #    pass
 
     @api.depends('parent_id.ancestor_id')
     def _compute_ancestor_id(self):
@@ -2095,7 +2047,7 @@ class Task(models.Model):
             if vals.get('stage_id'):
                 vals.update(self.update_date_end(vals['stage_id']))
                 vals['date_last_stage_update'] = fields.Datetime.now()
-            if vals.get('state_id'):
+            if vals.get('state'):
                 vals['date_last_state_update'] = fields.Datetime.now()
             # recurrence
             rec_fields = vals.keys() & self._get_recurrence_fields()
@@ -2158,7 +2110,7 @@ class Task(models.Model):
 
             vals.update(self.update_date_end(vals['stage_id']))
             vals['date_last_stage_update'] = now
-        if 'state_id' in vals:
+        if 'state' in vals:
             vals['date_last_state_update'] = now
         task_ids_without_user_set = set()
         if 'user_ids' in vals and 'date_assign' not in vals:
@@ -2584,35 +2536,6 @@ class Task(models.Model):
             'blocking_task_list' : blocking_task_list,
         }
         return action
-
-    def action_toggle_approval_mode(self):
-        for task in self.browse(self.env.context['active_ids']):
-            #task.state_approval_mode = not task.state_approval_mode
-            task.write({'state_approval_mode': not task.state_approval_mode})
-            if task.state_id != task.env['project.task.state'].search([('key', '=', STATES_KEY['Waiting'])]):
-                default_state = 'Pending approval' if task.state_approval_mode else 'In Progress'     # 4-> Pending approval, 1-> In Progress
-                task.write({'state_id' : task.env['project.task.state'].search([('key', '=', STATES_KEY[default_state])])})
-
-
-    def action_toggle_approve_state(self):
-        new_state = 'Approved' if self.state_name != 'Approved' else 'Pending approval'
-        self.write({'state_id': self.env['project.task.state'].search([('key', '=', STATES_KEY[new_state])])})
-        #return self.call_confirmation_wizard()
-
-
-    def action_toggle_request_changes_state(self):
-        new_state = 'Changes requested' if self.state_name != 'Changes requested' else 'Pending approval'
-        self.write({'state_id': self.env['project.task.state'].search([('key', '=', STATES_KEY[new_state])])})
-
-    def action_toggle_reject_state(self):
-        new_state = 'Rejected' if self.state_name != 'Rejected' else 'Pending approval'
-        self.write({'state_id': self.env['project.task.state'].search([('key', '=', STATES_KEY[new_state])])})
-
-    def action_toggle_mark_as_done(self):
-        if self.state_name == 'Waiting':
-            return self.call_confirmation_wizard(STATES_KEY['Done'])
-        new_state = 'Done' if self.state_name != 'Done' else 'In Progress'
-        self.write({'state_id': self.env['project.task.state'].search([('key', '=', STATES_KEY[new_state])])})
 
     def action_assign_to_me(self):
         self.write({'user_ids': [(4, self.env.user.id)]})

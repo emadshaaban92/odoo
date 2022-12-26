@@ -421,15 +421,6 @@
             </field>
         </record>
 
-        <record id="project_task_act_window_app" model="ir.actions.act_window">
-            <field name="name">TEST</field>
-            <field name="res_model">project.task</field>
-            <field name="view_mode">form</field>
-            <field name="target">new</field>
-            <field name="binding_model_id" ref="project.model_project_task_state"/>
-            <field name="binding_view_types">form </field>
-        </record>
-
         <record id="action_send_mail_project_task" model="ir.actions.act_window">
             <field name="name">Send Email</field>
             <field name="res_model">mail.compose.message</field>
@@ -1112,8 +1103,6 @@
                     <field name="parent_id" invisible="1"/>
                     <field name="company_id" invisible="1"/>
                     <field name="state_approval_mode" invisible="1"/>
-                    <field name="state_key" invisible="1"/>
-                    <field name="state_id" invisible="1"/>
                     <header>
                         <!--
                         <button name="action_toggle_approve_state" string="Approve" type="object" class="" attrs="{'invisible' : &quot;['|', ('state_approval_mode', '=', False), ('state_key','=',5)]&quot;}" icon="fa-check"/>
@@ -1474,11 +1463,10 @@
                     <field name="rating_active"/>
                     <field name="has_late_and_unreached_milestone" />
                     <field name="allow_milestones" />
-                    <field name="state_id" />
                     <field name="state" />
                     <field name="state_approval_mode" />
                     <field name="company_id"/>
-                    <progressbar field="state_name" colors='{"Done": "success", "Approved": "success", "Changes requested": "warning", "Rejected": "danger", "In Progress": "200", "Pending approval": "200"}'/>
+                    <progressbar field="state" colors='{"done": "success", "approved": "success", "Changes requested": "warning", "Rejected": "danger", "In Progress": "200", "Pending approval": "200"}'/>
                     <templates>
                     <t t-name="kanban-box">
                         <div t-attf-class="{{!selection_mode ? 'oe_kanban_color_' + kanban_getcolor(record.color.raw_value) : ''}} oe_kanban_card oe_kanban_global_click">
