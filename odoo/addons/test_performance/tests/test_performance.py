@@ -71,6 +71,19 @@ class TestPerformance(SavepointCaseWithUserDemo):
 
     @users('__system__', 'demo')
     @warmup
+    def test_read_base_one2many(self):
+        records = self.env['test_performance.base'].search([])
+        self.assertEqual(len(records), 5)
+
+        # add one line on each record
+        records.write({'line_ids': [Command.create({})]})
+        self.env.invalidate_all()
+
+        with self.assertQueryCount(2):
+            records.line_ids
+
+    @users('__system__', 'demo')
+    @warmup
     def test_reversed_read_base(self):
         records = self.env['test_performance.base'].search([])
         self.assertEqual(len(records), 5)
