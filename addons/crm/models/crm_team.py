@@ -505,6 +505,11 @@ class Team(models.Model):
             # assign + deduplicate and concatenate results in teams_data to keep some history
             candidate_lead = teams_data[team]["leads"][0]
             assign_res = team._allocate_leads_deduplicate(candidate_lead, duplicates_cache=duplicates_lead_cache)
+            if 'leads_with_different_company' in assign_res:
+                for leads in assign_res['leads_with_different_company']:
+                    leads_done_ids.update({leads.id})
+                if 'assigned' not in assign_res:
+                    continue
             for key in ('assigned', 'merged', 'duplicates'):
                 teams_data[team][key].update(assign_res[key])
                 leads_done_ids.update(assign_res[key])
@@ -551,7 +556,7 @@ class Team(models.Model):
 
         # classify leads
         leads_assigned = self.env['crm.lead']  # direct team assign
-        leads_done_ids, leads_merged_ids, leads_dup_ids = set(), set(), set()  # classification
+        leads_done_ids = set()  # classification
         leads_dups_dict = dict()  # lead -> its duplicate
         for lead in leads:
             if lead.id not in leads_done_ids:
@@ -567,7 +572,16 @@ class Team(models.Model):
                 else:
                     leads_assigned += lead
                     leads_done_ids.add(lead.id)
+        values = {
+            'lead_duplicates': lead_duplicates,
+            'leads_assigned': leads_assigned,
+            'leads_dups_dict': leads_dups_dict
+        }
+        return self._merge_leads(leads, values)
 
+    def _merge_leads(self, leads, values):
+        leads_assigned, leads_dups_dict = values['leads_assigned'], values['leads_dups_dict']
+        leads_merged_ids, leads_dup_ids = set(), set()
         # assign team to direct assign (leads_assigned) + dups keys (to ensure their team
         # if they are elected master of merge process)
         dups_to_assign = [lead for lead in leads_dups_dict]
@@ -579,11 +593,17 @@ class Team(models.Model):
             leads_dup_ids.update((lead_duplicates - merged).ids)
             leads_merged_ids.add(merged.id)
 
-        return {
+        return_val = {
             'assigned': set(leads_assigned.ids),
             'merged': leads_merged_ids,
             'duplicates': leads_dup_ids,
         }
+
+        if 'leads_with_different_company' in values:
+            return_val.update({
+                'leads_with_different_company': values['leads_with_different_company']
+            })
+        return return_val
 
     # ------------------------------------------------------------
     # ACTIONS

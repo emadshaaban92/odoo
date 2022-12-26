@@ -42,3 +42,52 @@ class CrmTeam(models.Model):
         if self.use_opportunities and self._context.get('in_sales_app'):
             return "AND state in ('sale', 'done', 'pos_done')"
         return super(CrmTeam,self)._extra_sql_conditions()
+
+    def _merge_leads(self, leads, values):
+        """ Remove opportunities or leads from ["leads_dups_dict"] that
+        have sale orders and the company of the sale order is not the same
+        as the company of the head lead, its sale order, or current company.
+
+        :param leads: recordset of leads to assign to current team;
+        :param values: dictionary in the following form
+                       {
+                            'lead_duplicates': crm.lead(),
+                            'leads_assigned': crm.lead(),
+                            'leads_dups_dict': {crm.lead(): crm.lead()}
+                       };
+        :return: Opportunities or leads that have sale orders, and the company
+        of the sale order is not the same as the company of the head lead, its
+        sale order, or current company.
+        (
+            {'leads_with_different_company': opportunities}
+        )
+        """
+        opportunities = values['lead_duplicates']._sort_by_confidence_level(reverse=True)
+        if opportunities.order_ids \
+           and (len(opportunities.order_ids.company_id) > 1 or len(opportunities.company_id) > 1):
+            is_return = False
+            head_opportunity = opportunities[0]
+            current_company = head_opportunity.company_id or head_opportunity.order_ids.company_id or self.env.company
+            leads_with_so_different_company = opportunities.filtered(
+                lambda lead: lead.order_ids and lead.order_ids.company_id != current_company
+            )
+            if len(opportunities - leads_with_so_different_company) < 2:
+                is_return = True
+            else:
+                if leads in leads_with_so_different_company:
+                    leads = head_opportunity
+                values['leads_dups_dict'].clear()
+                values['leads_dups_dict'].update({leads: opportunities - leads_with_so_different_company})
+                opportunities = values['leads_with_different_company'] = leads_with_so_different_company
+            leads_list = ', '.join(opportunities.mapped('name'))
+            sales_order_list = ", ".join(opportunities.order_ids.mapped('name'))
+            for opportunity in opportunities:
+                subject = _('Merging Leads Failed:')
+                body = _('Leads (%s) could not be merged and have been skipped because their Sales Orders (%s) belong to different companies.', leads_list, sales_order_list)
+                opportunity.message_post(body=body, subject=subject)
+            if is_return:
+                return {
+                    'leads_with_different_company': opportunities
+                }
+
+        return super(CrmTeam, self)._merge_leads(leads, values)
