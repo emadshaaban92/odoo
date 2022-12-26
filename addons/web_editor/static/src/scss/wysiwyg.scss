@@ -56,7 +56,7 @@ $o-we-zindex: $o-we-overlay-zindex + 1 !default;
     button {
         outline: none;
     }
-
+    
     .o_we_colorpicker_switch_panel {
         font-size: $o-we-font-size;
         border-bottom: 1px solid var(--tab-border-bottom);
@@ -133,6 +133,11 @@ $o-we-zindex: $o-we-overlay-zindex + 1 !default;
         }
 
         .o_colorpicker_section {
+            &.o_custom_gradient_editor{
+                .o_custom_gradient_btn{
+                    border: 1px solid var(--o-we-toolbar-border);
+                }
+            }
             &::after {
                 content: "";
                 display: table;
@@ -182,16 +187,16 @@ $o-we-zindex: $o-we-overlay-zindex + 1 !default;
 
 // Floating Toolbar
 .oe-toolbar.oe-floating {
-    gap: 0 $o-we-sidebar-content-field-control-item-spacing * .7;
-    grid-auto-flow: column;
+
+    gap: $o-we-sidebar-content-field-control-item-spacing * .7;
+    // grid-auto-flow: column;
     align-items: stretch;
-    height: auto;
+    // height: auto;
     min-height: $o-we-toolbar-height;
-    max-width: none;
-    border-radius: $o-we-item-border-radius;
+    // max-width: none;
+    // border-radius: 0;
     padding: 0 $o-we-sidebar-content-field-control-item-spacing;
     background-color: var(--o-we-toolbar-bg, #{$o-we-toolbar-bg});
-    box-shadow: 0 0 4px rgba(#000, .1), 0 4px 18px rgba(#000, .25);
     color: var(--o-we-toolbar-color-text, #{$o-we-toolbar-color-text});
     font-family: $o-we-font-family;
 
@@ -267,7 +272,7 @@ $o-we-zindex: $o-we-overlay-zindex + 1 !default;
         @include o-caret-down();
         margin-left: .3em
     }
-
+    
     .dropdown-menu {
         margin: 0;
         border: 0;
@@ -276,7 +281,7 @@ $o-we-zindex: $o-we-overlay-zindex + 1 !default;
         overflow: visible;
         border-top: 1px solid var(--o-we-toolbar-border, #{$o-we-toolbar-border});
         background-color: var(--o-we-toolbar-bg, #{$o-we-toolbar-bg});
-        box-shadow: 0 18px 18px rgba(#000, .23);
+        box-shadow: rgba(0, 0, 0 , 0.1) 0px 4px 12px, rgba(0, 0, 0, 0.05) 0px 0px 4px;
         @include border-top-radius(0);
         @include border-bottom-radius($o-we-item-border-radius);
 
@@ -292,6 +297,7 @@ $o-we-zindex: $o-we-overlay-zindex + 1 !default;
             margin-top: 0;
             min-width: 222px !important;
         }
+        
     }
 
     .dropdown-item { // To overcome wysiwyg rules breaking this in iframes
@@ -375,7 +381,7 @@ $o-we-zindex: $o-we-overlay-zindex + 1 !default;
 
     .colorpicker {
         background: var(--o-we-toolbar-bg, #{$o-we-toolbar-bg});
-        box-shadow: 0px 3px 9px rgba(0, 0, 0, 0.2);
+        box-shadow: rgba(0, 0, 0 , 0.1) 0px 4px 12px, rgba(0, 0, 0, 0.05) 0px 0px 4px;
     }
 
     .o_image_alt {
@@ -642,13 +648,17 @@ img.o_we_selected_image {
 }
 
 .o_edit_menu_popover {
+    box-shadow: rgba(0, 0, 0 , 0.1) 0px 4px 12px, rgba(0, 0, 0, 0.05) 0px 0px 4px;
+    border-color: rgba(0,0,0,0.025);
     max-width: $popover-max-width * 1.2;
     // Prevent UI glitch after fetching page preview (size might change)
     width: $popover-max-width * 1.2;
     // Prevent the edited link from being deselected when clicking between
     // buttons in the popover
     user-select: none;
-
+    .popover-arrow::before{
+        border-right-color: rgba(0, 0, 0, 0.05);
+    }
     // As the popover is displayed both in the frontend and the backend,
     // the font styles need to be uniformized.
     font-size: 12px;
