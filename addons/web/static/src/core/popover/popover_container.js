@@ -44,8 +44,10 @@ class PopoverController extends Component {
         }
     }
     onClickAway(ev) {
+        const selection = document.getSelection();
         if (this.target.contains(ev.target)
-            || ev.target.closest(`.o_popover[popover-id="${this.props.id}"]`)) {
+            || ev.target.closest(`.o_popover[popover-id="${this.props.id}"]`)
+            || selection && selection.anchorNode.closest(`.o_popover[popover-id="${this.props.id}"]`)) {
             return;
         }
         if (this.props.preventClose && this.props.preventClose(ev)) {
