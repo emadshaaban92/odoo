@@ -1,6 +1,7 @@
 /** @odoo-module */
 
 import { StateSelectionField } from "@web/views/fields/state_selection/state_selection_field";
+import { ProjectTaskStateAutoDropdown } from "../project_task_state_auto_dropdown/project_task_state_auto_dropdown";
 
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
@@ -41,14 +42,12 @@ export class ProjectTaskStateSelectionForm extends StateSelectionField {
             changes_requested: "btn-warning",
             waiting: "",
         }
-        this.isStateButtonHighlighted
         if (this.props.record.activeFields[this.props.name].viewType !== "form") {
             super.setup();
         }
     }
 
-    get options() {
-
+    get options_approval() {
         return [
             ["pending_approval", "Pending Approval"],
             ["approved", "Approved"],
@@ -57,8 +56,29 @@ export class ProjectTaskStateSelectionForm extends StateSelectionField {
         ];
     }
 
+    get options_normal() {
+        return [
+            ["in_progress", "In Progress"],
+            ["done", "Done"],
+        ];
+    }
+
+    get availableOptions() {
+        if (["in_progress", "done"].includes(this.currentValue)) {
+            return this.options_normal.filter((o) => o !== this.currentValue);
+        }
+        return this.options_approval.filter((o) => o !== this.currentValue);
+    }
+
+    get switchModeAvailableOptions() {
+        if (["in_progress", "done"].includes(this.currentValue)) {
+            return this.options_approval;
+        }
+        return this.options_normal
+    }
+
     get isApproval() {
-        return this.props.record.data.state_approval_mode;
+        return !["in_progress", "done"].includes(this.currentValue);
     }
 
     async onSelectedDD(option) {
@@ -67,15 +87,10 @@ export class ProjectTaskStateSelectionForm extends StateSelectionField {
         this.props.record.model.notify();
     }
 
-    onExternalButtonCLick0() {
-        console.log("external click");
-    }
-
     stateIcon(value) {
         const fut = this.icons[value] || "";
         return fut;
     }
-
 
     stateColor(value) {
         return this.colorIcons[value] || "";
@@ -138,7 +153,6 @@ export class ProjectTaskStateSelectionForm extends StateSelectionField {
      * @param {MouseEvent} ev
      */
      onMouseEnterModeSelection(ev) {
-
         this.state.isModeSelectionHighlighted = true ;
     }
 
@@ -150,9 +164,11 @@ export class ProjectTaskStateSelectionForm extends StateSelectionField {
         this.state.isModeSelectionHighlighted = false ;
     }
 
-
 }
 
 ProjectTaskStateSelectionForm.template = "project.ProjectTaskStateSelectionForm";
-
+ProjectTaskStateSelectionForm.components = {
+    ...ProjectTaskStateSelectionForm.components,
+    ProjectTaskStateAutoDropdown
+}
 registry.category("fields").add("project_task_state_selection_form", ProjectTaskStateSelectionForm);

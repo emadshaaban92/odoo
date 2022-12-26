@@ -14,8 +14,8 @@
                 </t>  
         </xpath>
             <xpath expr="//t/div[@class='d-flex align-items-center']" position="replace">
-                <div class="d-flex align-items-center">
-                    <span t-attf-class="fa-fw fa {{ stateIcon(currentValue) }} {{ stateColor(currentValue) }}"/>
+                <div class="d-flex align-items-center o_status_align">
+                    <span t-attf-class=" {{ stateIcon(currentValue) }} {{ stateColor(currentValue) }}"/>
                 </div>
             </xpath>    
 

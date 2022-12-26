@@ -13,6 +13,7 @@ export class ProjectTaskStateSelection extends StateSelectionField {
         this.icons = {
             in_progress: "fa fa-check-circle-o",
             done: "fa fa-check-circle",
+            pending_approval: "o_status",
             approved: "o_status o_status_green",
             rejected: "o_status o_status_red",
             changes_requested: "fa fa-repeat",
@@ -47,13 +48,7 @@ export class ProjectTaskStateSelection extends StateSelectionField {
     }
 
     get options() {
-        //console.log(this.props.record.preloadedData['state_id'].records);
-        //return this.props.record.preloadedData["state_id"].records.map(
-        //    ({ key, name, approval_mode }) => {
-        //        return [key, name];
-        //    }
-        //);
-        //return this.stateSelection.map
+
         return [
             ["pending_approval", "Pending Approval"],
             ["approved", "Approved"],
@@ -91,15 +86,9 @@ export class ProjectTaskStateSelection extends StateSelectionField {
     }
 
     async toggleState() {
-        //const toggleVal = this.props.value[0] == 2 ? 1 : 2;         // those are the id for the 'In Progress' and 'Done' states
-        //const toggleState = this.props.record.preloadedData["state_id"].records.find((record) => record.key == toggleVal)
-        // This would be a better way to do it but the props.update() only takes a [key, label] value as update because we're in a StateSelection Field
-
         const toggleVal = this.props.value == "done" ? "in_progress" : "done";
         await this.props.update(toggleVal);
-        //await this.props.record.model.root.load();
-        //this.props.record.model.notify();
-    }
+        }
 }
 
 ProjectTaskStateSelection.template = "project.ProjectTaskStateSelection";
