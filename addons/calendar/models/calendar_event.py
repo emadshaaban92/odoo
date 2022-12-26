@@ -476,18 +476,19 @@ class Meeting(models.Model):
 
         return events.with_context(is_calendar_event_new=False)
 
-    def _fetch_query(self, query, field_names):
+    def _fetch_query(self, query, fields):
         if self.env.is_system():
-            return super()._fetch_query(query, field_names)
+            return super()._fetch_query(query, fields)
 
-        fields = set(field_names)
-        private_fields = fields - self._get_public_fields()
+        public_fnames = self._get_public_fields()
+        private_fields = [field for field in fields if field.name not in public_fnames]
         if not private_fields:
-            return super()._fetch_query(query, field_names)
+            return super()._fetch_query(query, fields)
 
-        events = super()._fetch_query(query, fields | {'privacy', 'user_id', 'partner_ids'})
+        fields_to_fetch = list(fields) + [self._fields[name] for name in ('privacy', 'user_id', 'partner_ids')]
+        events = super()._fetch_query(query, fields_to_fetch)
 
-        private_fields.add('partner_ids')
+        # determine private events to which the user does not participate
         current_partner_id = self.env.user.partner_id
         others_private_events = events.filtered(
             lambda e: e.privacy == 'private' \
@@ -497,10 +498,10 @@ class Meeting(models.Model):
         if not others_private_events:
             return events
 
-        for field_name in private_fields:
-            field = self._fields[field_name]
+        private_fields.append(self._fields['partner_ids'])
+        for field in private_fields:
             replacement = field.convert_to_cache(
-                _('Busy') if field_name == 'name' else False,
+                _('Busy') if field.name == 'name' else False,
                 others_private_events)
             self.env.cache.update(others_private_events, field, repeat(replacement))
 

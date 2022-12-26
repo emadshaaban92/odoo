@@ -1545,7 +1545,7 @@ class BaseModel(metaclass=MetaModel):
                     if dep.prefetch is True and (not dep.groups or self.user_has_groups(dep.groups)):
                         fields_to_fetch.add(dep)
 
-        return self._fetch_query(query, [field.name for field in fields_to_fetch])
+        return self._fetch_query(query, fields_to_fetch)
 
     #
     # display_name, name_get, name_create, name_search
@@ -3208,7 +3208,7 @@ class BaseModel(metaclass=MetaModel):
             query = self._as_query()
 
         # fetch the fields
-        fetched = self._fetch_query(query, [field.name for field in fields_to_fetch])
+        fetched = self._fetch_query(query, fields_to_fetch)
 
         # possibly raise exception for the records that could not be read
         if fetched != self:
@@ -3216,42 +3216,25 @@ class BaseModel(metaclass=MetaModel):
             if forbidden:
                 raise self.env['ir.rule']._make_access_error('read', forbidden)
 
-    def _fetch_query(self, query, field_names):
-        """ Fetch the given fields from the given query, put them in cache, and
-        return the fetched records.
+    def _fetch_query(self, query, fields):
+        """ Fetch the given fields (iterable of :class:`Field` instances) from
+        the given query, put them in cache, and return the fetched records.
         """
-        stored_fields = OrderedSet()
-        for name in field_names:
-            if name == 'id':
-                continue
-            field = self._fields.get(name)
-            if not field:
-                raise ValueError("Invalid field %r on model %r" % (name, self._name))
-            if field.store:
-                stored_fields.add(field)
-            elif field.compute:
-                # optimization: fetch direct field dependencies
-                for dotname in self.pool.field_depends[field]:
-                    f = self._fields[dotname.split('.')[0]]
-                    if f.store and (not f.groups or self.user_has_groups(f.groups)):
-                        stored_fields.add(f)
-
         # determine columns fields and those with their own read() method
-        column_fields = []
-        other_fields = []
-        translated_field_names = []
-        for field in stored_fields:
-            if field.column_type:
-                column_fields.append(field)
-            else:
-                other_fields.append(field)
-            if field.translate:
-                translated_field_names.append(field.name)
+        column_fields = OrderedSet()
+        other_fields = OrderedSet()
+        for field in fields:
+            if field.name == 'id':
+                continue
+            assert field.store
+            (column_fields if field.column_type else other_fields).add(field)
             if field.type == 'properties':
                 # force calling fields.read for properties field in order to
                 # read all relational properties in batch
-                other_fields.append(field)
+                other_fields.add(field)
 
+        # necessary to retrieve the en_US value of fields without a translation
+        translated_field_names = [field.name for field in column_fields if field.translate]
         if translated_field_names:
             self.flush_model(translated_field_names)
 
