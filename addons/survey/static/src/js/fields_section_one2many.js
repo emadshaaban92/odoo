@@ -39,6 +39,9 @@ var SectionListRenderer = ListRenderer.extend({
 
         if (isSection) {
             if (node.attrs.widget === "handle" || node.attrs.name === "random_questions_count") {
+                if (node.attrs.name === "random_questions_count"){
+                    $cell.attr('colspan', 1 + this.columns.filter(elem => elem.tag === "button_group").length);
+                }
                 return $cell;
             } else if (node.attrs.name === "title") {
                 var nbrColumns = this._getNumberOfCols();
@@ -49,7 +52,7 @@ var SectionListRenderer = ListRenderer.extend({
                     nbrColumns--;
                 }
                 if (record.data.questions_selection === "random") {
-                    nbrColumns--;
+                    nbrColumns -= 1 + this.columns.filter(elem => elem.tag === "button_group").length;
                 }
                 $cell.attr('colspan', nbrColumns);
             } else {
