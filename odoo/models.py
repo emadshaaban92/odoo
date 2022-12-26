@@ -4988,30 +4988,19 @@ class BaseModel(metaclass=MetaModel):
         :return: List of dictionaries containing the asked fields.
         :rtype: list(dict).
         """
-        records = self.search(domain or [], offset=offset, limit=limit, order=order)
-        if not records:
-            return []
+        fields = self.check_field_access_rights('read', fields)
+        records = self.search(domain or [], fields, offset=offset, limit=limit, order=order)
 
-        if fields and fields == ['id']:
-            # shortcut read if we only want the ids
-            return [{'id': record.id} for record in records]
-
-        # read() ignores active_test, but it would forward it to any downstream search call
-        # (e.g. for x2m or function fields), and this is not the desired behavior, the flag
-        # was presumably only meant for the main search().
-        # TODO: Move this to read() directly?
+        # _read_format() ignores 'active_test', but it would forward it to any
+        #  downstream search call(e.g. for x2m or computed fields), and this is
+        #  not the desired behavior. The flag was presumably only meant for the
+        #  main search().
         if 'active_test' in self._context:
             context = dict(self._context)
             del context['active_test']
             records = records.with_context(context)
 
-        result = records.read(fields, **read_kwargs)
-        if len(result) <= 1:
-            return result
-
-        # reorder read
-        index = {vals['id']: vals for vals in result}
-        return [index[record.id] for record in records if record.id in index]
+        return records._read_format(fnames=fields, **read_kwargs)
 
     def toggle_active(self):
         "Inverses the value of :attr:`active` on the records in ``self``."

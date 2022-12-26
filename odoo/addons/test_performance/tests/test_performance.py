@@ -155,18 +155,18 @@ class TestPerformance(SavepointCaseWithUserDemo):
         records = Model.search([])
         self.assertEqual(len(records), 5)
 
-        # one query for search, one query for read, one query for display_name
+        # one query for search and read, one query for display_name
         expected = records.read(['partner_id', 'value_pc'])
-        with self.assertQueryCount(3):
+        with self.assertQueryCount(2):
             self.env.invalidate_all()
             self.assertEqual(
                 Model.search_read([], ['partner_id', 'value_pc']),
                 expected,
             )
 
-        # one query for search, one query for read
+        # one query for search and read
         expected = records.read(['partner_id', 'value_pc'], load=False)
-        with self.assertQueryCount(2):
+        with self.assertQueryCount(1):
             self.env.invalidate_all()
             self.assertEqual(
                 Model.search_read([], ['partner_id', 'value_pc'], load=False),
