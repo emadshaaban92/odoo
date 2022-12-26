@@ -1528,10 +1528,24 @@ class BaseModel(metaclass=MetaModel):
             # optimization: don't execute the query at all
             return self.browse()
 
+        # determine fields to fetch
+        fields_to_fetch = OrderedSet()
         if field_names:
             field_names = self.check_field_access_rights('read', field_names)
+        for field_name in field_names:
+            field = self._fields.get(field_name)
+            if not field:
+                raise ValueError("Invalid field %r on model %r" % (field_name, self._name))
+            if field.store:
+                fields_to_fetch.add(field)
+            elif field.compute:
+                # optimization: fetch direct field dependencies
+                for dotname in self.pool.field_depends[field]:
+                    dep = self._fields[dotname.split('.', 1)[0]]
+                    if dep.prefetch is True and (not dep.groups or self.user_has_groups(dep.groups)):
+                        fields_to_fetch.add(dep)
 
-        return self._fetch_query(query, field_names)
+        return self._fetch_query(query, [field.name for field in fields_to_fetch])
 
     #
     # display_name, name_get, name_create, name_search
@@ -2973,28 +2987,7 @@ class BaseModel(metaclass=MetaModel):
         :raise ValueError: if a requested field does not exist
         """
         fields = self.check_field_access_rights('read', fields)
-
-        # fetch stored fields from the database to the cache
-        stored_fields = OrderedSet()
-        for name in fields:
-            field = self._fields.get(name)
-            if not field:
-                raise ValueError("Invalid field %r on model %r" % (name, self._name))
-            if field.store:
-                stored_fields.add(name)
-            elif field.compute:
-                # optimization: prefetch direct field dependencies
-                for dotname in self.pool.field_depends[field]:
-                    f = self._fields[dotname.split('.')[0]]
-                    if f.prefetch is True and (not f.groups or self.user_has_groups(f.groups)):
-                        stored_fields.add(f.name)
-
-        if stored_fields:
-            self.fetch(stored_fields)
-        else:
-            self.check_access_rights('read')
-            self.check_access_rule('read')
-
+        self.fetch(fields)
         return self._read_format(fnames=fields, load=load)
 
     def update_field_translations(self, field_name, translations):
@@ -3164,25 +3157,35 @@ class BaseModel(metaclass=MetaModel):
     def fetch(self, field_names):
         """ Make sure the given fields are in memory for the records in ``self``,
         by fetching what is necessary from the database.  Non-stored fields are
-        ignored.
+        mostly ignored, except for their stored dependencies.
         """
-        if not self:
+        if not self or not field_names:
             return
 
+        # determine fields to fetch
+        fields_to_fetch = OrderedSet()
         cache = self.env.cache
-        has_columns = False
-        fnames_to_fetch = []
+        field_names = self.check_field_access_rights('read', field_names)
         for field_name in field_names:
-            field = self._fields[field_name]
-            if field.store and any(cache.get_missing_ids(self, field)):
-                fnames_to_fetch.append(field_name)
-                has_columns = has_columns or field.column_type
+            field = self._fields.get(field_name)
+            if not field:
+                raise ValueError("Invalid field %r on model %r" % (field_name, self._name))
+            if not any(cache.get_missing_ids(self, field)):
+                continue
+            if field.store:
+                fields_to_fetch.add(field)
+            elif field.compute:
+                # optimization: fetch direct field dependencies
+                for dotname in self.pool.field_depends[field]:
+                    dep = self._fields[dotname.split('.', 1)[0]]
+                    if dep.prefetch is True and (not dep.groups or self.user_has_groups(dep.groups)):
+                        fields_to_fetch.add(dep)
 
-        if not fnames_to_fetch:
+        if not fields_to_fetch:
             return
 
         # first determine a query that satisfies the domain and access rules
-        if has_columns:
+        if any(field.column_type for field in fields_to_fetch):
             query = self.with_context(active_test=False)._search([('id', 'in', self.ids)])
         else:
             self.check_access_rights('read')
@@ -3198,8 +3201,7 @@ class BaseModel(metaclass=MetaModel):
             query = self._as_query()
 
         # fetch the fields
-        fnames_to_fetch = self.check_field_access_rights('read', fnames_to_fetch)
-        fetched = self._fetch_query(query, fnames_to_fetch)
+        fetched = self._fetch_query(query, [field.name for field in fields_to_fetch])
 
         # possibly raise exception for the records that could not be read
         if fetched != self:
