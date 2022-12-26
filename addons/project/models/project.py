@@ -508,7 +508,7 @@ class Project(models.Model):
         mapped_count = {group['project_id'][0]: group['project_id_count'] for group in read_group}
         for project in self:
             project.milestone_count_reached = mapped_count.get(project.id, 0)
-            project.milestone_progress = (project.milestone_count_reached * 100) / project.milestone_count if project.milestone_count > 0 else 0
+            project.milestone_progress = project.milestone_count_reached * 100 // project.milestone_count if project.milestone_count > 0 else 0
 
     @api.depends('milestone_ids', 'milestone_ids.is_reached', 'milestone_ids.deadline', 'allow_milestones')
     def _compute_is_milestone_exceeded(self):
