@@ -280,7 +280,7 @@
             .o_list_number {
                 white-space: nowrap;
                 .o_field_widget:not(.o_row_handle):not(.o_field_handle):not(.o_field_badge) {
-                    display: block;
+                    display: inline;
                     span:not(.o_m2o_avatar) {
                         @include o-text-overflow(inline);
                     }

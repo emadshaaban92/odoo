@@ -490,14 +490,11 @@ class Project(models.Model):
     def _compute_last_update_status(self):
         for project in self:
             project.last_update_status = project.last_update_id.status or 'to_define'
-            pass
-
 
     @api.depends('last_update_status')
     def _compute_last_update_color(self):
         for project in self:
-            project.last_update_color = STATUS_COLOR['on_hold']
-            pass
+            project.last_update_color = STATUS_COLOR[project.last_update_status]
 
     @api.depends('milestone_ids')
     def _compute_milestone_count(self):
