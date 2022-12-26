@@ -5821,14 +5821,8 @@
                         : undefined));
                 }
             }
-            else if (zone.left === zone.right && zone.top === zone.bottom) {
-                // A single cell. If it's only the title, the dataset is not added.
-                if (!dataSetsHaveTitle) {
-                    dataSets.push(createDataSet(getters, dataSetSheetId, zone, undefined));
-                }
-            }
             else {
-                /* 1 row or 1 column */
+                /* 1 cell, 1 row or 1 column */
                 dataSets.push(createDataSet(getters, dataSetSheetId, zone, dataSetsHaveTitle
                     ? {
                         top: zone.top,
@@ -5881,6 +5875,65 @@
             label: ds.labelCell ? getters.getRangeString(ds.labelCell, "forceSheetReference") : undefined,
             range: getters.getRangeString(dataRange, "forceSheetReference"),
         };
+    }
+    function toExcelLabelRange(getters, labelRange, dataSetsHaveTitle) {
+        if (!labelRange)
+            return undefined;
+        let zone = {
+            ...labelRange.zone,
+        };
+        if (dataSetsHaveTitle) {
+            if (labelRange.zone.bottom > labelRange.zone.top) {
+                zone.top = zone.top + 1;
+            }
+            else {
+                zone.left = zone.left + 1;
+            }
+        }
+        const range = labelRange.clone({ zone });
+        return getters.getRangeString(range, "forceSheetReference");
+    }
+    function convertExcelDatasetToSheetXC(ds, dataSetsHaveTitle) {
+        let sheet = "";
+        if (ds.range.includes("!")) {
+            sheet = ds.range.split("!")[0] + "!";
+        }
+        const dataRange = ds.range.replace(/\$/g, "");
+        let dataZone = toUnboundedZone(dataRange);
+        if (dataSetsHaveTitle && dataZone.bottom !== undefined && dataZone.right !== undefined) {
+            const height = dataZone.bottom - dataZone.top + 1;
+            const width = dataZone.right - dataZone.left + 1;
+            if (height === 1) {
+                dataZone = { ...dataZone, left: dataZone.left - 1 };
+            }
+            else if (width === 1) {
+                dataZone = { ...dataZone, top: dataZone.top - 1 };
+            }
+        }
+        const dataXC = zoneToXc(dataZone);
+        return sheet + dataXC;
+    }
+    function convertExcelLabelToSheetXC(label, dataSetsHaveTitle) {
+        if (label === undefined)
+            return undefined;
+        let sheet = "";
+        if (label.includes("!")) {
+            sheet = label.split("!")[0] + "!";
+        }
+        const labelRange = label.replace(/\$/g, "");
+        let labelZone = toUnboundedZone(labelRange);
+        if (dataSetsHaveTitle && labelZone.right !== undefined && labelZone.bottom !== undefined) {
+            const height = labelZone.bottom - labelZone.top + 1;
+            const width = labelZone.right - labelZone.left + 1;
+            if (height === 1) {
+                labelZone = { ...labelZone, left: labelZone.left - 1 };
+            }
+            else if (width === 1) {
+                labelZone = { ...labelZone, top: labelZone.top - 1 };
+            }
+        }
+        const labelXC = zoneToXc(labelZone);
+        return sheet + labelXC;
     }
     /**
      * Transform a chart definition which supports dataSets (dataSets and LabelRange)
@@ -6316,6 +6369,7 @@
             this.legendPosition = definition.legendPosition;
             this.stacked = definition.stacked;
             this.aggregated = definition.aggregated;
+            this.dataSetsHaveTitle = definition.dataSetsHaveTitle;
         }
         static transformDefinition(definition, executed) {
             return transformChartDefinitionWithDataSetsWithZone(definition, executed);
@@ -6363,7 +6417,7 @@
         getDefinitionWithSpecificDataSets(dataSets, labelRange, targetSheetId) {
             return {
                 type: "bar",
-                dataSetsHaveTitle: dataSets.length ? Boolean(dataSets[0].labelCell) : false,
+                dataSetsHaveTitle: this.dataSetsHaveTitle,
                 background: this.background,
                 dataSets: dataSets.map((ds) => this.getters.getRangeString(ds.dataRange, targetSheetId || this.sheetId)),
                 legendPosition: this.legendPosition,
@@ -6383,11 +6437,13 @@
             const dataSets = this.dataSets
                 .map((ds) => toExcelDataset(this.getters, ds))
                 .filter((ds) => ds.range !== ""); // && range !== INCORRECT_RANGE_STRING ? show incorrect #ref ?
+            const labelRange = toExcelLabelRange(this.getters, this.labelRange, this.dataSetsHaveTitle);
             return {
                 ...this.getDefinition(),
                 backgroundColor: toXlsxHexColor(this.background || BACKGROUND_CHART_COLOR),
                 fontColor: toXlsxHexColor(chartFontColor(this.background)),
                 dataSets,
+                labelRange,
             };
         }
         updateRanges(applyChange) {
@@ -6450,6 +6506,8 @@
         const labelValues = getChartLabelValues(getters, chart.dataSets, chart.labelRange);
         let labels = labelValues.formattedValues;
         let dataSetsValues = getChartDatasetValues(getters, chart.dataSets);
+        if (chart.dataSetsHaveTitle)
+            labels.shift();
         ({ labels, dataSetsValues } = filterEmptyDataPoints(labels, dataSetsValues));
         if (chart.aggregated) {
             ({ labels, dataSetsValues } = aggregateDataForLabels(labels, dataSetsValues));
@@ -6614,6 +6672,7 @@
             this.labelsAsText = definition.labelsAsText;
             this.stacked = definition.stacked;
             this.aggregated = definition.aggregated;
+            this.dataSetsHaveTitle = definition.dataSetsHaveTitle;
         }
         static validateChartDefinition(validator, definition) {
             return validator.checkValidations(definition, checkDataset, checkLabelRange);
@@ -6642,7 +6701,7 @@
         getDefinitionWithSpecificDataSets(dataSets, labelRange, targetSheetId) {
             return {
                 type: "line",
-                dataSetsHaveTitle: dataSets.length ? Boolean(dataSets[0].labelCell) : false,
+                dataSetsHaveTitle: this.dataSetsHaveTitle,
                 background: this.background,
                 dataSets: dataSets.map((ds) => this.getters.getRangeString(ds.dataRange, targetSheetId || this.sheetId)),
                 legendPosition: this.legendPosition,
@@ -6681,11 +6740,13 @@
             const dataSets = this.dataSets
                 .map((ds) => toExcelDataset(this.getters, ds))
                 .filter((ds) => ds.range !== ""); // && range !== INCORRECT_RANGE_STRING ? show incorrect #ref ?
+            const labelRange = toExcelLabelRange(this.getters, this.labelRange, this.dataSetsHaveTitle);
             return {
                 ...this.getDefinition(),
                 backgroundColor: toXlsxHexColor(this.background || BACKGROUND_CHART_COLOR),
                 fontColor: toXlsxHexColor(chartFontColor(this.background)),
                 dataSets,
+                labelRange,
             };
         }
         copyForSheetId(sheetId) {
@@ -6818,6 +6879,8 @@
         const labelValues = getChartLabelValues(getters, chart.dataSets, chart.labelRange);
         let labels = axisType === "linear" ? labelValues.values : labelValues.formattedValues;
         let dataSetsValues = getChartDatasetValues(getters, chart.dataSets);
+        if (chart.dataSetsHaveTitle)
+            labels.shift();
         ({ labels, dataSetsValues } = filterEmptyDataPoints(labels, dataSetsValues));
         if (axisType === "time") {
             ({ labels, dataSetsValues } = fixEmptyLabelsForDateCharts(labels, dataSetsValues));
@@ -6977,7 +7040,6 @@
             labelRangeXc = zoneToXc({
                 ...zone,
                 right: zone.left,
-                top: dataSetsHaveTitle ? zone.top + 1 : zone.top,
             });
         }
         // Only display legend for several datasets.
@@ -7305,6 +7367,7 @@
             this.background = definition.background;
             this.legendPosition = definition.legendPosition;
             this.aggregated = definition.aggregated;
+            this.dataSetsHaveTitle = definition.dataSetsHaveTitle;
         }
         static transformDefinition(definition, executed) {
             return transformChartDefinitionWithDataSetsWithZone(definition, executed);
@@ -7340,7 +7403,7 @@
         getDefinitionWithSpecificDataSets(dataSets, labelRange, targetSheetId) {
             return {
                 type: "pie",
-                dataSetsHaveTitle: dataSets.length ? Boolean(dataSets[0].labelCell) : false,
+                dataSetsHaveTitle: this.dataSetsHaveTitle,
                 background: this.background,
                 dataSets: dataSets.map((ds) => this.getters.getRangeString(ds.dataRange, targetSheetId || this.sheetId)),
                 legendPosition: this.legendPosition,
@@ -7368,12 +7431,14 @@
             const dataSets = this.dataSets
                 .map((ds) => toExcelDataset(this.getters, ds))
                 .filter((ds) => ds.range !== ""); // && range !== INCORRECT_RANGE_STRING ? show incorrect #ref ?
+            const labelRange = toExcelLabelRange(this.getters, this.labelRange, this.dataSetsHaveTitle);
             return {
                 ...this.getDefinition(),
                 backgroundColor: toXlsxHexColor(this.background || BACKGROUND_CHART_COLOR),
                 fontColor: toXlsxHexColor(chartFontColor(this.background)),
                 verticalAxisPosition: "left",
                 dataSets,
+                labelRange,
             };
         }
         updateRanges(applyChange) {
@@ -7423,6 +7488,8 @@
         const labelValues = getChartLabelValues(getters, chart.dataSets, chart.labelRange);
         let labels = labelValues.formattedValues;
         let dataSetsValues = getChartDatasetValues(getters, chart.dataSets);
+        if (chart.dataSetsHaveTitle)
+            labels.shift();
         ({ labels, dataSetsValues } = filterEmptyDataPoints(labels, dataSetsValues));
         if (chart.aggregated) {
             ({ labels, dataSetsValues } = aggregateDataForLabels(labels, dataSetsValues));
@@ -9505,12 +9572,19 @@
             this.state = owl.useState({
                 datasetDispatchResult: undefined,
                 labelsDispatchResult: undefined,
+                headerPosition: {
+                    direction: "ROW",
+                    index: 1,
+                },
             });
             this.dataSeriesRanges = [];
         }
         setup() {
             this.dataSeriesRanges = this.props.definition.dataSets;
             this.labelRange = this.props.definition.labelRange;
+            owl.useEffect(() => {
+                this.state.headerPosition = this.calculateHeaderPosition();
+            }, () => [this.state.datasetDispatchResult, this.state.labelsDispatchResult]);
         }
         get errorMessages() {
             var _a, _b;
@@ -9527,6 +9601,9 @@
         get isLabelInvalid() {
             var _a;
             return !!((_a = this.state.labelsDispatchResult) === null || _a === void 0 ? void 0 : _a.isCancelledBecause(32 /* CommandResult.InvalidLabelRange */));
+        }
+        get headerPosition() {
+            return `${this.state.headerPosition.direction === "ROW" ? "row" : "column"} ${this.state.headerPosition.index}`;
         }
         onUpdateDataSetsHaveTitle(ev) {
             this.props.updateChart({
@@ -9561,6 +9638,44 @@
             this.props.updateChart({
                 aggregated: ev.target.checked,
             });
+        }
+        calculateHeaderPosition() {
+            if (this.isDatasetInvalid || this.isLabelInvalid) {
+                return {
+                    index: 1,
+                    direction: "ROW",
+                };
+            }
+            const getters = this.env.model.getters;
+            const sheetId = getters.getActiveSheetId();
+            const labelRange = createRange(getters, sheetId, this.labelRange);
+            const dataSets = createDataSets(getters, this.dataSeriesRanges, sheetId, this.props.definition.dataSetsHaveTitle);
+            let headerDirection = "ROW";
+            if ((dataSets.length && dataSets[0].dataRange.zone.right > dataSets[0].dataRange.zone.left) ||
+                (dataSets.length === 0 && labelRange && labelRange.zone.right > labelRange.zone.left)) {
+                headerDirection = "COL";
+            }
+            let headerIndex = headerDirection === "ROW" ? 1 : "A";
+            if (dataSets.length) {
+                if (headerDirection === "ROW") {
+                    headerIndex = dataSets[0].dataRange.zone.top + 1;
+                }
+                else {
+                    headerIndex = zoneToXc(dataSets[0].dataRange.zone)[0];
+                }
+            }
+            else if (labelRange) {
+                if (headerDirection === "ROW") {
+                    headerIndex = labelRange.zone.top + 1;
+                }
+                else {
+                    headerIndex = zoneToXc(labelRange.zone)[0];
+                }
+            }
+            return {
+                index: headerIndex,
+                direction: headerDirection,
+            };
         }
     }
     LineBarPieConfigPanel.template = "o-spreadsheet-LineBarPieConfigPanel";
@@ -24910,16 +25025,16 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         };
     }
     function convertChartData(chartData) {
-        var _a;
-        const labelRange = (_a = chartData.dataSets[0].label) === null || _a === void 0 ? void 0 : _a.replace(/\$/g, "");
-        let dataSets = chartData.dataSets.map((data) => data.range.replace(/\$/g, ""));
+        const dataSetsHaveTitle = chartData.dataSets[0].label !== undefined;
+        const labelRange = convertExcelLabelToSheetXC(chartData.labelRange, dataSetsHaveTitle);
+        let dataSets = chartData.dataSets.map((data) => convertExcelDatasetToSheetXC(data, dataSetsHaveTitle));
         // For doughnut charts, in chartJS first dataset = outer dataset, in excel first dataset = inner dataset
         if (chartData.type === "pie") {
             dataSets.reverse();
         }
         return {
             dataSets,
-            dataSetsHaveTitle: false,
+            dataSetsHaveTitle,
             labelRange,
             title: chartData.title || "",
             type: chartData.type,
@@ -25995,6 +26110,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     title: chartTitle,
                     type: CHART_TYPE_CONVERSION_MAP[chartType],
                     dataSets: this.extractChartDatasets(this.querySelector(rootChartElement, `c:${chartType}`)),
+                    labelRange: this.extractChildTextContent(rootChartElement, "c:ser c:cat c:f"),
                     backgroundColor: this.extractChildAttr(rootChartElement, "c:chartSpace > c:spPr a:srgbClr", "val", {
                         default: "ffffff",
                     }).asString(),
@@ -26014,7 +26130,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         extractChartDatasets(chartElement) {
             return this.mapOnElements({ parent: chartElement, query: "c:ser" }, (chartDataElement) => {
                 return {
-                    label: this.extractChildTextContent(chartDataElement, "c:cat c:f"),
+                    label: this.extractChildTextContent(chartDataElement, "c:tx c:f"),
                     range: this.extractChildTextContent(chartDataElement, "c:val c:f", { required: true }),
                 };
             });
@@ -43338,8 +43454,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-12-22T13:54:58.664Z';
-    exports.__info__.hash = '4c5002d';
+    exports.__info__.date = '2022-12-26T09:35:51.861Z';
+    exports.__info__.hash = '28c3bdc';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
