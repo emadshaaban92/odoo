@@ -148,6 +148,31 @@ class TestPerformance(SavepointCaseWithUserDemo):
             for record in records.search([], ['value_pc']):
                 record.partner_id
 
+    @warmup
+    def test_search_read(self):
+        """ Search and fetch all at once. """
+        Model = self.env['test_performance.base']
+        records = Model.search([])
+        self.assertEqual(len(records), 5)
+
+        # one query for search, one query for read, one query for display_name
+        expected = records.read(['partner_id', 'value_pc'])
+        with self.assertQueryCount(3):
+            self.env.invalidate_all()
+            self.assertEqual(
+                Model.search_read([], ['partner_id', 'value_pc']),
+                expected,
+            )
+
+        # one query for search, one query for read
+        expected = records.read(['partner_id', 'value_pc'], load=False)
+        with self.assertQueryCount(2):
+            self.env.invalidate_all()
+            self.assertEqual(
+                Model.search_read([], ['partner_id', 'value_pc'], load=False),
+                expected,
+            )
+
     @users('__system__', 'demo')
     @warmup
     def test_write_base(self):
