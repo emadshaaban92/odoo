@@ -27,6 +27,8 @@
                 
 
             <div class="o_state_display d-flex">
+                
+                
                 <t t-if="!isApproval">
                     <button class="o_state_non_approval_button btn oe_highlight rounded-pill" 
                     t-attf-class="{ #{state.isStateButtonHighlighted ? 'oe_highlight text-success' : ''} 
@@ -58,7 +60,14 @@
                                 <!--
                                     <span t-attf-class="fa-fw fa {{ stateIcon(currentValue) }} {{ stateColor(currentValue) }}"/>
                                 -->
-                                <span class="o_status_label ms-1" t-esc="label"/>
+                                <t t-if="this.props.value == 'waiting'">
+                                    <span class="o_status_label ms-1" t-esc="label">
+                                        Waiting
+                                    </span>
+                                </t>
+                                <t t-else="">
+                                    <span class="o_status_label ms-1" t-esc="label"/>
+                                </t>
                             </button>
                         </t>
                         <t t-foreach="availableOptions" t-as="option" t-key="option[0]">

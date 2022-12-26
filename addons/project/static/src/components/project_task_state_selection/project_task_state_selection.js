@@ -9,7 +9,6 @@ const { EventBus , useBus } = owl;
 
 export class ProjectTaskStateSelection extends StateSelectionField {
     setup() {
-        this.orm = useService("orm");
         this.icons = {
             in_progress: "fa fa-check-circle-o",
             done: "fa fa-check-circle",
@@ -28,27 +27,12 @@ export class ProjectTaskStateSelection extends StateSelectionField {
             changes_requested: "text-warning",
             waiting: "",
         };
-        //this.serv = useService("statisticsServiceMod");
-        //console.log("this.props.record.preloadedData");
-        /*
-        setInterval(() => {
-            
-            this.props.record.model.notify();
-            //this.props.load();
-            console.log(this.props.record.data.name);
-            console.log(this.props.value);
-            //this.props.record.update();
-            this.render();
-        }, 10000);
-        */
         if (this.props.record.activeFields[this.props.name].viewType !== "form") {
             super.setup();
         }
-        //const obj_sam = reactive(this.props.record.data.state_approval_mode)
     }
 
     get options() {
-
         return [
             ["pending_approval", "Pending Approval"],
             ["approved", "Approved"],
@@ -58,28 +42,12 @@ export class ProjectTaskStateSelection extends StateSelectionField {
     }
 
     get isApproval() {
-        return this.props.record.data.state_approval_mode;
-    }
-
-    async onSelectedDD(option) {
-        //console.log(option);
-        //console.log("onSelected");
-        await this.props.update(option);
-        await this.props.record.model.root.load();
-        this.props.record.model.notify();
-    }
-
-    onExternalButtonCLick0() {
-        console.log("external click");
+        return !["in_progress", "done"].includes(this.currentValue);
     }
 
     stateIcon(value) {
-        //console.log(value);
-        //console.log(this.icons[value[1]]);
-        const fut = this.icons[value] || "";
-        return fut;
+        return this.icons[value] || "";
     }
-
 
     stateColor(value) {
         return this.colorIcons[value] || "";
@@ -88,18 +56,9 @@ export class ProjectTaskStateSelection extends StateSelectionField {
     async toggleState() {
         const toggleVal = this.props.value == "done" ? "in_progress" : "done";
         await this.props.update(toggleVal);
-        }
+    }
 }
 
 ProjectTaskStateSelection.template = "project.ProjectTaskStateSelection";
 
 registry.category("fields").add("project_task_state_selection", ProjectTaskStateSelection);
-
-export function preloadState(orm, record, fieldName) {
-    return orm.webSearchRead("project.task.state", [], ["name", "key", "approval_mode"]);
-}
-
-registry.category("preloadedData").add("project_task_state_selection", {
-    loadOnTypes: ["many2one"],
-    preload: preloadState,
-});

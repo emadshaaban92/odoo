@@ -1,22 +1,21 @@
 /** @odoo-module */
 
-import { StateSelectionField } from "@web/views/fields/state_selection/state_selection_field";
+import { ProjectTaskStateSelection } from "../project_task_state_selection/project_task_state_selection";
 import { ProjectTaskStateAutoDropdown } from "../project_task_state_auto_dropdown/project_task_state_auto_dropdown";
 
 import { registry } from "@web/core/registry";
-import { useService } from "@web/core/utils/hooks";
 
 const { useState } = owl;
 
-export class ProjectTaskStateSelectionForm extends StateSelectionField {
+export class ProjectTaskStateSelectionForm extends ProjectTaskStateSelection {
     setup() {
-        this.orm = useService("orm");
+        super.setup();
         this.state = useState({
             isStateButtonHighlighted: false,
             isStateBoxHighlighted: false,
-            isModeSelectionHighlighted: false
+            isModeSelectionHighlighted: false,
         });
-        this.markAsDoneText = 'In Progress';
+        this.markAsDoneText = "In Progress";
         this.icons = {
             in_progress: "fa fa-check-square-o",
             done: "fa fa-check-square",
@@ -40,11 +39,8 @@ export class ProjectTaskStateSelectionForm extends StateSelectionField {
             approved: "btn-success",
             rejected: "btn-danger",
             changes_requested: "btn-warning",
-            waiting: "",
-        }
-        if (this.props.record.activeFields[this.props.name].viewType !== "form") {
-            super.setup();
-        }
+            waiting: "btn-warning",
+        };
     }
 
     get options_approval() {
@@ -65,35 +61,16 @@ export class ProjectTaskStateSelectionForm extends StateSelectionField {
 
     get availableOptions() {
         if (["in_progress", "done"].includes(this.currentValue)) {
-            return this.options_normal.filter((o) => o !== this.currentValue);
+            return this.options_normal.filter((o) => o !== this.currentValue || o !== "waiting");
         }
-        return this.options_approval.filter((o) => o !== this.currentValue);
+        return this.options_approval.filter((o) => o !== this.currentValue || o !== "waiting");
     }
 
     get switchModeAvailableOptions() {
         if (["in_progress", "done"].includes(this.currentValue)) {
-            return this.options_approval;
+            return this.options_approval.filter((o) => o !== "waiting");
         }
-        return this.options_normal
-    }
-
-    get isApproval() {
-        return !["in_progress", "done"].includes(this.currentValue);
-    }
-
-    async onSelectedDD(option) {
-        await this.props.update(option);
-        await this.props.record.model.root.load();
-        this.props.record.model.notify();
-    }
-
-    stateIcon(value) {
-        const fut = this.icons[value] || "";
-        return fut;
-    }
-
-    stateColor(value) {
-        return this.colorIcons[value] || "";
+        return this.options_normal.filter((o) => o !== "waiting");
     }
 
     markAsUndone() {
@@ -104,71 +81,58 @@ export class ProjectTaskStateSelectionForm extends StateSelectionField {
         return this.env._t("Done");
     }
 
-    async toggleState() {
-        const toggleVal = this.props.value == "done" ? "in_progress" : "done";
-        await this.props.update(toggleVal);
-
-    }
-
     /**
      * @param {MouseEvent} ev
      */
     onClickState(ev) {
-        this.toggleState()
+        this.toggleState();
     }
 
     /**
      * @param {MouseEvent} ev
      */
     onMouseEnterStateBox(ev) {
-
-        this.state.isStateBoxHighlighted = true ;
+        this.state.isStateBoxHighlighted = true;
     }
     /**
      * @param {MouseEvent} ev
      */
     onMouseLeaveStateBox(ev) {
-
-        this.state.isStateBoxHighlighted = false ;
+        this.state.isStateBoxHighlighted = false;
     }
-    
+
     /**
      * @param {MouseEvent} ev
      */
     onMouseEnterStateButton(ev) {
-
-        this.state.isStateButtonHighlighted = true ;
+        this.state.isStateButtonHighlighted = true;
     }
 
     /**
      * @param {MouseEvent} ev
      */
     onMouseLeaveStateButton(ev) {
-
-        this.state.isStateButtonHighlighted = false ;
-        
+        this.state.isStateButtonHighlighted = false;
     }
 
-     /**
+    /**
      * @param {MouseEvent} ev
      */
-     onMouseEnterModeSelection(ev) {
-        this.state.isModeSelectionHighlighted = true ;
+    onMouseEnterModeSelection(ev) {
+        this.state.isModeSelectionHighlighted = true;
     }
 
-     /**
+    /**
      * @param {MouseEvent} ev
      */
-     onMouseLeaveModeSelection(ev) {
-
-        this.state.isModeSelectionHighlighted = false ;
+    onMouseLeaveModeSelection(ev) {
+        this.state.isModeSelectionHighlighted = false;
     }
-
 }
 
 ProjectTaskStateSelectionForm.template = "project.ProjectTaskStateSelectionForm";
 ProjectTaskStateSelectionForm.components = {
     ...ProjectTaskStateSelectionForm.components,
-    ProjectTaskStateAutoDropdown
-}
+    ProjectTaskStateAutoDropdown,
+};
 registry.category("fields").add("project_task_state_selection_form", ProjectTaskStateSelectionForm);

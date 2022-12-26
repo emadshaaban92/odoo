@@ -21,7 +21,7 @@
 
 .o_state_display {
     background: lightcoral; 
-    width: 4em;
+    width: 4.2em;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -31,6 +31,7 @@
 }
 
 .o_state_approval_dropdown {
+    justify-content: center;
     width: 100%;
     display:block;
 
@@ -43,6 +44,7 @@
 }
 
 .o_state_non_approval_button {
+    justify-content: center;
     width:100%;
     display:block;
 }
