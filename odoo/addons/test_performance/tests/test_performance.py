@@ -79,7 +79,7 @@ class TestPerformance(SavepointCaseWithUserDemo):
         records.write({'line_ids': [Command.create({})]})
         self.env.invalidate_all()
 
-        with self.assertQueryCount(2):
+        with self.assertQueryCount(1):
             records.line_ids
 
     @users('__system__', 'demo')
@@ -306,7 +306,7 @@ class TestPerformance(SavepointCaseWithUserDemo):
         lines = rec1.line_ids
 
         # set N lines in rec2: O(1) queries
-        with self.assertQueryCount(8):
+        with self.assertQueryCount(7):
             self.env.invalidate_all()
             rec2.write({'line_ids': [Command.set(lines[0].ids)]})
         self.assertEqual(rec1.line_ids, lines[1:])
@@ -694,7 +694,7 @@ class TestMapped(TransactionCase):
         self.env.invalidate_all()
 
         # expected same performance as recs.line_ids.mapped('value')
-        with self.assertQueryCount(3):
+        with self.assertQueryCount(2):
             for rec in recs:
                 rec.line_ids.mapped('value')
 
