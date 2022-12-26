@@ -17,6 +17,7 @@ class ResPartner(models.Model):
         loyalty_groups = self.env['loyalty.card']._read_group(
             domain=[('partner_id', 'in', all_partners.ids),
                     ('points', '>', '0'),
+                    ('program_id.active', '=', 'True'),
                     '|',
                     ('expiration_date', '>=', fields.Date().context_today(self).strftime('%Y-%m-%d 00:00:00')),
                     ('expiration_date', '=', False)],
