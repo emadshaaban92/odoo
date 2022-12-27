@@ -127,6 +127,16 @@ class SaleOrderLine(models.Model):
                     else:
                         order_line.qty_delivered = 0.0
 
+    def compute_uom_qty(self, new_qty, stock_move, rounding=True):
+        #check if stock move concerns a kit
+        if stock_move.bom_line_id:
+            filters = {
+                'incoming_moves': lambda m: m.location_id.usage == 'supplier' and (not m.origin_returned_move_id or (m.origin_returned_move_id and m.to_refund)),
+                'outgoing_moves': lambda m: m.location_id.usage != 'supplier' and m.to_refund
+            }
+            return stock_move._compute_kit_quantities(stock_move.product_id, new_qty, stock_move.bom_line_id.bom_id, filters)
+        return super(SaleOrderLine, self).compute_uom_qty(new_qty, stock_move, rounding)
+
     def _get_bom_component_qty(self, bom):
         bom_quantity = self.product_id.uom_id._compute_quantity(1, bom.product_uom_id, rounding_method='HALF-UP')
         boms, lines = bom.explode(self.product_id, bom_quantity)
