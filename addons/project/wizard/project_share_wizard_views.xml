@@ -21,7 +21,7 @@
                         <label for="partner_ids" string="Invite People" attrs="{'invisible': [('access_mode', '=', 'read')]}"/>
                         <label for="partner_ids" attrs="{'invisible': [('access_mode', '=', 'edit')]}"/>
                     </div>
-                    <field name="partner_ids" widget="many2many_tags_email" placeholder="Add contacts to share the project..." nolabel="1" context="{'show_email': True}"/>
+                    <field name="partner_ids" widget="many2many_tags_email" domain="['|', ('employee_ids','!=', False), ('parent_id','!=', False)]" placeholder="Add contacts to share the project..." nolabel="1" context="{'show_email': True}"/>
                 </group>
                 <group>
                     <field name="note" placeholder="Add a note" nolabel="1" colspan="2"/>
