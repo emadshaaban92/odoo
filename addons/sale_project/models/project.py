@@ -475,6 +475,7 @@ class Project(models.Model):
                     },
                 }
         return {'data': [], 'total': {'invoiced': 0.0, 'to_invoice': 0.0}}
+
     def _get_aal_domain(self):
         """
             Taking only the aal where the sale_line_ids is not enough, for some invoices are related to the project, but not the sales order.
@@ -482,7 +483,7 @@ class Project(models.Model):
             is with the move lines.
         """
         move_line_ids_no_sol = list(self.env['account.move.line']._search([('sale_line_ids', '=', False)]))
-        return [('account_id', '=', self.analytic_account_id.id), ('move_line_id', 'in', move_line_ids_no_sol + [False])]
+        return [('account_id', '=', self.analytic_account_id.id), ('move_line_id', '=', False)]
 
     def _get_items_from_aal(self, with_action=True):
         def get_action(record_ids):
