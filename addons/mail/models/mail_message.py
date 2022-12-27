@@ -633,6 +633,15 @@ class Message(models.Model):
         self.check_access_rule('read')
         return super(Message, self).read(fields=fields, load=load)
 
+    def fetch(self, field_names):
+        # This freaky hack is aimed at reading data without the overhead of
+        # checking that "self" is accessible, which is already done above in
+        # methods read() and _search(). It reproduces the existing behavior
+        # before the introduction of method fetch(), where the low-lever
+        # reading method _read() did not enforce any actual permission.
+        self = self.sudo()
+        return super().fetch(field_names)
+
     def write(self, vals):
         record_changed = 'model' in vals or 'res_id' in vals
         if record_changed or 'message_type' in vals:
