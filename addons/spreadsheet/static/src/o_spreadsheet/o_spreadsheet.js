@@ -35104,15 +35104,18 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     case "center": {
                         const emptyZone = {
                             ...zone,
-                            right: nextColIndex,
                             left: previousColIndex,
+                            right: nextColIndex,
                         };
-                        const { x, y, width, height } = this.getters.getVisibleRect(emptyZone);
-                        if (width < contentWidth ||
-                            previousColIndex === col ||
-                            nextColIndex === col ||
+                        const { x, y, height, width } = this.getters.getVisibleRect(emptyZone);
+                        const halfContentWidth = contentWidth / 2;
+                        const boxMiddle = box.x + box.width / 2;
+                        if (x + width < boxMiddle + halfContentWidth ||
+                            x > boxMiddle - halfContentWidth ||
                             fontSizePX > height) {
-                            box.clipRect = { x, y, width, height };
+                            const clipX = x > boxMiddle - halfContentWidth ? x : boxMiddle - halfContentWidth;
+                            const clipWidth = x + width - clipX;
+                            box.clipRect = { x: clipX, y, width: clipWidth, height };
                         }
                         break;
                     }
@@ -43338,8 +43341,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-12-22T13:54:58.664Z';
-    exports.__info__.hash = '4c5002d';
+    exports.__info__.date = '2022-12-27T12:35:02.886Z';
+    exports.__info__.hash = '1f2bb74';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
