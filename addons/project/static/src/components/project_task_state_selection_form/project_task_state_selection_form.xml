@@ -4,11 +4,11 @@
                 t-attf-class="{ #{!state.isStateBoxHighlighted ? 'add_left_pad' : ''}" 
                 t-on-mouseenter="onMouseEnterStateBox" 
                 t-on-mouseleave="onMouseLeaveStateBox">
-            <ProjectTaskStateAutoDropdown t-if="state.isStateBoxHighlighted" togglerClass="'btn d-flex p-0'">
+            <!-- Here is the additionnal dropdown -->
+            <ProjectTaskStateAutoDropdown t-if="state.isStateBoxHighlighted" togglerClass="' btn btn-light d-flex rounded-pill '"
+                t-on-mouseenter="onMouseEnterModeSelection" t-on-mouseleave="onMouseLeaveModeSelection">
                 <t t-set-slot="toggler">
-                    <button class="o_switch_mode_button btn btn-light rounded-pill text-muted m-0" t-on-mouseenter="onMouseEnterModeSelection" t-on-mouseleave="onMouseLeaveModeSelection">
                         <i class="fa fa-fw fa-plus"/>
-                    </button>
                     <!--
                         <button class="o_switch_mode_button btn btn-light rounded-pill text-muted m-0" t-on-mouseenter="onMouseEnterModeSelection" t-on-mouseleave="onMouseLeaveModeSelection">
                             <i class="fa fa-fw fa-plus"/>
@@ -16,7 +16,7 @@
                     </div>-->
                 </t>
                 <t t-foreach="switchModeAvailableOptions" t-as="option" t-key="option[0]">
-                    <DropdownItem onSelected="() => props.update(option[0])">
+                    <DropdownItem onSelected="() => this._onClickModeSelection(option[0])">
                         <div class="d-flex align-items-center">
                             <span t-attf-class="fa-fw fa {{ stateIcon(option[0]) }} {{ stateColor(option[0]) }}"/>
                             <span t-attf-class="ms-2 {{ stateColor(option[0]) }}" t-esc="option[1]"/>
@@ -31,47 +31,48 @@
                 
                 <t t-if="!isApproval">
                     <button class="o_state_non_approval_button btn oe_highlight rounded-pill" 
-                    t-attf-class="{ #{state.isStateButtonHighlighted ? 'oe_highlight text-success' : ''} 
-                    #{this.props.value == 'done' ? 'btn-success' : 'btn-light border border-dark'} }"
+                    t-attf-class="{ #{this.props.value == 'done' ? 'btn-success' : 'btn-light border border-dark'} }"
                     t-on-click="onClickState" t-on-mouseenter="onMouseEnterStateButton" 
                     t-on-mouseleave="onMouseLeaveStateButton">
-                            <span t-if="this.props.value == 'waiting'">
+                            <t t-if="this.props.value == 'waiting_normal' || this.props.value == 'waiting_approval'">
                                 <i class="fa fa-fw fa-hourglass"/>
-                            </span>
-                            <span t-if="this.props.value == 'in_progress'">
+                                <span class="o_status_label ms-1">
+                                    Waiting
+                                </span>
+                            </t>
+                            <t t-elif="this.props.value == 'in_progress'">
                                 <span t-if="!state.isStateButtonHighlighted">
                                     <t t-out="'In Progress'"></t>
                                 </span>
-                                <span t-else="" class="text-success">
+                                <span t-else="" class="text-success oe_highlight">
                                     <i class="fa fa-fw fa-check"/>
                                     <t t-out="'Mark Done'"></t>
                                 </span>
-                            </span>
-                            <span t-else="">
+                            </t>
+                            <t t-else="">
                                 <i class="fa fa-fw fa-check"/>
                                 Done
-                            </span>
-                    </button>
+                            </t>
+                        </button>
                 </t>
                 <t t-else="">
-                    <Dropdown class="toggle_dropdown" togglerClass="'o_state_approval_dropdown btn d-flex p-0'">
+                    <Dropdown class="toggle_dropdown" togglerClass="`o_state_approval_button btn rounded-pill ${ colorButton[currentValue] }`">
                         <t t-set-slot="toggler">
-                            <button class="o_state_approval_button btn rounded-pill d-flex " t-attf-class="{{ colorButton[currentValue] }}">
                                 <!--
                                     <span t-attf-class="fa-fw fa {{ stateIcon(currentValue) }} {{ stateColor(currentValue) }}"/>
                                 -->
-                                <t t-if="this.props.value == 'waiting'">
-                                    <span class="o_status_label ms-1" t-esc="label">
+                                <t t-if="this.props.value == 'waiting_normal' || this.props.value == 'waiting_approval'">
+                                    <i class="fa fa-fw fa-hourglass"/>
+                                    <span class="o_status_label ms-1">
                                         Waiting
                                     </span>
                                 </t>
                                 <t t-else="">
                                     <span class="o_status_label ms-1" t-esc="label"/>
                                 </t>
-                            </button>
                         </t>
                         <t t-foreach="availableOptions" t-as="option" t-key="option[0]">
-                            <DropdownItem onSelected="() => props.update(option[0])">
+                            <DropdownItem onSelected="() => this._onClickModeSelection(option[0])">
                                 <div class="d-flex align-items-center">
                                     <span t-attf-class="fa-fw fa {{ stateIcon(option[0]) }} {{ stateColor(option[0]) }}"/>
                                     <span t-attf-class="ms-2 {{ stateColor(option[0]) }}" t-esc="option[1]"/>

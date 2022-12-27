@@ -16,30 +16,13 @@ export class ProjectTaskStateSelectionForm extends ProjectTaskStateSelection {
             isModeSelectionHighlighted: false,
         });
         this.markAsDoneText = "In Progress";
-        this.icons = {
-            in_progress: "fa fa-check-square-o",
-            done: "fa fa-check-square",
-            pending_approval: "o_status",
-            approved: "o_status o_status_green",
-            rejected: "o_status o_status_red",
-            changes_requested: "fa fa-repeat",
-            waiting: "fa fa-hourglass-o",
-        };
-        this.colorIcons = {
-            in_progress: "",
-            done: "text-success",
-            pending_approval: "",
-            approved: "text-success",
-            rejected: "text-danger",
-            changes_requested: "text-warning",
-            waiting: "",
-        };
         this.colorButton = {
             pending_approval: "btn-light border border-dark",
             approved: "btn-success",
             rejected: "btn-danger",
             changes_requested: "btn-warning",
-            waiting: "btn-warning",
+            waiting_normal: "btn-warning",
+            waiting_approval: "btn-warning",
         };
     }
 
@@ -60,24 +43,41 @@ export class ProjectTaskStateSelectionForm extends ProjectTaskStateSelection {
     }
 
     get availableOptions() {
-        if (["in_progress", "done"].includes(this.currentValue)) {
-            return this.options_normal.filter((o) => o !== this.currentValue || o !== "waiting");
+        if (["in_progress", "done", "waiting_normal"].includes(this.currentValue)) {
+            return this.options_normal.filter(
+                (o) =>
+                    o !== this.currentValue || !["waiting_normal", "waiting_approval"].includes(o)
+            );
         }
-        return this.options_approval.filter((o) => o !== this.currentValue || o !== "waiting");
+        return this.options_approval.filter(
+            (o) => o !== this.currentValue || !["waiting_normal", "waiting_approval"].includes(o)
+        );
     }
 
     get switchModeAvailableOptions() {
-        if (["in_progress", "done"].includes(this.currentValue)) {
-            return this.options_approval.filter((o) => o !== "waiting");
+        if (["in_progress", "done", "waiting_normal"].includes(this.currentValue)) {
+            return this.options_approval.filter(
+                (o) => !["waiting_normal", "waiting_approval"].includes(o)
+            );
         }
-        return this.options_normal.filter((o) => o !== "waiting");
+        return this.options_normal.filter(
+            (o) => !["waiting_normal", "waiting_approval"].includes(o)
+        );
     }
-    
+
+    _onClickModeSelection(arg1, arg2) {
+        this.props.update(arg1);
+        this.state.isStateButtonHighlighted = false;
+        this.state.isStateBoxHighlighted = false;
+    }
+
     /**
      * @param {MouseEvent} ev
      */
     onClickState(ev) {
         this.toggleState();
+        //this.state.isStateButtonHighlighted = false;
+        //this.state.isStateBoxHighlighted = false;
     }
 
     /**

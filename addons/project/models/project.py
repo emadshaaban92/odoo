@@ -75,6 +75,17 @@ BLOCKING_STATES = [
     'changes_requested'
 ]
 
+CLOSED_STATES = [
+    'done',
+    'rejected',
+    'accepted',
+]
+
+OPEN_APPROVAL_STATES = [
+    'pending_approval',
+    'changes_requested',
+]
+
 class ProjectTaskType(models.Model):
     _name = 'project.task.type'
     _description = 'Task Stage'
@@ -1126,11 +1137,12 @@ class Task(models.Model):
     state = fields.Selection([
         ('in_progress','In Progress'),
         ('done','Done'),
-        ('waiting','Waiting'),
+        ('waiting_normal','Waiting'),
         ('pending_approval','Pending Approval'),
         ('approved','Approved'),
         ('rejected','Rejected'),
         ('changes_requested','Changes Requested'),
+        ('waiting_approval','Waiting'),
     ], string='Status', copy=False, default='in_progress', required=True, compute='_compute_state', readonly=False, store=True, recursive=True)
 
     state_approval_mode = fields.Boolean(default=False, store=True)
@@ -1407,11 +1419,17 @@ class Task(models.Model):
     def _compute_state(self):
         for task in self:
             for dependent_task in task.depend_on_ids:
+                # if one of the blocking task is in a blocking state
                 if dependent_task.state in BLOCKING_STATES:
-                    task.write({'state':'waiting'})
+                    # here we check that the blocked task is not alread in a closed state (if the task is already done we don't put it in waiting state)
+                    if task.state in OPEN_APPROVAL_STATES:
+                        task.write({'state':'waiting_approval'})
+                    elif task.state == 'in_progress':
+                        task.write({'state':'waiting_normal'})
                     return
-            default_state = 'pending_approval' if task.state_approval_mode else 'in_progress'
-            task.write({'state':default_state})
+            if task.state not in CLOSED_STATES:
+                default_state = 'pending_approval' if task.state == 'waiting_approval' else 'in_progress'
+                task.write({'state':default_state})
 
     @api.onchange('state_approval_mode')
     def _onchange_state_approval_mode(self):

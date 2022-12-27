@@ -15,8 +15,9 @@ export class ProjectTaskStateSelection extends StateSelectionField {
             pending_approval: "o_status",
             approved: "o_status o_status_green",
             rejected: "o_status o_status_red",
-            changes_requested: "fa fa-repeat",
-            waiting: "fa fa-hourglass-o",
+            changes_requested: "o_status o_status_orange",
+            waiting_normal: "o_status o_status_orange",
+            waiting_approval: "o_status o_status_orange",
         };
         this.colorIcons = {
             in_progress: "",
@@ -25,7 +26,8 @@ export class ProjectTaskStateSelection extends StateSelectionField {
             approved: "text-success",
             rejected: "text-danger",
             changes_requested: "text-warning",
-            waiting: "",
+            waiting_normal: "",
+            waiting_approval: "",
         };
         if (this.props.record.activeFields[this.props.name].viewType !== "form") {
             super.setup();
@@ -42,7 +44,13 @@ export class ProjectTaskStateSelection extends StateSelectionField {
     }
 
     get isApproval() {
-        return !["in_progress", "done"].includes(this.currentValue);
+        return [
+            "pending_approval",
+            "approved",
+            "rejected",
+            "changes_requested",
+            "waiting_approval",
+        ].includes(this.currentValue);
     }
 
     stateIcon(value) {

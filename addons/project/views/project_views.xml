@@ -1125,15 +1125,15 @@
                                 <field name="priority" widget="priority_switch" class="me-3"/>
                                 <field name="name" class="o_task_name text-truncate oe_inline" placeholder="Task Title..."/>
                             </div>
-                            <div class="">
-                                <field name="state" widget="project_task_state_selection_form" class=""/>
+                            <div class="d-flex">
+                                <field name="state" widget="project_task_state_selection_form"/>
                             </div>
                         </h1>
                         <h2>
                             Approval Mode:
                             <field name="state_approval_mode" class="" string="Approval mode"/>
                             State: 
-                            <field name="state" class="" string="State: "/>
+                            <field name="state" string="State: "/>
                         </h2>
                     </div>
                     <group>
@@ -1519,6 +1519,7 @@
                     <field name="legend_normal" invisible="1"/>
                     <field name="legend_done" invisible="1"/>
                     <field name="legend_blocked" invisible="1"/>
+                    <field name="state" widget="project_task_state_selection"/>
                     <field name="stage_id" invisible="context.get('set_visible',False)" optional="show" readonly="not context.get('default_project_id')"/>
                     <field name="recurrence_id" invisible="1" />
                 </tree>
