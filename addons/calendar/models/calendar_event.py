@@ -161,7 +161,7 @@ class Meeting(models.Model):
     attendee_ids = fields.One2many(
         'calendar.attendee', 'event_id', 'Participant')
     attendee_status = fields.Selection(
-        Attendee.STATE_SELECTION, string='Attendee Status', compute='_compute_attendee')
+        Attendee.STATE_SELECTION, string='Attendee Status', compute='_compute_attendee', search="_search_attendee_status")
     partner_ids = fields.Many2many(
         'res.partner', 'calendar_event_res_partner_rel',
         string='Attendees', default=_default_partners)
@@ -323,6 +323,22 @@ class Meeting(models.Model):
         for meeting in self:
             attendee = mapped_attendees[meeting.id]
             meeting.attendee_status = attendee.state if attendee else 'needsAction'
+
+    def _search_attendee_status(self, operator, value):
+        if operator not in ['=', '!=', 'in', 'not in']:
+            raise NotImplementedError(_('Operation not supported'))
+        attendee_status = ['needsAction', 'tentative', 'declined', 'accepted']
+        if operator in '=':
+            attendee_status = [value]
+        elif operator == '!=':
+            attendee_status.remove(value)
+        elif operator == 'not in':
+            for v in value:
+                attendee_status.remove(v)
+
+        self._cr.execute("""SELECT event_id FROM calendar_attendee WHERE state IN %s AND partner_id = %s""", [tuple(attendee_status), self.env.user.partner_id.id])
+
+        return [('id', 'in', [r[0] for r in self._cr.fetchall()])]
 
     @api.constrains('start', 'stop', 'start_date', 'stop_date')
     def _check_closing_date(self):
@@ -1071,15 +1087,6 @@ class Meeting(models.Model):
                 lambda a: a.partner_id in event_checked_partners and a.state != "needsAction")
             result[event.id] = attendee[:1]
         return result
-
-    # YTI TODO MASTER: Remove deprecated method
-    def _find_attendee(self):
-        """ Return the first attendee where the user connected has been invited
-            or the attendee selected in the filter that is the owner
-            from all the meeting_ids in parameters.
-        """
-        self.ensure_one()
-        return self._find_attendee_batch()[self.id]
 
     def _get_start_date(self):
         """Return the event starting date in the event's timezone.
