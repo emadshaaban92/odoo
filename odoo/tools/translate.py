@@ -356,9 +356,11 @@ def html_term_converter(value):
     return etree.tostring(root[0][0], encoding='unicode', method='html')[5:-6]
 
 
+re_spaces = re.compile(r'\s+')
+
 def get_text_content(term):
     """ Return the textual content of the given term. """
-    return html.fromstring(term).text_content()
+    return re_spaces.sub(' ', html.fromstring(term).text_content()).strip()
 
 xml_translate.get_text_content = get_text_content
 html_translate.get_text_content = get_text_content
