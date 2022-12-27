@@ -3182,6 +3182,13 @@ class BaseModel(metaclass=MetaModel):
                         fields_to_fetch.add(dep)
 
         if not fields_to_fetch:
+            # there is nothing to fetch, but we expect an error anyway in case
+            # self is not accessible
+            self.check_access_rights('read')
+            try:
+                self.check_access_rule('read')
+            except MissingError:
+                self.exists().check_access_rule('read')
             return
 
         # first determine a query that satisfies the domain and access rules
