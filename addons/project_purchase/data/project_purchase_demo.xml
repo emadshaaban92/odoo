@@ -5,5 +5,37 @@
             <value model="purchase.order.line" search="[('product_id', 'in', [ref('product.product_delivery_01'), ref('product.product_product_27')]), ('order_id', '=', ref('purchase.purchase_order_1'))]"/>
             <value eval="{'analytic_distribution': {ref('analytic.analytic_our_super_product'): 100}}"/>
         </function>
+
+        <!-- Purchase order for project update -->
+        <record id="purchase_order_for_project" model="purchase.order">
+            <field name="partner_id" ref="base.res_partner_4"/>
+            <field name="user_id" ref="base.user_admin"/>
+            <field name="state">draft</field>
+            <field name="order_line" model="purchase.order.line" eval="[(5, 0, 0),
+                (0, 0, {
+                    'product_id': ref('product.product_product_12'),
+                    'name': obj().env.ref('product.product_product_12').partner_ref,
+                    'price_unit': 130.5,
+                    'analytic_distribution': {ref('project.analytic_research_development'): 100},
+                    'product_qty': 5.0,
+                    'product_uom': ref('uom.product_uom_unit'),
+                    'date_planned': DateTime.today()}),
+                (0, 0, {
+                    'product_id': ref('product.product_delivery_02'),
+                    'name': obj().env.ref('product.product_delivery_02').partner_ref,
+                    'price_unit': 38.0,
+                    'analytic_distribution': {ref('project.analytic_office_design'): 100},
+                    'product_qty': 15.0,
+                    'product_uom': ref('uom.product_uom_unit'),
+                    'date_planned': DateTime.today()}),
+                (0, 0, {
+                    'product_id': ref('product.product_delivery_02'),
+                    'name': obj().env.ref('product.product_delivery_02').partner_ref,
+                    'price_unit': 38.0,
+                    'analytic_distribution': {ref('project.analytic_renovations'): 100},
+                    'product_qty': 15.0,
+                    'product_uom': ref('uom.product_uom_unit'),
+                    'date_planned': DateTime.today()}),]"/>
+        </record>
     </data>
 </odoo>
