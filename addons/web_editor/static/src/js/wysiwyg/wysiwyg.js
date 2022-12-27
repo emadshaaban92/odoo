@@ -946,69 +946,10 @@ const Wysiwyg = Widget.extend({
         const defs = _.map($editable, async editableEl => {
             const {oeModel: resModel, oeId: resId} = editableEl.dataset;
             const b64Proms = [...editableEl.querySelectorAll('.o_b64_image_to_save')].map(async el => {
-                const attachment = await this._rpc({
-                    route: '/web_editor/attachment/add_data',
-                    params: {
-                        name: el.dataset.fileName || '',
-                        data: el.getAttribute('src').split(',')[1],
-                        is_image: true,
-                    },
-                });
-                el.setAttribute('src', attachment.image_src);
-                el.classList.remove('o_b64_image_to_save');
+                await this._saveB64Image(el, resModel, resId);
             });
             const modifiedProms = [...editableEl.querySelectorAll('.o_modified_image_to_save')].map(async el => {
-                const isBackground = !el.matches('img');
-                el.classList.remove('o_modified_image_to_save');
-                // Modifying an image always creates a copy of the original, even if
-                // it was modified previously, as the other modified image may be used
-                // elsewhere if the snippet was duplicated or was saved as a custom one.
-                let altData = undefined;
-                if (el.dataset.mimetype === 'image/webp') {
-                    // Generate alternate sizes and format for reports.
-                    altData = {};
-                    const image = document.createElement('img');
-                    image.src = isBackground ? el.dataset.bgSrc : el.getAttribute('src');
-                    await new Promise(resolve => image.addEventListener('load', resolve));
-                    const originalSize = Math.max(image.width, image.height);
-                    const smallerSizes = [1024, 512, 256, 128].filter(size => size < originalSize);
-                    for (const size of [originalSize, ...smallerSizes]) {
-                        const ratio = size / originalSize;
-                        const canvas = document.createElement('canvas');
-                        canvas.width = image.width * ratio;
-                        canvas.height = image.height * ratio;
-                        const ctx = canvas.getContext('2d');
-                        ctx.fillStyle = 'rgb(255, 255, 255)';
-                        ctx.fillRect(0, 0, canvas.width, canvas.height);
-                        ctx.drawImage(image, 0, 0, image.width, image.height, 0, 0, canvas.width, canvas.height);
-                        altData[size] = {
-                            'image/jpeg': canvas.toDataURL('image/jpeg', 0.75).split(',')[1],
-                        };
-                        if (size !== originalSize) {
-                            altData[size]['image/webp'] = canvas.toDataURL('image/webp', 0.75).split(',')[1];
-                        }
-                    }
-                }
-                const newAttachmentSrc = await this._rpc({
-                    route: `/web_editor/modify_image/${el.dataset.originalId}`,
-                    params: {
-                        res_model: resModel,
-                        res_id: parseInt(resId),
-                        data: (isBackground ? el.dataset.bgSrc : el.getAttribute('src')).split(',')[1],
-                        alt_data: altData,
-                        mimetype: el.dataset.mimetype,
-                        name: (el.dataset.fileName ? el.dataset.fileName : null),
-                    },
-                });
-                if (isBackground) {
-                    const parts = weUtils.backgroundImageCssToParts($(el).css('background-image'));
-                    parts.url = `url('${newAttachmentSrc}')`;
-                    const combined = weUtils.backgroundImagePartsToCss(parts);
-                    $(el).css('background-image', combined);
-                    delete el.dataset.bgSrc;
-                } else {
-                    el.setAttribute('src', newAttachmentSrc);
-                }
+                await this._saveModifiedImage(el, resModel, resId);
             });
             return Promise.all([...b64Proms, ...modifiedProms]);
         });
@@ -2585,7 +2526,96 @@ const Wysiwyg = Widget.extend({
                 });
             }
         }
-    }
+    },
+    /**
+     * Saves a base64 encoded image as an attachment.
+     *
+     * @private
+     * @param {Element} el
+     * @param {string} resModel
+     * @param {number} resId
+     */
+    async _saveB64Image(el, resModel, resId) {
+        const attachment = await this._rpc({
+            route: '/web_editor/attachment/add_data',
+            params: {
+                name: el.dataset.fileName || '',
+                data: el.getAttribute('src').split(',')[1],
+                is_image: true,
+            },
+        });
+        if (attachment.mimetype === 'image/webp') {
+            el.classList.add('o_modified_image_to_save');
+            el.dataset.originalId = attachment.id;
+            el.dataset.mimetype = attachment.mimetype;
+            el.dataset.fileName = attachment.name;
+            this._saveModifiedImage(el, resModel, resId);
+        } else {
+            el.setAttribute('src', attachment.image_src);
+        }
+        el.classList.remove('o_b64_image_to_save');
+    },
+    /**
+     * Saves a modified image as an attachment.
+     *
+     * @private
+     * @param {Element} el
+     * @param {string} resModel
+     * @param {number} resId
+     */
+    async _saveModifiedImage(el, resModel, resId) {
+        const isBackground = !el.matches('img');
+        el.classList.remove('o_modified_image_to_save');
+        // Modifying an image always creates a copy of the original, even if
+        // it was modified previously, as the other modified image may be used
+        // elsewhere if the snippet was duplicated or was saved as a custom one.
+        let altData = undefined;
+        if (el.dataset.mimetype === 'image/webp') {
+            // Generate alternate sizes and format for reports.
+            altData = {};
+            const image = document.createElement('img');
+            image.src = isBackground ? el.dataset.bgSrc : el.getAttribute('src');
+            await new Promise(resolve => image.addEventListener('load', resolve));
+            const originalSize = Math.max(image.width, image.height);
+            const smallerSizes = [1024, 512, 256, 128].filter(size => size < originalSize);
+            for (const size of [originalSize, ...smallerSizes]) {
+                const ratio = size / originalSize;
+                const canvas = document.createElement('canvas');
+                canvas.width = image.width * ratio;
+                canvas.height = image.height * ratio;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = 'rgb(255, 255, 255)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(image, 0, 0, image.width, image.height, 0, 0, canvas.width, canvas.height);
+                altData[size] = {
+                    'image/jpeg': canvas.toDataURL('image/jpeg', 0.75).split(',')[1],
+                };
+                if (size !== originalSize) {
+                    altData[size]['image/webp'] = canvas.toDataURL('image/webp', 0.75).split(',')[1];
+                }
+            }
+        }
+        const newAttachmentSrc = await this._rpc({
+            route: `/web_editor/modify_image/${el.dataset.originalId}`,
+            params: {
+                res_model: resModel,
+                res_id: parseInt(resId),
+                data: (isBackground ? el.dataset.bgSrc : el.getAttribute('src')).split(',')[1],
+                alt_data: altData,
+                mimetype: el.dataset.mimetype,
+                name: (el.dataset.fileName ? el.dataset.fileName : null),
+            },
+        });
+        if (isBackground) {
+            const parts = weUtils.backgroundImageCssToParts($(el).css('background-image'));
+            parts.url = `url('${newAttachmentSrc}')`;
+            const combined = weUtils.backgroundImagePartsToCss(parts);
+            $(el).css('background-image', combined);
+            delete el.dataset.bgSrc;
+        } else {
+            el.setAttribute('src', newAttachmentSrc);
+        }
+    },
 
 });
 Wysiwyg.activeCollaborationChannelNames = new Set();
