@@ -186,6 +186,10 @@ class ResCompany(models.Model):
             ('out_and_in_invoices', 'Customer Invoices and Vendor Bills')],
         string="Quick encoding")
 
+    @api.depends('quick_edit_mode')
+    def get_quick_edit_mode(self):
+        return bool(self.env.company.quick_edit_mode)
+
     @api.constrains('account_opening_move_id', 'fiscalyear_last_day', 'fiscalyear_last_month')
     def _check_fiscalyear_last_day(self):
         # if the user explicitly chooses the 29th of February we allow it:
