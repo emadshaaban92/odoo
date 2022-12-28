@@ -376,6 +376,10 @@ class Message(models.Model):
 
         if self.env.is_superuser():
             return
+
+        # just in case there are ir.rules
+        super().check_access_rule(operation)
+
         # Non employees see only messages with a subtype (aka, not internal logs)
         if not self.env['res.users'].has_group('base.group_user'):
             self._cr.execute('''SELECT DISTINCT message.id, message.subtype_id, subtype.internal
