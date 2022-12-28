@@ -1199,11 +1199,6 @@
     function colorNumberString(color) {
         return toHex(color.toString(16).padStart(6, "0"));
     }
-    let colorIndex = 0;
-    function getNextColor() {
-        colorIndex = ++colorIndex % colors$1.length;
-        return colors$1[colorIndex];
-    }
     /**
      * Converts any CSS color value to a standardized hex6 value.
      * Accepts: hex3, hex6, hex8 and rgb (rgba is not supported)
@@ -22296,8 +22291,12 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             const index = this._getElementIndex(this._getEvOffset(ev));
             if (index < 0)
                 return;
-            if (!this._getActiveElements().has(index)) {
+            const activeElements = this._getActiveElements();
+            if (!activeElements.has(index)) {
                 this._selectElement(index, false);
+            }
+            else if (activeElements[activeElements.size - 1] !== index) {
+                this._selectElement(index, true);
             }
             const type = this._getType();
             this.props.onOpenContextMenu(type, ev.clientX, ev.clientY);
@@ -30357,7 +30356,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             let sheetName = "";
             let prefixSheet = false;
             if (sheetXC.includes("!")) {
-                [sheetName, sheetXC] = sheetXC.split("!");
+                [sheetXC, sheetName] = sheetXC.split("!").reverse();
                 if (sheetName) {
                     prefixSheet = true;
                 }
@@ -35104,15 +35103,18 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     case "center": {
                         const emptyZone = {
                             ...zone,
-                            right: nextColIndex,
                             left: previousColIndex,
+                            right: nextColIndex,
                         };
-                        const { x, y, width, height } = this.getters.getVisibleRect(emptyZone);
-                        if (width < contentWidth ||
-                            previousColIndex === col ||
-                            nextColIndex === col ||
+                        const { x, y, height, width } = this.getters.getVisibleRect(emptyZone);
+                        const halfContentWidth = contentWidth / 2;
+                        const boxMiddle = box.x + box.width / 2;
+                        if (x + width < boxMiddle + halfContentWidth ||
+                            x > boxMiddle - halfContentWidth ||
                             fontSizePX > height) {
-                            box.clipRect = { x, y, width, height };
+                            const clipX = x > boxMiddle - halfContentWidth ? x : boxMiddle - halfContentWidth;
+                            const clipWidth = x + width - clipX;
+                            box.clipRect = { x: clipX, y, width: clipWidth, height };
                         }
                         break;
                     }
@@ -35321,7 +35323,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             this.ranges.splice(index, 0, ...values.map((xc, i) => ({
                 xc,
                 id: (this.ranges.length + i + 1).toString(),
-                color: getNextColor(),
+                color: colors$1[(this.ranges.length + i) % colors$1.length],
             })));
         }
         /**
@@ -43338,8 +43340,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-12-22T13:54:58.664Z';
-    exports.__info__.hash = '4c5002d';
+    exports.__info__.date = '2022-12-28T13:55:59.132Z';
+    exports.__info__.hash = '4a1ae47';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
