@@ -1788,6 +1788,34 @@ class UsersView(models.Model):
             })
         return res
 
+    def action_change_password(self):
+        if len(self) == 1:
+            user_id = self.env['change.password.user'].create({
+                'user_id': self.id,
+                'user_login': self.login,
+            })
+
+            return {
+                'name': _('Change Passwords'),
+                'view_mode': 'form',
+                'target': 'new',
+                'res_model': 'change.password.user',
+                'type': 'ir.actions.act_window',
+                'view_id': self.env.ref('base.change_password_user_form_view').id,
+                'views': [(self.env.ref('base.change_password_user_form_view').id, 'form')],
+                'res_id': user_id.id,
+            }
+        else:
+
+            return {
+                'name': _('Change Passwords'),
+                'view_mode': 'form',
+                'target': 'new',
+                'res_model': 'change.password.wizard',
+                'type': 'ir.actions.act_window',
+                'views': [[False, 'form']],
+            }
+
 class CheckIdentity(models.TransientModel):
     """ Wizard used to re-check the user's credentials (password)
 
@@ -1846,7 +1874,7 @@ class ChangePasswordUser(models.TransientModel):
     _name = 'change.password.user'
     _description = 'User, Change Password Wizard'
 
-    wizard_id = fields.Many2one('change.password.wizard', string='Wizard', required=True, ondelete='cascade')
+    wizard_id = fields.Many2one('change.password.wizard', string='Wizard', ondelete='cascade')
     user_id = fields.Many2one('res.users', string='User', required=True, ondelete='cascade')
     user_login = fields.Char(string='User Login', readonly=True)
     new_passwd = fields.Char(string='New Password', default='')
