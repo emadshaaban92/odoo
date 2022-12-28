@@ -822,7 +822,6 @@ class Message(models.Model):
 
     def _message_format(self, fnames, format_reply=True, legacy=False):
         """Reads values from messages and formats them for the web client."""
-        self.check_access_rule('read')
         vals_list = self._read_format(fnames)
 
         thread_ids_by_model_name = defaultdict(set)
@@ -938,6 +937,7 @@ class Message(models.Model):
                     'parentMessage': {...}, # formatted message that this message is a reply to. Only present if format_reply is True
                 }
         """
+        self.check_access_rule('read')
         vals_list = self._message_format(self._get_message_format_fields(), format_reply=format_reply)
 
         com_id = self.env['ir.model.data']._xmlid_to_res_id('mail.mt_comment')
