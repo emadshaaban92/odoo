@@ -19267,7 +19267,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             const zone = positionToZone({ col: this.col, row: this.row });
             this.selection.capture(this, { cell: { col: this.col, row: this.row }, zone }, {
                 handleEvent: this.handleEvent.bind(this),
-                release: () => (this.mode = "inactive"),
+                release: () => {
+                    this.stopEdition();
+                },
             });
         }
         stopEdition() {
@@ -21201,6 +21203,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 this.startMovement(ev);
                 return;
             }
+            if (this.env.model.getters.getEditionMode() === "editing") {
+                this.env.model.selection.getBackToDefault();
+            }
             this.startSelection(ev, index);
         }
         startMovement(ev) {
@@ -22399,8 +22404,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             const lastZone = zones[zones.length - 1];
             let type = "CELL";
             if (!isInside(col, row, lastZone)) {
-                this.env.model.dispatch("UNFOCUS_SELECTION_INPUT");
-                this.env.model.dispatch("STOP_EDITION");
+                this.env.model.selection.getBackToDefault();
                 this.env.model.selection.selectCell(col, row);
             }
             else {
@@ -39384,7 +39388,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             let sheetName = "";
             let prefixSheet = false;
             if (sheetXC.includes("!")) {
-                [sheetName, sheetXC] = sheetXC.split("!");
+                [sheetXC, sheetName] = sheetXC.split("!").reverse();
                 if (sheetName) {
                     prefixSheet = true;
                 }
@@ -39591,6 +39595,17 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             this.mainSubscription = this.defaultSubscription;
         }
         /**
+         * Release whichever subscription in charge and get back to the default subscription
+         */
+        getBackToDefault() {
+            var _a, _b, _c;
+            if (this.mainSubscription === this.defaultSubscription) {
+                return;
+            }
+            (_c = (_a = this.mainSubscription) === null || _a === void 0 ? void 0 : (_b = _a.callbacks).release) === null || _c === void 0 ? void 0 : _c.call(_b);
+            this.mainSubscription = this.defaultSubscription;
+        }
+        /**
          * Check if you are currently the main stream consumer
          */
         isListening(owner) {
@@ -39652,6 +39667,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 this.stream.release(owner);
                 this.anchor = this.defaultAnchor;
             }
+        }
+        getBackToDefault() {
+            this.stream.getBackToDefault();
         }
         /**
          * Select a new anchor
@@ -42100,8 +42118,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2022-12-22T13:54:13.937Z';
-    exports.__info__.hash = 'd2940f6';
+    exports.__info__.date = '2022-12-28T09:53:16.680Z';
+    exports.__info__.hash = '6fd13cf';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
