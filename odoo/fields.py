@@ -3509,12 +3509,15 @@ class Properties(Field):
         if not properties_definition:
             return properties_values
 
-        assert isinstance(properties_values, (list, dict))
         if isinstance(properties_values, list):
             self._remove_display_name(properties_values)
             properties_list_values = properties_values
-        else:
+        elif isinstance(properties_values, dict):
             properties_list_values = self._dict_to_list(properties_values, properties_definition)
+        elif isinstance(properties_values, str):
+            properties_list_values = self._dict_to_list(ast.literal_eval(properties_values), properties_definition)
+        else:
+            assert "Wrong type for property values (expect list, dict or str)"
 
         for properties_value in properties_list_values:
             if properties_value.get('value') is None:
