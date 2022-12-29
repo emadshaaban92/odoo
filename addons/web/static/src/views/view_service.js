@@ -84,6 +84,87 @@ export const viewService = {
         }
 
         /**
+         *
+         * @param {Element} element
+         * @param {function(string, Element):void} enterModel
+         * @param {function(string):void} exitModel
+         */
+        async function walk(element, enterModel, exitModel) {
+            for (const child of element.children) {
+                if (child.nodeType !== 3 /* TEXT_NODE */) {
+                    const isSwitchingContext =
+                        child.tagName === "field" || child.tagName === "groupby";
+                    if (isSwitchingContext) {
+                        await enterModel(child.getAttribute("name"), child);
+                    }
+                    await walk(child, enterModel, exitModel);
+                    if (isSwitchingContext) {
+                        exitModel(child.getAttribute("name"));
+                    }
+                }
+            }
+        }
+
+        /**
+         *
+         * @param {string} resModel
+         * @param {Object.<string, Object.<string, {}>>} models
+         * @param {Object.<string, {id: number, arch: string}>} views
+         */
+        async function replaceMissingFieldsWithGhostWidget(resModel, models, views) {
+            const domParser = new DOMParser();
+            for (const viewType in views) {
+                const view = views[viewType];
+                const arch = view.arch;
+                const root = domParser.parseFromString(arch, "text/xml").documentElement;
+
+                const stack = [];
+                await walk(
+                    root,
+                    async (fieldName, node) => {
+                        const modelName =
+                            stack.length > 0 ? stack[stack.length - 1].resModel : resModel;
+                        const model = models[modelName];
+                        const field = model[fieldName];
+                        if (field) {
+                            if (field.relation) {
+                                stack.push({
+                                    fieldName,
+                                    resModel: field.relation,
+                                });
+                            }
+                        } else {
+                            const isFieldNode = node.tagName === "field";
+                            const res = await orm.read("ir.ui.view", [view.id], ["xml_id"]);
+                            const xmlId = res[0].xml_id;
+                            console.error(
+                                `field [${fieldName}] in ${viewType} view [${xmlId}] for model [${modelName}] is missing`
+                            );
+                            if (isFieldNode) {
+                                node.setAttribute("widget", "ghost");
+                                model[fieldName] = {
+                                    name: fieldName,
+                                    type: "missing",
+                                    xmlId,
+                                };
+                            } else {
+                                // TODO: replace missing groupby by a ghost field ?
+                            }
+                        }
+                    },
+                    (fieldName) => {
+                        const last = stack.length > 0 && stack[stack.length - 1];
+                        if (last && last.fieldName === fieldName) {
+                            stack.pop();
+                        }
+                    }
+                );
+
+                views[viewType].arch = root.outerHTML;
+            }
+        }
+
+        /**
          * Loads various information concerning views: fields_view for each view,
          * fields of the corresponding model, and optionally the filters.
          *
@@ -108,6 +189,13 @@ export const viewService = {
             if (!cache[key]) {
                 cache[key] = orm
                     .call(resModel, "get_views", [], { context, views, options: loadViewsOptions })
+                    .then((result) =>
+                        replaceMissingFieldsWithGhostWidget(
+                            resModel,
+                            result.models,
+                            result.views
+                        ).then(() => result)
+                    )
                     .then((result) => {
                         const { models, views } = result;
                         const modelsCopy = deepCopy(models); // for legacy views
