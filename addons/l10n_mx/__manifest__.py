@@ -8,7 +8,7 @@
 
 {
     "name": "Mexico - Accounting",
-    "version": "2.0",
+    "version": "2.1",
     "author": "Vauxoo",
     'category': 'Accounting/Localizations/Account Charts',
     "description": """
@@ -32,6 +32,8 @@ With this module you will have:
     """,
     "depends": [
         "l10n_multilang"
+        "account",
+        "base_iban", # TODO: discuss with OCO if we can bring more logic from account.report in standard instead of this hack that tweak dependancy graph so that account_reports if any is loaded before
     ],
     "data": [
         "data/account.account.tag.csv",
@@ -40,6 +42,7 @@ With this module you will have:
         "data/l10n_mx_chart_post_data.xml",
         "data/account_tax_group_data.xml",
         "data/account.group.template.csv",
+        "data/account_report_diot.xml",
         "data/account_tax_data.xml",
         "data/fiscal_position_data.xml",
         "data/account_chart_template_data.xml",
