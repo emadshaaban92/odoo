@@ -11,12 +11,18 @@
             <div id="recaptcha_warning" position="replace">
                 <div class="content-group" id="reacaptcha_configuration_settings" attrs="{'invisible': [('module_google_recaptcha', '=', False)]}">
                     <div class="mt16 row">
-                        <label for="recaptcha_public_key" class="col-3 o_light_label"/>
-                        <field name="recaptcha_public_key"/>
-                        <label for="recaptcha_private_key" class="col-3 o_light_label"/>
-                        <field name="recaptcha_private_key"/>
-                        <label for="recaptcha_min_score" class="col-3 o_light_label"/>
-                        <field name="recaptcha_min_score"/>
+                        <div class="row">
+                            <label for="recaptcha_public_key" class="o_light_label col-lg-3"/>
+                            <field name="recaptcha_public_key"/>
+                        </div>
+                        <div class="row">
+                            <label for="recaptcha_private_key" class="o_light_label col-lg-3"/>
+                            <field name="recaptcha_private_key"/>
+                        </div>
+                        <div class="row">
+                            <label for="recaptcha_min_score" class="o_light_label col-lg-3"/>
+                            <field name="recaptcha_min_score"/>
+                        </div>
                     </div>
                     <div>
                         <a href="https://www.google.com/recaptcha/admin/create" class="oe_link" target="_blank">

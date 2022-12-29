@@ -11,7 +11,7 @@
                     <div class="o_td_label d-inline-flex">
                         <label for='service_to_purchase'/>
                         <field name="service_to_purchase"/>
-                        <span class='fa fa-lg fa-building-o fa-fw' title="Service to Purchase"/>
+                        <span class='fa fa-lg fa-building-o fa-fw ms-2' title="Service to Purchase"/>
                     </div>
                 </group>
             </xpath>
