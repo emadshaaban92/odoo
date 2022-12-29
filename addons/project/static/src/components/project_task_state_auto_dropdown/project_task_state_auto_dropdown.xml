@@ -1,0 +1,8 @@
+<templates>
+    <t t-name="project.ProjectTaskStateAutoDropdown" t-inherit="web.Dropdown" t-inherit-mode="primary" owl="1">
+        <xpath expr="//div[@class='o-dropdown dropdown']" position="attributes">
+            <attribute name="t-on-mouseleave">onTogglerMouseLeave</attribute>
+        </xpath>
+    </t>
+
+</templates>
