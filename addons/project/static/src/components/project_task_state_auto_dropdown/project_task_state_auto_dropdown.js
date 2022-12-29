@@ -9,4 +9,12 @@ export class ProjectTaskStateAutoDropdown extends Dropdown {
             this.open();
         }
     }
+    onTogglerMouseLeave() {
+        console.log("mouseleave");
+        this.close();
+    }
 }
+
+ProjectTaskStateAutoDropdown.template = "project.ProjectTaskStateAutoDropdown";
+
+//registry.category("fields").add("project_task_state_selection", ProjectTaskStateSelection);

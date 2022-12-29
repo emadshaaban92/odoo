@@ -12,7 +12,7 @@
             <Dropdown tooltip="label" togglerClass="'btn d-flex p-0'">
                 <t t-set-slot="toggler">
                     <div class="d-flex align-items-center">
-                        <span t-attf-class="o_status {{ statusColor(currentValue) }} "/>
+                        <span t-attf-class=" o_status {{ statusColor(currentValue) }} "/>
                         <span t-if="showLabel" class="o_status_label ms-1" t-esc="label"/>
                     </div>
                 </t>

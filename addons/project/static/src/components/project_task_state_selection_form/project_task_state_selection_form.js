@@ -21,8 +21,8 @@ export class ProjectTaskStateSelectionForm extends ProjectTaskStateSelection {
             approved: "btn-success",
             rejected: "btn-danger",
             changes_requested: "btn-warning",
-            waiting_normal: "btn-warning",
-            waiting_approval: "btn-warning",
+            waiting_normal: "",
+            waiting_approval: "border border-dark",
         };
     }
 
@@ -69,6 +69,7 @@ export class ProjectTaskStateSelectionForm extends ProjectTaskStateSelection {
         this.props.update(arg1);
         this.state.isStateButtonHighlighted = false;
         this.state.isStateBoxHighlighted = false;
+        
     }
 
     /**

@@ -70,7 +70,8 @@ PROJECT_TASK_WRITABLE_FIELDS = {
 
 BLOCKING_STATES = [
     'in_progress', 
-    'waiting', 
+    'waiting_normal',
+    'waiting_approval',
     'pending_approval', 
     'changes_requested'
 ]
@@ -1427,7 +1428,7 @@ class Task(models.Model):
                     elif task.state == 'in_progress':
                         task.write({'state':'waiting_normal'})
                     return
-            if task.state not in CLOSED_STATES:
+            if task.state in ['waiting_approval', 'waiting_normal']:
                 default_state = 'pending_approval' if task.state == 'waiting_approval' else 'in_progress'
                 task.write({'state':default_state})
 

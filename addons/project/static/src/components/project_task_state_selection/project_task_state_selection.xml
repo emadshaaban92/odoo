@@ -1,30 +1,41 @@
 <templates>
     <t t-name="project.ProjectTaskStateSelection" t-inherit="web.StateSelectionField" t-inherit-mode="primary" owl="1">
-    
-        <xpath expr="//t[@t-if='isReadonly']" position="replace">
-                <t t-if="!isApproval">
-                        <t t-if="this.props.value != 'waiting'">
-                            <button class="d-flex align-items-center btn fw-normal p-0" t-on-click.stop="toggleState">
-                                <i t-attf-class="fa-fw {{ stateIcon(currentValue) }} {{ stateColor(currentValue) }}"></i>
-                            </button>  
-                        </t>
-                        <t t-else="">
-                            <i class="fa-fw fa fa-hourglass-o"></i>
-                        </t>
-                </t>  
+        <!-- The normal mark as done button -->
+        <xpath expr="//t[@t-if='isReadonly']" position="before">
+            <t t-if="this.props.value == 'waiting_normal' || this.props.value == 'waiting_approval'">
+                <i class="fa-fw fa fa-hourglass"></i>
+            </t>
         </xpath>
-            <xpath expr="//t/div[@class='d-flex align-items-center']" position="replace">
-                <div class="d-flex align-items-center o_status_align">
-                    <span t-attf-class=" {{ stateIcon(currentValue) }} {{ stateColor(currentValue) }}"/>
-                </div>
-            </xpath>    
+        
+        <xpath expr="//t[@t-if='isReadonly']" position="replace">
+            <t t-elif="!isApproval">
+                <button class="d-flex align-items-center btn fw-normal p-0" t-on-click.stop="toggleState">
+                    <i t-attf-class="fa-fw {{ stateIcon(currentValue) }} {{ stateColor(currentValue) }}"></i>
+                </button>
+            </t>  
+        </xpath>
 
-            <xpath expr="//DropdownItem/div[@class='d-flex align-items-center']" position="replace">
-                <div class="d-flex align-items-center">
-                    <span t-attf-class="fa-fw fa {{ stateIcon(option[0]) }} {{ stateColor(option[0]) }}"/>
-                    <span t-attf-class="ms-2 {{ stateColor(option[0]) }}" t-esc="option[1]"/>
-                </div>
-            </xpath>
+        <xpath expr="//t/div[@class='d-flex align-items-center']" position="replace">
+            <div class="d-flex align-items-center o_status_align">
+                <span t-attf-class=" {{ stateIcon(currentValue) }} {{ stateColor(currentValue) }}"/>
+            </div>
+        </xpath>
+
+        <xpath expr="//DropdownItem" position="attributes">
+            <t t-if="this.props.value == 'waiting_normal' || this.props.value == 'waiting_approval'">
+                <attribute name='onSelected'></attribute>
+            </t>
+            <t t-else="">
+                <attribute name='onSelected'>() => this.onSelectedDD(option)</attribute>
+            </t>
+        </xpath>
+
+        <xpath expr="//DropdownItem/div[@class='d-flex align-items-center']" position="replace">
+            <div class="d-flex align-items-center">
+                <span t-attf-class="fa-fw fa {{ stateIcon(option[0]) }} {{ stateColor(option[0]) }}"/>
+                <span t-attf-class="ms-2 {{ stateColor(option[0]) }}" t-esc="option[1]"/>
+            </div>
+        </xpath>
     </t>
 
 </templates>

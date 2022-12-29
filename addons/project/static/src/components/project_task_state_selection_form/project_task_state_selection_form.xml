@@ -35,9 +35,13 @@
                     t-on-click="onClickState" t-on-mouseenter="onMouseEnterStateButton" 
                     t-on-mouseleave="onMouseLeaveStateButton">
                             <t t-if="this.props.value == 'waiting_normal' || this.props.value == 'waiting_approval'">
-                                <i class="fa fa-fw fa-hourglass"/>
-                                <span class="o_status_label ms-1">
+                                <span t-if="!state.isStateButtonHighlighted" class="o_status_label ms-1">
+                                    <i class="fa fa-fw fa-hourglass"/>
                                     Waiting
+                                </span>
+                                <span t-else="" class="text-success oe_highlight">
+                                    <i class="fa fa-fw fa-check"/>
+                                    <t t-out="'Mark Done'"></t>
                                 </span>
                             </t>
                             <t t-elif="this.props.value == 'in_progress'">

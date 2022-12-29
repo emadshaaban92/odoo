@@ -3,21 +3,18 @@
 import { StateSelectionField } from "@web/views/fields/state_selection/state_selection_field";
 
 import { registry } from "@web/core/registry";
-import { useService } from "@web/core/utils/hooks";
-
-const { EventBus , useBus } = owl;
 
 export class ProjectTaskStateSelection extends StateSelectionField {
     setup() {
         this.icons = {
-            in_progress: "fa fa-check-circle-o",
-            done: "fa fa-check-circle",
+            in_progress: "fa fa-fw fa-check-circle-o",
+            done: "fa fa-fw fa-check-circle",
             pending_approval: "o_status",
             approved: "o_status o_status_green",
             rejected: "o_status o_status_red",
-            changes_requested: "o_status o_status_orange",
-            waiting_normal: "o_status o_status_orange",
-            waiting_approval: "o_status o_status_orange",
+            changes_requested: "fa fa-fw fa-exclamation-circle",
+            waiting_normal: "fa fa-fw fa-hourglass-o",
+            waiting_approval: "fa fa-fw fa-hourglass-o",
         };
         this.colorIcons = {
             in_progress: "",
@@ -64,6 +61,21 @@ export class ProjectTaskStateSelection extends StateSelectionField {
     async toggleState() {
         const toggleVal = this.props.value == "done" ? "in_progress" : "done";
         await this.props.update(toggleVal);
+        if (this.props.record.activeFields[this.props.name].viewType == "list") {
+            await this.props.record.model.root.load();
+            this.props.record.model.notify();
+        }
+    }
+
+    async onSelectedDD(option) {
+        //console.log(option);
+        //console.log("onSelected");
+        //this.props.update(option);
+        await this.props.update(option[0]);
+        if (this.props.record.activeFields[this.props.name].viewType == "list") {
+            await this.props.record.model.root.load();
+            this.props.record.model.notify();
+        }
     }
 }
 
