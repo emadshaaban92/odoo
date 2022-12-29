@@ -15,13 +15,12 @@ export class BurndownChartRenderer extends GraphRenderer {
     }
 
     async fetchSequence() {
-        const activeId = this.model.metaData.context.active_id;
-        return await this.orm
-            .webSearchRead(
-                'project.task.type',
-                [['project_ids', 'in', activeId]],
-                ["name","sequence"]
-            ).then((data) => {return data.records})
+        const data = await this.orm.webSearchRead(
+            "project.task.type",
+            [["project_ids", "in", this.model.metaData.context.active_id]],
+            ["name", "sequence"]
+        );
+        return data.records;
     }
 
     /**

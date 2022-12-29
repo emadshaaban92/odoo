@@ -229,6 +229,7 @@ export class GraphModel extends Model {
 
         // dataPoints + labels --> datasetsTmp --> datasets
         const datasetsTmp = {};
+        //const indexation = { "New":1,"new second stage":2,"In Progress":3,"new fourth stage":4,"Done":5 }
         for (const dataPt of dataPoints) {
             const { domain, labelIndex, originIndex, trueLabel, value } = dataPt;
             const datasetLabel = this._getDatasetLabel(dataPt);
@@ -248,6 +249,7 @@ export class GraphModel extends Model {
             datasetsTmp[datasetLabel].data[labelIndex] = value;
             datasetsTmp[datasetLabel].domains[labelIndex] = domain;
             datasetsTmp[datasetLabel].trueLabels[labelIndex] = trueLabel;
+            datasetsTmp[datasetLabel].originIndex = indexation[datasetLabel];
         }
         // sort by origin
         let datasets = sortBy(Object.values(datasetsTmp), "originIndex");
