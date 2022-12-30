@@ -11,7 +11,7 @@ export class BurndownChartRenderer extends GraphRenderer {
         super.setup();
         this.orm = useService("orm");
 
-        onWillStart(async () => this.stageSequence = await this.fetchSequence());
+        onWillStart(async () => (this.stageSequence = await this.fetchSequence()));
     }
 
     async fetchSequence() {
@@ -26,7 +26,7 @@ export class BurndownChartRenderer extends GraphRenderer {
     /**
      * @returns {Object}
      * @override
-    **/
+     **/
     getLegendOptions() {
         const legends = super.getLegendOptions();
         const { mode } = this.model.metaData;

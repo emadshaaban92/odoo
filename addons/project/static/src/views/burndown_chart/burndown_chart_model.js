@@ -9,12 +9,12 @@ const { onWillStart } = owl;
 export class BurndownChartModel extends GraphModel {
     setup(params) {
         super.setup(params);
-
-        onWillStart(async () => this.stageSequence = await this.fetchSequence());
+        console.log(this);
+        //onWillStart(async () => this.stageSequence = await this.fetchSequence());
     }
 
     /**
-     * 
+     *
      * @returns {Object}
      */
     async fetchSequence() {

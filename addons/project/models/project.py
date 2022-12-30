@@ -749,6 +749,13 @@ class Project(models.Model):
     def action_project_task_burndown_chart_report(self):
         action = self.env['ir.actions.act_window']._for_xml_id('project.action_project_task_burndown_chart_report')
         action['display_name'] = _("%(name)s's Burndown Chart", name=self.name)
+        new_context = json.dumps(
+            {
+                **action['context'],
+                'stage_seq': [(stage.name,stage.sequence) for stage in self.type_ids]
+            }
+        )
+        action['context'] = new_context
         return action
 
     def action_project_timesheets(self):

@@ -229,7 +229,7 @@ export class GraphModel extends Model {
 
         // dataPoints + labels --> datasetsTmp --> datasets
         const datasetsTmp = {};
-        //const indexation = { "New":1,"new second stage":2,"In Progress":3,"new fourth stage":4,"Done":5 }
+        const indexation = { "New":1, "second stage":2, "In Progress":3, "fourth stage":4, "Done":5 }
         for (const dataPt of dataPoints) {
             const { domain, labelIndex, originIndex, trueLabel, value } = dataPt;
             const datasetLabel = this._getDatasetLabel(dataPt);
