@@ -8,7 +8,7 @@
             <ProjectTaskStateAutoDropdown t-if="state.isStateBoxHighlighted" togglerClass="' btn btn-light d-flex rounded-pill '"
                 t-on-mouseenter="onMouseEnterModeSelection" t-on-mouseleave="onMouseLeaveModeSelection">
                 <t t-set-slot="toggler">
-                        <i class="fa fa-fw fa-plus"/>
+                        <i class="fa fa-fw fa-ellipsis-v"/>
                     <!--
                         <button class="o_switch_mode_button btn btn-light rounded-pill text-muted m-0" t-on-mouseenter="onMouseEnterModeSelection" t-on-mouseleave="onMouseLeaveModeSelection">
                             <i class="fa fa-fw fa-plus"/>

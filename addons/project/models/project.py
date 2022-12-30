@@ -1234,7 +1234,7 @@ class Task(models.Model):
     legend_blocked = fields.Char(related='stage_id.legend_blocked', string='Kanban Blocked Explanation', readonly=True)
     legend_done = fields.Char(related='stage_id.legend_done', string='Kanban Valid Explanation', readonly=True)
     legend_normal = fields.Char(related='stage_id.legend_normal', string='Kanban Ongoing Explanation', readonly=True)
-    is_closed = fields.Boolean(related="stage_id.fold", string="Closing Stage", store=True, index=True, help="Folded in Kanban stages are closing stages.")
+    is_closed = fields.Boolean(compute="_compute_is_closed", string="Closing Stage", store=True, index=True, help="Folded in Kanban stages are closing stages.")
     parent_id = fields.Many2one('project.task', string='Parent Task', index=True)
     ancestor_id = fields.Many2one('project.task', string='Ancestor Task', compute='_compute_ancestor_id', index='btree_not_null', recursive=True, store=True)
     child_ids = fields.One2many('project.task', 'parent_id', string="Sub-tasks")
@@ -1424,13 +1424,21 @@ class Task(models.Model):
                 if dependent_task.state in BLOCKING_STATES:
                     # here we check that the blocked task is not alread in a closed state (if the task is already done we don't put it in waiting state)
                     if task.state in OPEN_APPROVAL_STATES:
-                        task.write({'state':'waiting_approval'})
+                        task.state= 'waiting_approval'
                     elif task.state == 'in_progress':
-                        task.write({'state':'waiting_normal'})
+                        task.state = 'waiting_normal'
                     return
             if task.state in ['waiting_approval', 'waiting_normal']:
                 default_state = 'pending_approval' if task.state == 'waiting_approval' else 'in_progress'
-                task.write({'state':default_state})
+                task.state = default_state
+
+    @api.depends('state')
+    def _compute_is_closed(self):
+        for task in self:
+            if task.state not in BLOCKING_STATES:
+                task.is_closed = True
+                return
+            task.is_closed = False
 
     @api.onchange('state_approval_mode')
     def _onchange_state_approval_mode(self):
@@ -1622,6 +1630,8 @@ class Task(models.Model):
     def _compute_is_blocked(self):
         for task in self:
             task.is_blocked = any(not blocking_task.is_closed or blocking_task.is_blocked for blocking_task in task.depend_on_ids)
+            print(task.is_blocked)
+            
 
     @api.depends('partner_id.email')
     def _compute_partner_email(self):
@@ -2127,6 +2137,15 @@ class Task(models.Model):
             vals.update(self.update_date_end(vals['stage_id']))
             vals['date_last_stage_update'] = now
         if 'state' in vals:
+            # specific use case: when the blocked task goes from 'forced' done state to a not closed state, we fix the state back to waiting
+            #app_tasks = self.filtered(lambda t: vals['state'] in OPEN_APPROVAL_STATES and t.is_blocked)
+            #nor_tasks = self.filtered(lambda t: vals['state'] == "in_progress" and t.is_blocked)
+            for task in self:
+                if task.is_blocked:
+                    if vals['state'] in OPEN_APPROVAL_STATES:
+                        vals['state'] = 'waiting_approval'
+                    elif vals['state'] == 'in_progress':
+                        vals['state'] = 'waiting_normal'
             vals['date_last_state_update'] = now
         task_ids_without_user_set = set()
         if 'user_ids' in vals and 'date_assign' not in vals:
