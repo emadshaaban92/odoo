@@ -50,6 +50,7 @@ class InvoiceButton extends PosComponent {
             }
         }
     }
+    onWillInvoiceOrder(order) {}
     async _invoiceOrder() {
         const order = this.props.order;
         if (!order) {
@@ -68,8 +69,8 @@ class InvoiceButton extends PosComponent {
         // Write to pos.order the selected partner.
         if (!order.get_partner()) {
             const { confirmed: confirmedPopup } = await this.showPopup("ConfirmPopup", {
-                title: this.env._t("Need customer to invoice"),
-                body: this.env._t("Do you want to open the customer list to select customer?"),
+                title: this.env._t("Need a customer to invoice"),
+                body: this.env._t("Do you want to open the customer list to select a customer?"),
             });
             if (!confirmedPopup) {
                 return;
@@ -88,6 +89,8 @@ class InvoiceButton extends PosComponent {
                 kwargs: { context: this.env.session.user_context },
             });
         }
+
+        this.onWillInvoiceOrder(order);
 
         // Part 2: Invoice the order.
         await this.rpc(
