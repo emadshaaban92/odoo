@@ -3,7 +3,8 @@
 /**
  * @typedef {import("@spreadsheet/data_sources/metadata_repository").Field} Field
  * @typedef {import("./global_filters_core_plugin").GlobalFilter} GlobalFilter
- *
+ * @typedef {import("./global_filters_core_plugin").FieldMatching} FieldMatching
+ 
  */
 
 import { _t } from "@web/core/l10n/translation";
@@ -327,11 +328,11 @@ export default class GlobalFiltersUIPlugin extends spreadsheet.UIPlugin {
      * @returns {Domain|undefined}
      */
     _getDateDomain(filter, fieldMatching) {
-        if (!this.isGlobalFilterActive(filter.id)) {
-            return undefined;
-        }
         let granularity;
         const value = this.getGlobalFilterValue(filter.id);
+        if (!value || !fieldMatching.chain) {
+            return undefined;
+        }
         const field = fieldMatching.chain;
         const type = fieldMatching.type;
         const offset = fieldMatching.offset || 0;
