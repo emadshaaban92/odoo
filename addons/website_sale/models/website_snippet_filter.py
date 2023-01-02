@@ -159,6 +159,22 @@ class WebsiteSnippetFilter(models.Model):
                     products = self.env['product.product'].with_context(display_default_code=False).search(domain, limit=limit)
         return products
 
+    def _get_products_most_sold(self, website, limit, domain, context):
+        products = []
+        sale_orders = self.env['sale.order'].sudo().search([
+            ('website_id', '=', website.id),
+            ('state', 'in', ('sale', 'done')),
+        ])
+        if sale_orders:
+            products_ids = list(set([p.product_id.id for p in sale_orders.order_line]))
+            if products_ids:
+                domain = expression.AND([
+                    domain,
+                    [('id', 'in', products_ids)],
+                ])
+                products = self.env['product.product'].with_context(display_default_code=False).search(domain, limit=limit).sorted(key=lambda r: r.sales_count, reverse=True)
+        return products
+
     def _get_products_alternative_products(self, website, limit, domain, context):
         products = self.env['product.product']
         current_id = context.get('product_template_id')
