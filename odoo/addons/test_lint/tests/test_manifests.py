@@ -96,10 +96,16 @@ class ManifestLinter(BaseCase):
                 " Please specify a correct value or remove this key from the manifest.",
                 module)
         else:
-            path_parts = value.split('/')
+            path_string, *country = value.split(';')
+            path_parts = path_string.split('/')
             path = get_module_resource(path_parts[1], *path_parts[2:])
             if not path:
                 _logger.warning(
                     "Icon value specified in manifest of module %s wasn't found in given path."
                     " Please specify a correct value or remove this key from the manifest.",
+                    module)
+            if country and not get_module_resource('base', 'static', 'img', 'country_flags', f'{country[0]}.png'):
+                _logger.warning(
+                    "Country value specifiedfor the icon in manifest of module %s wasn't found in given path. "
+                    "Please specify a correct value or remove this key from the manifest.",
                     module)

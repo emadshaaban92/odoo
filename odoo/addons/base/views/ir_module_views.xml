@@ -183,7 +183,15 @@
                     <t t-name="kanban-box">
                       <div class="oe_module_vignette">
                         <t t-set="installed" t-value="record.state.raw_value == 'installed'"/>
-                        <img t-attf-src="#{record.icon.value}" class="oe_module_icon" alt="Icon"/>
+                        <t t-if="record.icon.value.includes(';')">
+                            <div class="oe_module_icon">
+                                <img t-attf-src="#{record.icon.value.split(';')[0]}" class="w-100" alt="Icon"/>
+                                <img t-attf-src="/base/static/img/country_flags/#{record.icon.value.split(';')[1]}.png" class="oe_module_flag" alt="Icon"/>
+                            </div>
+                        </t>
+                        <t t-else="">
+                            <img t-attf-src="#{record.icon.value}" class="oe_module_icon" alt="Icon"/>
+                        </t>
                         <div class="oe_module_desc" t-att-title="record.shortdesc.value">
                           <h4 class="o_kanban_record_title">
                             <field name="shortdesc"/>&amp;nbsp;
