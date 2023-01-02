@@ -36,14 +36,7 @@ class AuthSignupHome(Home):
             try:
                 self.do_signup(qcontext)
                 # Send an account creation confirmation email
-                if qcontext.get('token'):
-                    User = request.env['res.users']
-                    user_sudo = User.sudo().search(
-                        User._get_login_domain(qcontext.get('login')), order=User._get_login_order(), limit=1
-                    )
-                    template = request.env.ref('auth_signup.mail_template_user_signup_account_created', raise_if_not_found=False)
-                    if user_sudo and template:
-                        template.sudo().send_mail(user_sudo.id, force_send=True)
+                self.send_confirmation_mail(qcontext.get('login'))
                 return self.web_login(*args, **kw)
             except UserError as e:
                 qcontext['error'] = e.args[0]
@@ -89,6 +82,15 @@ class AuthSignupHome(Home):
         response = request.render('auth_signup.reset_password', qcontext)
         response.headers['X-Frame-Options'] = 'DENY'
         return response
+
+    def send_confirmation_mail(self, login):
+        User = request.env['res.users']
+        user_sudo = User.sudo().search(
+            User._get_login_domain(login), order=User._get_login_order(), limit=1
+        )
+        template = request.env.ref('auth_signup.mail_template_user_signup_account_created', raise_if_not_found=False)
+        if user_sudo and template:
+            template.sudo().send_mail(user_sudo.id, force_send=True)
 
     def get_auth_signup_config(self):
         """retrieve the module config (which features are enabled) for the login page"""
