@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from datetime import date, timedelta
 from functools import lru_cache
 
+from odoo.osv import expression
 from odoo import api, fields, models, Command, _
 from odoo.exceptions import ValidationError, UserError
 from odoo.tools import frozendict, formatLang, format_date, float_is_zero
@@ -1276,29 +1277,43 @@ class AccountMoveLine(models.Model):
     def search_read(self, domain=None, fields=None, offset=0, limit=None, order=None):
         def to_tuple(t):
             return tuple(map(to_tuple, t)) if isinstance(t, (list, tuple)) else t
+
         # Since the ORM only supports simple `order by` clauses, add a search_read to match a specific amount_residual
         # so that they appear on the bank rec widget first. It is activated by context key when no order is specified.
-        matching_amount_res = []
-        extra_domain = []
-        preferred_amount = self.env.context.get('preferred_residual')
-        if not order and preferred_amount:
-            amount_domain = domain + [('amount_residual', '=', preferred_amount)]
-            matching_amount_res = super().search_read(amount_domain, fields, offset, limit, order)
-            if matching_amount_res:
-                if len(matching_amount_res) == limit:
-                    return matching_amount_res
-                else:
-                    extra_domain = [('amount_residual', '!=', preferred_amount)]
-                    if limit and limit > len(matching_amount_res):
-                        limit -= len(matching_amount_res)
+        residual_amount_to_match = self.env.context.get('exact_residual_amount_to_match_first')
+        extra_results = []
+        if not order and residual_amount_to_match:
+            residual_amount, residual_currency_id = residual_amount_to_match
+
+            residual_amount_domain = (domain or []) + [
+                ('amount_residual_currency', '=', residual_amount),
+                ('currency_id', '=', residual_currency_id),
+            ]
+            extra_results = super().search_read(domain=residual_amount_domain, fields=fields, offset=offset, limit=limit, order=order)
+
+            if extra_results:
+
+                # Adapt the limit.
+                if limit:
+                    limit -= len(extra_results)
+
+                    # Special case to avoid an additional search_read if there is nothing left to match.
+                    if limit == 0:
+                        return extra_results
+
+                # Adapt the domain.
+                ids_to_exclude = [x['id'] for x in extra_results]
+                if ids_to_exclude:
+                    domain = expression.AND([domain or [], [('id', 'not in', ids_to_exclude)]])
+
         # Make an explicit order because we will need to reverse it
         order = (order or self._order) + ', id'
         # Add the domain and order by in order to compute the cumulated balance in _compute_cumulated_balance
         contextualized = self.with_context(
-            domain_cumulated_balance=to_tuple(domain or [] + extra_domain),
+            domain_cumulated_balance=to_tuple(domain or []),
             order_cumulated_balance=order,
         )
-        return matching_amount_res + super(AccountMoveLine, contextualized).search_read(domain + extra_domain, fields, offset, limit, order)
+        return extra_results + super(AccountMoveLine, contextualized).search_read(domain, fields, offset, limit, order)
 
     def init(self):
         """ change index on partner_id to a multi-column index on (partner_id, ref), the new index will behave in the
