@@ -46,11 +46,11 @@
                             </t>
                             <t t-elif="this.props.value == 'in_progress'">
                                 <span t-if="!state.isStateButtonHighlighted">
-                                    <t t-out="'In Progress'"></t>
+                                    In progress
                                 </span>
                                 <span t-else="" class="text-success oe_highlight">
                                     <i class="fa fa-fw fa-check"/>
-                                    <t t-out="'Mark Done'"></t>
+                                    Mark as done
                                 </span>
                             </t>
                             <t t-else="">
@@ -78,7 +78,7 @@
                         <t t-foreach="availableOptions" t-as="option" t-key="option[0]">
                             <DropdownItem onSelected="() => this._onClickModeSelection(option[0])">
                                 <div class="d-flex align-items-center">
-                                    <span t-attf-class="fa-fw fa {{ stateIcon(option[0]) }} {{ stateColor(option[0]) }}"/>
+                                    <span t-attf-class="{{ stateIcon(option[0]) }} {{ stateColor(option[0]) }}"/>
                                     <span t-attf-class="ms-2 {{ stateColor(option[0]) }}" t-esc="option[1]"/>
                                 </div>
                             </DropdownItem>

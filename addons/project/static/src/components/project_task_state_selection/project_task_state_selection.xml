@@ -3,7 +3,9 @@
         <!-- Waiting state button -->
         <xpath expr="//t[@t-if='isReadonly']" position="before">
             <t t-if="this.props.value == 'waiting_normal' || this.props.value == 'waiting_approval'">
-                <i class="fa-fw fa fa-hourglass-o"></i>
+                <button class="d-flex align-items-center btn fw-normal p-0" style="justify-content: center;">
+                    <i class="fa-fw fa fa-hourglass-o"></i>                
+                </button>
             </t>
         </xpath>
         <!-- The normal mark as done button -->       
@@ -14,13 +16,13 @@
                 </button>
             </t>  
         </xpath>
-        <!-- Approval mode button -->       
+        <!-- Approval mode toggle button -->       
         <xpath expr="//t/div[@class='d-flex align-items-center']" position="replace">
             <div class="d-flex align-items-center fa-fw" style="justify-content: center;">
                 <span t-attf-class=" {{ stateIcon(currentValue) }} {{ stateColor(currentValue) }}"/>
             </div>
         </xpath>
-        <!-- Approval mode dropdown buttons -->
+        <!-- Approval mode dropdown buttons (attribute onselected)-->
         <xpath expr="//DropdownItem" position="attributes">
             <t t-if="this.props.value == 'waiting_normal' || this.props.value == 'waiting_approval'">
                 <attribute name='onSelected'></attribute>
@@ -29,7 +31,7 @@
                 <attribute name='onSelected'>() => this.onSelectedDD(option)</attribute>
             </t>
         </xpath>
-        <!-- Approval mode dropdown button -->       
+        <!-- Approval mode dropdown button (class)-->
         <xpath expr="//DropdownItem/div[@class='d-flex align-items-center']" position="replace">
             <div class="d-flex align-items-center">
                 <span t-attf-class="{{ stateIcon(option[0]) }} {{ stateColor(option[0]) }}"/>
