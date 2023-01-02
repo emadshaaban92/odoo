@@ -25,11 +25,20 @@ class PosSelfOrder(http.Controller):
         # 2. The currency of the POS - to display the prices in the correct currency
         """
         pos_details_sudo = http.request.env['pos.config'].sudo().search_read([('id', '=', pos_id)], ['name', 'currency_id'])[0]
+        domain = [
+            ('state', 'in', ['opening_control', 'opened']),
+            ('user_id', '=', request.session.uid),
+            ('rescue', '=', False),
+            ('config_id', '=', int(pos_id)),
+        ]
+        pos_session = request.env['pos.session'].sudo().search(domain).read(['id','name', 'login_number'])[0]
         context = {
             'pos_id': pos_id,
             'table_number': table_number,
             'pos_name' : pos_details_sudo.get('name'),
             'currency' : pos_details_sudo.get('currency_id')[1],
+            'login_number': pos_session['login_number'],
+            'pos_session_id': pos_session['id'],
         }
         # We pass the context to the template
         response = request.render('pos_self_order.pos_self_order_index', context)
@@ -90,7 +99,7 @@ class PosSelfOrder(http.Controller):
 
             
         total_amount = sum(orderline[2].get("price_subtotal") for orderline in lines)
-        # TODO : find a way to create the id of the order
+        # order_id = generate_unique_id()
         order = {'id': '00010-001-0009',
                  'data': 
                     {'name': 'Order 00010-001-0009', 
@@ -119,3 +128,11 @@ class PosSelfOrder(http.Controller):
                     'session_id': 10}
         request.env['pos.order'].sudo().create_from_ui([order])
         return True
+    def generate_unique_id(id, login_number, sequence_number):
+        # // Generates a public identification number for the order.
+        # // The generated number must be unique and sequential. They are made 12 digit long
+        # // to fit into EAN-13 barcodes, should it be needed
+        # here we use a trick with f-strings
+        # ex: f"{id:0>5}" will return a string with 5 digits
+        # if the id is 1, the result will be 00001
+        return f"{id:0>5}-{login_number:0>3}-{sequence_number:0>4}"
