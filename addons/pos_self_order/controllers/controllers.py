@@ -6,7 +6,7 @@ from odoo.http import request
 from odoo.osv.expression import AND
 from odoo.tools import format_amount
 from odoo.addons.account.controllers.portal import PortalAccount
-
+from odoo import fields
 
 class PosSelfOrder(http.Controller):
     """
@@ -76,6 +76,15 @@ class PosSelfOrder(http.Controller):
             # we need to get the other details of the product from the database
             # this is done for security reasons
             product_info_sudo =  request.env['product.product'].sudo().search([('available_in_pos', '=', True), ('id', '=', item.get("id"))]).read(['list_price', 'name'])[0]
+            # We want to check if the session_id of the last order is the same as the current session_id
+            # If it is the same, we will look at what the last order_id was and add 1 to it
+            # If it is not the same, we will start from 1
+            sequence_number =  request.env['pos.order'].sudo().search([('config_id', '=', int(pos_id))]).read(["sequence_number"])[0].get("sequence_number") + 1
+            # last_order =  request.env['pos.order'].sudo().search([('config_id', '=', int(pos_id))]).read(['session_id', ])[0]
+            # import pdb; pdb.set_trace()
+            # TODO: I don't know yet how to code should actually work:
+            #  ex: if the last code is 00007-001-0002 and the next order done on this POS session is 
+            # done by a different user, the code should be 00007-002-0001 or 00007-002-0003?
             print(item.get("quantity"))
             lines.append([0, 0, {
                 'product_id': item.get('id'),
@@ -106,34 +115,50 @@ class PosSelfOrder(http.Controller):
         ]
         pos_session = request.env['pos.session'].sudo().search(domain).read(['id','name', 'login_number'])[0]
         total_amount = sum(orderline[2].get("price_subtotal") for orderline in lines)
-        order_id = self.generate_unique_id(pos_session["id"], pos_session["login_number"], 3)
+        order_id = self.generate_unique_id(pos_session["id"], pos_session["login_number"], sequence_number)
+        print("date")
+        print("date")
+        print("date")
+        print("date")
+        print("date")
+        print("date")
+        print("date")
+        print("date")
+        print("date")
+        print("date")
+        print("date")
+        print(str(fields.Datetime.now()).replace(" ", "T"))
         order = {'id': order_id,
                  'data': 
-                    {'name': f"Order {order_id}", 
-                    'amount_paid': 0, 
-                    'amount_total': total_amount, 
-                    'amount_tax': 0, 
-                    'amount_return': 0, 
-                    'lines': lines, 
-                    'statement_ids': [[0, 0, {'name': '2023-01-02 08:20:07', 'payment_method_id': 1, 'amount': total_amount, 'payment_status': '', 'ticket': '', 'card_type': '', 'cardholder_name': '', 'transaction_id': ''}]], 
-                    'pos_session_id': 10, 
-                    'pricelist_id': 1, 
-                    'partner_id': False, 
-                    'user_id': request.session.uid, 
-                    'uid': order_id, 
-                    'sequence_number': 1, 
-                    'creation_date': '2023-01-02T08:20:07.456Z', 
-                    'fiscal_position_id': False, 
-                    'server_id': False, 
-                    'to_invoice': False, 
-                    'to_ship': False, 
-                    'is_tipped': False, 
-                    'tip_amount': 0, 
-                    'access_token': '756581b3-bd49-4cf6-8037-011336780d03', 
-                    'customer_count': 1}, 
+                    {
+                        'name': f"Order {order_id}", 
+                        'amount_paid': 0, 
+                        'amount_total': total_amount, 
+                        'amount_tax': 0, 
+                        'amount_return': 0, 
+                        'lines': lines, 
+                        'statement_ids': [[0, 0, {'name': '2023-01-02 08:20:07', 'payment_method_id': 1, 'amount': total_amount, 'payment_status': '', 'ticket': '', 'card_type': '', 'cardholder_name': '', 'transaction_id': ''}]], 
+                        'pos_session_id': pos_session.get("id"), 
+                        'pricelist_id': 1, 
+                        'partner_id': False, 
+                        'user_id': request.session.uid, 
+                        'uid': order_id, 
+                        'sequence_number': sequence_number, 
+                        'creation_date': str(fields.Datetime.now()).replace(" ", "T"), 
+                        # 'creation_date': fields.Datetime.now(), 
+                        'fiscal_position_id': False, 
+                        # 'server_id': False, 
+                        'to_invoice': False, 
+                        'to_ship': False, 
+                        'is_tipped': False, 
+                        'tip_amount': 0, 
+                        'access_token': '756581b3-bd49-4cf6-8037-011336780d03', 
+                        'customer_count': 1
+                    }, 
                     'to_invoice': False,
                     'session_id': pos_session.get("id")}
-        request.env['pos.order'].sudo().create_from_ui([order])
+        resp = request.env['pos.order'].sudo().create_from_ui([order])
+        print(resp) 
         return True
     # this function resembles the one with the same name in the models.js file
     def generate_unique_id(self, id, login_number, sequence_number):
