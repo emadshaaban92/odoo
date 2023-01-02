@@ -37,8 +37,8 @@ class PosSelfOrder(http.Controller):
             'table_number': table_number,
             'pos_name' : pos_details_sudo.get('name'),
             'currency' : pos_details_sudo.get('currency_id')[1],
-            'login_number': pos_session['login_number'],
-            'pos_session_id': pos_session['id'],
+            # 'login_number': pos_session['login_number'],
+            # 'pos_session_id': pos_session['id'],
         }
         # We pass the context to the template
         response = request.render('pos_self_order.pos_self_order_index', context)
@@ -65,10 +65,10 @@ class PosSelfOrder(http.Controller):
     
 
     # this is the route that the POS Self Order App uses to SEND THE ORDER
-    @http.route('/pos-self-order/send-order', auth='public', type="json", website=True)
-    def pos_self_order_send_order(self, cart):
+    @http.route('/pos-self-order/send-order/<int:pos_id>/<int:table_number>/', auth='public', type="json", website=True)
+    def pos_self_order_send_order(self, cart, pos_id, table_number):
         # TODO: we need to check if the order is valid -- the values of cart have to be integers, for ex
-        print(cart)
+        print("items in cart ",cart)
         # We create the lines of the order from the cart variable
         lines = []
         for item in cart:
@@ -97,12 +97,19 @@ class PosSelfOrder(http.Controller):
                 'note': '',
             }])
 
-            
+        # We get the POS Session details from the database 
+        domain = [
+            ('state', 'in', ['opening_control', 'opened']),
+            ('user_id', '=', request.session.uid),
+            ('rescue', '=', False),
+            ('config_id', '=', int(pos_id)),
+        ]
+        pos_session = request.env['pos.session'].sudo().search(domain).read(['id','name', 'login_number'])[0]
         total_amount = sum(orderline[2].get("price_subtotal") for orderline in lines)
-        # order_id = generate_unique_id()
-        order = {'id': '00010-001-0009',
+        order_id = self.generate_unique_id(pos_session["id"], pos_session["login_number"], 3)
+        order = {'id': order_id,
                  'data': 
-                    {'name': 'Order 00010-001-0009', 
+                    {'name': f"Order {order_id}", 
                     'amount_paid': 0, 
                     'amount_total': total_amount, 
                     'amount_tax': 0, 
@@ -112,8 +119,8 @@ class PosSelfOrder(http.Controller):
                     'pos_session_id': 10, 
                     'pricelist_id': 1, 
                     'partner_id': False, 
-                    'user_id': 2, 
-                    # 'uid': '00010-001-0003', 
+                    'user_id': request.session.uid, 
+                    'uid': order_id, 
                     'sequence_number': 1, 
                     'creation_date': '2023-01-02T08:20:07.456Z', 
                     'fiscal_position_id': False, 
@@ -125,10 +132,11 @@ class PosSelfOrder(http.Controller):
                     'access_token': '756581b3-bd49-4cf6-8037-011336780d03', 
                     'customer_count': 1}, 
                     'to_invoice': False,
-                    'session_id': 10}
+                    'session_id': pos_session.get("id")}
         request.env['pos.order'].sudo().create_from_ui([order])
         return True
-    def generate_unique_id(id, login_number, sequence_number):
+    # this function resembles the one with the same name in the models.js file
+    def generate_unique_id(self, id, login_number, sequence_number):
         # // Generates a public identification number for the order.
         # // The generated number must be unique and sequential. They are made 12 digit long
         # // to fit into EAN-13 barcodes, should it be needed

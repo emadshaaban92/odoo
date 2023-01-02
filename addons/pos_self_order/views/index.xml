@@ -36,15 +36,14 @@
                 'pos_id': pos_id,
                 'currency': currency,
                 'pos_name': pos_name,
-                'login_number': login_number,
-                'pos_session_id': pos_session_id,
                 'debug': debug,
             })"/>;
             // Prevent the menu_service to load anything. In an ideal world, POS assets would only contain
             // what is genuinely necessary, and not the whole backend.
             odoo.loadMenusPromise = Promise.resolve();
         </script>
-
+        <!-- 'login_number': login_number,
+        'pos_session_id': pos_session_id, -->
 
         <t t-call-assets="web.assets_common" />
         <t t-call-assets="web.assets_backend" />

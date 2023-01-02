@@ -33,8 +33,8 @@ class SelfOrderRoot extends Component {
             -------------------
             cart: [] -- the cart is an array of objects that have the following structure:
             {
-                id: 0, -- the id of the product
-                quantity: 0 -- the quantity of the product
+                id: int, -- the id of the product
+                quantity: int -- the quantity of the product
             }
         */
         this.state = useState({ currentScreen: 0, currentProduct: 0, cart: [] });
@@ -44,10 +44,6 @@ class SelfOrderRoot extends Component {
         onWillStart(async () => {
             this.productList = await this.rpc('/pos-self-order/get-menu');
         }); 
-
-    }
-    jsonToString = (json) => {
-        return JSON.stringify(json);
     }
     // FIXME we have to use the function that correctly formats the price (with the currency symbol and the correct number of decimals)
     viewMenu = () => {
@@ -79,7 +75,7 @@ class SelfOrderRoot extends Component {
         },0);
     }
     sendOrder = async () => {
-        this.response_after_order = await this.rpc('/pos-self-order/send-order', { cart: this.state.cart });
+        this.response_after_order = await this.rpc(`/pos-self-order/send-order/${odoo.pos_id}/${odoo.table_number}`, { cart: this.state.cart });
         // this.state.currentScreen = 4;
     }
     // TODO: Find the currency type of the posConfig

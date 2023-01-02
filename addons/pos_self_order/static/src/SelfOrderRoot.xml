@@ -5,7 +5,7 @@
             <!-- Landing Page at the start -->
             <!-- This is the first page the users sees when they go on the website -->
             <t t-if="state.currentScreen == 0">
-                <LandingPageStart tableNumber="tableNumber" viewMenu="viewMenu"/>
+                <LandingPageStart viewMenu="viewMenu"/>
             </t>
             <!-- Menu -->
             <!-- We go here after clicking VIEW MENU -->
