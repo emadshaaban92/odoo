@@ -1285,26 +1285,35 @@ class AccountMoveLine(models.Model):
         if not order and residual_amount_to_match:
             residual_amount, residual_currency_id = residual_amount_to_match
 
-            residual_amount_domain = (domain or []) + [
-                ('amount_residual_currency', '=', residual_amount),
-                ('currency_id', '=', residual_currency_id),
-            ]
-            extra_results = super().search_read(domain=residual_amount_domain, fields=fields, offset=offset, limit=limit, order=order)
+            residual_amount_domain = expression.AND([
+                domain or [],
+                [
+                    ('amount_residual_currency', '=', residual_amount),
+                    ('currency_id', '=', residual_currency_id),
+                ],
+            ])
+            extra_results = super().search_read(domain=residual_amount_domain, fields=fields, order=order)
 
             if extra_results:
-
-                # Adapt the limit.
-                if limit:
-                    limit -= len(extra_results)
-
-                    # Special case to avoid an additional search_read if there is nothing left to match.
-                    if limit == 0:
-                        return extra_results
 
                 # Adapt the domain.
                 ids_to_exclude = [x['id'] for x in extra_results]
                 if ids_to_exclude:
                     domain = expression.AND([domain or [], [('id', 'not in', ids_to_exclude)]])
+
+                # Adapt offset.
+                nb_extra_results = len(extra_results)
+                extra_results = extra_results[offset:]
+                offset = max(offset - nb_extra_results, 0)
+
+                # Adapt the limit.
+                if limit is not None:
+                    extra_results = extra_results[:limit]
+                    limit -= len(extra_results)
+
+                    # Special case to avoid an additional search_read if there is nothing left to match.
+                    if limit == 0:
+                        return extra_results
 
         # Make an explicit order because we will need to reverse it
         order = (order or self._order) + ', id'
