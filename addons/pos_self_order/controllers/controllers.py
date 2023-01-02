@@ -35,11 +35,15 @@ class PosSelfOrder(http.Controller):
         response = request.render('pos_self_order.pos_self_order_index', context)
         # response.headers['Cache-Control'] = 'no-store'
         return response
+
+
     # this is the route that the POS Self Order App uses to GET THE MENU
     @http.route('/pos-self-order/get-menu', auth='public',type="json", website=True)
     def pos_self_order_get_menu(self,config_id = False):
         response_sudo = http.request.env['product.product'].sudo().search([('available_in_pos', '=', True)]).read(['id', 'name', 'list_price', 'description_sale'])
         return response_sudo
+
+
     # this is the route that the POS Self Order App uses to GET THE PRODUCT IMAGES
     @http.route('/pos-self-order/get-images/<int:product_id>', methods=['GET'], type='http', auth='public')
     def pos_self_order_get_images(self, product_id):
@@ -49,6 +53,9 @@ class PosSelfOrder(http.Controller):
         # 'image_1920' is the name of the field that contains the image
         # If the product does not have an image, the function _get_image_stream_from will return the default image
         return request.env['ir.binary']._get_image_stream_from(product_sudo, field_name='image_1920').get_response()
+    
+
+    # this is the route that the POS Self Order App uses to SEND THE ORDER
     @http.route('/pos-self-order/send-order', auth='public', type="json", website=True)
     def pos_self_order_send_order(self, cart):
         # TODO: we need to check if the order is valid -- the values of cart have to be integers, for ex
@@ -56,7 +63,10 @@ class PosSelfOrder(http.Controller):
         # We create the lines of the order from the cart variable
         lines = []
         for item in cart:
-            product_info_sudo =  request.env['product.product'].sudo().search([('available_in_pos', '=', True), ('id', '=', item.get("id"))]).read(['list_price', 'description_sale'])[0]
+            # from the frontend we only get the id of the product and the quantity
+            # we need to get the other details of the product from the database
+            # this is done for security reasons
+            product_info_sudo =  request.env['product.product'].sudo().search([('available_in_pos', '=', True), ('id', '=', item.get("id"))]).read(['list_price', 'name'])[0]
             print(item.get("quantity"))
             lines.append([0, 0, {
                 'product_id': item.get('id'),
@@ -71,7 +81,7 @@ class PosSelfOrder(http.Controller):
                 'id': 1,
                 'pack_lot_ids': [],
                 'description': '',
-                'full_product_name': product_info_sudo.get("description_sale"),
+                'full_product_name': product_info_sudo.get("name"),
                 'price_extra': 0,
                 'customer_note': '',
                 'price_manually_set': False,
@@ -81,9 +91,9 @@ class PosSelfOrder(http.Controller):
             
         total_amount = sum(orderline[2].get("price_subtotal") for orderline in lines)
         # TODO : find a way to create the id of the order
-        order = {'id': '00010-001-0007',
+        order = {'id': '00010-001-0009',
                  'data': 
-                    {'name': 'Order 00010-001-0007', 
+                    {'name': 'Order 00010-001-0009', 
                     'amount_paid': 0, 
                     'amount_total': total_amount, 
                     'amount_tax': 0, 
@@ -94,7 +104,7 @@ class PosSelfOrder(http.Controller):
                     'pricelist_id': 1, 
                     'partner_id': False, 
                     'user_id': 2, 
-                    'uid': '00010-001-0003', 
+                    # 'uid': '00010-001-0003', 
                     'sequence_number': 1, 
                     'creation_date': '2023-01-02T08:20:07.456Z', 
                     'fiscal_position_id': False, 

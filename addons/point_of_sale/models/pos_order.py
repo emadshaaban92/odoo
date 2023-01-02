@@ -872,6 +872,7 @@ class PosOrder(models.Model):
         :type draft: bool.
         :Returns: list -- list of db-ids for the created and updated orders.
         """
+        print(orders)
         order_ids = []
         for order in orders:
             existing_order = False
