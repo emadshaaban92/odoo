@@ -31,7 +31,7 @@ class PosSelfOrder(http.Controller):
             'pos_name' : pos_details_sudo.get('name'),
             'currency' : pos_details_sudo.get('currency_id')[1],
         }
-        # and pass it to the template
+        # We pass the context to the template
         response = request.render('pos_self_order.pos_self_order_index', context)
         # response.headers['Cache-Control'] = 'no-store'
         return response
@@ -50,9 +50,36 @@ class PosSelfOrder(http.Controller):
         # If the product does not have an image, the function _get_image_stream_from will return the default image
         return request.env['ir.binary']._get_image_stream_from(product_sudo, field_name='image_1920').get_response()
     @http.route('/pos-self-order/send-order', auth='public', type="json", website=True)
-    # def pos_self_order_send_order(self,cart):
     def pos_self_order_send_order(self, cart):
+        # TODO: we need to check if the order is valid -- the values of cart have to be integers, for ex
         print(cart)
+        # We create the lines of the order from the cart variable
+        lines = []
+        for item in cart:
+            product_info_sudo =  request.env['product.product'].sudo().search([('available_in_pos', '=', True)]).read(['list_price', 'description_sale'])
+            
+            lines.append([0, 0, {
+                'product_id': item.get('id'),
+                'qty': item.get('qty'),
+                'price_unit': product_info_sudo.get("list_price"),
+                'price_subtotal': product_info_sudo.get("list_price") * item.get('qty'),
+                'price_subtotal_incl': product_info_sudo.get("list_price") * item.get('qty'),
+                # TODO: figure out how to get the discount
+                'discount': 0,
+                # TODO: figure out how to get the taxes
+                'tax_ids': [[6, False, []]],
+                'id': 1,
+                'pack_lot_ids': [],
+                'description': '',
+                'full_product_name': product_info_sudo.get("description_sale"),
+                'price_extra': 0,
+                'customer_note': '',
+                'price_manually_set': False,
+                'note': '',
+            }])
+
+            
+
         order = {'id': '00010-001-0004',
                  'data': 
                     {'name': 'Order 00010-001-0004', 
@@ -60,107 +87,24 @@ class PosSelfOrder(http.Controller):
                     'amount_total': 840, 
                     'amount_tax': 0, 
                     'amount_return': 0, 
-                    'lines': [[0, 0, 
-                        {'qty': 3, 
-                        'price_unit': 280, 
-                        'price_subtotal': 840, 
-                        'price_subtotal_incl': 840, 
-                        'discount': 0, 
-                        'product_id': 7, 
-                        'tax_ids': [[6, False, []]], 
-                        'id': 1, 
-                        'pack_lot_ids': [], 
-                        'description': '', 
-                        'full_product_name': 'Office Design Software', 
-                        'price_extra': 0, 
-                        'customer_note': '', 
-                        'price_manually_set': False, 
-                        'note': ''},
-                        ]], 
-                        'statement_ids': [[0, 0, {'name': '2023-01-02 08:20:07', 'payment_method_id': 1, 'amount': 840, 'payment_status': '', 'ticket': '', 'card_type': '', 'cardholder_name': '', 'transaction_id': ''}]], 
-                        'pos_session_id': 10, 
-                        'pricelist_id': 1, 
-                        'partner_id': False, 
-                        'user_id': 2, 
-                        'uid': '00010-001-0003', 
-                        'sequence_number': 1, 
-                        'creation_date': '2023-01-02T08:20:07.456Z', 
-                        'fiscal_position_id': False, 
-                        'server_id': False, 
-                        'to_invoice': False, 
-                        'to_ship': False, 
-                        'is_tipped': False, 
-                        'tip_amount': 0, 
-                        'access_token': '756581b3-bd49-4cf6-8037-011336780d03', 
-                        'customer_count': 1}, 
-                        'to_invoice': False,
-                        'session_id': 10}
+                    'lines': lines, 
+                    'statement_ids': [[0, 0, {'name': '2023-01-02 08:20:07', 'payment_method_id': 1, 'amount': 840, 'payment_status': '', 'ticket': '', 'card_type': '', 'cardholder_name': '', 'transaction_id': ''}]], 
+                    'pos_session_id': 10, 
+                    'pricelist_id': 1, 
+                    'partner_id': False, 
+                    'user_id': 2, 
+                    'uid': '00010-001-0003', 
+                    'sequence_number': 1, 
+                    'creation_date': '2023-01-02T08:20:07.456Z', 
+                    'fiscal_position_id': False, 
+                    'server_id': False, 
+                    'to_invoice': False, 
+                    'to_ship': False, 
+                    'is_tipped': False, 
+                    'tip_amount': 0, 
+                    'access_token': '756581b3-bd49-4cf6-8037-011336780d03', 
+                    'customer_count': 1}, 
+                    'to_invoice': False,
+                    'session_id': 10}
         request.env['pos.order'].sudo().create_from_ui([order])
-
         return True
-
-    # name = fields.Char(string='Order Ref', required=True, readonly=True, copy=False, default='/')
-    # date_order = fields.Datetime(string='Date', readonly=True, index=True, default=fields.Datetime.now)
-    # user_id = fields.Many2one(
-    #     comodel_name='res.users', string='Responsible',
-    #     help="Person who uses the cash register. It can be a reliever, a student or an interim employee.",
-    #     default=lambda self: self.env.uid,
-    #     states={'done': [('readonly', True)], 'invoiced': [('readonly', True)]},
-    # )
-    # amount_tax = fields.Float(string='Taxes', digits=0, readonly=True, required=True)
-    # amount_total = fields.Float(string='Total', digits=0, readonly=True, required=True)
-    # amount_paid = fields.Float(string='Paid', states={'draft': [('readonly', False)]},
-    #     readonly=True, digits=0, required=True)
-    # amount_return = fields.Float(string='Returned', digits=0, required=True, readonly=True)
-    # margin = fields.Monetary(string="Margin", compute='_compute_margin')
-    # margin_percent = fields.Float(string="Margin (%)", compute='_compute_margin', digits=(12, 4))
-    # is_total_cost_computed = fields.Boolean(compute='_compute_is_total_cost_computed',
-    #     help="Allows to know if all the total cost of the order lines have already been computed")
-    # lines = fields.One2many('pos.order.line', 'order_id', string='Order Lines', states={'draft': [('readonly', False)]}, readonly=True, copy=True)
-    # company_id = fields.Many2one('res.company', string='Company', required=True, readonly=True)
-    # pricelist_id = fields.Many2one('product.pricelist', string='Pricelist', required=True, states={
-    #                                'draft': [('readonly', False)]}, readonly=True)
-    # partner_id = fields.Many2one('res.partner', string='Customer', change_default=True, index='btree_not_null', states={'draft': [('readonly', False)], 'paid': [('readonly', False)]})
-    # sequence_number = fields.Integer(string='Sequence Number', help='A session-unique sequence number for the order', default=1)
-
-    # session_id = fields.Many2one(
-    #     'pos.session', string='Session', required=True, index=True,
-    #     domain="[('state', '=', 'opened')]", states={'draft': [('readonly', False)]},
-    #     readonly=True)
-    # config_id = fields.Many2one('pos.config', related='session_id.config_id', string="Point of Sale", readonly=False)
-    # currency_id = fields.Many2one('res.currency', related='config_id.currency_id', string="Currency")
-    # currency_rate = fields.Float("Currency Rate", compute='_compute_currency_rate', compute_sudo=True, store=True, digits=0, readonly=True,
-    #     help='The rate of the currency to the currency of rate applicable at the date of the order')
-
-    # state = fields.Selection(
-    #     [('draft', 'New'), ('cancel', 'Cancelled'), ('paid', 'Paid'), ('done', 'Posted'), ('invoiced', 'Invoiced')],
-    #     'Status', readonly=True, copy=False, default='draft')
-
-    # account_move = fields.Many2one('account.move', string='Invoice', readonly=True, copy=False, index="btree_not_null")
-    # picking_ids = fields.One2many('stock.picking', 'pos_order_id')
-    # picking_count = fields.Integer(compute='_compute_picking_count')
-    # failed_pickings = fields.Boolean(compute='_compute_picking_count')
-    # picking_type_id = fields.Many2one('stock.picking.type', related='session_id.config_id.picking_type_id', string="Operation Type", readonly=False)
-    # procurement_group_id = fields.Many2one('procurement.group', 'Procurement Group', copy=False)
-
-    # note = fields.Text(string='Internal Notes')
-    # nb_print = fields.Integer(string='Number of Print', readonly=True, copy=False, default=0)
-    # pos_reference = fields.Char(string='Receipt Number', readonly=True, copy=False)
-    # sale_journal = fields.Many2one('account.journal', related='session_id.config_id.journal_id', string='Sales Journal', store=True, readonly=True, ondelete='restrict')
-    # fiscal_position_id = fields.Many2one(
-    #     comodel_name='account.fiscal.position', string='Fiscal Position',
-    #     readonly=True,
-    #     states={'draft': [('readonly', False)]},
-    # )
-    # payment_ids = fields.One2many('pos.payment', 'pos_order_id', string='Payments', readonly=True)
-    # session_move_id = fields.Many2one('account.move', string='Session Journal Entry', related='session_id.move_id', readonly=True, copy=False)
-    # to_invoice = fields.Boolean('To invoice', copy=False)
-    # to_ship = fields.Boolean('To ship')
-    # is_invoiced = fields.Boolean('Is Invoiced', compute='_compute_is_invoiced')
-    # is_tipped = fields.Boolean('Is this already tipped?', readonly=True)
-    # tip_amount = fields.Float(string='Tip Amount', digits=0, readonly=True)
-    # refund_orders_count = fields.Integer('Number of Refund Orders', compute='_compute_refund_related_fields')
-    # is_refunded = fields.Boolean(compute='_compute_refund_related_fields')
-    # refunded_order_ids = fields.Many2many('pos.order', compute='_compute_refund_related_fields')
-    # has_refundable_lines = fields.Boolean('Has Refundable Lines', compute='_compute_has_refundable_lines')
-    # refunded_orders_count = fields.Integer(compute='_compute_refund_related_fields')
