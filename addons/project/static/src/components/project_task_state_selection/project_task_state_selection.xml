@@ -1,12 +1,12 @@
 <templates>
     <t t-name="project.ProjectTaskStateSelection" t-inherit="web.StateSelectionField" t-inherit-mode="primary" owl="1">
-        <!-- The normal mark as done button -->
+        <!-- Waiting state button -->
         <xpath expr="//t[@t-if='isReadonly']" position="before">
             <t t-if="this.props.value == 'waiting_normal' || this.props.value == 'waiting_approval'">
-                <i class="fa-fw fa fa-hourglass"></i>
+                <i class="fa-fw fa fa-hourglass-o"></i>
             </t>
         </xpath>
-        
+        <!-- The normal mark as done button -->       
         <xpath expr="//t[@t-if='isReadonly']" position="replace">
             <t t-elif="!isApproval">
                 <button class="d-flex align-items-center btn fw-normal p-0" t-on-click.stop="toggleState">
@@ -14,13 +14,13 @@
                 </button>
             </t>  
         </xpath>
-
+        <!-- Approval mode button -->       
         <xpath expr="//t/div[@class='d-flex align-items-center']" position="replace">
-            <div class="d-flex align-items-center o_status_align">
+            <div class="d-flex align-items-center fa-fw" style="justify-content: center;">
                 <span t-attf-class=" {{ stateIcon(currentValue) }} {{ stateColor(currentValue) }}"/>
             </div>
         </xpath>
-
+        <!-- Approval mode dropdown buttons -->
         <xpath expr="//DropdownItem" position="attributes">
             <t t-if="this.props.value == 'waiting_normal' || this.props.value == 'waiting_approval'">
                 <attribute name='onSelected'></attribute>
@@ -29,10 +29,10 @@
                 <attribute name='onSelected'>() => this.onSelectedDD(option)</attribute>
             </t>
         </xpath>
-
+        <!-- Approval mode dropdown button -->       
         <xpath expr="//DropdownItem/div[@class='d-flex align-items-center']" position="replace">
             <div class="d-flex align-items-center">
-                <span t-attf-class="fa-fw fa {{ stateIcon(option[0]) }} {{ stateColor(option[0]) }}"/>
+                <span t-attf-class="{{ stateIcon(option[0]) }} {{ stateColor(option[0]) }}"/>
                 <span t-attf-class="ms-2 {{ stateColor(option[0]) }}" t-esc="option[1]"/>
             </div>
         </xpath>

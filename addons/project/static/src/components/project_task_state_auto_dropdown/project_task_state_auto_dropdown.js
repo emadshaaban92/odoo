@@ -10,7 +10,6 @@ export class ProjectTaskStateAutoDropdown extends Dropdown {
         }
     }
     onTogglerMouseLeave() {
-        console.log("mouseleave");
         this.close();
     }
 }

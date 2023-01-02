@@ -12,7 +12,7 @@ export class ProjectTaskStateSelection extends StateSelectionField {
             pending_approval: "o_status",
             approved: "o_status o_status_green",
             rejected: "o_status o_status_red",
-            changes_requested: "fa fa-fw fa-exclamation-circle",
+            changes_requested: "fa fa-exclamation-circle",
             waiting_normal: "fa fa-fw fa-hourglass-o",
             waiting_approval: "fa fa-fw fa-hourglass-o",
         };
@@ -33,10 +33,10 @@ export class ProjectTaskStateSelection extends StateSelectionField {
 
     get options() {
         return [
-            ["pending_approval", "Pending Approval"],
-            ["approved", "Approved"],
-            ["rejected", "Rejected"],
-            ["changes_requested", "Request Changes"],
+            ["pending_approval", this.env._t("Pending Approval")],
+            ["approved", this.env._t("Approved")],  //exemple trad
+            ["rejected", this.env._t("Rejected")],
+            ["changes_requested", this.env._t("Request Changes")],
         ];
     }
 

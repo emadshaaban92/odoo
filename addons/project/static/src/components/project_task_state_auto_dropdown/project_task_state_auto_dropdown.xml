@@ -3,6 +3,13 @@
         <xpath expr="//div[@class='o-dropdown dropdown']" position="attributes">
             <attribute name="t-on-mouseleave">onTogglerMouseLeave</attribute>
         </xpath>
+        <!--
+        <xpath expr="//div[hasclass('dropdown-menu')]" position="attributes">
+            <attribute name="class">dropdown-menu-state o-dropdown-menu dropdown-menu d-block</attribute>
+        </xpath>
+        -->
+        
     </t>
+    
 
 </templates>
