@@ -56,14 +56,14 @@ class PosSelfOrder(http.Controller):
         # We create the lines of the order from the cart variable
         lines = []
         for item in cart:
-            product_info_sudo =  request.env['product.product'].sudo().search([('available_in_pos', '=', True)]).read(['list_price', 'description_sale'])
-            
+            product_info_sudo =  request.env['product.product'].sudo().search([('available_in_pos', '=', True), ('id', '=', item.get("id"))]).read(['list_price', 'description_sale'])[0]
+            print(item.get("quantity"))
             lines.append([0, 0, {
                 'product_id': item.get('id'),
-                'qty': item.get('qty'),
+                'quantity': item.get('quantity'),
                 'price_unit': product_info_sudo.get("list_price"),
-                'price_subtotal': product_info_sudo.get("list_price") * item.get('qty'),
-                'price_subtotal_incl': product_info_sudo.get("list_price") * item.get('qty'),
+                'price_subtotal': product_info_sudo.get("list_price") * item.get('quantity'),
+                'price_subtotal_incl': product_info_sudo.get("list_price") * item.get('quantity'),
                 # TODO: figure out how to get the discount
                 'discount': 0,
                 # TODO: figure out how to get the taxes
@@ -79,16 +79,17 @@ class PosSelfOrder(http.Controller):
             }])
 
             
-
-        order = {'id': '00010-001-0004',
+        total_amount = sum(orderline[2].get("price_subtotal") for orderline in lines)
+        # TODO : find a way to create the id of the order
+        order = {'id': '00010-001-0007',
                  'data': 
-                    {'name': 'Order 00010-001-0004', 
+                    {'name': 'Order 00010-001-0007', 
                     'amount_paid': 0, 
-                    'amount_total': 840, 
+                    'amount_total': total_amount, 
                     'amount_tax': 0, 
                     'amount_return': 0, 
                     'lines': lines, 
-                    'statement_ids': [[0, 0, {'name': '2023-01-02 08:20:07', 'payment_method_id': 1, 'amount': 840, 'payment_status': '', 'ticket': '', 'card_type': '', 'cardholder_name': '', 'transaction_id': ''}]], 
+                    'statement_ids': [[0, 0, {'name': '2023-01-02 08:20:07', 'payment_method_id': 1, 'amount': total_amount, 'payment_status': '', 'ticket': '', 'card_type': '', 'cardholder_name': '', 'transaction_id': ''}]], 
                     'pos_session_id': 10, 
                     'pricelist_id': 1, 
                     'partner_id': False, 
