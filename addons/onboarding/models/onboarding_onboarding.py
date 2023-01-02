@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models
 from odoo.addons.onboarding.models.onboarding_progress import ONBOARDING_PROGRESS_STATES
+from odoo.exceptions import ValidationError
 
 
 class Onboarding(models.Model):
@@ -13,7 +14,7 @@ class Onboarding(models.Model):
     name = fields.Char('Name of the onboarding', translate=True)
     # One word identifier used to define the onboarding panel's route: `/onboarding/{route_name}`.
     route_name = fields.Char('One word name', required=True)
-    step_ids = fields.One2many('onboarding.onboarding.step', 'onboarding_id', 'Onboarding steps')
+    step_ids = fields.Many2many('onboarding.onboarding.step', string='Onboarding steps')
 
     is_per_company = fields.Boolean('Should be done per company?', default=True)
 
@@ -41,6 +42,13 @@ class Onboarding(models.Model):
         ('route_name_uniq', 'UNIQUE (route_name)', 'Onboarding alias must be unique.'),
     ]
 
+    @api.constrains('step_ids')
+    def check_is_per_company_consistency(self):
+        for onboarding in self:
+            if any(is_step_per_company != onboarding.is_per_company
+                   for is_step_per_company in onboarding.step_ids.mapped('is_per_company')):
+                raise ValidationError(_('Onboarding and step `is_per_company` must be equal.'))
+
     @api.depends_context('company')
     @api.depends('progress_ids', 'progress_ids.is_onboarding_closed', 'progress_ids.onboarding_state')
     def _compute_current_progress(self):
@@ -64,8 +72,9 @@ class Onboarding(models.Model):
         self.current_progress_id.action_toggle_visibility()
 
     def write(self, values):
+        onboardings_per_company_update = self
         if 'is_per_company' in values:
-            onboardings_per_company_update = self.filtered(
+            onboardings_per_company_update = onboardings_per_company_update.filtered(
                 lambda onboarding: onboarding.is_per_company != values['is_per_company'])
 
         res = super().write(values)
@@ -73,6 +82,8 @@ class Onboarding(models.Model):
         if 'is_per_company' in values:
             # When changing this parameter, all progress (onboarding and steps) is reset.
             onboardings_per_company_update.progress_ids.unlink()
+            onboardings_per_company_update.step_ids.is_per_company = values['is_per_company']
+            onboardings_per_company_update.step_ids.progress_ids.unlink()
         return res
 
     def _search_or_create_progress(self):
@@ -98,7 +109,7 @@ class Onboarding(models.Model):
                        if self.panel_background_color not in {False, 'none'} else '',
             'close_method': self.panel_close_action_name,
             'close_model': 'onboarding.onboarding',
-            'steps': self.step_ids,
+            'steps': self.step_ids.sorted('sequence'),
             'state': self.current_progress_id._get_and_update_onboarding_state(),
         }
 

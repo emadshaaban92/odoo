@@ -44,7 +44,8 @@ class TestOnboarding(TestOnboardingCommon):
         # Adding new step resets onboarding state to 'not_done' even if closed
         onboarding_1_step_3 = self.env['onboarding.onboarding.step'].create({
             'title': 'Test Onboarding 1 - Step 3',
-            'onboarding_id': self.onboarding_1.id,
+            'onboarding_ids': [(4, self.onboarding_1.id)],
+            'is_per_company': False,
             'panel_step_open_action_name': 'action_fake_open_onboarding_step',
         })
         self.assert_step_is_not_done(onboarding_1_step_3)
@@ -64,7 +65,8 @@ class TestOnboarding(TestOnboardingCommon):
         # Adding new step resets onboarding state to 'not_done'
         self.env['onboarding.onboarding.step'].create({
             'title': 'Test Onboarding 1 - Step 4',
-            'onboarding_id': self.onboarding_1.id,
+            'onboarding_ids': [(4, self.onboarding_1.id)],
+            'is_per_company': False,
             'panel_step_open_action_name': 'action_fake_open_onboarding_step',
         })
 
@@ -81,7 +83,7 @@ class TestOnboarding(TestOnboardingCommon):
         # Completing onboarding as company_1
         self.assertEqual(self.env.company, self.company_1)
 
-        # Updating onboarding to per-company
+        # Updating onboarding (and steps) to per-company
         self.onboarding_1.is_per_company = True
         # Required after progress reset (simulate role of controller)
         self.onboarding_1._search_or_create_progress()
@@ -133,6 +135,33 @@ class TestOnboarding(TestOnboardingCommon):
 
         self.assert_onboarding_is_not_done(self.onboarding_1)
 
+    def test_onboarding_shared_steps(self):
+        self.onboarding_2_step_2.action_set_just_done()
+        self.assert_step_is_done(self.onboarding_2_step_2)
+        # Completing common step is also required to be "done"
+        self.assert_onboarding_is_not_done(self.onboarding_2)
+
+        self.onboarding_1_step_1.action_set_just_done()
+        self.assert_onboarding_is_not_done(self.onboarding_1)
+        self.assert_onboarding_is_done(self.onboarding_2)
+
+    def test_onboarding_per_company_consistency(self):
+        with self.assertRaises(ValidationError):
+            self.env['onboarding.onboarding.step'].create([{
+                'title': 'Test Onboarding 1 - Step N',
+                'onboarding_ids': [self.onboarding_1.id],
+                'panel_step_open_action_name': 'action_fake_open_onboarding_step',
+                'is_per_company': True
+            }])
+
+        with self.assertRaises(ValidationError):
+            self.env['onboarding.onboarding'].create([{
+                'name': 'Test Onboarding N',
+                'is_per_company': True,
+                'route_name': 'onboardingN',
+                'step_ids': [self.onboarding_1_step_1.id]
+            }])
+
     @mute_logger('odoo.sql_db')
     def test_only_one_progress_per_company_or_without(self):
         self.assertFalse(self.onboarding_1.current_progress_id.company_id)
@@ -152,4 +181,31 @@ class TestOnboarding(TestOnboardingCommon):
             self.env['onboarding.progress'].create({
                 'onboarding_id': self.onboarding_1.id,
                 'company_id': self.env.company.id
+            })
+
+    @mute_logger('odoo.sql_db')
+    def test_only_one_progress_step_per_company_or_without(self):
+        self.assertFalse(self.onboarding_1.current_progress_id.company_id)
+
+        onboarding_progress = self.onboarding_1._search_or_create_progress()
+        self.onboarding_1_step_1.action_set_just_done()  # creates an onboarding_progress_step record
+
+        with self.assertRaises(ValidationError):
+            self.env['onboarding.progress.step'].create({
+                'progress_ids': [onboarding_progress.id],
+                'step_id': self.onboarding_1_step_1.id,
+                'company_id': False
+            })
+
+        # Updating onboarding to per-company
+        self.onboarding_1.is_per_company = True
+        # Required after progress reset (simulate role of controller)
+        onboarding_progress = self.onboarding_1._search_or_create_progress()
+        self.onboarding_1_step_1.action_set_just_done()
+
+        with self.assertRaises(ValidationError):
+            self.env['onboarding.progress.step'].create({
+                'progress_ids': [onboarding_progress.id],
+                'step_id': self.onboarding_1_step_1.id,
+                'company_id': self.env.company.id,
             })

@@ -18,12 +18,12 @@ class TestOnboardingCommon(TransactionCase):
         })
         cls.user_admin.company_ids |= cls.company_2
 
-        cls.onboarding_1 = cls.env['onboarding.onboarding'].create([
+        cls.onboarding_1, cls.onboarding_2 = cls.env['onboarding.onboarding'].create([
             {
-                'name': 'Test Onboarding 1',
+                'name': f'Test Onboarding {onboarding_id}',
+                'route_name': f'onboarding{onboarding_id}',
                 'is_per_company': False,
-                'route_name': 'onboarding1'
-            }
+            } for onboarding_id in range(2)
         ])
 
         # create a fake action for step opening
@@ -36,14 +36,22 @@ class TestOnboardingCommon(TransactionCase):
         cls.onboarding_1_step_1, cls.onboarding_1_step_2 = cls.env['onboarding.onboarding.step'].create([
             {
                 'title': f'Test Onboarding 1 - Step {step_n}',
-                'onboarding_id': cls.onboarding_1.id,
+                'onboarding_ids': [cls.onboarding_1.id],
+                'is_per_company': False,
                 'panel_step_open_action_name': 'action_fake_open_onboarding_step',
             }
             for step_n in range(1, 3)
         ])
-
+        # Add one of these in onboarding_2, and an "original" one
+        cls.onboarding_2.step_ids = [cls.onboarding_1_step_1.id]
+        cls.onboarding_2_step_2 = cls.env['onboarding.onboarding.step'].create([{
+            'title': f'Test Onboarding 2 - Step {2}',
+            'onboarding_ids': [cls.onboarding_2.id],
+            'is_per_company': False,
+            'panel_step_open_action_name': 'action_fake_open_onboarding_step',
+        }])
         # Create progress records as would happen through the controller
-        cls.onboarding_1.with_company(cls.company_1)._search_or_create_progress()
+        (cls.onboarding_1 + cls.onboarding_2).with_company(cls.company_1)._search_or_create_progress()
 
     def assert_step_is_done(self, step, also_with_company=None):
         self.assertIn(

@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-from odoo import fields, models
+from odoo import _, api, fields, models
 from odoo.addons.onboarding.models.onboarding_progress import ONBOARDING_PROGRESS_STATES
+from odoo.exceptions import ValidationError
 
 
 class OnboardingProgressStep(models.Model):
@@ -10,18 +11,26 @@ class OnboardingProgressStep(models.Model):
     _description = 'Onboarding Progress Step Tracker'
     _rec_name = 'step_id'
 
-    progress_id = fields.Many2one(
-        'onboarding.progress', 'Related Onboarding Progress Tracker', required=True, ondelete='cascade')
+    progress_ids = fields.Many2many(
+        'onboarding.progress', 'onboarding_progress_onboarding_progress_step_rel',
+        'onboarding_progress_step_id', 'onboarding_progress_id',
+        string='Related Onboarding Progress Tracker', required=True)
     step_state = fields.Selection(
         ONBOARDING_PROGRESS_STATES, string='Onboarding Step Progress', default='not_done')
-    onboarding_id = fields.Many2one(related='progress_id.onboarding_id', string='Onboarding')
+    company_id = fields.Many2one('res.company', string='Company', ondelete='cascade')
     step_id = fields.Many2one(
         'onboarding.onboarding.step', string='Onboarding Step', required=True, ondelete='cascade')
 
-    _sql_constraints = [
-        ('progress_step_uniq', 'unique (progress_id, step_id)',
-         'There cannot be multiple records of the same onboarding step completion for the same Progress record.'),
-    ]
+    @api.constrains('company_id', 'step_id')
+    def check_progress_per_company(self):
+        progress_data = self.read_group(
+            [('company_id', 'in', [self.env.company.id, False]), ('step_id', 'in', self.step_id.ids)],
+            ['step_id', 'ids:array_agg(id)'], ['step_id']
+        )
+        for data in progress_data:
+            if len(data['ids']) > 1:
+                raise ValidationError(_(
+                    'There cannot be multiple records of the same onboarding step completion for the same company.'))
 
     def action_consolidate_just_done(self):
         was_just_done = self.filtered(lambda progress: progress.step_state == 'just_done')

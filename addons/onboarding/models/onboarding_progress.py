@@ -23,19 +23,18 @@ class OnboardingProgress(models.Model):
     company_id = fields.Many2one('res.company')
     onboarding_id = fields.Many2one(
         'onboarding.onboarding', 'Related onboarding tracked', required=True, ondelete='cascade')
-    progress_step_ids = fields.One2many('onboarding.progress.step', 'progress_id', 'Progress Steps Trackers')
+    progress_step_ids = fields.Many2many('onboarding.progress.step', string='Progress Steps Trackers')
 
     @api.depends('onboarding_id.step_ids', 'progress_step_ids', 'progress_step_ids.step_state')
     def _compute_onboarding_state(self):
-        progress_steps_data = self.env['onboarding.progress.step'].read_group(
-            [('progress_id', 'in', self.ids), ('step_state', 'in', ['just_done', 'done'])],
-            ['progress_id'], ['progress_id']
-        )
-        result = dict((data['progress_id'][0], data['progress_id_count']) for data in progress_steps_data)
         for progress in self:
             progress.onboarding_state = (
-                'not_done' if result.get(progress.id, 0) != len(progress.onboarding_id.step_ids)
-                else 'done')
+                'not_done' if (
+                    len(progress.progress_step_ids.filtered(lambda p: p.step_state in {'just_done', 'done'}))
+                    != len(progress.onboarding_id.step_ids)
+                )
+                else 'done'
+            )
 
     @api.constrains('company_id', 'onboarding_id')
     def check_progress_per_company(self):
