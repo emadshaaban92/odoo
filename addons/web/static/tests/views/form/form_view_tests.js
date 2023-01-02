@@ -12677,4 +12677,45 @@ QUnit.module("Views", (hooks) => {
             "Unable to save"
         );
     });
+
+    QUnit.test("check records creation with empty notebook from list view", async function (assert) {
+        assert.expect(1);
+
+        patchWithCleanup(odoo, { debug: true });
+
+        serverData.views = {
+            "partner,false,form": `
+            <form>
+                <sheet>
+                    <notebook>
+                    </notebook>
+                </sheet>
+            </form>`,
+            "partner,false,list": '<tree><field name="foo"/></tree>',
+            "partner,false,search": "<search></search>",
+        };
+
+        serverData.actions = {
+            1: {
+                id: 1,
+                name: "Partner",
+                res_model: "partner",
+                type: "ir.actions.act_window",
+                views: [
+                    [false, "list"],
+                    [false, "form"],
+                ],
+            },
+        };
+
+        const target = getFixture();
+        const webClient = await createWebClient({ serverData });
+        await doAction(webClient, 1);
+        await click(target.querySelector(".o_list_button_add"));
+        await clickSave(target);
+        await click(target.querySelector(".o_back_button"));
+        await click(target.querySelector(".o_list_button_add"));
+        await clickSave(target);
+        assert.strictEqual(1, 1);
+    });
 });
