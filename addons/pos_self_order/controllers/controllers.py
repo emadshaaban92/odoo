@@ -51,51 +51,51 @@ class PosSelfOrder(http.Controller):
         return request.env['ir.binary']._get_image_stream_from(product_sudo, field_name='image_1920').get_response()
     @http.route('/pos-self-order/send-order', auth='public', type="json", website=True)
     # def pos_self_order_send_order(self,cart):
-    def pos_self_order_send_order(self):
-        print('vlad')
-        print('vlad')
-        print('vlad')
-        print('vlad')
-        print('vlad')
-        print('vlad')
-        print('vlad')
-        print('vlad')
-        print('vlad')
-        print('vlad')
-        print('vlad')
-        print('vlad')
-        # pos_details = http.request.env['pos.order'].sudo().search([('id', '=', 7)])
-        order = {
-            'name': 'resto1/0001-test-vlad',
-            'user_id': 2,
-            'amount_tax': 2,
-            'amount_total': 10,
-            'amount_paid': 10,
-            'amount_return': 0,
-            'lines': [
-                (0, 0, {
-                    'product_id': 1,
-                    'qty': 1,
-                    'price_unit': 10,
-                    'discount': 0,
-                    'price_subtotal': 10,
-                    'price_subtotal_incl': 10,
-                })
-            ],
-            'company_id': 1,
-            'partner_id': 1,
-
-            'session_id': 8,
-            'config_id': 2,
-            'currency_id': 2,
-            'state': 'paid',
-
-        }
-
-        # old_orders = request.env['pos.order'].sudo().search([]).read(['name'])
-        old_orders = request.env['pos.order'].sudo().search([])
-        import pdb; pdb.set_trace()
-        request.env['pos.order'].sudo().create([order])
+    def pos_self_order_send_order(self, cart):
+        print(cart)
+        order = {'id': '00010-001-0004',
+                 'data': 
+                    {'name': 'Order 00010-001-0004', 
+                    'amount_paid': 0, 
+                    'amount_total': 840, 
+                    'amount_tax': 0, 
+                    'amount_return': 0, 
+                    'lines': [[0, 0, 
+                        {'qty': 3, 
+                        'price_unit': 280, 
+                        'price_subtotal': 840, 
+                        'price_subtotal_incl': 840, 
+                        'discount': 0, 
+                        'product_id': 7, 
+                        'tax_ids': [[6, False, []]], 
+                        'id': 1, 
+                        'pack_lot_ids': [], 
+                        'description': '', 
+                        'full_product_name': 'Office Design Software', 
+                        'price_extra': 0, 
+                        'customer_note': '', 
+                        'price_manually_set': False, 
+                        'note': ''},
+                        ]], 
+                        'statement_ids': [[0, 0, {'name': '2023-01-02 08:20:07', 'payment_method_id': 1, 'amount': 840, 'payment_status': '', 'ticket': '', 'card_type': '', 'cardholder_name': '', 'transaction_id': ''}]], 
+                        'pos_session_id': 10, 
+                        'pricelist_id': 1, 
+                        'partner_id': False, 
+                        'user_id': 2, 
+                        'uid': '00010-001-0003', 
+                        'sequence_number': 1, 
+                        'creation_date': '2023-01-02T08:20:07.456Z', 
+                        'fiscal_position_id': False, 
+                        'server_id': False, 
+                        'to_invoice': False, 
+                        'to_ship': False, 
+                        'is_tipped': False, 
+                        'tip_amount': 0, 
+                        'access_token': '756581b3-bd49-4cf6-8037-011336780d03', 
+                        'customer_count': 1}, 
+                        'to_invoice': False,
+                        'session_id': 10}
+        request.env['pos.order'].sudo().create_from_ui([order])
 
         return True
 
