@@ -4,7 +4,7 @@
 
         <!-- Chart Template -->
         <record id="l10nnl_chart_template" model="account.chart.template">
-            <field name="name">Nederlands Grootboekschema</field>
+            <field name="name">Dutch Chart of Accounts</field>
             <field name="cash_account_code_prefix">101</field>
             <field name="bank_account_code_prefix">103</field>
             <field name="transfer_account_code_prefix">1060</field>
