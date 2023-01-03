@@ -1278,19 +1278,26 @@ class AccountMoveLine(models.Model):
         def to_tuple(t):
             return tuple(map(to_tuple, t)) if isinstance(t, (list, tuple)) else t
 
+        def get_float_comparison(amount_field, currency_field, amount_value, currency_value, decimal_precision):
+            delta_amount = 1 / (10 ** (decimal_precision + 1))
+            amount_value = round(amount_value)
+            return [
+                (amount_field, '>=', amount_value - delta_amount),
+                (amount_field, '<=', amount_value + delta_amount),
+                (currency_field, '=', currency_value),
+            ]
+
         # Since the ORM only supports simple `order by` clauses, add a search_read to match a specific amount_residual
         # so that they appear on the bank rec widget first. It is activated by context key when no order is specified.
-        residual_amount_to_match = self.env.context.get('exact_residual_amount_to_match_first')
+        residual_amounts_to_match = self.env.context.get('exact_residual_amount_to_match_first')
         extra_results = []
-        if not order and residual_amount_to_match:
-            residual_amount, residual_currency_id = residual_amount_to_match
-
+        if not order and residual_amounts_to_match:
             residual_amount_domain = expression.AND([
                 domain or [],
-                [
-                    ('amount_residual_currency', '=', residual_amount),
-                    ('currency_id', '=', residual_currency_id),
-                ],
+                expression.OR([
+                    get_float_comparison(*x)
+                    for x in residual_amounts_to_match
+                ])
             ])
             extra_results = super().search_read(domain=residual_amount_domain, fields=fields, order=order)
 
