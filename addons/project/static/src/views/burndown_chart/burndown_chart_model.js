@@ -5,6 +5,7 @@ import { useService } from "@web/core/utils/hooks";
 
 const { onWillStart } = owl;
 
+export const SEP = " / ";
 
 export class BurndownChartModel extends GraphModel {
 
