@@ -11,8 +11,8 @@ import threading
 from odoo.addons.base.models.ir_mail_server import extract_rfc2822_addresses
 from odoo.tests.common import BaseCase, TransactionCase
 from odoo.tools import (
-    is_html_empty, html_to_plaintext, html_sanitize, append_content_to_html, plaintext2html,
-    email_split, email_domain_normalize,
+    is_html_empty, html_to_plaintext, html_to_formatted_plaintext, html_sanitize,
+    append_content_to_html, plaintext2html, email_split, email_domain_normalize,
     misc, formataddr,
     prepend_html_content,
 )
@@ -318,6 +318,22 @@ class TestHtmlTools(BaseCase):
         for content, expected in cases:
             text = html_to_plaintext(content)
             self.assertEqual(text, expected, 'html_to_plaintext is broken')
+
+    def test_html_to_formatted_plaintext(self):
+        cases = [
+            ('<div><p>First <br/>Second <br/>Third Paragraph</p><p>--<br/>Signature paragraph with a <a href="./link">link</a></p></div>',
+             'First  \nSecond  \nThird Paragraph\n\n--  \nSignature paragraph with a [link](./link)'),
+            ('<div><p>First <br/>Second <br/>Third Paragraph</p><p><hr/>Signature paragraph with a <a href="./link">link</a></p></div>',
+             'First  \nSecond  \nThird Paragraph\n\n* * *\n\nSignature paragraph with a [link](./link)'),
+            ('<p>Now =&gt; processing&nbsp;entities&#8203;and extra whitespace too.  </p>',
+             'Now => processing entities\u200band extra whitespace too.'),
+            ('<div>Look what happens with <p>unmatched tags</div>', 'Look what happens with\n\nunmatched tags'),
+            ('<div>Look what happens with <p unclosed tags</div> Are we good?', 'Look what happens with\n\nAre we good?'),
+            ('<div>A list of things <ul> <li>One</li><li>Two</li><li> Three</li></ul>', 'A list of things\n\n  * One\n  * Two\n  * Three')
+        ]
+        for content, expected in cases:
+            text = html_to_formatted_plaintext(content)
+            self.assertEqual(text, expected, 'html_to_formatted_plaintext is broken')
 
     def test_append_to_html(self):
         test_samples = [

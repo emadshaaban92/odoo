@@ -22,6 +22,7 @@ from werkzeug import urls
 import odoo
 from odoo.loglevels import ustr
 from odoo.tools import misc
+from odoo.tools._html2text import _html2plaintext
 
 _logger = logging.getLogger(__name__)
 
@@ -330,8 +331,8 @@ def html_to_text(html, keep_newlines=False, convert_entities=False, formatted=Fa
     tree = etree.fromstring(html, parser=etree.HTMLParser())
     root = tree.xpath('//body')[0]
     if formatted:
-        # todo: this part, obviously
-        processed = _html2plaintext(root)
+        html = ustr(etree.tostring(tree, encoding='unicode'))
+        processed = _html2plaintext(html)
     else:
         processed = etree.tostring(root, encoding=str)
         processed = re.sub(HTML_NEWLINES_REGEX, '\n' if keep_newlines else ' ', processed)
@@ -342,50 +343,6 @@ def html_to_text(html, keep_newlines=False, convert_entities=False, formatted=Fa
     processed = processed.strip()
     return processed
 
-
-def _html2plaintext(tree):
-    """ From an HTML text, convert the HTML to plain text.
-    """
-
-    url_index = []
-    i = 0
-    for link in tree.findall('.//a'):
-        url = link.get('href')
-        if url and url != '#':
-            i += 1
-            tree.replace(link, '%s [%s]' % (link.text, i))
-            url_index.append(url)
-
-    html = ustr(etree.tostring(tree, encoding='unicode'))
-    # \r char is converted into &#13;, must remove it
-    html = html.replace('&#13;', '')
-
-    html = html.replace('<strong>', '*').replace('</strong>', '*')
-    html = html.replace('<b>', '*').replace('</b>', '*')
-    html = html.replace('<a.*>', '').replace('</a>', '')
-    html = html.replace('<h3>', '*').replace('</h3>', '*')
-    html = html.replace('<h2>', '**').replace('</h2>', '**')
-    html = html.replace('<h1>', '**').replace('</h1>', '**')
-    html = html.replace('<em>', '/').replace('</em>', '/')
-    html = html.replace('<tr>', '\n')
-    html = html.replace('</p>', '\n')
-    html = re.sub('<br\s*/?>', '\n', html)
-    html = re.sub('<.*?>', ' ', html)
-    html = html.replace(' ' * 2, ' ')
-    html = html.replace('&gt;', '>')
-    html = html.replace('&lt;', '<')
-    html = html.replace('&amp;', '&')
-
-    # strip all lines
-    html = '\n'.join([x.strip() for x in html.splitlines()])
-    html = html.replace('\n' * 2, '\n')
-
-    for i, url in enumerate(url_index):
-        if i == 0:
-            html += '\n\n'
-        html += ustr('[%s] %s\n') % (i + 1, url)
-
-    return html
 
 def plaintext2html(text, container_tag=None):
     r"""Convert plaintext into html. Content of the text is escaped to manage
