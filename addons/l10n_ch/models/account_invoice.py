@@ -40,7 +40,7 @@ class AccountMove(models.Model):
     @api.depends('partner_id', 'currency_id')
     def _compute_l10n_ch_qr_is_valid(self):
         for move in self:
-            move.l10n_ch_is_qr_valid = move.move_type == 'out_invoice' \
+            move.l10n_ch_is_qr_valid = move.move_type == 'out_invoice' and move.state != 'draft' \
                                        and move.partner_bank_id._eligible_for_qr_code('ch_qr', move.partner_id, move.currency_id, raises_error=False)
 
     @api.depends('partner_bank_id.l10n_ch_isr_subscription_eur', 'partner_bank_id.l10n_ch_isr_subscription_chf')
@@ -367,3 +367,8 @@ class AccountMove(models.Model):
             'isr': isr_invs,
             'classic': self - qr_invs - isr_invs,
         }
+
+    def _generate_qr_code(self):
+        if self.state == 'draft' and self.country_code == 'CH':
+            return None
+        return super(AccountMove, self)._generate_qr_code()
