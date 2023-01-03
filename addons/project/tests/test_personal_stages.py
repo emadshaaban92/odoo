@@ -28,7 +28,6 @@ class TestPersonalStages(TestProjectCommon):
             'Project User is assigned to task 1, he should have a personal stage assigned.')
 
         self.task_1.with_user(self.user_projectmanager)._compute_personal_stage_type_id()
-        test = self.env['project.task'].browse(self.task_1.id).with_user(self.user_projectmanager).personal_stage_type_id
         self.assertFalse(self.env['project.task'].browse(self.task_1.id).with_user(self.user_projectmanager).personal_stage_type_id,
             'Project Manager is not assigned to task 1, he should not have a personal stage assigned.')
 
@@ -54,7 +53,6 @@ class TestPersonalStages(TestProjectCommon):
         self.task_2.with_user(self.user_projectmanager).personal_stage_type_id = self.manager_stages[1]
         self.assertEqual(self.task_1.with_user(self.user_projectmanager).personal_stage_type_id, task_1_manager_stage,
             'Modifying the personal stage on task 2 for Project Manager should not have affected the stage on task 1.')
-        print('...test done')
 
     def test_personal_stage_search(self):
         self.task_2.user_ids += self.user_projectuser
