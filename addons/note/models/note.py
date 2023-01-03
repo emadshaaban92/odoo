@@ -5,6 +5,7 @@ from random import randint
 
 from odoo import api, fields, models, _
 from odoo.tools import html2plaintext
+from odoo.exceptions import ValidationError
 
 
 class Stage(models.Model):
