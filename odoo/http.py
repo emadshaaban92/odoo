@@ -993,6 +993,9 @@ class Session(collections.abc.MutableMapping):
         self.context['lang'] = request.default_lang() if request else DEFAULT_LANG
         self.should_rotate = True
 
+        if request:
+            request.clear_cookies()
+
     def touch(self):
         self.is_dirty = True
 
@@ -1262,6 +1265,11 @@ class Request:
     # =====================================================
     # Helpers
     # =====================================================
+    def clear_cookies(self):
+        """ Force some session-related cookies to expire """
+        self.future_response.set_cookie('cids', max_age=0)
+        self.future_response.set_cookie('color_scheme', max_age=0)
+
     def csrf_token(self, time_limit=None):
         """
         Generates and returns a CSRF token for the current session
