@@ -60,15 +60,19 @@ export class KanbanColumnQuickCreate extends Component {
         }
     }
 
+    apply(index) {
+        for (const groupName of this.props.exampleData.examples[index].columns) {
+            this.props.onValidate(groupName);
+        }
+    }
+
     showExamples() {
         this.dialog.add(KanbanColumnExamplesDialog, {
             examples: this.props.exampleData.examples,
             applyExamplesText:
                 this.props.exampleData.applyExamplesText || this.env._t("Use This For My Kanban"),
             applyExamples: (index) => {
-                for (const groupName of this.props.exampleData.examples[index].columns) {
-                    this.props.onValidate(groupName);
-                }
+                this.apply(index);
             },
         });
     }

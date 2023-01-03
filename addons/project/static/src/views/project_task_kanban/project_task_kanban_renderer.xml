@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+    <t t-name="project.ProjectTaskKanbanRenderer" t-inherit="web.KanbanRenderer" t-inherit-mode="primary" owl="1">
+        <KanbanColumnQuickCreate position="replace">
+            <ProjectTaskKanbanColumnQuickCreate
+                folded="state.columnQuickCreateIsFolded"
+                onFoldChange="folded => state.columnQuickCreateIsFolded = props.list.groups.length > 0 and folded"
+                onValidate="(name, fold, model) => props.list.createGroup(name, fold, model)"
+                exampleData="exampleData"
+                groupByFieldString="props.list.groupByField.string"
+            />
+        </KanbanColumnQuickCreate>
+    </t>
+</templates>

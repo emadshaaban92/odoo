@@ -14,9 +14,11 @@ const clock = markup(`<a class="fa fa-clock-o"></a>`);
 const exampleData = {
     ghostColumns: [_lt('New'), _lt('Assigned'), _lt('In Progress'), _lt('Done')],
     applyExamplesText: _lt("Use This For My Project"),
+    model: "project.task.type",
     examples:[{
         name: _lt('Software Development'),
         columns: [_lt('Backlog'), _lt('Specifications'), _lt('Development'), _lt('Tests'), _lt('Delivered')],
+        folded: [false, false, false, false, true],
         get description() {
             return renderToMarkup("project.example.generic");
         },
@@ -24,6 +26,7 @@ const exampleData = {
     }, {
         name: _lt('Agile Scrum'),
         columns: [_lt('Backlog'), _lt('Sprint Backlog'), _lt('Sprint in Progress'), _lt('Sprint Complete'), _lt('Old Completed Sprint')],
+        folded: [false, false, false, true, true],
         get description() {
             return renderToMarkup("project.example.agilescrum");
         },
@@ -31,6 +34,7 @@ const exampleData = {
     }, {
         name: _lt('Digital Marketing'),
         columns: [_lt('Ideas'), _lt('Researching'), _lt('Writing'), _lt('Editing'), _lt('Done')],
+        folded: [false, false, false, false, true],
         get description() {
             return renderToMarkup("project.example.digitalmarketing");
         },
@@ -38,6 +42,7 @@ const exampleData = {
     }, {
         name: _lt('Customer Feedback'),
         columns: [_lt('New'), _lt('In development'), _lt('Done'), _lt('Refused')],
+        folded: [false, false, false, true, true],
         get description() {
             return renderToMarkup("project.example.customerfeedback");
         },
@@ -45,6 +50,7 @@ const exampleData = {
     }, {
         name: _lt('Consulting'),
         columns: [_lt('New Projects'), _lt('Resources Allocation'), _lt('In Progress'), _lt('Done')],
+        folded: [false, false, false, true],
         get description() {
             return renderToMarkup("project.example.consulting");
         },
@@ -52,6 +58,7 @@ const exampleData = {
     }, {
         name: _lt('Research Project'),
         columns: [_lt('Brainstorm'), _lt('Research'), _lt('Draft'), _lt('Final Document')],
+        folded: [false, false, false, true],
         get description() {
             return renderToMarkup("project.example.researchproject");
         },
@@ -59,12 +66,14 @@ const exampleData = {
     }, {
         name: _lt('Website Redesign'),
         columns: [_lt('Page Ideas'), _lt('Copywriting'), _lt('Design'), _lt('Live')],
+        folded: [false, false, false, true],
         get description() {
             return renderToMarkup("project.example.researchproject");
         },
     }, {
         name: _lt('T-shirt Printing'),
         columns: [_lt('New Orders'), _lt('Logo Design'), _lt('To Print'), _lt('Done')],
+        folded: [false, false, false, true],
         get description() {
             return renderToMarkup("project.example.tshirtprinting");
         },
@@ -72,6 +81,7 @@ const exampleData = {
     }, {
         name: _lt('Design'),
         columns: [_lt('New Request'), _lt('Design'), _lt('Client Review'), _lt('Handoff')],
+        folded: [false, false, false, true],
         get description() {
             return renderToMarkup("project.example.generic");
         },
@@ -79,6 +89,7 @@ const exampleData = {
     }, {
         name: _lt('Publishing'),
         columns: [_lt('Ideas'), _lt('Writing'), _lt('Editing'), _lt('Published')],
+        folded: [false, false, false, true],
         get description() {
             return renderToMarkup("project.example.generic");
         },
@@ -86,6 +97,7 @@ const exampleData = {
     }, {
         name: _lt('Manufacturing'),
         columns: [_lt('New Orders'), _lt('Material Sourcing'), _lt('Manufacturing'), _lt('Assembling'), _lt('Delivered')],
+        folded: [false, false, false, false, true],
         get description() {
             return renderToMarkup("project.example.generic");
         },
@@ -93,6 +105,7 @@ const exampleData = {
     }, {
         name: _lt('Podcast and Video Production'),
         columns: [_lt('Research'), _lt('Script'), _lt('Recording'), _lt('Mixing'), _lt('Published')],
+        folded: [false, false, false, false, true],
         get description() {
             return renderToMarkup("project.example.generic");
         },

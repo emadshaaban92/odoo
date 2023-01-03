@@ -40,7 +40,25 @@ export class ProjectTaskKanbanDynamicGroupList extends KanbanDynamicGroupList {
                 createPersonalStageGroup: true,
             });
         }
-        const result = await super.createGroup(...arguments);
+
+        let result;
+        const model = arguments[2];
+        if (model) {
+            const project_domain = this.domain.find((item) => {
+                return item[0] === 'display_project_id' && item[1] === '='
+            });
+            result = await this.model.orm.create(model, [{
+                'name': arguments[0],
+                'fold': arguments[1],
+                'project_ids': [project_domain[2]],
+            }]);
+            await this.model.reloadRecords(this);
+        }
+        else {
+            result = await super.createGroup(...arguments);
+        }
+
+
         if (this.isGroupedByPersonalStages) {
             delete this.defaultContext.createPersonalStageGroup;
         }
