@@ -28,8 +28,8 @@ export class TimeOffCalendarYearRenderer extends CalendarYearRenderer {
     get options() {
         return Object.assign(super.options, {
             weekNumbers: true,
-            weekNumbersWithinDays: false,
-            weekLabel: this.env._t('Week'),
+            // weekNumbersWithinDays: false,
+            weekText: this.env._t('Week'),
         });
     }
 

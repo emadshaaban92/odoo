@@ -35,27 +35,26 @@ export class CalendarYearRenderer extends Component {
 
     get options() {
         return {
-            columnHeaderFormat: "EEEEE",
+            dayHeaderFormat: "EEEEE",
             contentHeight: 0,
             dateClick: this.onDateClick,
-            dayRender: this.onDayRender,
-            defaultDate: this.props.model.date.toISO(),
-            defaultView: "dayGridMonth",
-            dir: localization.direction,
+            dayCellClassNames: this.onDayRender,
+            initialDate: this.props.model.date.toISO(),
+            initialView: "dayGridMonth",
+            direction: localization.direction,
             droppable: true,
             editable: this.props.model.canEdit,
-            eventLimit: this.props.model.eventLimit,
-            eventRender: this.onEventRender,
+            dayMaxEventRows: this.props.model.eventLimit,
+            eventDidMount: this.onEventRender,
             eventResizableFromStart: true,
             events: (_, successCb) => successCb(this.mapRecordsToEvents()),
             firstDay: this.props.model.firstDayOfWeek,
-            header: { left: false, center: "title", right: false },
+            headerToolbar: { start: false, center: "title", end: false },
             height: 0,
             locale: luxon.Settings.defaultLocale,
             longPressDelay: 500,
             navLinks: false,
             nowIndicator: true,
-            plugins: ["dayGrid", "interaction", "luxon"],
             select: this.onSelect,
             selectMinDistance: 5, // needed to not trigger select when click
             selectMirror: true,
@@ -89,7 +88,7 @@ export class CalendarYearRenderer extends Component {
     getOptionsForMonth(month) {
         return {
             ...this.options,
-            defaultDate: this.getDateWithMonth(month),
+            initialDate: this.getDateWithMonth(month),
         };
     }
     getPopoverProps(date, records) {
@@ -145,7 +144,7 @@ export class CalendarYearRenderer extends Component {
     onDayRender(info) {
         const date = luxon.DateTime.fromJSDate(info.date).toISODate();
         if (this.props.model.unusualDays.includes(date)) {
-            info.el.classList.add("o_calendar_disabled");
+            return ["o_calendar_disabled"];
         }
     }
     onEventRender(info) {

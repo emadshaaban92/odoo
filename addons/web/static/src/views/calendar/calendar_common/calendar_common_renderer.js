@@ -2,7 +2,7 @@
 
 import { is24HourFormat } from "@web/core/l10n/dates";
 import { localization } from "@web/core/l10n/localization";
-import { renderToString } from "@web/core/utils/render";
+// import { renderToString } from "@web/core/utils/render";
 import { useDebounced } from "@web/core/utils/timing";
 import { getColor } from "../colors";
 import { useCalendarPopover, useClickHandler, useFullCalendar } from "../hooks";
@@ -62,36 +62,35 @@ export class CalendarCommonRenderer extends Component {
         return {
             allDaySlot: this.props.model.hasAllDaySlot,
             allDayText: this.env._t("All day"),
-            columnHeaderFormat: this.env.isSmall
+            dayHeaderFormat: this.env.isSmall
                 ? SHORT_SCALE_TO_HEADER_FORMAT[this.props.model.scale]
                 : SCALE_TO_HEADER_FORMAT[this.props.model.scale],
             dateClick: this.onDateClick,
-            dayRender: this.onDayRender,
-            defaultDate: this.props.model.date.toISO(),
-            defaultView: SCALE_TO_FC_VIEW[this.props.model.scale],
-            dir: localization.direction,
+            dayCellClassNames: this.onDayRender,
+            initialDate: this.props.model.date.toISO(),
+            initialView: SCALE_TO_FC_VIEW[this.props.model.scale],
+            direction: localization.direction,
             droppable: true,
             editable: this.props.model.canEdit,
             eventClick: this.onEventClick,
             eventDragStart: this.onEventDragStart,
             eventDrop: this.onEventDrop,
-            eventLimit: this.props.model.eventLimit,
-            eventLimitClick: this.onEventLimitClick,
+            dayMaxEventRows: this.props.model.eventLimit,
+            moreLinkClick: this.onEventLimitClick,
             eventMouseEnter: this.onEventMouseEnter,
             eventMouseLeave: this.onEventMouseLeave,
-            eventRender: this.onEventRender,
+            eventDidMount: this.onEventRender,
             eventResizableFromStart: true,
             eventResize: this.onEventResize,
             eventResizeStart: this.onEventResizeStart,
             events: (_, successCb) => successCb(this.mapRecordsToEvents()),
             firstDay: this.props.model.firstDayOfWeek % 7,
-            header: false,
+            headerToolbar: false,
             height: "parent",
             locale: luxon.Settings.defaultLocale,
             longPressDelay: 500,
             navLinks: false,
             nowIndicator: true,
-            plugins: ["dayGrid", "interaction", "timeGrid", "luxon"],
             select: this.onSelect,
             selectAllow: this.isSelectionAllowed,
             selectMinDistance: 5, // needed to not trigger select when click
@@ -101,11 +100,11 @@ export class CalendarCommonRenderer extends Component {
             snapDuration: { minutes: 15 },
             timeZone: luxon.Settings.defaultZone.name,
             unselectAuto: false,
-            weekLabel:
+            weekText:
                 this.props.model.scale === "month" && this.env.isSmall ? "" : this.env._t("Week"),
             weekNumberCalculation: "ISO",
             weekNumbers: true,
-            weekNumbersWithinDays: !this.env.isSmall,
+            // weekNumbersWithinDays: !this.env.isSmall, // TODO
             windowResize: this.onWindowResizeDebounced,
         };
     }
@@ -182,7 +181,7 @@ export class CalendarCommonRenderer extends Component {
     onDayRender(info) {
         const date = luxon.DateTime.fromJSDate(info.date).toISODate();
         if (this.props.model.unusualDays.includes(date)) {
-            info.el.classList.add("o_calendar_disabled");
+            return ["o_calendar_disabled"];
         }
     }
     onDblClick(info) {
@@ -198,14 +197,15 @@ export class CalendarCommonRenderer extends Component {
         const record = this.props.model.records[event.id];
 
         if (record) {
+            // TODO new DOM structure need to refactor the OWL template
             // This is needed in order to give the possibility to change the event template.
-            const injectedContentStr = renderToString(this.constructor.eventTemplate, {
-                ...record,
-                startTime: this.getStartTime(record),
-            });
-            const domParser = new DOMParser();
-            const { children } = domParser.parseFromString(injectedContentStr, "text/html").body;
-            el.querySelector(".fc-content").replaceWith(...children);
+            // const injectedContentStr = renderToString(this.constructor.eventTemplate, {
+            //     ...record,
+            //     startTime: this.getStartTime(record),
+            // });
+            // const domParser = new DOMParser();
+            // const { children } = domParser.parseFromString(injectedContentStr, "text/html").body;
+            // el.querySelector(".fc-event-main-frame").replaceWith(...children);
 
             const color = getColor(record.colorIndex);
             if (typeof color === "string") {
