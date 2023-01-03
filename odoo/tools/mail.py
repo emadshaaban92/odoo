@@ -351,10 +351,9 @@ def _html2plaintext(tree):
     i = 0
     for link in tree.findall('.//a'):
         url = link.get('href')
-        if url:
+        if url and url != '#':
             i += 1
-            link.tag = 'span'
-            link.text = '%s [%s]' % (link.text, i)
+            tree.replace(link, '%s [%s]' % (link.text, i))
             url_index.append(url)
 
     html = ustr(etree.tostring(tree, encoding='unicode'))
@@ -363,6 +362,7 @@ def _html2plaintext(tree):
 
     html = html.replace('<strong>', '*').replace('</strong>', '*')
     html = html.replace('<b>', '*').replace('</b>', '*')
+    html = html.replace('<a.*>', '').replace('</a>', '')
     html = html.replace('<h3>', '*').replace('</h3>', '*')
     html = html.replace('<h2>', '**').replace('</h2>', '**')
     html = html.replace('<h1>', '**').replace('</h1>', '**')
