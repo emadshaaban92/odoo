@@ -15,7 +15,6 @@ const burndownChartGraphView = {
   Model: BurndownChartModel,
   searchMenuTypes: graphView.searchMenuTypes.filter(menuType => menuType !== "comparison"),
   SearchModel: BurndownChartSearchModel,
-  Renderer: BurndownChartRenderer
 };
 
 viewRegistry.add("burndown_chart", burndownChartGraphView);

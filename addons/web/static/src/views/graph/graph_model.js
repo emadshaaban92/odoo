@@ -229,7 +229,6 @@ export class GraphModel extends Model {
 
         // dataPoints + labels --> datasetsTmp --> datasets
         const datasetsTmp = {};
-        const indexation = { "New":1, "second stage":2, "In Progress":3, "fourth stage":4, "Done":5 }
         for (const dataPt of dataPoints) {
             const { domain, labelIndex, originIndex, trueLabel, value } = dataPt;
             const datasetLabel = this._getDatasetLabel(dataPt);
@@ -243,7 +242,6 @@ export class GraphModel extends Model {
                     trueLabels: labels.slice(0, dataLength), // should be good // check this in case identify = true
                     domains: new Array(dataLength).fill([]),
                     label: datasetLabel,
-                    originIndex: originIndex,
                 };
             }
             datasetsTmp[datasetLabel].data[labelIndex] = value;

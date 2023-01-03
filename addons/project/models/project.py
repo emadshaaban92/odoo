@@ -948,11 +948,12 @@ class Project(models.Model):
         if self.user_has_groups('project.group_project_user'):
             buttons.append({
                 'icon': 'area-chart',
-                'text': _lt('Burndown Chart'),
+                'text': _lt('Burndown Chart update menu'),
                 'action_type': 'action',
                 'action': 'project.action_project_task_burndown_chart_report',
                 'additional_context': json.dumps({
                     'active_id': self.id,
+                    'stage_seq': dict([(stage.name,stage.sequence) for stage in self.type_ids])
                 }),
                 'show': True,
                 'sequence': 60,

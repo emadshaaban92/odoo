@@ -880,7 +880,7 @@
                                                     <a name="action_view_tasks_analysis" type="object">Tasks Analysis</a>
                                                 </div>
                                                 <div role="menuitem" name="project_burndown_menu" groups="project.group_project_user">
-                                                    <a name="action_project_task_burndown_chart_report" type="object">Burndown Chart</a>
+                                                    <a name="action_project_task_burndown_chart_report" type="object">Burndown Chart menu</a>
                                                 </div>
                                             </div>
                                         </div>
@@ -1084,7 +1084,7 @@
                     <field name="recurrence_id" invisible="1" />
                     <field name="allow_task_dependencies" invisible="1" />
                     <field name="rating_last_value" invisible="1"/>
-                    <field name="rating_count" invisible="1"/>
+                    <field name="rating_count" invisible="1"/>  
                     <field name="allow_milestones" invisible="1" />
                     <field name="parent_id" invisible="1"/>
                     <field name="company_id" invisible="1"/>
