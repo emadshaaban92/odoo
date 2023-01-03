@@ -3962,7 +3962,9 @@
             var _a;
             rule.current += rule.increment;
             const startText = rule.startText || "";
-            const content = `${startText}${rule.current.toString()}`;
+            const content = `${startText}${rule.current
+            .toString()
+            .padStart(rule.endNumberStringLength || 0, "0")}`;
             const tooltipValue = rule.startText ? content : formatValue(rule.current, (_a = data.cell) === null || _a === void 0 ? void 0 : _a.format);
             return {
                 cellData: {
@@ -4118,6 +4120,7 @@
         generateRule: (cell, cells) => {
             const endNumber = parseInt(cell.content.match(endNumberReg)[0]);
             const startText = cell.content.match(startTextReg)[0];
+            const endNumberStringLength = cell.content.length - startText.length;
             const group = getGroup(cell, cells, startText);
             const increment = calculateIncrementBasedOnGroup(group);
             return {
@@ -4125,6 +4128,7 @@
                 startText,
                 current: endNumber,
                 increment,
+                endNumberStringLength,
             };
         },
         sequence: 15,
@@ -43422,8 +43426,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2023-01-03T09:05:25.244Z';
-    exports.__info__.hash = '8e6164b';
+    exports.__info__.date = '2023-01-03T09:30:59.372Z';
+    exports.__info__.hash = '02ef7ca';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
