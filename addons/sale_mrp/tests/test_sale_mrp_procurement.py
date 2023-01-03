@@ -234,3 +234,53 @@ class TestSaleMrpProcurement(TransactionCase):
 
         mo = self.env['mrp.production'].search([('product_id', '=', product.id)], order='id desc', limit=1)
         self.assertIn(so.name, mo.origin)
+
+    def test_so_reordering_rule(self):
+        Orderpoint = self.env['stock.warehouse.orderpoint']
+        mrp_prod, component_prod = self.env['product.product'].create([{
+            'name': n,
+            'type': 'product',
+        } for n in ['Manufactured 1', 'Component 1']])
+
+        bom = self.env['mrp.bom'].create([{
+            'product_tmpl_id': mrp_prod.product_tmpl_id.id,
+            'product_qty': 1,
+            'type': 'normal',
+            'bom_line_ids': [
+                (0, 0, {'product_id': component_prod.id, 'product_qty': 2}),
+            ],
+        }])
+
+        customer = self.env['res.partner'].create({
+            'name': 'customer',
+        })
+
+        self.env['sale.order'].create({
+            'partner_id': customer.id,
+            'order_line': [
+                (0, 0, {
+                    'product_id': mrp_prod.id,
+                    'product_uom_qty': 3,
+                })],
+        }).action_confirm()
+        Orderpoint._get_orderpoint_action()
+
+        # change product type to Kit
+        mrp_prod.orderpoint_ids.unlink()
+        bom.type = 'phantom'
+
+        self.env['sale.order'].create({
+            'partner_id': customer.id,
+            'order_line': [
+                (0, 0, {
+                    'product_id': mrp_prod.id,
+                    'product_uom_qty': 3,
+                })],
+        }).action_confirm()
+
+        Orderpoint._get_orderpoint_action()
+        orderpoint_kit = Orderpoint.search([('product_id', '=', mrp_prod.id)])
+        orderpoint_component = Orderpoint.search([('product_id', '=', component_prod.id)])
+
+        self.assertFalse(orderpoint_kit)
+        self.assertEqual(orderpoint_component.qty_to_order, 3*2)

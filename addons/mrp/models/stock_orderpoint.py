@@ -124,3 +124,8 @@ class StockWarehouseOrderpoint(models.Model):
             ('state', '=', 'draft'),
         ]).action_confirm()
         return super()._post_process_scheduler()
+
+    def _product_exclude_list(self):
+        # don't create an order point for kit products
+        bom = self.env['mrp.bom'].search([('type', '=', 'phantom')])
+        return super()._product_exclude_list() + (bom.product_id + bom.product_tmpl_id.product_variant_ids).ids
