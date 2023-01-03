@@ -1129,12 +1129,14 @@
                                 <field name="state" widget="project_task_state_selection_form"/>
                             </div>
                         </h1>
+                        <!--
                         <h2>
                             Approval Mode:
                             <field name="state_approval_mode" class="" string="Approval mode"/>
                             State: 
                             <field name="state" string="State: "/>
                         </h2>
+                        -->
                     </div>
                     <group>
                         <group>
