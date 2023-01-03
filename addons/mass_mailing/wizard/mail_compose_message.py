@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-from odoo import fields, models
+from odoo import fields, models, tools
 
 
 class MailComposeMessage(models.TransientModel):
@@ -44,6 +44,7 @@ class MailComposeMessage(models.TransientModel):
             mass_mail_layout = self.env.ref('mass_mailing.mass_mailing_mail_layout', raise_if_not_found=False)
             for res_id in res_ids:
                 mail_values = res[res_id]
+                mail_values['body'] = tools.html_sanitize(mail_values['body_html'], sanitize_tags=False, strip_classes=True)
                 if mail_values.get('body_html') and mass_mail_layout:
                     mail_values['body_html'] = mass_mail_layout._render({'body': mail_values['body_html']}, engine='ir.qweb', minimal_qcontext=True)
 
