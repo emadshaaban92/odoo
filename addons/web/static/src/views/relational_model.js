@@ -1,5 +1,6 @@
 /* @odoo-module */
 
+import { markRaw, markup, toRaw } from "@odoo/owl";
 import { AlertDialog } from "@web/core/confirmation_dialog/confirmation_dialog";
 import { makeContext } from "@web/core/context";
 import { Domain } from "@web/core/domain";
@@ -16,15 +17,16 @@ import { registry } from "@web/core/registry";
 import { unique } from "@web/core/utils/arrays";
 import { Deferred, KeepLast, Mutex } from "@web/core/utils/concurrency";
 import { memoize } from "@web/core/utils/functions";
+import { pick } from "@web/core/utils/objects";
 import { escape } from "@web/core/utils/strings";
 import { session } from "@web/session";
 import { FormArchParser } from "@web/views/form/form_arch_parser";
 import { ListConfirmationDialog } from "@web/views/list/list_confirmation_dialog";
 import { Model } from "@web/views/model";
 import { archParseBoolean, evalDomain, isNumeric, isRelational, isX2Many } from "@web/views/utils";
+import { ListPropertyTags } from "./fields/properties/property_tags";
 
 const { DateTime } = luxon;
-import { markRaw, markup, toRaw } from "@odoo/owl";
 
 const formatters = registry.category("formatters");
 const preloadedDataRegistry = registry.category("preloadedData");
@@ -293,7 +295,9 @@ class DataPoint {
     }
 
     get fieldNames() {
-        return Object.keys(this.activeFields);
+        return Object.keys(this.activeFields).filter(
+            (fieldName) => !this.activeFields[fieldName].relatedPropertyField
+        );
     }
 
     // -------------------------------------------------------------------------
@@ -370,6 +374,15 @@ class DataPoint {
                     return hasKey0 ? 0 : value;
                 }
                 break;
+            }
+            case "properties": {
+                return value.map((property) => ({
+                    ...property,
+                    value: this._parseServerValue(
+                        property,
+                        [null, undefined].includes(property.value) ? false : property.value
+                    ),
+                }));
             }
         }
         return value;
@@ -715,7 +728,7 @@ export class Record extends DataPoint {
     discard() {
         clearObject(this._changes);
         clearObject(this._domains);
-        for (const fieldName in this.activeFields) {
+        for (const fieldName of this.fieldNames) {
             // activeFields should be changed
             const field = this.fields[fieldName];
             if (isX2Many(field)) {
@@ -753,6 +766,24 @@ export class Record extends DataPoint {
         };
     }
 
+    _formatServerValue(fieldType, value) {
+        if (fieldType === "many2one") {
+            return value ? value[0] : false;
+        } else if (fieldType === "date") {
+            return value ? serializeDate(value) : false;
+        } else if (fieldType === "datetime") {
+            return value ? serializeDateTime(value) : false;
+        } else if (fieldType === "reference") {
+            return value ? `${value.resModel},${value.resId}` : false;
+        } else if (fieldType === "properties") {
+            return value.map((property) => ({
+                ...property,
+                value: this._formatServerValue(property.type, property.value),
+            }));
+        }
+        return value;
+    }
+
     getChanges(allFields = false, parentChanges = false) {
         const changes = { ...(allFields ? this.data : this._changes) };
         for (const fieldName in changes) {
@@ -772,17 +803,8 @@ export class Record extends DataPoint {
                 if (!changes[fieldName]) {
                     delete changes[fieldName];
                 }
-            } else if (fieldType === "many2one") {
-                changes[fieldName] = changes[fieldName] ? changes[fieldName][0] : false;
-            } else if (fieldType === "date") {
-                changes[fieldName] = changes[fieldName] ? serializeDate(changes[fieldName]) : false;
-            } else if (fieldType === "datetime") {
-                changes[fieldName] = changes[fieldName]
-                    ? serializeDateTime(changes[fieldName])
-                    : false;
-            } else if (fieldType === "reference") {
-                const value = changes[fieldName];
-                changes[fieldName] = value ? `${value.resModel},${value.resId}` : false;
+            } else {
+                changes[fieldName] = this._formatServerValue(fieldType, changes[fieldName]);
             }
         }
 
@@ -919,7 +941,7 @@ export class Record extends DataPoint {
 
     async loadRelationalData() {
         const proms = [];
-        for (const fieldName in this.activeFields) {
+        for (const fieldName of this.fieldNames) {
             const field = this.fields[fieldName];
             if (field.type === "many2one") {
                 proms.push(
@@ -1046,7 +1068,14 @@ export class Record extends DataPoint {
     async _applyChanges(changes) {
         for (let [fieldName, value] of Object.entries(changes)) {
             const field = this.fields[fieldName];
-            if (field && isX2Many(field)) {
+            if (field && field.relatedPropertyField) {
+                const propertyFieldName = field.relatedPropertyField.fieldName;
+                this.data[propertyFieldName] = this.data[propertyFieldName].map((property) =>
+                    property.name === field.propertyName ? { ...property, value } : property
+                );
+                this._changes[propertyFieldName] = this.data[propertyFieldName];
+                this.data[fieldName] = value;
+            } else if (field && isX2Many(field)) {
                 this._changes[fieldName] = value;
                 await this.data[fieldName].update(value);
             } else {
@@ -1146,7 +1175,18 @@ export class Record extends DataPoint {
             views,
             viewMode,
             onChanges: async () => {
-                this._changes[fieldName] = list;
+                const field = this.fields[fieldName];
+                if (field && field.relatedPropertyField) {
+                    const propertyFieldName = field.relatedPropertyField.fieldName;
+                    this.data[propertyFieldName] = this.data[propertyFieldName].map((property) =>
+                        property.name === field.propertyName
+                            ? { ...property, value: list.currentIds }
+                            : property
+                    );
+                    this._changes[propertyFieldName] = this.data[propertyFieldName];
+                } else {
+                    this._changes[fieldName] = list;
+                }
                 const proms = [];
                 if (activeField && activeField.onChange && this.isX2ManyValid(fieldName)) {
                     const changes = await this._onChange([fieldName]);
@@ -1185,7 +1225,7 @@ export class Record extends DataPoint {
                 defaultValues[fieldName] = 0;
             } else if (["date", "datetime"].includes(field.type)) {
                 defaultValues[fieldName] = false;
-            } else if (isX2Many(field)) {
+            } else if (isX2Many(field) || field.type === "properties") {
                 defaultValues[fieldName] = [];
             } else {
                 defaultValues[fieldName] = null;
@@ -1198,6 +1238,9 @@ export class Record extends DataPoint {
         const specs = {};
         function buildSpec(activeFields, prefix) {
             for (const [fieldName, activeField] of Object.entries(activeFields)) {
+                if (activeField.relatedPropertyField) {
+                    continue;
+                }
                 const key = prefix ? `${prefix}.${fieldName}` : fieldName;
                 specs[key] = activeField.onChange ? "1" : "";
                 const subViewInfo = activeField.views && activeField.views[activeField.viewMode];
@@ -1220,7 +1263,7 @@ export class Record extends DataPoint {
         this._changes = params.changes || {};
         this._rawChanges = { ...this._changes };
         const defaultValues = this._getDefaultValues();
-        for (const fieldName in this.activeFields) {
+        for (const fieldName of this.fieldNames) {
             delete this._rawChanges[fieldName];
             const field = this.fields[fieldName];
             if (isX2Many(field)) {
@@ -1239,6 +1282,26 @@ export class Record extends DataPoint {
                     this.data[fieldName] = this._values[fieldName];
                 } else {
                     this.data[fieldName] = defaultValues[fieldName];
+                }
+
+                if (field.type === "properties") {
+                    for (const property of this.data[fieldName]) {
+                        const fieldPropertyName = `${fieldName}.${property.name}`;
+                        if (isX2Many(property)) {
+                            const staticList = this._createStaticList(fieldPropertyName);
+                            this._cache[fieldPropertyName] = staticList;
+                            await staticList.setDataRecords(
+                                (property.value || []).map((val) => ({
+                                    id: val[0],
+                                    display_name: val[1],
+                                }))
+                            );
+                            this.data[fieldPropertyName] = staticList;
+                        } else {
+                            this.data[fieldPropertyName] =
+                                property.value === undefined ? false : property.value;
+                        }
+                    }
                 }
             }
         }
@@ -1941,6 +2004,8 @@ export class DynamicRecordList extends DynamicList {
         const newRecord = this.model.createDataPoint("record", {
             ...this.commonRecordParams,
             parentActiveFields: this.activeFields,
+            activeFields: this.activeFields,
+            fields: this.fields,
             ...params,
         });
         if (this.model.useSampleModel) {
@@ -3194,6 +3259,20 @@ export class StaticList extends DataPoint {
         this.currentIds = this._getCurrentIds(this._serverIds, this._commands, true);
     }
 
+    async setDataRecords(data) {
+        const proms = [];
+        this.currentIds = [];
+        this._commandsById = {};
+        this._commands = this._getNormalizedCommands([], []);
+        for (const values of data) {
+            const record = this._createRecord({ resId: values.id, mode: "readonly" });
+            this.currentIds.push(values.id);
+            proms.push(record.load({ values }));
+        }
+        await Promise.all(proms);
+        this.records = this._getRecords();
+    }
+
     async sortBy(fieldName) {
         if (this.orderBy.length && this.orderBy[0].name === fieldName) {
             if (this.isOrder) {
@@ -3549,12 +3628,82 @@ export class RelationalModel extends Model {
         const state = this.root
             ? Object.assign(this.root.exportState(), { offset: 0 })
             : this.initialRootState;
-
+        await this._loadProperties(rootParams);
         const newRoot = this.createDataPoint(this.rootType, rootParams, state);
         await this.keepLast.add(newRoot.load({ values: this.initialValues }));
         this.root = newRoot;
         this.rootParams = rootParams;
         this.notify();
+    }
+
+    async _loadProperties(params) {
+        const { resModel, fields, domain, activeFields } = params;
+        const propertiesFieldNames = Object.keys(activeFields).filter(
+            (name) => fields[name].type === "properties" && !activeFields[name].alwaysInvisible
+        );
+        if (!propertiesFieldNames.length) {
+            return;
+        }
+
+        const properties = await this.orm.call(resModel, "search_properties_definitions", [
+            domain,
+            propertiesFieldNames,
+        ]);
+
+        await Promise.all(
+            propertiesFieldNames.map(async (fieldName) => {
+                for (const record of properties[fieldName]) {
+                    for (const definition of record.definitions) {
+                        const propertyFieldName = `${fieldName}.${definition.name}`;
+                        const widget =
+                            definition.type === "many2many" ? "many2many_tags" : definition.type;
+                        const propsFromAttrs = ["many2many", "many2one"].includes(definition.type)
+                            ? { relation: definition.comodel }
+                            : {};
+                        const relatedPropertyField = {
+                            id: record.id,
+                            fieldName,
+                            displayName: record.display_name,
+                        };
+                        fields[propertyFieldName] = {
+                            ...definition,
+                            name: propertyFieldName,
+                            sortable: false,
+                            required: false,
+                            relatedPropertyField,
+                            propertyName: definition.name,
+                            relation: definition.comodel,
+                        };
+                        activeFields[propertyFieldName] = {
+                            ...pick(
+                                activeFields[fieldName],
+                                "context",
+                                "viewType",
+                                "help",
+                                "modifiers",
+                                "onChange",
+                                "forceSave",
+                                "decorations",
+                                "noLabel",
+                                "props",
+                                "alwaysInvisible"
+                            ),
+                            name: propertyFieldName,
+                            string: definition.string,
+                            relatedPropertyField,
+                            rawAttrs: {},
+                            options: {},
+                            propertyName: definition.name,
+                            widget,
+                            propsFromAttrs,
+                            fieldsToFetch:
+                                registry.category("fields").get(widget, {}).fieldsToFetch || {},
+                            FieldComponent: widget === "tags" ? ListPropertyTags : undefined,
+                        };
+                    }
+                }
+            })
+        );
     }
 
     /**
