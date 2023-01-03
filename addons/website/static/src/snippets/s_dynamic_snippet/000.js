@@ -195,6 +195,11 @@ const DynamicSnippet = publicWidget.Widget.extend({
             $target: $templateArea,
         });
         $templateArea.html(this.renderedContent);
+        // TODO remove me in master. These classes should be added in the XML
+        // ('website.s_dynamic_snippet.grid') rather than here.
+        for (const rowElement of $templateArea[0].querySelectorAll('.dynamic_snippet_template > .row')) {
+            rowElement.classList.add('s_col_no_resize', 's_col_no_bgcolor');
+        }
         // TODO this is probably not the only public widget which creates DOM
         // which should be attached to another public widget. Maybe a generic
         // method could be added to properly do this operation of DOM addition.
