@@ -13,6 +13,7 @@ var _t = core._t;
 var round_di = utils.round_decimals;
 
 
+<<<<<<< HEAD
 const PosL10nSAOrder = (Order) => class PosL10nSAOrder extends Order {
     export_for_printing() {
         var result = super.export_for_printing(...arguments);
@@ -27,6 +28,39 @@ const PosL10nSAOrder = (Order) => class PosL10nSAOrder extends Order {
         }
         return result;
     }
+||||||| parent of e62bd2760f1 (temp)
+var _super_order = models.Order.prototype;
+models.Order = models.Order.extend({
+    export_for_printing: function() {
+      var result = _super_order.export_for_printing.apply(this,arguments);
+      if (this.pos.company.country.code === 'SA') {
+          result.is_settlement = this.is_settlement();
+          if (!result.is_settlement) {
+              const codeWriter = new window.ZXing.BrowserQRCodeSvgWriter()
+              let qr_values = this.compute_sa_qr_code(result.company.name, result.company.vat, result.date.isostring, result.total_with_tax, result.total_tax);
+              let qr_code_svg = new XMLSerializer().serializeToString(codeWriter.write(qr_values, 150, 150));
+              result.qr_code = "data:image/svg+xml;base64," + window.btoa(qr_code_svg);
+          }
+      }
+      return result;
+    },
+=======
+var _super_order = models.Order.prototype;
+models.Order = models.Order.extend({
+    export_for_printing: function() {
+      var result = _super_order.export_for_printing.apply(this,arguments);
+      if (this.pos.company.country && this.pos.company.country.code === 'SA') {
+          result.is_settlement = this.is_settlement();
+          if (!result.is_settlement) {
+              const codeWriter = new window.ZXing.BrowserQRCodeSvgWriter()
+              let qr_values = this.compute_sa_qr_code(result.company.name, result.company.vat, result.date.isostring, result.total_with_tax, result.total_tax);
+              let qr_code_svg = new XMLSerializer().serializeToString(codeWriter.write(qr_values, 150, 150));
+              result.qr_code = "data:image/svg+xml;base64," + window.btoa(qr_code_svg);
+          }
+      }
+      return result;
+    },
+>>>>>>> e62bd2760f1 (temp)
     /**
      * If the order is empty (there are no products)
      * and all "pay_later" payments are negative,
