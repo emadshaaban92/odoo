@@ -28,6 +28,18 @@ def nl2br(string):
     """
     return pycompat.to_text(string).replace('\n', Markup('<br>\n'))
 
+
+def nl2br_enclose(string, enclosure_tag='div'):
+    """ Like nl2br, but returns enclosed Markup allowing to better manipulate
+    trusted and untrusted content. New lines added by use are trusted, other
+    content is escaped. """
+    source = pycompat.to_text(string)
+    nl_count = source.count("\n")
+    enclosure = Markup(f'<{enclosure_tag}>%s</{enclosure_tag}>')
+    if not nl_count:
+        return Markup(enclosure) % source
+    return Markup(enclosure) % source.replace("\n", "%s") % ((Markup("<br />\n"),) * nl_count)
+
 #--------------------------------------------------------------------
 # QWeb Fields converters
 #--------------------------------------------------------------------
