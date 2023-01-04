@@ -11,7 +11,7 @@
                 t-att-class="{'o_field_translate': props.isTranslatable}"
                 t-att-id="props.id"
                 t-att-type="props.isPassword ? 'password' : 'text'"
-                t-att-autocomplete="props.autocomplete or (props.isPassword ? 'new-password' : 'off')"
+                t-att-autocomplete="props.autocomplete or (props.isPassword ? 'new-password' : `o-field-${props.name}`)"
                 t-att-maxlength="props.maxLength > 0 and props.maxLength"
                 t-att-placeholder="props.placeholder"
                 t-ref="input"
