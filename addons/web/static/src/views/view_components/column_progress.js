@@ -12,4 +12,9 @@ export class ColumnProgress extends Component {
         aggregate: { type: Object },
         group: { type: Object },
     };
+
+    async onBarClick(progressBar) {
+        await this.props.group.filterProgressValue(progressBar.value);
+        document.querySelector(".o_content").scrollTo({ top: 0 });
+    }
 }

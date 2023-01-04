@@ -40,12 +40,12 @@ export class KanbanRenderer extends Component {
         // Sortable
         let dataRecordId;
         let dataGroupId;
-        const rootRef = useRef("root");
+        this.rootRef = useRef("root");
         if (this.canUseSortable) {
             useSortable({
                 enable: () => this.canResequenceRecords,
                 // Params
-                ref: rootRef,
+                ref: this.rootRef,
                 elements: ".o_record_draggable",
                 ignore: ".dropdown",
                 groups: () => this.props.list.isGrouped && ".o_kanban_group",
@@ -66,7 +66,7 @@ export class KanbanRenderer extends Component {
             useSortable({
                 enable: () => this.canResequenceGroups,
                 // Params
-                ref: rootRef,
+                ref: this.rootRef,
                 elements: ".o_group_draggable",
                 handle: ".o_column_title",
                 cursor: "move",
@@ -81,7 +81,7 @@ export class KanbanRenderer extends Component {
             });
         }
 
-        useBounceButton(rootRef, (clickedEl) => {
+        useBounceButton(this.rootRef, (clickedEl) => {
             if (!this.props.list.count || this.props.list.model.useSampleModel) {
                 return clickedEl.matches(
                     [
@@ -105,7 +105,7 @@ export class KanbanRenderer extends Component {
                 if (model.useSampleModel || !model.hasData()) {
                     return;
                 }
-                const firstCard = rootRef.el.querySelector(".o_kanban_record");
+                const firstCard = this.rootRef.el.querySelector(".o_kanban_record");
                 if (firstCard) {
                     // Focus first kanban card
                     firstCard.focus();
@@ -127,10 +127,10 @@ export class KanbanRenderer extends Component {
                 }
                 return;
             },
-            { area: () => rootRef.el }
+            { area: () => this.rootRef.el }
         );
 
-        const arrowsOptions = { area: () => rootRef.el, allowRepeat: true };
+        const arrowsOptions = { area: () => this.rootRef.el, allowRepeat: true };
         if (this.env.searchModel) {
             useHotkey(
                 "ArrowUp",
@@ -260,7 +260,7 @@ export class KanbanRenderer extends Component {
         if (!this.env.isSmall && group.isFolded) {
             classes.push("o_column_folded");
         }
-        if (!group.isFolded && !group.hasActiveProgressValue) {
+        if (!group.isFolded) {
             classes.push("bg-100");
         }
         if (group.progressBars.length) {
@@ -447,13 +447,18 @@ export class KanbanRenderer extends Component {
         });
     }
 
+    getDropdownContainer(groupId) {
+        return this.rootRef.el.querySelector(`.o_kanban_group[data-id="${groupId}"]`);
+    }
+
     // ------------------------------------------------------------------------
     // Handlers
     // ------------------------------------------------------------------------
 
-    onGroupClick(group) {
+    async onGroupClick(group, ev) {
         if (!this.env.isSmall && group.isFolded) {
-            group.toggle();
+            await group.toggle();
+            this.rootRef.el.parentElement.scrollTo({ top: 0 });
         }
     }
 
