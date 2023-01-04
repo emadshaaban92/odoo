@@ -247,7 +247,6 @@ export class GraphModel extends Model {
             datasetsTmp[datasetLabel].data[labelIndex] = value;
             datasetsTmp[datasetLabel].domains[labelIndex] = domain;
             datasetsTmp[datasetLabel].trueLabels[labelIndex] = trueLabel;
-            datasetsTmp[datasetLabel].originIndex = indexation[datasetLabel];
         }
         // sort by origin
         let datasets = sortBy(Object.values(datasetsTmp), "originIndex");

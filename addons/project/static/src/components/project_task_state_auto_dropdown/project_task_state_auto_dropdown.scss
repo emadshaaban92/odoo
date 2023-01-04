@@ -1,0 +1,24 @@
+.dropdown_menu_state {
+    left: 0px;
+    top: 0px;
+}
+
+// Set position of our custom o-dropdown-menu (not bootstrap)
+.o-dropdown-menu-state {
+    top: 100%;
+    &.dropdown-menu-start {
+      left: 0;
+      right: auto;
+    }
+    &.dropdown-menu-end {
+      left: auto;
+      right: 0;
+    }
+  }
+  
+  // == Boostrap Dropdown
+  // ----------------------------------------------------------------------------
+  .dropdown-menu-state {
+    left: 0px;
+    top: 0px;
+  }

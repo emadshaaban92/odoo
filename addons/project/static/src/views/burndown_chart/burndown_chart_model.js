@@ -2,6 +2,7 @@
 
 import { GraphModel } from "@web/views/graph/graph_model";
 import { useService } from "@web/core/utils/hooks";
+import { sortBy } from "@web/core/utils/arrays";
 
 const { onWillStart } = owl;
 
@@ -70,10 +71,10 @@ export class BurndownChartModel extends GraphModel {
             datasetsTmp[datasetLabel].data[labelIndex] = value;
             datasetsTmp[datasetLabel].domains[labelIndex] = domain;
             datasetsTmp[datasetLabel].trueLabels[labelIndex] = trueLabel;
-            datasetsTmp[datasetLabel].originIndex = indexation[datasetLabel];
+            datasetsTmp[datasetLabel].orderIndex = indexation[datasetLabel] || 0;
         }
         // sort by origin
-        let datasets = sortBy(Object.values(datasetsTmp), "originIndex");
+        let datasets = sortBy(Object.values(datasetsTmp), "orderIndex");
 
         if (mode === "pie") {
             // We kinda have a matrix. We remove the zero columns and rows. This is a global operation.

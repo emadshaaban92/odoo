@@ -749,13 +749,12 @@ class Project(models.Model):
     def action_project_task_burndown_chart_report(self):
         action = self.env['ir.actions.act_window']._for_xml_id('project.action_project_task_burndown_chart_report')
         action['display_name'] = _("%(name)s's Burndown Chart", name=self.name)
-        new_context = json.dumps(
-            {
-                **action['context'],
-                'stage_seq': [(stage.name,stage.sequence) for stage in self.type_ids]
-            }
-        )
-        action['context'] = new_context
+        context = action['context'].replace('active_id', str(self.id))
+        context = ast.literal_eval(context)
+        context.update({
+            'stage_seq': dict([(stage.name,stage.sequence) for stage in self.type_ids])
+            })
+        action['context'] = context
         return action
 
     def action_project_timesheets(self):
@@ -891,6 +890,8 @@ class Project(models.Model):
     def _get_profitability_sequence_per_invoice_type(self):
         return {}
 
+    
+
     def _get_user_values(self):
         return {
             'is_project_user': self.user_has_groups('project.group_project_user'),
@@ -914,6 +915,9 @@ class Project(models.Model):
         return {
             'data': self.milestone_ids._get_data_list(),
         }
+    
+    def _get_stage_seq(self):
+        return {}
 
     def _get_stat_buttons(self):
         self.ensure_one()

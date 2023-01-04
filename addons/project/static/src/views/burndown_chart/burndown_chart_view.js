@@ -4,7 +4,6 @@ import { BurndownChartModel } from "./burndown_chart_model";
 import { graphView } from "@web/views/graph/graph_view";
 import { registry } from "@web/core/registry";
 import { BurndownChartSearchModel } from "./burndown_chart_search_model";
-import { BurndownChartRenderer } from "./burndown_chart_renderer";
 
 const viewRegistry = registry.category("views");
 
