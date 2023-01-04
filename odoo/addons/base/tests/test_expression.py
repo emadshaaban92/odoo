@@ -888,6 +888,45 @@ class TestExpression(SavepointCaseWithUserDemo):
         domain = ['|', ('id', '=', id2), ('id', '=', id1)]
         self.assertEqual(countries.filtered_domain(domain)._ids, expected._ids)
 
+    def test_remove_domain_leaf(self):
+        domains = [
+            ['|', ('skills','=',1), ('admin','=',True)],
+            ['|', ('skills','=',1), ('admin','=',True), '|', ('skills','=',2), ('admin','=',True)],
+            ['|', ('skills','=',1), ('skills','=',2), '|', ('skills','=',2), ('admin','=',True)],
+            ['|', '|', ('skills','=',1), ('skills','=',True), '|', ('skills','=',2), ('admin','=',True)], #PROBLEMATIC CASE
+            ['|', '|', ('admin','=',1), ('admin','=',True), '&', ('skills','=',2), ('admin','=',True)], #PROBLEMATIC CASE
+            ['|', '|', '!', ('admin','=',1), ('admin','=',True), '!', '&', '!', ('skills','=',2), ('admin','=',True)], #PROBLEMATIC CASE
+            ['&', '!', ('skills','=',2), ('admin','=',True)], #PROBLEMATIC CASE
+            [['start_datetime', '<=', '2022-12-17 22:59:59'], ['end_datetime', '>=', '2022-12-10 23:00:00']],
+            [('admin','=',1), ('admin','=',1), '|', ('admin','=',1), ('admin','=',1), ('skills','=',2)]
+        ]
+        fields_to_remove = [['skills'], ['admin', 'skills']]
+        expected_results = []
+        expected_results.append([
+            expression.normalize_domain(['|', expression.FALSE_LEAF, ('admin', '=', True)]),
+            expression.normalize_domain(['|', expression.FALSE_LEAF, ('admin','=',True), '|', expression.FALSE_LEAF, ('admin','=',True)]),
+            expression.normalize_domain([expression.TRUE_LEAF, '|', expression.FALSE_LEAF, ('admin','=',True)]),
+            expression.normalize_domain(['|', expression.FALSE_LEAF, '|', expression.FALSE_LEAF, ('admin','=',True)]), #PROBLEMATIC CASE
+            expression.normalize_domain(['|', '|', ('admin','=',1), ('admin','=',True), '&', expression.TRUE_LEAF, ('admin','=',True)]),
+            expression.normalize_domain(['|', '|', '!', ('admin','=',1), ('admin','=',True), '!', '&', expression.TRUE_LEAF, ('admin','=',True)]), #PROBLEMATIC CASE
+            expression.normalize_domain(['&', expression.TRUE_LEAF, ('admin','=',True)]), #PROBLEMATIC CASE
+            expression.normalize_domain([['start_datetime', '<=', '2022-12-17 22:59:59'], ['end_datetime', '>=', '2022-12-10 23:00:00']]),
+            expression.normalize_domain([('admin','=',1), ('admin','=',1), '|', ('admin','=',1), ('admin','=',1), expression.TRUE_LEAF])
+        ])
+        expected_results.append([
+            expression.normalize_domain([]),
+            expression.normalize_domain([expression.TRUE_LEAF, expression.TRUE_LEAF]),
+            expression.normalize_domain([expression.TRUE_LEAF, expression.TRUE_LEAF]),
+            expression.normalize_domain(['|', expression.FALSE_LEAF, expression.TRUE_LEAF]),
+            expression.normalize_domain(['|', expression.FALSE_LEAF, '&', expression.TRUE_LEAF, expression.TRUE_LEAF]),
+            expression.normalize_domain(['|', expression.TRUE_LEAF, '!', '&', expression.FALSE_LEAF, expression.FALSE_LEAF]),
+            expression.normalize_domain(['&', expression.TRUE_LEAF, expression.TRUE_LEAF]),
+            expression.normalize_domain([['start_datetime', '<=', '2022-12-17 22:59:59'], ['end_datetime', '>=', '2022-12-10 23:00:00']]),
+            expression.normalize_domain([expression.TRUE_LEAF, expression.TRUE_LEAF, expression.TRUE_LEAF, expression.TRUE_LEAF])
+        ])
+        for idx, fields in enumerate(fields_to_remove):
+            results = [expression.remove_domain_leaf(dom, fields) for dom in domains]
+            self.assertEqual(results, expected_results[idx])
 
 class TestExpression2(TransactionCase):
 
