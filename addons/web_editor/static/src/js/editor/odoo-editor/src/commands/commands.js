@@ -234,13 +234,11 @@ export const editorCommands = {
                 liEL = liEL.nextSibling;
             }
             //convert the respective ul to ol or vice versa.
-            while (liEL && (liEL.nodeName !== listParent.nodeName ||
-                liEL.className !== listParent.className )) {
+            while (liEL && (liEL.nodeName !== listParent.nodeName || liEL.className !== listParent.className )) {
             // when the case will be pasting on checklist list parent === liEl parent.
                 if (['OL', 'UL'].includes(liEL.nodeName)) {
-                    liEL = setTagName(liEL, ['OL', 'UL'].includes(listParent.nodeName) ?
-                        listParent.nodeName :
-                        listParent.parentNode.nodeName);
+                    const newTag = ['OL', 'UL'].includes(listParent.nodeName) ? listParent.nodeName : listParent.parentNode.nodeName;
+                    liEL = setTagName(liEL, newTag);
                     if (listParent.firstChild.id) {
                         //pasting into checklist.
                         liEL.classList.add('o_checklist');
@@ -262,17 +260,15 @@ export const editorCommands = {
             }
         }
         if (containerLastChild.hasChildNodes()) {
-            const toInsert = ['UL', 'OL'].includes([...containerLastChild.childNodes][0].nodeName) ?
-                            convertList([...containerLastChild.childNodes][0]):
-                            [...containerLastChild.childNodes]; // Prevent mutation
+            const childNodes = [...containerLastChild.childNodes];
+            const toInsert = ['UL', 'OL'].includes(childNodes[0].nodeName) ? convertList(childNodes[0]) : childNodes; // Prevent mutation
             _insertAt(currentNode, [...toInsert], insertBefore);
             currentNode = insertBefore ? toInsert[0] : currentNode;
             lastChildNode = toInsert[toInsert.length - 1];
         }
         if (containerFirstChild.hasChildNodes()) {
-            const toInsert = ['UL', 'OL'].includes([...containerFirstChild.childNodes][0].nodeName) ?
-                            convertList([...containerFirstChild.childNodes][0]) :
-                            [...containerFirstChild.childNodes]; // Prevent mutation
+            const childNodes = [...containerFirstChild.childNodes];
+            const toInsert = ['UL', 'OL'].includes(childNodes[0].nodeName) ? convertList(childNodes[0]) : childNodes; // Prevent mutation
             _insertAt(currentNode, [...toInsert], insertBefore);
             currentNode = firstChildNode = toInsert[toInsert.length - 1];
             insertBefore = false;
