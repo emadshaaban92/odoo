@@ -13,9 +13,12 @@ class ResourceCalendarLeaves(models.Model):
     timesheet_ids = fields.One2many('account.analytic.line', 'global_leave_id', string="Analytic Lines")
 
     def _get_resource_calendars(self):
-        if any(not leave.calendar_id for leave in self):
-            return self.env['resource.calendar'].search([('company_id', 'in', self.company_id.ids)])
-        return self.calendar_id
+        leaves_with_calendar = self.filtered('calendar_id')
+        calendars = leaves_with_calendar.calendar_id
+        leaves_wo_calendar = self - leaves_with_calendar
+        if leaves_wo_calendar:
+            calendars += self.env['resource.calendar'].search([('company_id', 'in', leaves_wo_calendar.company_id.ids)])
+        return calendars
 
     def _work_time_per_day(self, resource_calendars):
         """ Get work time per day based on the calendar and its attendances
