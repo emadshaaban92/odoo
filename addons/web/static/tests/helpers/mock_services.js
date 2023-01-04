@@ -171,6 +171,7 @@ export function makeFakeRouterService(params = {}) {
             bus.addEventListener("test:hashchange", (ev) => {
                 const hash = ev.detail;
                 browser.location.hash = objectToUrlEncodedString(hash);
+                bus.trigger("ROUTE_CHANGE");
             });
             registerCleanup(router.cancelPushes);
             patchWithCleanup(router, {

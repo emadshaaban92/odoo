@@ -16,8 +16,9 @@ import {
     mount,
     nextTick,
     makeDeferred,
+    editInput,
 } from "../../helpers/utils";
-import { toggleFilterMenu, toggleMenuItem } from "@web/../tests/search/helpers";
+import { pagerNext, toggleFilterMenu, toggleMenuItem } from "@web/../tests/search/helpers";
 import { session } from "@web/session";
 import {
     createWebClient,
@@ -966,6 +967,16 @@ QUnit.module("ActionManager", (hooks) => {
             assert.containsN(target, ".o_list_view .o_data_row", 1);
         }
     );
+
+    QUnit.test("should not crash while commiting changes", async (assert) => {
+        assert.expect(0);
+        serverData.views["partner,false,form"] = `<form><field name="display_name" /></form>`;
+        const webClient = await createWebClient({ serverData });
+        await doAction(webClient, 24, { props: { resIds: [1, 2, 3, 4] } });
+        await pagerNext(target);
+        await editInput(target, "[name=display_name] input", "new name");
+        await loadState(webClient, { id: 1 });
+    });
 
     QUnit.test("initial action crashes", async (assert) => {
         assert.expect(8);
