@@ -221,9 +221,9 @@ class ProductTemplate(models.Model):
         if only_template:
             product = product_template.env['product.product']
         elif product_id and not combination:
-            product = product_template.env['product.product'].browse(product_id)
+            product = product_template.env['product.product'].with_context(display_default_code=False).browse(product_id)
         else:
-            product = product_template._get_variant_for_combination(combination)
+            product = product_template.with_context(display_default_code=False)._get_variant_for_combination(combination)
 
         if product:
             # We need to add the price_extra for the attributes that are not

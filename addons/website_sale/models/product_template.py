@@ -493,6 +493,12 @@ class ProductTemplate(models.Model):
             'icon': 'fa-shopping-cart',
         }
 
+    @api.model
+    def _name_search(self, name, args=None, operator='ilike', limit=100, name_get_uid=None):
+        if not name or any(term[0] == 'id' for term in (args or [])):
+            res = super()._name_search(name=name, args=args, operator=operator, limit=limit, name_get_uid=name_get_uid)
+            return list(res) + list(self._search([('default_code', '=', name)]))
+
     def _search_render_results(self, fetch_fields, mapping, icon, limit):
         with_image = 'image_url' in mapping
         with_category = 'extra_link' in mapping
