@@ -46,6 +46,7 @@ SANITIZE_TAGS = {
     'remove_tags': ['html', 'body'],
 }
 
+TEXT_URL_REGEX = r'https?://[\w@:%.+&~#=/-]+(?:\?\S+)?'
 
 class _Cleaner(clean.Cleaner):
 
@@ -176,7 +177,6 @@ class _Cleaner(clean.Cleaner):
             else:
                 del el.attrib['style']
 
-
 def html_sanitize(src, silent=True, sanitize_tags=True, sanitize_attributes=False, sanitize_style=False, sanitize_form=True, strip_style=False, strip_classes=False):
     if not src:
         return src
@@ -224,6 +224,12 @@ def html_sanitize(src, silent=True, sanitize_tags=True, sanitize_attributes=Fals
         cleaned = cleaner.clean_html(src)
         assert isinstance(cleaned, str)
         # MAKO compatibility: $, { and } inside quotes are escaped, preventing correct mako execution
+
+        # save urls to prevent sanitation of url parameters (important for signed urls)
+        original_src_urls = []
+        for match in re.finditer(TEXT_URL_REGEX, cleaned):
+            original_src_urls.append(match.group())
+        # clean up
         cleaned = cleaned.replace(u'%24', u'$')
         cleaned = cleaned.replace(u'%7B', u'{')
         cleaned = cleaned.replace(u'%7D', u'}')
@@ -234,7 +240,15 @@ def html_sanitize(src, silent=True, sanitize_tags=True, sanitize_attributes=Fals
         cleaned = cleaned.replace(u'&lt;%', u'<%')
         cleaned = cleaned.replace(u'%&gt;', u'%>')
         # html considerations so real html content match database value
-        cleaned.replace(u'\xa0', u'&nbsp;')
+        cleaned.replace(u'\xa0', u'&nbsp;') #TODO? Should this be removed? It cannot be doing anything
+        # restore urls
+        index_diff = 0
+        original_src_url_index = 0
+        for match in re.finditer(TEXT_URL_REGEX, cleaned):
+            original_src_url = original_src_urls[original_src_url_index]
+            cleaned = cleaned[0:match.start()+index_diff] + original_src_url + cleaned[match.end()+index_diff:]
+            index_diff += len(original_src_url) - len(match.group())
+            original_src_url_index += 1
     except etree.ParserError as e:
         if 'empty' in str(e):
             return u""
@@ -259,7 +273,6 @@ def html_sanitize(src, silent=True, sanitize_tags=True, sanitize_attributes=Fals
 # ----------------------------------------------------------
 
 URL_REGEX = r'(\bhref=[\'"](?!mailto:|tel:|sms:)([^\'"]+)[\'"])'
-TEXT_URL_REGEX = r'https?://[\w@:%.+&~#=/-]+(?:\?\S+)?'
 # retrieve inner content of the link
 HTML_TAG_URL_REGEX = URL_REGEX + r'([^<>]*>([^<>]+)<\/)?'
 HTML_TAGS_REGEX = re.compile('<.*?>')
