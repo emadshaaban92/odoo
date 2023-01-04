@@ -23,14 +23,17 @@ class AccruedExpenseRevenue(models.TransientModel):
         orders = self.env[self._context['active_model']].browse(self._context['active_ids'])
         return orders and orders[0].company_id.id
 
+    def _get_default_journal(self):
+        return self.env['account.journal'].search([('company_id', '=', self.env.company.id), ('type', '=', 'general')], limit=1)
+
     company_id = fields.Many2one('res.company', default=_get_default_company)
     journal_id = fields.Many2one(
         comodel_name='account.journal',
-        compute='_compute_journal_id',
         domain="[('type', '=', 'general'), ('company_id', '=', company_id)]",
         readonly=False,
         required=True,
         check_company=True,
+        default=_get_default_journal,
         string='Journal',
     )
     date = fields.Date(default=fields.Date.today, required=True)
@@ -69,14 +72,6 @@ class AccruedExpenseRevenue(models.TransientModel):
                 record.reversal_date = record.date + relativedelta(days=1)
             else:
                 record.reversal_date = record.reversal_date
-
-    @api.depends('company_id')
-    def _compute_journal_id(self):
-        journal = self.env['account.journal'].search(
-            [('type', '=', 'general'), ('company_id', '=', self.company_id.id)], limit=1
-        )
-        for record in self:
-            record.journal_id = journal
 
     @api.depends('date', 'journal_id', 'account_id', 'amount')
     def _compute_preview_data(self):
