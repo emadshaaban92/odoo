@@ -261,10 +261,8 @@
                                                 <a role="menuitem" type="delete" class="dropdown-item">Delete</a>
                                             </t>
                                             <a role="menuitem" type="edit" class="dropdown-item">Edit</a>
-                                            <a role="menuitem" name="action_channel_invite" class="dropdown-item"
-                                               type="object" attrs="{'invisible': [('enroll', '!=', 'invite')]}">
-                                                Invite
-                                            </a>
+                                            <a role="menuitem" name="action_channel_enroll_invite" class="dropdown-item" type="object">Invite</a>
+                                            <a role="menuitem" name="action_channel_invite" class="dropdown-item" type="object">Share</a>
                                         </div>
                                     </div>
                                 </div>

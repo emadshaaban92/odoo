@@ -61,16 +61,19 @@
                             <div class="dropdown-menu">
                                 <a class="dropdown-item" href="/slides">Home</a>
                                 <t t-set="dropdown_class" t-value="'dropdown-item %s' % ('active' if not slide else '')"/>
-                                <a t-att-class="'dropdown-item %s' % ('active' if not search_category and not search_tag and not search_slide_category else '')" t-att-href="'/slides/%s' % slug(channel)">
+                                <a t-att-class="'dropdown-item %s' % ('active' if not search_category and not search_tag and not search_slide_category else '')"
+                                    t-att-href="'/slides/%s?%s' % (channel.id, keep_query('invite_hash', 'partner_id')) if is_visible_via_invite else '/slides/%s' % slug(channel)">
                                     &#9492;<span class="ms-1" t-esc="channel.name"/>
                                 </a>
-                                <a t-att-class="dropdown_class" t-att-aria-current="'page' and search_category" t-if="search_category" t-att-href="'/slides/%s/category/%s' % (slug(channel), slug(search_category))">
+                                <a t-att-class="dropdown_class" t-att-aria-current="'page' and search_category" t-if="search_category"
+                                    t-att-href="'/slides/%s/category/%s?%s' % (channel.id, search_category.id, keep_query('invite_hash', 'partner_id')) if is_visible_via_invite else '/slides/%s/category/%s' % (slug(channel), slug(search_category))">
                                     &#9492;<span class="ms-1" t-esc="search_category.name"/>
                                 </a>
                                 <a t-att-class="dropdown_class" t-att-aria-current="'page' and search_tag" t-if="search_tag" t-att-href="'/slides/%s/tag/%s' % (slug(channel), slug(search_tag))">
                                     &#9492;<span class="ms-1" t-esc="search_tag.name"/>
                                 </a>
-                                <a t-att-class="dropdown_class" t-att-aria-current="'page' and search_uncategorized" t-if="search_uncategorized" t-att-href="'/slides/%s?search_uncategorized=1' % (slug(channel))">
+                                <a t-att-class="dropdown_class" t-att-aria-current="'page' and search_uncategorized" t-if="search_uncategorized"
+                                    t-att-href="'/slides/%s?uncategorized=1&amp;%s' % (channel.id, keep_query('invite_hash', 'partner_id')) if is_visible_via_invite else '/slides/%s?uncategorized=1' % (slug(channel))">
                                     &#9492;<span class="ms-1">Uncategorized</span>
                                 </a>
                                 <a t-att-class="dropdown_class" t-att-aria-current="'page' and search_slide_category" t-if="search_slide_category" t-att-href="'/slides/%s?slide_category=%s' % (slug(channel), search_slide_category)">

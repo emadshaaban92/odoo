@@ -740,7 +740,8 @@ class Channel(models.Model):
         return self.action_channel_invite(with_enrollment=True)
 
     def action_channel_invite(self, channel_id=False, with_enrollment=False):
-        template = self.env.ref('website_slides.mail_template_slide_channel_invite', raise_if_not_found=False)
+        template = self.env.ref('website_slides.mail_template_slide_channel_invite', raise_if_not_found=False) if with_enrollment else \
+            self.env.ref('website_slides.mail_template_slide_channel_share', raise_if_not_found=False)
         course_name = self.env['slide.channel'].sudo().browse(channel_id).name if channel_id else self.name if len(self) == 1 else ''
 
         local_context = dict(
