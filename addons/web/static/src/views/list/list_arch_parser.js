@@ -69,6 +69,7 @@ export class ListArchParser extends XMLParser {
         let buttonGroup;
         let handleField = null;
         let defaultOrder = stringToOrderBy(xmlDoc.getAttribute("default_order") || null);
+        const defaultGroupBy = xmlDoc.getAttribute("default_group_by");
         const treeAttr = {};
         let nextId = 0;
         const activeFields = {};
@@ -231,6 +232,7 @@ export class ListArchParser extends XMLParser {
             columns,
             groupBy,
             defaultOrder,
+            defaultGroupBy,
             __rawArch: arch,
             ...treeAttr,
         };

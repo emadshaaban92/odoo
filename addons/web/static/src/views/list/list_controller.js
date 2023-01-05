@@ -70,6 +70,7 @@ export class ListController extends Component {
             groupByInfo: this.archInfo.groupBy.fields,
             limit: this.archInfo.limit || this.props.limit,
             defaultOrder: this.archInfo.defaultOrder,
+            defaultGroupBy: this.props.defaultGroupBy,
             expand: this.archInfo.expand,
             groupsLimit: this.archInfo.groupsLimit,
             multiEdit: this.multiEdit,
@@ -516,6 +517,7 @@ ListController.template = `web.ListView`;
 ListController.components = { ActionMenus, ListViewHeaderButton, Layout, ViewButton };
 ListController.props = {
     ...standardViewProps,
+    defaultGroupBy: { validate: (dgb) => !dgb || typeof dgb === "string", optional: true },
     allowSelectors: { type: Boolean, optional: true },
     editable: { type: Boolean, optional: true },
     onSelectionChanged: { type: Function, optional: true },
