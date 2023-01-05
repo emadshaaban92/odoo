@@ -526,6 +526,21 @@ export class Messaging {
                     if (this.store.user.partnerId === partner_id) {
                         channel.serverLastSeenMsgByCurrentUser = last_message_id;
                     }
+                    channel.partnerSeenInfos.push({
+                        lastSeenMessage: { id: last_message_id },
+                        partner: { id: partner_id },
+                    });
+                    break;
+                }
+
+                case "mail.channel.member/fetched": {
+                    const { channel_id, last_message_id, partner_id } = notif.payload;
+                    const channel = this.store.threads[createLocalId("mail.channel", channel_id)];
+                    channel.isUnread = true;
+                    channel.partnerSeenInfos.push({
+                        lastFetchedMessage: { id: last_message_id },
+                        partner: { id: partner_id },
+                    });
                     break;
                 }
                 case "mail.channel.member/typing_status": {

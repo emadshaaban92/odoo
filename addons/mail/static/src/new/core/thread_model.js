@@ -43,7 +43,7 @@ export class Thread {
     memberCount = 0;
     message_needaction_counter = 0;
     message_unread_counter = 0;
-    /** @type {import("@mail/new/core/message_model").Message[]} */
+    /** @type {number[]} */
     messages = [];
     /** @type {number} */
     serverLastSeenMsgByCurrentUser;
@@ -57,6 +57,9 @@ export class Thread {
     _store;
     /** @type {string} */
     defaultDisplayMode;
+    seenInfo = [];
+    fetchedInfo = [];
+    partnerSeenInfos = [];
 
     /**
      * @param {import("@mail/new/core/store_service").Store} store
@@ -177,6 +180,40 @@ export class Thread {
                         Partner.insert(this._store, partner)
                     );
             }
+
+            if ("seen_partners_info" in serverData) {
+                this.partnerSeenInfos = serverData.seen_partners_info.map(
+                    ({ fetched_message_id, partner_id, seen_message_id }) => {
+                        return {
+                            lastFetchedMessage: fetched_message_id
+                                ? { id: fetched_message_id }
+                                : undefined,
+                            lastSeenMessage: seen_message_id ? { id: seen_message_id } : undefined,
+                            partner: { id: partner_id },
+                        };
+                    }
+                );
+                // const messageIds = serverData.seen_partners_info.reduce(
+                //     (currentSet, { fetched_message_id, seen_message_id }) => {
+                //         if (fetched_message_id) {
+                //             currentSet.add(fetched_message_id);
+                //         }
+                //         if (seen_message_id) {
+                //             currentSet.add(seen_message_id);
+                //         }
+                //         return currentSet;
+                //     },
+                //     new Set()
+                // );
+                // if (messageIds.size > 0) {
+                //     this.messageSeenIndicators = [...messageIds].map((messageId) => {
+                //         return {
+                //             message: { id: messageId },
+                //         };
+                //     });
+                // }
+            }
+
             this.canLeave =
                 ["channel", "group"].includes(this.type) &&
                 !this.message_needaction_counter &&
@@ -406,6 +443,39 @@ export class Thread {
             Number.isInteger(messageId)
         );
         return this._store.messages[oldestNonTransientMessageId];
+    }
+
+    get nonTransientMessages() {
+        const messages = this.messages.map((id) => this._store.messages[id]);
+        return messages.filter((message) => !message.isTransient);
+    }
+
+    get lastCurrentPartnerMessageSeenByEveryone() {
+        const otherPartnerSeenInfos = this.partnerSeenInfos.filter(
+            (partnerSeenInfo) => partnerSeenInfo.partner.id !== this._store.user.partnerId
+        );
+        if (otherPartnerSeenInfos.length === 0) {
+            return false;
+        }
+
+        const otherPartnersLastSeenMessageIds = otherPartnerSeenInfos
+            .filter((partnerSeenInfo) => partnerSeenInfo.lastSeenMessage)
+            .map((partnerSeenInfo) => partnerSeenInfo.lastSeenMessage.id);
+        if (otherPartnersLastSeenMessageIds.length === 0) {
+            return false;
+        }
+        const lastMessageSeenByAllId = Math.min(...otherPartnersLastSeenMessageIds);
+        const currentPartnerOrderedSeenMessages = this.nonTransientMessages.filter((message) => {
+            return (
+                message.author.id === this._store.user.partnerId &&
+                message.id <= lastMessageSeenByAllId
+            );
+        });
+
+        if (!currentPartnerOrderedSeenMessages || currentPartnerOrderedSeenMessages.length === 0) {
+            return false;
+        }
+        return currentPartnerOrderedSeenMessages.slice().pop();
     }
 
     get onlineMembers() {

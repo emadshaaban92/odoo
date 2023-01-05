@@ -54,6 +54,10 @@
                         </span>
                     </div>
                 </div>
+                <MessageSeenIndicator
+                    t-if="props.message.isAuthoredByCurrentUser"
+                    message="props.message"
+                    thread="props.thread"/>
                 <div t-if="!state.isEditing" class="o-mail-message-content d-flex position-relative">
                     <t t-if="(message.type === 'notification' or message.isTransient) and !message.isBodyEmpty">
                         <t t-if="message.subtype_description">

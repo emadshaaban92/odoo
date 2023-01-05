@@ -53,6 +53,7 @@ export class Composer extends Component {
     setup() {
         this.messaging = useMessaging();
         this.store = useStore();
+        this.threadService = useService("mail.thread");
         this.attachmentUploader = useAttachmentUploader(
             this.messageToReplyTo?.originThread ?? this.props.composer.thread,
             this.props.composer.message
@@ -215,6 +216,10 @@ export class Composer extends Component {
                 this.attachmentUploader.attachments.length === 0) ||
             this.attachmentUploader.attachments.some(({ uploading }) => Boolean(uploading))
         );
+    }
+
+    onFocusin(ev) {
+        this.threadService.markAsRead(this.props.composer.thread);
     }
 
     onKeydown(ev) {

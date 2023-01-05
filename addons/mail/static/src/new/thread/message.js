@@ -19,6 +19,7 @@ import { MessageReactions } from "@mail/new/thread/message_reactions";
 import { useEmojiPicker } from "../composer/emoji_picker";
 import { usePopover } from "@web/core/popover/popover_hook";
 import { MessageNotificationPopover } from "./message_notification_popover";
+import { MessageSeenIndicator } from "./message_seen_indidator";
 
 /**
  * @typedef {Object} Props
@@ -38,6 +39,7 @@ export class Message extends Component {
         LinkPreviewList,
         MessageInReplyTo,
         MessageReactions,
+        MessageSeenIndicator,
         PartnerImStatus,
         RelativeTime,
     };
