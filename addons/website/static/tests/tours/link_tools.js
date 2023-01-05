@@ -71,7 +71,7 @@ wTourUtils.registerWebsitePreviewTour('link_tools', {
         content: "Click on the secondary style button.",
         trigger: '#toolbar we-button[data-value="secondary"]',
     },
-    ...wTourUtils.clickOnSave(),
+    ...wTourUtils.clickOnSave({waitBeforeSave: true}),
     {
         content: "The link should have the secondary button style.",
         trigger: 'iframe .s_text_image a.btn.btn-secondary[href="http://odoo.be"]:contains("odoo website")',

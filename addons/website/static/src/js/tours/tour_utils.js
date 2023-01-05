@@ -182,7 +182,7 @@ function clickOnSnippet(snippet, position = "bottom") {
     };
 }
 
-function clickOnSave(position = "bottom") {
+function clickOnSave(options = {}) {
     return [{
         trigger: "div:not(.o_loading_dummy) > #oe_snippets button[data-action=\"save\"]:not([disabled])",
         // TODO this should not be needed but for now it better simulates what
@@ -195,7 +195,12 @@ function clickOnSave(position = "bottom") {
         extra_trigger: "body:not(:has(.o_dialog)) #oe_snippets:not(:has(.o_we_already_dragging))",
         in_modal: false,
         content: Markup(_t("Good job! It's time to <b>Save</b> your work.")),
-        position: position,
+        position: options.position || "bottom",
+        run: function () {
+            setTimeout(() => {
+                this.$anchor.click();
+            }, options.waitBeforeSave ? 1000 : 0);
+        },
     }, {
         trigger: 'iframe body:not(.editor_enable)',
         noPrepend: true,
