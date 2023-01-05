@@ -356,17 +356,16 @@ export class GraphModel extends Model {
      */
     _isValidData(dataPoints) {
         const { mode } = this.metaData;
-        let somePositive = false;
-        let someNegative = false;
+        let somePositive = [];
         if (mode === "pie") {
             for (const dataPt of dataPoints) {
                 if (dataPt.value > 0) {
-                    somePositive = true;
-                } else if (dataPt.value < 0) {
-                    someNegative = true;
+                    somePositive.push(dataPt);
                 }
             }
-            if (someNegative && somePositive) {
+            if (somePositive.length > 0) {
+                return somePositive;
+            } else {
                 return false;
             }
         }
@@ -530,8 +529,10 @@ export class GraphModel extends Model {
     async _prepareData() {
         const processedDataPoints = this._getProcessedDataPoints();
         this.data = null;
-        if (this._isValidData(processedDataPoints)) {
+        if (this._isValidData(processedDataPoints) === true) {
             this.data = this._getData(processedDataPoints);
+        } else if (this._isValidData(processedDataPoints)) {
+            this.data = this._getData(this._isValidData(processedDataPoints));
         }
     }
 }
