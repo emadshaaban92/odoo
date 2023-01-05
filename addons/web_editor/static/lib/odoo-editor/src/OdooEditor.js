@@ -3204,7 +3204,6 @@ export class OdooEditor extends EventTarget {
                     };
                     let commands;
                     const pasteAsURLCommand = {
-                        groupName: this.options._t('Paste'),
                         title: this.options._t('Paste as URL'),
                         description: this.options._t('Create an URL.'),
                         fontawesome: 'fa-link',
@@ -3215,7 +3214,6 @@ export class OdooEditor extends EventTarget {
                     };
                     if (isImageUrl) {
                         const embedImageCommand = {
-                            groupName: this.options._t('Embed'),
                             title: this.options._t('Embed Image'),
                             description: this.options._t('Embed the image in the document.'),
                             fontawesome: 'fa-image',
@@ -3230,7 +3228,6 @@ export class OdooEditor extends EventTarget {
                     } else {
                          // URL is a YouTube video.
                         const embedVideoCommand = {
-                            groupName: this.options._t('Embed'),
                             title: this.options._t('Embed Youtube Video'),
                             description: this.options._t('Embed the youtube video in the document.'),
                             fontawesome: 'fa-youtube-play',
