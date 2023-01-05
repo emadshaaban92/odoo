@@ -1767,6 +1767,13 @@ msgstr ""
 #. openerp-web
 #: code:addons/web_editor/static/src/odoo-editor/src/OdooEditor.js:0
 #, python-format
+msgid "Paste"
+msgstr ""
+
+#. module: web_editor
+#. openerp-web
+#: code:addons/web_editor/static/src/odoo-editor/src/OdooEditor.js:0
+#, python-format
 msgid "Paste as URL"
 msgstr ""
 
