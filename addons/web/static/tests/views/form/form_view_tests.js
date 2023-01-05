@@ -6534,7 +6534,7 @@ QUnit.module("Views", (hooks) => {
                     <field name="foo"/>
                     <field name="int_field"/>
                     <field name="p">
-                        <tree>
+                        <tree no_open="0">
                             <field name="foo"/>
                             <field name="bar"/>
                         </tree>
@@ -6670,7 +6670,7 @@ QUnit.module("Views", (hooks) => {
                     <form>
                         <field name="foo"/>
                         <field name="p" string="custom label">
-                            <tree>
+                            <tree no_open="0">
                                 <field name="foo"/>
                             </tree>
                             <form>
@@ -8362,7 +8362,7 @@ QUnit.module("Views", (hooks) => {
             arch: `
                 <form>
                     <field name="p">
-                        <tree default_order="foo desc">
+                        <tree no_open="0" default_order="foo desc">
                             <field name="display_name"/>
                             <field name="foo"/>
                         </tree>
@@ -8838,7 +8838,7 @@ QUnit.module("Views", (hooks) => {
             arch: `
                 <form>
                     <field name="p" widget="many2many" string="custom label">
-                        <tree><field name="display_name"/></tree>
+                        <tree no_open="0"><field name="display_name"/></tree>
                         <form><field name="display_name"/></form>
                     </field>
                 </form>`,
@@ -9711,7 +9711,7 @@ QUnit.module("Views", (hooks) => {
             arch: `
                 <form>
                     <field name="p">
-                        <tree><field name="display_name"/></tree>
+                        <tree no_open="0"><field name="display_name"/></tree>
                         <form>
                             <field name="display_name"/>
                             <field name="foo" attrs="{'readonly': [['display_name', '=', 'readonly']]}"/>

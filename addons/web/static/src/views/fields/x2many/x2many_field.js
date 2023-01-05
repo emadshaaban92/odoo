@@ -157,6 +157,10 @@ export class X2ManyField extends Component {
             return props;
         }
 
+        if (props.archInfo.noOpen === null) {
+            props.archInfo.noOpen = true;
+        }
+
         // handle column_invisible modifiers
         const columns = archInfo.columns
             .map((col) => {
