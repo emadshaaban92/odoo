@@ -8,9 +8,9 @@ import { Component } from "@odoo/owl";
 
 export default class ToursDialog extends Component {
     setup() {
-        this.tourService = useService("tour");
-        this.onboardingTours = this.tourService.getOnboardingTours();
-        this.testingTours = this.tourService.getTestingTours();
+        this.tourService = useService("tour_service_x");
+        this.onboardingTours = this.tourService.legacy.getOnboardingTours();
+        this.testingTours = this.tourService.legacy.getTestingTours();
     }
 
     //--------------------------------------------------------------------------
@@ -24,7 +24,7 @@ export default class ToursDialog extends Component {
      * @param {MouseEvent} ev
      */
     _onStartTour(ev) {
-        this.tourService.reset(ev.target.dataset.name);
+        this.tourService.run(ev.target.dataset.name, { mode: 'manual' });
         this.props.close();
     }
     /**
@@ -34,7 +34,7 @@ export default class ToursDialog extends Component {
      * @param {MouseEvent} ev
      */
     _onTestTour(ev) {
-        this.tourService.run(ev.target.dataset.name);
+        this.tourService.run(ev.target.dataset.name, { mode: 'auto', interval: 500 });
         this.props.close();
     }
 }

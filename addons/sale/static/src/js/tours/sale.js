@@ -8,12 +8,11 @@ var { registry } = require("@web/core/registry");
 
 const { markup } = owl;
 
-registry.category("tours").add("sale_tour", {
-    name: "sale_tour",
+tour.register("sale_tour", {
     url: "/web",
     rainbowMan: false,
     sequence: 20,
-    steps: [tour.stepUtils.showAppsMenuItem(), {
+}, [tour.stepUtils.showAppsMenuItem(), {
     trigger: ".o_app[data-menu-xmlid='sale.sale_menu_root']",
     content: _t("Open Sales app to send your first quotation in a few clicks."),
     position: "right",
@@ -68,15 +67,14 @@ registry.category("tours").add("sale_tour", {
     extra_trigger: ".o_sale_order",
     content: _t("Now, we'll create a sample quote."),
     position: "bottom",
-}]});
+}]);
 
-registry.category("tours").add("sale_quote_tour", {
-        name: "sale_quote_tour",
+tour.register("sale_quote_tour", {
         url: "/web#action=sale.action_quotations_with_onboarding&view_type=form",
         rainbowMan: true,
         rainbowManMessage: markup(_t("<b>Congratulations</b>, your first quotation is sent!<br>Check your email to validate the quote.")),
         sequence: 30,
-    steps: [{
+    }, [{
         trigger: ".o_field_res_partner_many2one[name='partner_id']",
         extra_trigger: ".o_sale_order",
         content: _t("Write a company name to create one, or see suggestions."),
@@ -137,6 +135,6 @@ registry.category("tours").add("sale_quote_tour", {
         extra_trigger: ".modal-footer button[name='action_send_mail']",
         content: _t("Let's send the quote."),
         position: "bottom",
-    }]});
+    }]);
 
 });

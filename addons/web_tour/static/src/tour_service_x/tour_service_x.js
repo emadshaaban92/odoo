@@ -1,6 +1,6 @@
 /** @odoo-module **/
 
-import { reactive } from "@odoo/owl";
+import { reactive, whenReady } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { MacroEngine } from "@web/core/macro";
 import { TourPointer } from "../tour_pointer/tour_pointer";
@@ -562,7 +562,12 @@ function intersectionService() {
  * @property {string} [title]
  */
 export const tourService = {
-    start() {
+    // TODO-JCB: avoid legacy
+    dependencies: ["orm", "tour_legacy"],
+    start: async (_env, { orm, tour_legacy }) => {
+        // Wait for all the tours to be registered. Some are extending the others.
+        await whenReady();
+
         const macroEngine = new MacroEngine(document);
         const intersection = intersectionService();
 
@@ -583,8 +588,8 @@ export const tourService = {
          * @param {"auto" | "manual"} mode
          * @param {number} interval
          */
-        function run(tourName, mode, interval) {
-            const tourDesc = registry.category("tours").get(tourName);
+        function run(tourName, { mode, interval }) {
+            const tourDesc = tour_legacy.tourMap[tourName];
             const currentStepIndex = parseInt(browser.localStorage.getItem(tourName) || 0);
             if (currentStepIndex >= tourDesc.steps.length) {
                 // TODO-JCB: log something here?
@@ -612,7 +617,7 @@ export const tourService = {
             props: { pointerState, setPointerState: pointerMethods.setState },
         });
 
-        return { run };
+        return { run, legacy: tour_legacy };
     },
 };
 

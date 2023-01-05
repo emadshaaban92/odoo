@@ -80,6 +80,9 @@ export const tourService = {
         }
 
         return {
+            get tourMap() {
+                return _getAllTourMap();
+            },
             getAllTours,
             getActiveTours,
             getOnboardingTours,
@@ -90,4 +93,4 @@ export const tourService = {
     },
 };
 
-registry.category("services").add("tour", tourService);
+registry.category("services").add("tour_legacy", tourService);
