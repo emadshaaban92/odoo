@@ -993,6 +993,8 @@
                                 </div>
                             </form>
                             <p t-elif="not product.active" class="alert alert-warning">This product is no longer available.</p>
+                            <p t-elif="product.recurring_invoice and
+                            (request.session['website_sale_cart_quantity'] if 'website_sale_cart_quantity' in request.session else website.sale_get_order().cart_quantity or 0) > 0" class="alert alert-warning">This product pricing is not compatible with the product(s) in your cart.</p>
                             <p t-else="" class="alert alert-warning">This product has no valid combination.</p>
                             <div id="product_attributes_simple">
                                 <t t-set="single_value_attributes" t-value="product.valid_product_template_attribute_line_ids._prepare_single_value_for_display()"/>
