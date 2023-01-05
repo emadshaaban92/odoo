@@ -37,3 +37,11 @@
 .o_data_cell .o_favorite i.fa {
     font-size: 1.35em;
 }
+
+.oe_form_field_html.o_readonly_modifier .o_checklist li {
+    pointer-events: none;
+
+    a {
+        pointer-events: initial;
+    }
+}
