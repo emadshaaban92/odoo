@@ -3568,6 +3568,12 @@
         CellValueType["error"] = "error";
     })(CellValueType || (CellValueType = {}));
 
+    var ClipboardMIMEType;
+    (function (ClipboardMIMEType) {
+        ClipboardMIMEType["PlainText"] = "text/plain";
+        ClipboardMIMEType["Html"] = "text/html";
+    })(ClipboardMIMEType || (ClipboardMIMEType = {}));
+
     function isSheetDependent(cmd) {
         return "sheetId" in cmd;
     }
@@ -4217,6 +4223,18 @@
         return `${strikethrough ? "line-through" : ""} ${underline ? "underline" : ""}`;
     }
     /**
+     * Convert the cell style to CSS properties.
+     */
+    function cellStyleToCss(style) {
+        const attributes = cellTextStyleToCss(style);
+        if (!style)
+            return attributes;
+        if (style.fillColor) {
+            attributes["background"] = style.fillColor;
+        }
+        return attributes;
+    }
+    /**
      * Convert the cell text style to CSS properties.
      */
     function cellTextStyleToCss(style) {
@@ -4239,11 +4257,12 @@
         }
         return attributes;
     }
-    function cssPropertiesToCss(attributes) {
+    function cssPropertiesToCss(attributes, newLine = true) {
+        const separator = newLine ? "\n" : "";
         const str = Object.entries(attributes)
             .map(([attName, attValue]) => `${attName}: ${attValue};`)
-            .join("\n");
-        return "\n" + str + "\n";
+            .join(separator);
+        return str ? "\n" + str + "\n" : "";
     }
 
     const ERROR_TOOLTIP_MAX_HEIGHT = 80;
@@ -7837,17 +7856,6 @@
             style,
         });
     }
-    async function readOsClipboard(env) {
-        try {
-            return await env.clipboard.readText();
-        }
-        catch (e) {
-            // Permission is required to read the clipboard.
-            console.warn("The OS clipboard could not be read.");
-            console.error(e);
-            return undefined;
-        }
-    }
     //------------------------------------------------------------------------------
     // Simple actions
     //------------------------------------------------------------------------------
@@ -7855,40 +7863,35 @@
     const REDO_ACTION = (env) => env.model.dispatch("REQUEST_REDO");
     const COPY_ACTION = async (env) => {
         env.model.dispatch("COPY");
-        await env.clipboard.writeText(env.model.getters.getClipboardContent());
+        await env.clipboard.write(env.model.getters.getClipboardContent());
     };
     const CUT_ACTION = async (env) => {
         interactiveCut(env);
-        await env.clipboard.writeText(env.model.getters.getClipboardContent());
+        await env.clipboard.write(env.model.getters.getClipboardContent());
     };
-    const PASTE_ACTION = async (env) => {
-        const spreadsheetClipboard = env.model.getters.getClipboardContent();
-        const osClipboard = await readOsClipboard(env);
-        const target = env.model.getters.getSelectedZones();
-        if (osClipboard && osClipboard !== spreadsheetClipboard) {
-            interactivePasteFromOS(env, target, osClipboard);
+    const PASTE_ACTION = async (env) => paste(env);
+    const PASTE_VALUE_ACTION = async (env) => paste(env, "onlyValue");
+    async function paste(env, pasteOption) {
+        const spreadsheetClipboard = env.model.getters.getClipboardTextContent();
+        const osClipboard = await env.clipboard.readText();
+        switch (osClipboard.status) {
+            case "ok":
+                const target = env.model.getters.getSelectedZones();
+                if (osClipboard && osClipboard.content !== spreadsheetClipboard) {
+                    interactivePasteFromOS(env, target, osClipboard.content);
+                }
+                else {
+                    interactivePaste(env, target, pasteOption);
+                }
+                break;
+            case "notImplemented":
+                env.raiseError(_lt("Pasting from the context menu is not supported in this browser. Use keyboard shortcuts ctrl+c / ctrl+v instead."));
+                break;
+            case "permissionDenied":
+                env.raiseError(_lt("Access to the clipboard denied by the browser. Please enable clipboard permission for this page in your browser settings."));
+                break;
         }
-        else {
-            interactivePaste(env, target);
-        }
-    };
-    const PASTE_VALUE_ACTION = async (env) => {
-        const spreadsheetClipboard = env.model.getters.getClipboardContent();
-        const osClipboard = await readOsClipboard(env);
-        const target = env.model.getters.getSelectedZones();
-        if (osClipboard && osClipboard !== spreadsheetClipboard) {
-            env.model.dispatch("PASTE_FROM_OS_CLIPBOARD", {
-                target,
-                text: osClipboard,
-            });
-        }
-        else {
-            env.model.dispatch("PASTE", {
-                target: env.model.getters.getSelectedZones(),
-                pasteOption: "onlyValue",
-            });
-        }
-    };
+    }
     const PASTE_FORMAT_ACTION = (env) => interactivePaste(env, env.model.getters.getSelectedZones(), "onlyFormat");
     const DELETE_CONTENT_ACTION = (env) => env.model.dispatch("DELETE_CONTENT", {
         sheetId: env.model.getters.getActiveSheetId(),
@@ -11639,7 +11642,7 @@
                 action: async () => {
                     this.env.model.dispatch("SELECT_FIGURE", { id: this.props.figure.id });
                     this.env.model.dispatch("COPY");
-                    await this.env.clipboard.writeText(this.env.model.getters.getClipboardContent());
+                    await this.env.clipboard.clear();
                 },
             });
             registry.add("cut", {
@@ -11648,7 +11651,7 @@
                 action: async () => {
                     this.env.model.dispatch("SELECT_FIGURE", { id: this.props.figure.id });
                     this.env.model.dispatch("CUT");
-                    await this.env.clipboard.writeText(this.env.model.getters.getClipboardContent());
+                    await this.env.clipboard.clear();
                 },
             });
             registry.add("delete", {
@@ -15341,7 +15344,7 @@
         assert(() => pv > 0, _lt("The present value (%s) must be strictly positive.", pv.toString()));
     }
     function assertPeriodSmallerOrEqualToLife(period, life) {
-        assert(() => period <= life, _lt("The period (%s) must be less than or equal life (%.", period.toString(), life.toString()));
+        assert(() => period <= life, _lt("The period (%s) must be less than or equal life (%s).", period.toString(), life.toString()));
     }
     function assertInvestmentStrictlyPositive(investment) {
         assert(() => investment > 0, _lt("The investment (%s) must be strictly positive.", investment.toString()));
@@ -23510,6 +23513,11 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             if (!this.gridEl.contains(document.activeElement)) {
                 return;
             }
+            const clipboardData = ev.clipboardData;
+            if (!clipboardData) {
+                this.displayWarningCopyPasteNotSupported();
+                return;
+            }
             /* If we are currently editing a cell, let the default behavior */
             if (this.env.model.getters.getEditionMode() !== "inactive") {
                 return;
@@ -23521,7 +23529,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 this.env.model.dispatch("COPY");
             }
             const content = this.env.model.getters.getClipboardContent();
-            ev.clipboardData.setData("text/plain", content);
+            for (const type in content) {
+                clipboardData.setData(type, content[type]);
+            }
             ev.preventDefault();
         }
         paste(ev) {
@@ -23529,11 +23539,15 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 return;
             }
             const clipboardData = ev.clipboardData;
-            if (clipboardData.types.indexOf("text/plain") > -1) {
-                const content = clipboardData.getData("text/plain");
+            if (!clipboardData) {
+                this.displayWarningCopyPasteNotSupported();
+                return;
+            }
+            if (clipboardData.types.indexOf(ClipboardMIMEType.PlainText) > -1) {
+                const content = clipboardData.getData(ClipboardMIMEType.PlainText);
                 const target = this.env.model.getters.getSelectedZones();
-                const clipBoardString = this.env.model.getters.getClipboardContent();
-                if (clipBoardString === content) {
+                const clipboardString = this.env.model.getters.getClipboardTextContent();
+                if (clipboardString === content) {
                     // the paste actually comes from o-spreadsheet itself
                     interactivePaste(this.env, target);
                 }
@@ -23541,6 +23555,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     interactivePasteFromOS(this.env, target, content);
                 }
             }
+        }
+        displayWarningCopyPasteNotSupported() {
+            this.env.raiseError(_lt("Copy/Paste is not supported in this browser."));
         }
         closeMenu() {
             this.menuState.isOpen = false;
@@ -25467,8 +25484,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     function formatAttributes(attrs) {
         return new XMLString(attrs.map(([key, val]) => `${key}="${xmlEscape(val)}"`).join(" "));
     }
-    function parseXML(xmlString) {
-        const document = new DOMParser().parseFromString(xmlString.toString(), "text/xml");
+    function parseXML(xmlString, mimeType = "text/xml") {
+        const document = new DOMParser().parseFromString(xmlString.toString(), mimeType);
         const parserError = document.querySelector("parsererror");
         if (parserError) {
             const errorString = parserError.innerHTML;
@@ -29540,7 +29557,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 action: async () => {
                     this.env.model.dispatch("SELECT_FIGURE", { id: this.figureId });
                     this.env.model.dispatch("COPY");
-                    await this.env.clipboard.writeText(this.env.model.getters.getClipboardContent());
+                    await this.env.clipboard.clear();
                 },
             });
             registry.add("cut", {
@@ -29550,7 +29567,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 action: async () => {
                     this.env.model.dispatch("SELECT_FIGURE", { id: this.figureId });
                     this.env.model.dispatch("CUT");
-                    await this.env.clipboard.writeText(this.env.model.getters.getClipboardContent());
+                    await this.env.clipboard.clear();
                 },
             });
             registry.add("reset_size", {
@@ -34669,22 +34686,67 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             ctx.fillRect(0, 0, width + CANVAS_SHIFT, height + CANVAS_SHIFT);
             const areGridLinesVisible = !this.getters.isDashboard() &&
                 this.getters.getGridLinesVisibility(this.getters.getActiveSheetId());
-            const inset = areGridLinesVisible ? 0.1 * thinLineWidth : 0;
             if (areGridLinesVisible) {
                 for (const box of this.boxes) {
                     ctx.strokeStyle = CELL_BORDER_COLOR;
                     ctx.lineWidth = thinLineWidth;
-                    ctx.strokeRect(box.x + inset, box.y + inset, box.width - 2 * inset, box.height - 2 * inset);
+                    ctx.strokeRect(box.x, box.y, box.width, box.height);
                 }
             }
         }
         drawCellBackground(renderingContext) {
-            const { ctx } = renderingContext;
+            var _a, _b;
+            const { ctx, thinLineWidth } = renderingContext;
+            const areGridLinesVisible = !this.getters.isDashboard() &&
+                this.getters.getGridLinesVisibility(this.getters.getActiveSheetId());
             for (const box of this.boxes) {
                 let style = box.style;
                 if (style.fillColor && style.fillColor !== "#ffffff") {
                     ctx.fillStyle = style.fillColor || "#ffffff";
-                    ctx.fillRect(box.x, box.y, box.width, box.height);
+                    ctx.fillRect(box.x - thinLineWidth / 2, box.y - thinLineWidth / 2, box.width + thinLineWidth, box.height + thinLineWidth);
+                    if (areGridLinesVisible) {
+                        const { r, g, b } = colorToRGBA(style.fillColor || "#ffffff");
+                        const borderColor = `rgb(${r - 30},${g - 30},${b - 30})`; // to get a darker color
+                        if (!box.isOverflow) {
+                            ctx.lineWidth = thinLineWidth;
+                            ctx.strokeStyle = borderColor;
+                            ctx.strokeRect(box.x, box.y, box.width, box.height);
+                        }
+                        else {
+                            // top
+                            this.drawBorder(ctx, borderColor, thinLineWidth, {
+                                x1: box.x - thinLineWidth / 2,
+                                y1: box.y,
+                                x2: box.x + box.width + thinLineWidth / 2,
+                                y2: box.y,
+                            });
+                            //bottom
+                            this.drawBorder(ctx, borderColor, thinLineWidth, {
+                                x1: box.x - thinLineWidth / 2,
+                                y1: box.y + box.height,
+                                x2: box.x + box.width + thinLineWidth / 2,
+                                y2: box.y + box.height,
+                            });
+                            if (((_a = box.content) === null || _a === void 0 ? void 0 : _a.align) === "left") {
+                                // only left
+                                this.drawBorder(ctx, borderColor, thinLineWidth, {
+                                    x1: box.x,
+                                    y1: box.y,
+                                    x2: box.x,
+                                    y2: box.y + box.height,
+                                });
+                            }
+                            else if (((_b = box.content) === null || _b === void 0 ? void 0 : _b.align) === "right") {
+                                // only right
+                                this.drawBorder(ctx, borderColor, thinLineWidth, {
+                                    x1: box.x + box.width,
+                                    y1: box.y,
+                                    x2: box.x + box.width,
+                                    y2: box.y + box.height,
+                                });
+                            }
+                        }
+                    }
                 }
                 if (box.error) {
                     ctx.fillStyle = "red";
@@ -34727,6 +34789,10 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         }
         drawBorders(renderingContext) {
             const { ctx, thinLineWidth } = renderingContext;
+            const drawBorder = ([style, color], x1, y1, x2, y2) => {
+                const lineWidth = (style === "thin" ? 2 : 3) * thinLineWidth;
+                this.drawBorder(ctx, color, lineWidth, { x1, y1, x2, y2 });
+            };
             for (let box of this.boxes) {
                 const border = box.border;
                 if (border) {
@@ -34745,14 +34811,14 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     }
                 }
             }
-            function drawBorder([style, color], x1, y1, x2, y2) {
-                ctx.strokeStyle = color;
-                ctx.lineWidth = (style === "thin" ? 2 : 3) * thinLineWidth;
-                ctx.beginPath();
-                ctx.moveTo(x1, y1);
-                ctx.lineTo(x2, y2);
-                ctx.stroke();
-            }
+        }
+        drawBorder(ctx, color, lineWidth, { x1, y1, x2, y2 }) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
         }
         drawTexts(renderingContext) {
             const { ctx, thinLineWidth } = renderingContext;
@@ -36712,6 +36778,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     const position = { col, row, sheetId };
                     cellsInRow.push({
                         cell: getters.getCell(position),
+                        style: getters.getCellComputedStyle(position),
                         evaluatedCell: getters.getEvaluatedCell(position),
                         border: getters.getCellBorder(position) || undefined,
                         position,
@@ -37062,6 +37129,12 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             }
         }
         getClipboardContent() {
+            return {
+                [ClipboardMIMEType.PlainText]: this.getPlainTextContent(),
+                [ClipboardMIMEType.Html]: this.getHTMLContent(),
+            };
+        }
+        getPlainTextContent() {
             return (this.cells
                 .map((cells) => {
                 return cells
@@ -37069,6 +37142,23 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                     .join("\t");
             })
                 .join("\n") || "\t");
+        }
+        getHTMLContent() {
+            if (this.cells.length == 1 && this.cells[0].length == 1) {
+                return this.getters.getCellText(this.cells[0][0].position);
+            }
+            let htmlTable = '<table border="1" style="border-collapse:collapse">';
+            for (const row of this.cells) {
+                htmlTable += "<tr>";
+                for (const cell of row) {
+                    const cssStyle = cssPropertiesToCss(cellStyleToCss(cell.style), false);
+                    const cellText = this.getters.getCellText(cell.position);
+                    htmlTable += `<td style="${cssStyle}">` + xmlEscape(cellText) + "</td>";
+                }
+                htmlTable += "</tr>";
+            }
+            htmlTable += "</table>";
+            return htmlTable;
         }
         isColRowDirtyingClipboard(position, dimension) {
             if (!this.zones)
@@ -37160,7 +37250,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             this.dispatch("SELECT_FIGURE", { id: newId });
         }
         getClipboardContent() {
-            return "\t";
+            return { [ClipboardMIMEType.PlainText]: "\t" };
         }
         isColRowDirtyingClipboard(position, dimension) {
             return false;
@@ -37250,7 +37340,9 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
             this.selection.selectZone({ cell: { col: activeCol, row: activeRow }, zone });
         }
         getClipboardContent() {
-            return this.values.map((values) => values.join("\t")).join("\n");
+            return {
+                [ClipboardMIMEType.PlainText]: this.values.map((values) => values.join("\t")).join("\n"),
+            };
         }
         getPasteZone(target) {
             const height = this.values.length;
@@ -37407,7 +37499,11 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
          */
         getClipboardContent() {
             var _a;
-            return ((_a = this.state) === null || _a === void 0 ? void 0 : _a.getClipboardContent()) || "\t";
+            return ((_a = this.state) === null || _a === void 0 ? void 0 : _a.getClipboardContent()) || { [ClipboardMIMEType.PlainText]: "\t" };
+        }
+        getClipboardTextContent() {
+            var _a;
+            return ((_a = this.state) === null || _a === void 0 ? void 0 : _a.getClipboardContent()[ClipboardMIMEType.PlainText]) || "\t";
         }
         isCutOperation() {
             return this.state ? this.state.operation === "CUT" : false;
@@ -37485,7 +37581,12 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         }
     }
     ClipboardPlugin.layers = [2 /* LAYERS.Clipboard */];
-    ClipboardPlugin.getters = ["getClipboardContent", "isCutOperation", "isPaintingFormat"];
+    ClipboardPlugin.getters = [
+        "getClipboardContent",
+        "getClipboardTextContent",
+        "isCutOperation",
+        "isPaintingFormat",
+    ];
 
     const selectionStatisticFunctions = [
         {
@@ -39296,6 +39397,66 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
         onComposerContentFocused: Function,
     };
 
+    function instantiateClipboard() {
+        return new WebClipboardWrapper(navigator.clipboard);
+    }
+    class WebClipboardWrapper {
+        // Can be undefined because navigator.clipboard doesn't exist in old browsers
+        constructor(clipboard) {
+            this.clipboard = clipboard;
+        }
+        async write(clipboardContent) {
+            var _a;
+            try {
+                (_a = this.clipboard) === null || _a === void 0 ? void 0 : _a.write(this.getClipboardItems(clipboardContent));
+            }
+            catch (e) { }
+        }
+        async writeText(text) {
+            var _a;
+            try {
+                (_a = this.clipboard) === null || _a === void 0 ? void 0 : _a.writeText(text);
+            }
+            catch (e) { }
+        }
+        async readText() {
+            let permissionResult = undefined;
+            try {
+                //@ts-ignore - clipboard-read is not implemented in all browsers
+                permissionResult = await navigator.permissions.query({ name: "clipboard-read" });
+            }
+            catch (e) { }
+            try {
+                const clipboardContent = await this.clipboard.readText();
+                return { status: "ok", content: clipboardContent };
+            }
+            catch (e) {
+                const status = (permissionResult === null || permissionResult === void 0 ? void 0 : permissionResult.state) === "denied" ? "permissionDenied" : "notImplemented";
+                return { status };
+            }
+        }
+        async clear() {
+            var _a;
+            try {
+                (_a = this.clipboard) === null || _a === void 0 ? void 0 : _a.write([]);
+            }
+            catch (e) { }
+        }
+        getClipboardItems(content) {
+            return [
+                new ClipboardItem({
+                    [ClipboardMIMEType.PlainText]: this.getBlob(content, ClipboardMIMEType.PlainText),
+                    [ClipboardMIMEType.Html]: this.getBlob(content, ClipboardMIMEType.Html),
+                }),
+            ];
+        }
+        getBlob(clipboardContent, type) {
+            return new Blob([clipboardContent[type] || ""], {
+                type,
+            });
+        }
+    }
+
     css /* scss */ `
   .o-spreadsheet {
     position: relative;
@@ -39399,7 +39560,7 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
                 openSidePanel: this.openSidePanel.bind(this),
                 toggleSidePanel: this.toggleSidePanel.bind(this),
                 _t: Spreadsheet._t,
-                clipboard: navigator.clipboard,
+                clipboard: this.env.clipboard || instantiateClipboard(),
             });
             owl.useExternalListener(window, "resize", () => this.render(true));
             owl.useExternalListener(window, "beforeunload", this.unbindModelEvents.bind(this));
@@ -43399,8 +43560,8 @@ day_count_convention (number, default=${DEFAULT_DAY_COUNT_CONVENTION} ) ${_lt("A
     Object.defineProperty(exports, '__esModule', { value: true });
 
     exports.__info__.version = '2.0.0';
-    exports.__info__.date = '2023-01-04T17:31:52.940Z';
-    exports.__info__.hash = 'f88b16b';
+    exports.__info__.date = '2023-01-05T16:13:00.601Z';
+    exports.__info__.hash = '8adb55f';
 
 })(this.o_spreadsheet = this.o_spreadsheet || {}, owl);
 //# sourceMappingURL=o_spreadsheet.js.map
