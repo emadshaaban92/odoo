@@ -155,7 +155,7 @@
         </record>
 
         <record id='account_tag_1203' model='account.account.tag'>
-                <field name='name'> 1203 Deterioro de Valor Acumulado de Propiedades, Planta y Equipo</field>
+                <field name='name'>1203 Deterioro de Valor Acumulado de Propiedades, Planta y Equipo</field>
                 <field name='color'>1</field>
                 <field name='applicability'>accounts</field>
         </record>

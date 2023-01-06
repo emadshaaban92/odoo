@@ -17,8 +17,8 @@ msgstr ""
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1203
-msgid " 1203 Deterioro de Valor Acumulado de Propiedades, Planta y Equipo"
-msgstr ""
+msgid "1203 Deterioro de Valor Acumulado de Propiedades, Planta y Equipo"
+msgstr "1203 Accumulated Impairment of Property, Plant and Equipment"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_ret_10_income_dividend
@@ -28,43 +28,43 @@ msgstr ""
 #: model:account.tax.template,description:l10n_do.ret_10_income_person
 #: model:account.tax.template,description:l10n_do.ret_10_income_rent
 msgid "-10% ISR"
-msgstr ""
+msgstr "-10% ISR"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_ret_100_tax_nonprofit
 #: model:account.tax.template,description:l10n_do.ret_100_tax_nonprofit
 msgid "-100% ITBIS (N01-11)"
-msgstr ""
+msgstr "-100% VAT (N01-11)"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_ret_100_tax_security
 #: model:account.tax.template,description:l10n_do.ret_100_tax_security
 msgid "-100% ITBIS (N07-09)"
-msgstr ""
+msgstr "-100% VAT (N07-09)"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_ret_100_tax_person
 #: model:account.tax.template,description:l10n_do.ret_100_tax_person
 msgid "-100% ITBIS (R293-11)"
-msgstr ""
+msgstr "-100% VAT (R293-11)"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_ret_2_income_transfer
 #: model:account.tax.template,description:l10n_do.ret_2_income_transfer
 msgid "-2% ISR"
-msgstr ""
+msgstr "-2% ISR"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_ret_2_income_person
 #: model:account.tax.template,description:l10n_do.ret_2_income_person
 msgid "-2% ISR (N07-07)"
-msgstr ""
+msgstr "-2% ISR (N07-07)"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_ret_27_income_remittance
 #: model:account.tax.template,description:l10n_do.ret_27_income_remittance
 msgid "-27% ISR"
-msgstr ""
+msgstr "-27% ISR"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_ret_30_tax_freelance
@@ -72,48 +72,48 @@ msgstr ""
 #: model:account.tax.template,description:l10n_do.ret_30_tax_freelance
 #: model:account.tax.template,description:l10n_do.ret_30_tax_moral
 msgid "-30% ITBIS (N02-05)"
-msgstr ""
+msgstr "-30% VAT (N02-05)"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_ret_5_income_gov
 #: model:account.tax.template,description:l10n_do.ret_5_income_gov
 msgid "-5% ISR"
-msgstr ""
+msgstr "-5% ISR"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_ret_75_tax_nonformal
 #: model:account.tax.template,description:l10n_do.ret_75_tax_nonformal
 msgid "-75% ITBIS (N08-10)"
-msgstr ""
+msgstr "-75% VAT (N08-10)"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_tax_0015_bank
 #: model:account.tax.template,description:l10n_do.tax_0015_bank
 msgid "0.15% Trans"
-msgstr ""
+msgstr "0.15% Trans"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_0015_bank
 #: model:account.tax.template,name:l10n_do.tax_0015_bank
 msgid "0.15% Transferencia Bancaria"
-msgstr ""
+msgstr "0.15% Bank Transfer"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1
 msgid "1 Activos"
-msgstr ""
+msgstr "1 Assets"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_tax_10_telco
 #: model:account.tax.template,description:l10n_do.tax_10_telco
 msgid "10% ISC"
-msgstr ""
+msgstr "10% ISC"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_10_telco
 #: model:account.tax.template,name:l10n_do.tax_10_telco
 msgid "10% ISC Telecomunicaciones"
-msgstr ""
+msgstr "10% ISC Telecommunications"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_tax_tip_purch
@@ -121,7 +121,7 @@ msgstr ""
 #: model:account.tax.template,description:l10n_do.tax_tip_purch
 #: model:account.tax.template,description:l10n_do.tax_tip_sale
 msgid "10% Legal"
-msgstr ""
+msgstr "10% Legal"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_tip_purch
@@ -129,97 +129,97 @@ msgstr ""
 #: model:account.tax.template,name:l10n_do.tax_tip_purch
 #: model:account.tax.template,name:l10n_do.tax_tip_sale
 msgid "10% Propina Legal"
-msgstr ""
+msgstr "10% Propina Legal"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_11
 msgid "11 Activos Corrientes"
-msgstr ""
+msgstr "11 Current Assets"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1101
 msgid "1101 Efectivo y Equivalentes de Efectivo"
-msgstr ""
+msgstr "1101 Cash and Cash Equivalents"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_110101
 msgid "110101 Caja"
-msgstr ""
+msgstr "110101 Cash"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_110102
 msgid "110102 Bancos"
-msgstr ""
+msgstr "110102 Bank"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_110103
 msgid "110103 Inversiones Temporales Plazo Menor 90 días"
-msgstr ""
+msgstr "110103 Short-term Investments Less than 90 days"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1102
 msgid "1102 Inversiones en Valores a Corto Plazo"
-msgstr ""
+msgstr "1102 Short-Term Investments in Securities"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1103
 msgid "1103 Cuentas y Documentos por Cobrar"
-msgstr ""
+msgstr "1103 Accounts and notes receivable"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_110301
 msgid "110301 Documentos por Cobrar"
-msgstr ""
+msgstr "110301 Notes receivable"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_110302
 msgid "110302 Cuentas por Cobrar"
-msgstr ""
+msgstr "110302 Accounts receivable"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1104
 msgid "1104 Provisión para Cuentas Incobrables"
-msgstr ""
+msgstr "1104 Provision for doubtful accounts"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1105
 msgid "1105 Inventarios"
-msgstr ""
+msgstr "1105 Inventory"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1106
 msgid "1106 Deterioro Acumulado de Valor de Inventarios"
-msgstr ""
+msgstr "1106 Accumulated impairment of inventories"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1107
 msgid "1107 Estimación por Obsolecencia de Inventario"
-msgstr ""
+msgstr "1107 Allowance for inventory obsolescence"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1108
 msgid "1108 Impuestos Adelantados"
-msgstr ""
+msgstr "1108 Advance Taxes"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_110801
 msgid "110801 ITBIS Pagado en Compras"
-msgstr ""
+msgstr "110801 VAT Paid on Purchases"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_110803
 msgid "110803 Otros Impuestos y Saldos"
-msgstr ""
+msgstr "110803 Other Taxes and Balances"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1109
 msgid "1109 Inversiones Temporales"
-msgstr ""
+msgstr "1109 Temporary investments"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1110
 msgid "1110 Pagos Anticipados"
-msgstr ""
+msgstr "1110 Advance Payments"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_12

@@ -17,7 +17,7 @@ msgstr ""
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1203
-msgid " 1203 Deterioro de Valor Acumulado de Propiedades, Planta y Equipo"
+msgid "1203 Deterioro de Valor Acumulado de Propiedades, Planta y Equipo"
 msgstr ""
 
 #. module: l10n_do
