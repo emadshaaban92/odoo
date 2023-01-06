@@ -11,8 +11,8 @@
                     class="o_input"
                     t-att-id="props.id"
                     type="tel"
+                    autocomplete="off"
                     t-att-placeholder="props.placeholder"
-                    t-att-autocomplete="`o-field-${props.name}`"
                     t-ref="input"
                 />
             </t>
