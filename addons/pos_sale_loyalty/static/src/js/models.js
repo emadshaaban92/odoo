@@ -2,16 +2,16 @@
 
 
 import { Orderline } from '@point_of_sale/js/models';
-import Registries from '@point_of_sale/js/Registries';
+import { patch } from "@web/core/utils/patch";
 
-export const PosSaleLoyaltyOrderline = (Orderline) => class PosSaleLoyaltyOrderline extends Orderline {
+patch(Orderline.prototype, "pos_sale_loyalty.Orderline", {
     //@override
     ignoreLoyaltyPoints(args) {
         if (this.sale_order_origin_id) {
             return true;
         }
         return super.ignoreLoyaltyPoints(args);
-    }
+    },
     //@override
     setQuantityFromSOL(saleOrderLine) {
         // we need to consider reward product such as discount in a quotation
@@ -20,7 +20,5 @@ export const PosSaleLoyaltyOrderline = (Orderline) => class PosSaleLoyaltyOrderl
         } else {
             super.setQuantityFromSOL(...arguments);
         }
-    }
-};
-
-Registries.Model.extend(Orderline, PosSaleLoyaltyOrderline);
+    },
+});
