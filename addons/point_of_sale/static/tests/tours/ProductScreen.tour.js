@@ -9,6 +9,7 @@ import Tour from "web_tour.tour";
 // when finished, steps can be taken from getSteps
 startSteps();
 
+ProductScreen.do.confirmOpeningPopup();
 // Go by default to home category
 ProductScreen.do.clickHomeCategory();
 
@@ -123,6 +124,7 @@ ProductScreen.check.orderIsEmpty();
 
 // Test OrderlineCustomerNoteButton
 ProductScreen.do.clickDisplayedProduct("Desk Organizer");
+ProductScreen.check.selectedOrderlineHas("Desk Organizer", "1.0");
 ProductScreen.do.clickOrderlineCustomerNoteButton();
 TextAreaPopup.check.isShown();
 TextAreaPopup.do.inputText("Test customer note");

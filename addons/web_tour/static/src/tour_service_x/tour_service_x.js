@@ -663,6 +663,10 @@ export const tourService = {
             run(tourName);
         }
 
+        odoo.startTour = (name, stepDelay) => {
+            run(name, { mode: "auto", interval: stepDelay });
+        };
+
         return { run, legacy: tour_legacy };
     },
 };

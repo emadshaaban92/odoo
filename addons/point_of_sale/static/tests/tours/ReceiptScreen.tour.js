@@ -9,6 +9,7 @@ import Tour from "web_tour.tour";
 
 startSteps();
 
+ProductScreen.do.confirmOpeningPopup();
 // press close button in receipt screen
 ProductScreen.exec.addOrderline("Letter Tray", "10", "5");
 ProductScreen.check.selectedOrderlineHas("Letter Tray", "10");
