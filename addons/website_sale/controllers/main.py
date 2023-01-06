@@ -1352,6 +1352,8 @@ class WebsiteSale(http.Controller):
 
         values = self.checkout_values(**post)
 
+        request.session['website_sale_current_pl'] = values["order"].pricelist_id.id
+
         if post.get('express'):
             return request.redirect('/shop/confirm_order')
 
