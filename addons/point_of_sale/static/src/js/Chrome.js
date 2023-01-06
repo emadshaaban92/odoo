@@ -5,7 +5,6 @@ import { useListener, useBus, useService } from "@web/core/utils/hooks";
 import BarcodeParser from "barcodes.BarcodeParser";
 import PosComponent from "@point_of_sale/js/PosComponent";
 import NumberBuffer from "@point_of_sale/js/Misc/NumberBuffer";
-import Registries from "@point_of_sale/js/Registries";
 import IndependentToOrderScreen from "@point_of_sale/js/Misc/IndependentToOrderScreen";
 import { batched } from "@point_of_sale/js/utils";
 import { debounce } from "@web/core/utils/timing";
@@ -37,6 +36,7 @@ import { usePos } from "@point_of_sale/app/pos_store";
  * Chrome is the root component of the PoS App.
  */
 export class Chrome extends PosComponent {
+    static template = "Chrome";
     setup() {
         // BEGIN ChromeAdapter
         ProductScreen.sortControlButtons();
@@ -312,7 +312,7 @@ export class Chrome extends PosComponent {
         const { name, props, resolve } = event.detail;
         this.tempScreen.isShown = true;
         this.tempScreen.name = name;
-        this.tempScreen.component = this.constructor.components[name];
+        this.tempScreen.component = registry.category("pos_screens").get(name);;
         this.tempScreenProps = Object.assign({}, props, { resolve });
     }
     __closeTempScreen() {
@@ -320,7 +320,7 @@ export class Chrome extends PosComponent {
         this.tempScreen.name = null;
     }
     __showScreen({ detail: { name, props = {} } }) {
-        const component = this.constructor.components[name];
+        const component = registry.category("pos_screens").get(name);;
         // 1. Set the information of the screen to display.
         this.mainScreen.name = name;
         this.mainScreen.component = component;
@@ -483,7 +483,6 @@ export class Chrome extends PosComponent {
         return this.env.pos && this.env.pos.config && this.env.pos.config.cash_control;
     }
 }
-Chrome.template = "Chrome";
 Object.defineProperty(Chrome, "components", {
     get() {
         return Object.assign(
@@ -498,6 +497,4 @@ Object.defineProperty(Chrome, "components", {
     },
 });
 
-Registries.Component.add(Chrome);
-
-export default Chrome;
+registry.category("pos_screens").add("PartnerListScreen", PartnerListScreen);
