@@ -86,7 +86,7 @@ patch(PosGlobalState.prototype, "pos_mercury.PosGlobalState", {
 
 patch(Payment.prototype, "pos_mercury.Payment", {
     init_from_JSON(json) {
-        super.init_from_JSON(...arguments);
+        this._super(...arguments);
 
         this.paid = json.paid;
         this.mercury_card_number = json.mercury_card_number;
@@ -102,7 +102,7 @@ patch(Payment.prototype, "pos_mercury.Payment", {
         this.set_credit_card_name();
     },
     export_as_JSON() {
-        return _.extend(super.export_as_JSON(...arguments), {
+        return _.extend(this._super(...arguments), {
             paid: this.paid,
             mercury_card_number: this.mercury_card_number,
             mercury_card_brand: this.mercury_card_brand,
@@ -121,11 +121,11 @@ patch(Payment.prototype, "pos_mercury.Payment", {
         }
     },
     is_done() {
-        var res = super.is_done(...arguments);
+        var res = this._super(...arguments);
         return res && !this.mercury_swipe_pending;
     },
     export_for_printing() {
-        const result = super.export_for_printing(...arguments);
+        const result = this._super(...arguments);
         result.mercury_data = this.mercury_data;
         result.mercury_auth_code = this.mercury_auth_code;
         return result;
@@ -134,7 +134,7 @@ patch(Payment.prototype, "pos_mercury.Payment", {
 
 patch(Order.prototype, "pos_mercury.Order", {
     electronic_payment_in_progress() {
-        var res = super.electronic_payment_in_progress(...arguments);
+        var res = this._super(...arguments);
         return res || this.get_paymentlines().some((line) => line.mercury_swipe_pending);
     },
 });

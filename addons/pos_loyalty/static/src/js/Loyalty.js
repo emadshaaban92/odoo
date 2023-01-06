@@ -79,7 +79,7 @@ patch(PosGlobalState.prototype, "pos_loyalty.PosGlobalState", {
     //@override
     async _processData(loadedData) {
         this.couponCache = {};
-        await super._processData(loadedData);
+        await this._super(loadedData);
         this.productId2ProgramIds = loadedData["product_id_to_program_ids"];
         this.programs = loadedData["loyalty.program"] || []; //TODO: rename to `loyaltyPrograms` etc
         this.rules = loadedData["loyalty.rule"] || [];
@@ -114,13 +114,13 @@ patch(PosGlobalState.prototype, "pos_loyalty.PosGlobalState", {
         }
     },
     async load_server_data() {
-        await super.load_server_data(...arguments);
+        await this._super(...arguments);
         if (this.selectedOrder) {
             this.selectedOrder._updateRewards();
         }
     },
     set_order(order) {
-        const result = super.set_order(...arguments);
+        const result = this._super(...arguments);
         // FIXME - JCB: This is a temporary fix.
         // When an order is selected, it doesn't always contain the reward lines.
         // And the list of active programs are not always correct. This is because
@@ -199,7 +199,7 @@ patch(PosGlobalState.prototype, "pos_loyalty.PosGlobalState", {
         return loyaltyCards;
     },
     addPartners(partners) {
-        const result = super.addPartners(partners);
+        const result = this._super(partners);
         // cache the loyalty cards of the partners
         for (const partner of partners) {
             for (const [couponId, { code, program_id, points }] of Object.entries(
@@ -220,7 +220,7 @@ patch(PosGlobalState.prototype, "pos_loyalty.PosGlobalState", {
 
 patch(Orderline.prototype, "pos_loyalty.Orderline", {
     export_as_JSON() {
-        const result = super.export_as_JSON(...arguments);
+        const result = this._super(...arguments);
         result.is_reward_line = this.is_reward_line;
         result.reward_id = this.reward_id;
         result.reward_product_id = this.reward_product_id;
@@ -248,7 +248,7 @@ patch(Orderline.prototype, "pos_loyalty.Orderline", {
         this.giftBarcode = json.giftBarcode;
         this.giftCardId = json.giftCardId;
         this.eWalletGiftCardProgram = this.pos.program_by_id[json.eWalletGiftCardProgramId];
-        super.init_from_JSON(...arguments);
+        this._super(...arguments);
     },
     set_quantity(quantity, keep_price) {
         if (quantity === "remove" && this.is_reward_line) {
@@ -268,7 +268,7 @@ patch(Orderline.prototype, "pos_loyalty.Orderline", {
                 this.order.orderlines.remove(line);
             }
         }
-        return super.set_quantity(...arguments);
+        return this._super(...arguments);
     },
     getEWalletGiftCardProgramType() {
         return this.eWalletGiftCardProgram && this.eWalletGiftCardProgram.program_type;
@@ -291,7 +291,7 @@ patch(Order.prototype, "pos_loyalty.Order", {
         this.invalidCoupons = true;
     },
     export_as_JSON() {
-        const json = super.export_as_JSON(...arguments);
+        const json = this._super(...arguments);
         json.disabledRewards = [...this.disabledRewards];
         json.codeActivatedProgramRules = this.codeActivatedProgramRules;
         json.codeActivatedCoupons = this.codeActivatedCoupons;
@@ -318,7 +318,7 @@ patch(Order.prototype, "pos_loyalty.Order", {
                 this.couponPointChanges[newId] = pe;
             }
         }
-        super.init_from_JSON(...arguments);
+        this._super(...arguments);
         delete this.oldCouponMapping;
         this.disabledRewards = new Set(json.disabledRewards);
         this.codeActivatedProgramRules = json.codeActivatedProgramRules;
@@ -332,7 +332,7 @@ patch(Order.prototype, "pos_loyalty.Order", {
      */
     set_partner(partner) {
         const oldPartner = this.get_partner();
-        super.set_partner(partner);
+        this._super(partner);
         if (this.couponPointChanges && oldPartner !== this.get_partner()) {
             // Remove couponPointChanges for cards in is_nominative programs.
             // This makes sure that counting of points on loyalty and ewallet programs is updated after partner changes.
@@ -353,7 +353,7 @@ patch(Order.prototype, "pos_loyalty.Order", {
         return (
             !_.isEmpty(this.couponPointChanges) ||
             this._get_reward_lines().length ||
-            super.wait_for_push_order(...arguments)
+            this._super(...arguments)
         );
     },
     /**
@@ -362,7 +362,7 @@ patch(Order.prototype, "pos_loyalty.Order", {
      * @override
      */
     export_for_printing() {
-        const result = super.export_for_printing(...arguments);
+        const result = this._super(...arguments);
         if (this.get_partner()) {
             result.loyaltyStats = this.getLoyaltyPoints();
         }
@@ -371,7 +371,7 @@ patch(Order.prototype, "pos_loyalty.Order", {
     },
     //@override
     _get_ignored_product_ids_total_discount() {
-        const productIds = super._get_ignored_product_ids_total_discount(...arguments);
+        const productIds = this._super(...arguments);
         const giftCardPrograms = this.pos.programs.filter(
             (p) => p.program_type === "gift_card"
         );
@@ -384,7 +384,7 @@ patch(Order.prototype, "pos_loyalty.Order", {
         return productIds;
     },
     get_orderlines() {
-        const orderlines = super.get_orderlines(this, arguments);
+        const orderlines = this._super(this, arguments);
         const rewardLines = [];
         const nonRewardLines = [];
         for (const line of orderlines) {
@@ -397,14 +397,14 @@ patch(Order.prototype, "pos_loyalty.Order", {
         return [...nonRewardLines, ...rewardLines];
     },
     _get_reward_lines() {
-        const orderLines = super.get_orderlines(...arguments);
+        const orderLines = this._super(...arguments);
         if (orderLines) {
             return orderLines.filter((line) => line.is_reward_line);
         }
         return orderLines;
     },
     _get_regular_order_lines() {
-        const orderLines = super.get_orderlines(...arguments);
+        const orderLines = this._super(...arguments);
         if (orderLines) {
             return orderLines.filter(
                 (line) => !line.is_reward_line && !line.refunded_orderline_id
@@ -413,17 +413,17 @@ patch(Order.prototype, "pos_loyalty.Order", {
         return orderLines;
     },
     get_last_orderline() {
-        const orderLines = super
-            .get_orderlines(...arguments)
+        const orderLines = this._super
+            (...arguments)
             .filter((line) => !line.is_reward_line);
         return orderLines[orderLines.length - 1];
     },
     set_pricelist(pricelist) {
-        super.set_pricelist(...arguments);
+        this._super(...arguments);
         this._updateRewards();
     },
     set_orderline_options(line, options) {
-        super.set_orderline_options(...arguments);
+        this._super(...arguments);
         if (options && options.is_reward_line) {
             line.is_reward_line = options.is_reward_line;
             line.reward_id = options.reward_id;
@@ -438,7 +438,7 @@ patch(Order.prototype, "pos_loyalty.Order", {
         line.eWalletGiftCardProgram = options.eWalletGiftCardProgram;
     },
     add_product(product, options) {
-        super.add_product(...arguments);
+        this._super(...arguments);
         this._updateRewards();
     },
     async _initializePrograms() {

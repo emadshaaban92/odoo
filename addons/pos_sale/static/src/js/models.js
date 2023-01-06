@@ -6,14 +6,14 @@ import { patch } from "@web/core/utils/patch";
 patch(Order.prototype, "pos_sale.Order", {
     //@override
     select_orderline(orderline) {
-        super.select_orderline(...arguments);
+        this._super(...arguments);
         if (orderline && orderline.product.id === this.pos.config.down_payment_product_id[0]) {
             this.pos.numpadMode = "price";
         }
     },
     //@override
     _get_ignored_product_ids_total_discount() {
-        const productIds = super._get_ignored_product_ids_total_discount(...arguments);
+        const productIds = this._super(...arguments);
         productIds.push(this.pos.config.down_payment_product_id[0]);
         return productIds;
     },
@@ -32,14 +32,14 @@ patch(Orderline.prototype, "pos_sale.Orderline", {
         this.customerNote = this.customerNote || options.customer_note;
     },
     init_from_JSON(json) {
-        super.init_from_JSON(...arguments);
+        this._super(...arguments);
         this.sale_order_origin_id = json.sale_order_origin_id;
         this.sale_order_line_id = json.sale_order_line_id;
         this.down_payment_details =
             json.down_payment_details && JSON.parse(json.down_payment_details);
     },
     export_as_JSON() {
-        const json = super.export_as_JSON(...arguments);
+        const json = this._super(...arguments);
         json.sale_order_origin_id = this.sale_order_origin_id;
         json.sale_order_line_id = this.sale_order_line_id;
         json.down_payment_details =
@@ -58,7 +58,7 @@ patch(Orderline.prototype, "pos_sale.Orderline", {
         return false;
     },
     export_for_printing() {
-        var json = super.export_for_printing(...arguments);
+        var json = this._super(...arguments);
         json.down_payment_details = this.down_payment_details;
         if (this.sale_order_origin_id) {
             json.so_reference = this.sale_order_origin_id.name;

@@ -11,7 +11,7 @@ patch(PosGlobalState.prototype, "l10n_colombian.PosGlobalState", {
 
 patch(Order.prototype, "l10n_colombian.Order", {
     export_for_printing() {
-        var result = super.export_for_printing(...arguments);
+        var result = this._super(...arguments);
         result.l10n_co_dian = this.get_l10n_co_dian();
         return result;
     },
@@ -22,7 +22,7 @@ patch(Order.prototype, "l10n_colombian.Order", {
         return this.l10n_co_dian;
     },
     wait_for_push_order() {
-        var result = super.wait_for_push_order(...arguments);
+        var result = this._super(...arguments);
         result = Boolean(result || this.pos.is_colombian_country());
         return result;
     },

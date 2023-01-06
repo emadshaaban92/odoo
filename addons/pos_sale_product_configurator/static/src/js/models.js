@@ -6,7 +6,7 @@ import { patch } from "@web/core/utils/patch";
 
 patch(Order.prototype, "pos_sale_product_configurator.Order", {
     async add_product(product, options) {
-        super.add_product(...arguments);
+        this._super(...arguments);
         if (product.optional_product_ids.length) {
             // The `optional_product_ids` only contains ids of the product templates and not the product itself
             // We don't load all the product template in the pos, so it'll be hard to know if the id comes from

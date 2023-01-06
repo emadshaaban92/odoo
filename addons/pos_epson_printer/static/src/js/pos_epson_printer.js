@@ -7,7 +7,7 @@ import { patch } from "@web/core/utils/patch";
 patch(PosGlobalState.prototype, "pos_epson_printer.PosGlobalState", {
     after_load_server_data() {
         var self = this;
-        return super.after_load_server_data(...arguments).then(function () {
+        return this._super(...arguments).then(function () {
             if (self.config.other_devices && self.config.epson_printer_ip) {
                 self.env.proxy.printer = new EpsonPrinter(self.config.epson_printer_ip, self);
             }

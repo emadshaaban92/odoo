@@ -23,7 +23,7 @@ patch(PosGlobalState.prototype, "l10n_france.PosGlobalState", {
         return _.contains(french_countries, this.company.country.code);
     },
     disallowLineQuantityChange() {
-        const result = super.disallowLineQuantityChange(...arguments);
+        const result = this._super(...arguments);
         return this.is_french_country() || result;
     },
 });
@@ -35,7 +35,7 @@ patch(Order.prototype, "l10n_france.Order", {
         this.save_to_db();
     },
     export_for_printing() {
-        var result = super.export_for_printing(...arguments);
+        var result = this._super(...arguments);
         result.l10n_fr_hash = this.get_l10n_fr_hash();
         return result;
     },
@@ -46,7 +46,7 @@ patch(Order.prototype, "l10n_france.Order", {
         return this.l10n_fr_hash;
     },
     wait_for_push_order() {
-        var result = super.wait_for_push_order(...arguments);
+        var result = this._super(...arguments);
         result = Boolean(result || this.pos.is_french_country());
         return result;
     },
@@ -64,7 +64,7 @@ patch(Order.prototype, "l10n_france.Order", {
                 body: _t("Deleting of orders is not allowed."),
             });
         } else {
-            super.destroy(...arguments);
+            this._super(...arguments);
         }
     },
 });
@@ -81,7 +81,7 @@ patch(Orderline.prototype, "l10n_france.Orderline", {
         ) {
             return false;
         } else {
-            return super.can_be_merged_with(...arguments);
+            return this._super(...arguments);
         }
     },
 });

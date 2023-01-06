@@ -5,7 +5,7 @@ import { patch } from "@web/core/utils/patch";
 
 patch(Order.prototype, "pos_l10n_saudi_arabia.Order", {
     export_for_printing() {
-        var result = super.export_for_printing(...arguments);
+        var result = this._super(...arguments);
         if (this.pos.company.country.code === "SA") {
             result.is_settlement = this.is_settlement();
             if (!result.is_settlement) {

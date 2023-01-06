@@ -14,7 +14,7 @@ patch(PosGlobalState.prototype, "pos_epson_printer_restaurant.PosGlobalState", {
         if (config.printer_type === "epson_epos") {
             return new EpsonPrinter(config.epson_printer_ip, this);
         } else {
-            return super.create_printer(...arguments);
+            return this._super(...arguments);
         }
     },
 });

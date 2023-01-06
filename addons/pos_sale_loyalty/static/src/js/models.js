@@ -10,7 +10,7 @@ patch(Orderline.prototype, "pos_sale_loyalty.Orderline", {
         if (this.sale_order_origin_id) {
             return true;
         }
-        return super.ignoreLoyaltyPoints(args);
+        return this._super(args);
     },
     //@override
     setQuantityFromSOL(saleOrderLine) {
@@ -18,7 +18,7 @@ patch(Orderline.prototype, "pos_sale_loyalty.Orderline", {
         if (saleOrderLine.reward_id) {
             this.set_quantity(saleOrderLine.product_uom_qty);
         } else {
-            super.setQuantityFromSOL(...arguments);
+            this._super(...arguments);
         }
     },
 });

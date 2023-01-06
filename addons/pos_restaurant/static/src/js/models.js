@@ -19,7 +19,7 @@ patch(PosGlobalState.prototype, "pos_restaurant.PosGlobalState", {
     },
     //@override
     async _processData(loadedData) {
-        await super._processData(...arguments);
+        await this._super(...arguments);
         if (this.config.is_table_management) {
             this.floors = loadedData["restaurant.floor"];
             this.loadRestaurantFloor();
@@ -30,14 +30,14 @@ patch(PosGlobalState.prototype, "pos_restaurant.PosGlobalState", {
     },
     //@override
     _onReactiveOrderUpdated(order) {
-        super._onReactiveOrderUpdated(...arguments);
+        this._super(...arguments);
         if (this.config.iface_floorplan && !this.loadingOrderState) {
             this.ordersToUpdateSet.add(order);
         }
     },
     //@override
     removeOrder(order, removeFromServer = true) {
-        super.removeOrder(...arguments);
+        this._super(...arguments);
         if (this.config.iface_floorplan && removeFromServer) {
             if (this.ordersToUpdateSet.has(order)) {
                 this.ordersToUpdateSet.delete(order);
@@ -49,7 +49,7 @@ patch(PosGlobalState.prototype, "pos_restaurant.PosGlobalState", {
     },
     //@override
     async after_load_server_data() {
-        var res = await super.after_load_server_data(...arguments);
+        var res = await this._super(...arguments);
         if (this.config.iface_floorplan) {
             this.table = null;
         }
@@ -60,18 +60,18 @@ patch(PosGlobalState.prototype, "pos_restaurant.PosGlobalState", {
     // set when the user selects a table.
     set_start_order() {
         if (!this.config.iface_floorplan) {
-            super.set_start_order(...arguments);
+            this._super(...arguments);
         }
     },
     //@override
     add_new_order() {
-        const order = super.add_new_order();
+        const order = this._super();
         this.ordersToUpdateSet.add(order);
         return order;
     },
     //@override
     createReactiveOrder(json) {
-        let reactiveOrder = super.createReactiveOrder(...arguments);
+        let reactiveOrder = this._super(...arguments);
         if (this.config.iface_printers) {
             const updateOrderChanges = () => {
                 if (reactiveOrder.get_screen_data().name === "ProductScreen") {
@@ -86,7 +86,7 @@ patch(PosGlobalState.prototype, "pos_restaurant.PosGlobalState", {
     //@override
     async load_orders() {
         this.loadingOrderState = true;
-        await super.load_orders();
+        await this._super();
         this.loadingOrderState = false;
     },
     _loadRestaurantPrinter(printers) {
@@ -349,7 +349,7 @@ patch(Order.prototype, "pos_restaurant.Order", {
     },
     //@override
     export_as_JSON() {
-        const json = super.export_as_JSON(...arguments);
+        const json = this._super(...arguments);
         if (this.pos.config.module_pos_restaurant) {
             if (this.pos.config.iface_floorplan) {
                 json.table_id = this.tableId;
@@ -365,7 +365,7 @@ patch(Order.prototype, "pos_restaurant.Order", {
     },
     //@override
     init_from_JSON(json) {
-        super.init_from_JSON(...arguments);
+        this._super(...arguments);
         if (this.pos.config.module_pos_restaurant) {
             if (this.pos.config.iface_floorplan) {
                 this.tableId = json.table_id;
@@ -379,7 +379,7 @@ patch(Order.prototype, "pos_restaurant.Order", {
     },
     //@override
     export_for_printing() {
-        const json = super.export_for_printing(...arguments);
+        const json = this._super(...arguments);
         if (this.pos.config.module_pos_restaurant) {
             if (this.pos.config.iface_floorplan) {
                 json.table = this.getTable().name;
@@ -596,19 +596,19 @@ patch(Orderline.prototype, "pos_restaurant.Orderline", {
             return false;
         } else {
             return (
-                !this.mp_skip && !orderline.mp_skip && super.can_be_merged_with(...arguments)
+                !this.mp_skip && !orderline.mp_skip && this._super(...arguments)
             );
         }
     },
     //@override
     clone() {
-        const orderline = super.clone(...arguments);
+        const orderline = this._super(...arguments);
         orderline.note = this.note;
         return orderline;
     },
     //@override
     export_as_JSON() {
-        const json = super.export_as_JSON(...arguments);
+        const json = this._super(...arguments);
         json.note = this.note;
         if (this.pos.config.iface_printers) {
             json.uuid = this.uuid;
@@ -618,7 +618,7 @@ patch(Orderline.prototype, "pos_restaurant.Orderline", {
     },
     //@override
     init_from_JSON(json) {
-        super.init_from_JSON(...arguments);
+        this._super(...arguments);
         this.note = json.note;
         if (this.pos.config.iface_printers) {
             this.uuid = json.uuid;

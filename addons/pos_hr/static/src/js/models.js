@@ -5,7 +5,7 @@ import { patch } from "@web/core/utils/patch";
 
 patch(PosGlobalState.prototype, "pos_hr.PosGlobalState", {
     async _processData(loadedData) {
-        await super._processData(...arguments);
+        await this._super(...arguments);
         if (this.config.module_pos_hr) {
             this.employees = loadedData["hr.employee"];
             this.employee_by_id = loadedData["employee_by_id"];
@@ -13,7 +13,7 @@ patch(PosGlobalState.prototype, "pos_hr.PosGlobalState", {
         }
     },
     async after_load_server_data() {
-        await super.after_load_server_data(...arguments);
+        await this._super(...arguments);
         if (this.config.module_pos_hr) {
             this.hasLoggedIn = !this.config.module_pos_hr;
         }
@@ -48,13 +48,13 @@ patch(PosGlobalState.prototype, "pos_hr.PosGlobalState", {
         if (this.config.module_pos_hr) {
             return this.cashier;
         }
-        return super.get_cashier();
+        return this._super();
     },
     get_cashier_user_id() {
         if (this.config.module_pos_hr) {
             return this.cashier.user_id ? this.cashier.user_id : null;
         }
-        return super.get_cashier_user_id();
+        return this._super();
     },
 });
 
@@ -66,13 +66,13 @@ patch(Order.prototype, "pos_hr.Order", {
         }
     },
     init_from_JSON(json) {
-        super.init_from_JSON(...arguments);
+        this._super(...arguments);
         if (this.pos.config.module_pos_hr && json.employee_id) {
             this.cashier = this.pos.employee_by_id[json.employee_id];
         }
     },
     export_as_JSON() {
-        const json = super.export_as_JSON(...arguments);
+        const json = this._super(...arguments);
         if (this.pos.config.module_pos_hr) {
             json.employee_id = this.cashier ? this.cashier.id : false;
         }
