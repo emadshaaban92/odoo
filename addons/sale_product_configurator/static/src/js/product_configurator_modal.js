@@ -115,12 +115,21 @@ export const OptionalProductsModal = Dialog.extend(ServicesMixin, VariantMixin, 
             if (!self.preventOpening) {
                 self.$modal.find(".modal-body").replaceWith(self.$el);
                 self.$modal.attr('open', true);
+<<<<<<< HEAD
                 self.$modal.removeAttr("aria-hidden");
                 self.$modal.appendTo(self.container);
                 const modal = new Modal(self.$modal[0], {
                     focus: true,
                 });
                 modal.show();
+||||||| parent of 3050ef59581 (temp)
+                self.$modal.removeAttr("aria-hidden");
+                self.$modal.modal().appendTo(self.container);
+                self.$modal.focus();
+=======
+                self.$modal.modal().appendTo(self.container);
+                self.$modal.focus();
+>>>>>>> 3050ef59581 (temp)
                 self._openedResolver();
 
                 // Notifies OwlDialog to adjust focus/active properties on owl dialogs
