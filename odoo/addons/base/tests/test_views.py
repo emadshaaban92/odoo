@@ -3,6 +3,7 @@
 import ast
 import json
 import logging
+import re
 import time
 
 from functools import partial
@@ -16,7 +17,7 @@ from odoo.exceptions import AccessError, ValidationError
 from odoo.tests import common
 from odoo.tools import get_cache_key_counter, mute_logger, view_validation
 from odoo.addons.base.models.ir_ui_view import (
-    transfer_field_to_modifiers, transfer_node_to_modifiers, simplify_modifiers,
+    transfer_field_to_modifiers, transfer_node_to_modifiers, simplify_modifiers, ABCDE_REGEX
 )
 
 _logger = logging.getLogger(__name__)
@@ -3400,6 +3401,17 @@ Forbidden attribute used in arch (t-att-data-tooltip)."""
 Forbidden attribute used in arch (t-attf-data-tooltip-template)."""
         )
 
+    @mute_logger('odoo.addons.base.models.ir_ui_view')
+    def test_forbidden_use_of___abcde___in_kanban(self):
+        arch = "<kanban><templates><t t-name='kanban-box'>%s</t></templates></kanban>"
+        self.assertInvalid(
+            arch % '<t t-esc="__abcde__.props.resId"/>',
+            """Error while validating view near:
+
+<kanban __validate__="1"><templates><t t-name="kanban-box"><t t-esc="__abcde__.props.resId"/></t></templates></kanban>
+Forbidden use of `__abcde__` in arch."""
+        )
+
 
 class TestViewTranslations(common.TransactionCase):
     # these tests are essentially the same as in test_translate.py, but they use
@@ -4138,3 +4150,25 @@ class TestRenderAllViews(common.TransactionCase):
 
         _logger.info('Rendered %d views as %s using (best of 5) %ss',
             count, self.env.user.name, elapsed)
+
+
+class ThisRegexTest(common.TransactionCase):
+    def test_this_regex(self):
+        self.assertIsNone(re.search(ABCDE_REGEX, ""))
+        self.assertIsNone(re.search(ABCDE_REGEX, "__abcde__2"))
+        self.assertIsNone(re.search(ABCDE_REGEX, "__abcde___that"))
+        self.assertIsNone(re.search(ABCDE_REGEX, "a__abcde__"))
+
+        self.assertIsNotNone(re.search(ABCDE_REGEX, "__abcde__"))
+        self.assertIsNotNone(re.search(ABCDE_REGEX, "__abcde__ "))
+        self.assertIsNotNone(re.search(ABCDE_REGEX, " __abcde__ "))
+        self.assertIsNotNone(re.search(ABCDE_REGEX, "__abcde__.props"))
+        self.assertIsNotNone(re.search(ABCDE_REGEX, "__abcde__ .props"))
+        self.assertIsNotNone(re.search(ABCDE_REGEX, "__abcde__['props']"))
+        self.assertIsNotNone(re.search(ABCDE_REGEX, "__abcde__ ['props']"))
+        self.assertIsNotNone(re.search(ABCDE_REGEX, "__abcde__[\"props\"]"))
+        self.assertIsNotNone(re.search(ABCDE_REGEX, "__abcde__ [\"props\"]"))
+        self.assertIsNotNone(re.search(ABCDE_REGEX, "    __abcde__     [\"props\"]    "))
+        self.assertIsNotNone(re.search(ABCDE_REGEX, "record ? __abcde__ : false"))
+        self.assertIsNotNone(re.search(ABCDE_REGEX, "!__abcde__.props.resId"))
+        self.assertIsNotNone(re.search(ABCDE_REGEX, "{{ __abcde__ }}"))

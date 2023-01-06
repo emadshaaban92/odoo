@@ -76,13 +76,13 @@ export class FormCompiler extends ViewCompiler {
         } else {
             labelText = labelText
                 ? toStringExpression(labelText)
-                : `this.props.record.fields['${fieldName}'].string`;
+                : `__abcde__.props.record.fields['${fieldName}'].string`;
         }
         const formLabel = createElement("FormLabel", {
             id: `'${fieldId}'`,
             fieldName: `'${fieldName}'`,
-            record: `this.props.record`,
-            fieldInfo: `this.props.archInfo.fieldNodes['${fieldId}']`,
+            record: `__abcde__.props.record`,
+            fieldInfo: `__abcde__.props.archInfo.fieldNodes['${fieldId}']`,
             className: `"${label.className}"`,
             string: labelText,
         });
@@ -140,7 +140,7 @@ export class FormCompiler extends ViewCompiler {
             if (typeof invisible === "boolean") {
                 isVisibleExpr = `${invisible ? false : true}`;
             } else {
-                isVisibleExpr = `!this.evalDomainFromRecord(this.props.record,${JSON.stringify(
+                isVisibleExpr = `!__abcde__.evalDomainFromRecord(__abcde__.props.record,${JSON.stringify(
                     invisible
                 )})`;
             }
@@ -176,8 +176,8 @@ export class FormCompiler extends ViewCompiler {
 
     compileButton(el, params) {
         const compiled = super.compileButton(el, params);
-        compiled.setAttribute("disable", "this.props.disableViewButtons");
-        compiled.setAttribute("enable", "this.props.enableViewButtons");
+        compiled.setAttribute("disable", "__abcde__.props.disableViewButtons");
+        compiled.setAttribute("enable", "__abcde__.props.enableViewButtons");
         return compiled;
     }
 
@@ -219,13 +219,13 @@ export class FormCompiler extends ViewCompiler {
     compileForm(el, params) {
         const sheetNode = el.querySelector("sheet");
         const displayClasses = sheetNode
-            ? `d-flex {{ this.uiService.size < ${SIZES.XXL} ? "flex-column" : "flex-nowrap h-100" }}`
+            ? `d-flex {{ __abcde__.uiService.size < ${SIZES.XXL} ? "flex-column" : "flex-nowrap h-100" }}`
             : "d-block";
         const stateClasses =
-            "{{ this.props.record.isDirty ? 'o_form_dirty' : !this.props.record.isVirtual ? 'o_form_saved' : '' }}";
+            "{{ __abcde__.props.record.isDirty ? 'o_form_dirty' : !__abcde__.props.record.isVirtual ? 'o_form_saved' : '' }}";
         const form = createElement("div", {
-            "t-att-class": "this.props.class",
-            "t-attf-class": `{{this.props.record.isInEdition ? 'o_form_editable' : 'o_form_readonly'}} ${displayClasses} ${stateClasses}`,
+            "t-att-class": "__abcde__.props.class",
+            "t-attf-class": `{{__abcde__.props.record.isInEdition ? 'o_form_editable' : 'o_form_readonly'}} ${displayClasses} ${stateClasses}`,
         });
         if (!sheetNode) {
             for (const child of el.childNodes) {
@@ -249,8 +249,9 @@ export class FormCompiler extends ViewCompiler {
         if (localization.multiLang) {
             const statusBar = form.querySelector(".o_form_statusbar");
             const translateAlert = createElement("t", {
-                "t-if": "this.props.translateAlert",
+                "t-if": "__abcde__.props.translateAlert",
                 "t-call": "web.TranslateAlert",
+                "t-call-context": "__abcde__",
             });
             if (statusBar) {
                 statusBar.parentElement.insertBefore(translateAlert, statusBar.nextSibling);
@@ -332,14 +333,14 @@ export class FormCompiler extends ViewCompiler {
                     const props = {
                         id: `${fieldId}`,
                         fieldName: `'${fieldName}'`,
-                        record: `this.props.record`,
+                        record: `__abcde__.props.record`,
                         string: child.hasAttribute("string")
                             ? toStringExpression(child.getAttribute("string"))
-                            : `this.props.record.fields.${fieldName}.string`,
-                        fieldInfo: `this.props.archInfo.fieldNodes[${fieldId}]`,
+                            : `__abcde__.props.record.fields.${fieldName}.string`,
+                        fieldInfo: `__abcde__.props.archInfo.fieldNodes[${fieldId}]`,
                     };
                     mainSlot.setAttribute("props", objectToString(props));
-                    mainSlot.setAttribute("Component", "this.constructor.components.FormLabel");
+                    mainSlot.setAttribute("Component", "__abcde__.constructor.components.FormLabel");
                     mainSlot.setAttribute("subType", "'item_component'");
                 }
             } else {
@@ -360,7 +361,7 @@ export class FormCompiler extends ViewCompiler {
                 if (typeof invisible === "boolean") {
                     isVisibleExpr = `${invisible ? false : true}`;
                 } else {
-                    isVisibleExpr = `!this.evalDomainFromRecord(this.props.record,${JSON.stringify(
+                    isVisibleExpr = `!__abcde__.evalDomainFromRecord(__abcde__.props.record,${JSON.stringify(
                         invisible
                     )})`;
                 }
@@ -504,11 +505,11 @@ export class FormCompiler extends ViewCompiler {
 
         noteBook.setAttribute(
             "defaultPage",
-            `this.props.record.isNew ? undefined : this.props.activeNotebookPages[${noteBookId}]`
+            `__abcde__.props.record.isNew ? undefined : __abcde__.props.activeNotebookPages[${noteBookId}]`
         );
         noteBook.setAttribute(
             "onPageUpdate",
-            `(page) => this.props.onNotebookPageChange(${noteBookId}, page)`
+            `(page) => __abcde__.props.onNotebookPageChange(${noteBookId}, page)`
         );
 
         for (const child of el.children) {
@@ -539,7 +540,7 @@ export class FormCompiler extends ViewCompiler {
             if (child.getAttribute("autofocus") === "autofocus") {
                 noteBook.setAttribute(
                     "defaultPage",
-                    `this.props.record.isNew ? "${pageId}" : (this.props.activeNotebookPages[${noteBookId}] || "${pageId}")`
+                    `__abcde__.props.record.isNew ? "${pageId}" : (__abcde__.props.activeNotebookPages[${noteBookId}] || "${pageId}")`
                 );
             }
 
@@ -558,7 +559,7 @@ export class FormCompiler extends ViewCompiler {
             if (typeof invisible === "boolean") {
                 isVisible = `${!invisible}`;
             } else {
-                isVisible = `!this.evalDomainFromRecord(this.props.record,${JSON.stringify(
+                isVisible = `!__abcde__.evalDomainFromRecord(__abcde__.props.record,${JSON.stringify(
                     invisible
                 )})`;
             }
@@ -632,7 +633,7 @@ export class FormCompiler extends ViewCompiler {
      */
     compileWidget(el) {
         const widget = super.compileWidget(el);
-        widget.setAttribute("readonly", `!this.props.record.isInEdition`);
+        widget.setAttribute("readonly", `!__abcde__.props.record.isInEdition`);
         return widget;
     }
 }
