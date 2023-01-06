@@ -173,7 +173,7 @@ class DeliveryCarrier(models.Model):
             # save the real price in case a free_over rule overide it to 0
             res['carrier_price'] = res['price']
             # free when order is large enough
-            if res['success'] and self.free_over and order._compute_amount_total_without_delivery() >= self.amount:
+            if res['success'] and self.free_over and order._compute_amount_total_without_delivery() - order._get_amount_paid_with_gift_card() >= self.amount:
                 res['warning_message'] = _('The shipping is free since the order amount exceeds %.2f.') % (self.amount)
                 res['price'] = 0.0
             return res

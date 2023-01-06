@@ -50,6 +50,16 @@ class SaleOrder(models.Model):
             })
         return error
 
+
+    def _get_amount_paid_with_gift_card(self):
+        gift_card_lines = self.env['sale.order.line'].search([
+            ('order_id', '=', self.id),
+            ('gift_card_id', '!=', None),
+        ])
+
+        return sum(gift_card_lines.mapped('price_unit'))
+
+
     def _send_gift_card_mail(self):
         template = self.env.ref('sale_gift_card.mail_template_gift_card', raise_if_not_found=False)
         if template and self.gift_card_count:
