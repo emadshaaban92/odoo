@@ -12,8 +12,8 @@ from odoo.tools import float_compare
 class SaleOrder(models.Model):
     _inherit = 'sale.order'
 
-    timesheet_ids = fields.Many2many('account.analytic.line', compute='_compute_timesheet_ids', string='Timesheet activities associated to this sale')
-    timesheet_count = fields.Float(string='Timesheet activities', compute='_compute_timesheet_ids', groups="hr_timesheet.group_hr_timesheet_user")
+    timesheet_ids = fields.Many2many('account.analytic.line', compute='_compute_timesheet_ids', string='Timesheet activities associated to this sale', compute_sudo=True)
+    timesheet_count = fields.Float(string='Timesheet activities', compute='_compute_timesheet_ids', groups="hr_timesheet.group_hr_timesheet_user", compute_sudo=True)
 
     # override domain
     project_id = fields.Many2one(domain="[('pricing_type', '!=', 'employee_rate'), ('analytic_account_id', '!=', False), ('company_id', '=', company_id)]")
@@ -23,12 +23,13 @@ class SaleOrder(models.Model):
     def _compute_timesheet_ids(self):
         timesheets_per_so = {
             group['order_id'][0]: (group['ids'], group['order_id_count'])
-            for group in self.env['account.analytic.line'].sudo()._read_group(
+            for group in self.env['account.analytic.line']._read_group(
                 [('order_id', 'in', self.ids), ('project_id', '!=', False)],
                 ['order_id', 'ids:array_agg(id)'],
                 ['order_id']
             )
         }
+
         for order in self:
             timesheet_ids, timesheet_count = timesheets_per_so.get(order, (False, 0))
             order.write({
