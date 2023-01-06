@@ -200,7 +200,6 @@ msgid "Employee Advance"
 msgstr ""
 
 #. module: l10n_ec
-#: model:account.tax.group,name:l10n_ec.ec_tax_group_outflows
 #: model:ir.model.fields.selection,name:l10n_ec.selection__account_tax_group__l10n_ec_type__outflows_tax
 msgid "Exchange Outflows"
 msgstr ""
@@ -305,7 +304,6 @@ msgid "Origin Document"
 msgstr ""
 
 #. module: l10n_ec
-#: model:account.tax.group,name:l10n_ec.ec_tax_group_others
 #: model:ir.model.fields.selection,name:l10n_ec.selection__account_tax_group__l10n_ec_type__other
 #: model:ir.model.fields.selection,name:l10n_ec.selection__l10n_latam_document_type__l10n_ec_type__other
 msgid "Others"
@@ -333,7 +331,6 @@ msgid "Percent"
 msgstr ""
 
 #. module: l10n_ec
-#: model:account.tax.group,name:l10n_ec.ec_tax_group_irbpnr
 #: model:ir.model.fields.selection,name:l10n_ec.selection__account_tax_group__l10n_ec_type__irbpnr
 msgid "Plastic Bottles (IRBPNR)"
 msgstr ""
@@ -344,7 +341,6 @@ msgid "Product Template"
 msgstr ""
 
 #. module: l10n_ec
-#: model:account.tax.group,name:l10n_ec.ec_tax_group_withhold_income
 #: model:ir.model.fields.selection,name:l10n_ec.selection__account_tax_group__l10n_ec_type__withhold_income_tax
 msgid "Profit Withhold"
 msgstr ""
@@ -358,11 +354,6 @@ msgstr ""
 #: model:ir.actions.act_window,name:l10n_ec.action_account_l10n_ec_witholding_tree
 #: model:ir.ui.menu,name:l10n_ec.menu_action_account_l10n_ec_witholding
 msgid "Retenciones"
-msgstr ""
-
-#. module: l10n_ec
-#: model:account.tax.group,name:l10n_ec.ec_tax_group_ice
-msgid "Special Consumptions (ICE)"
 msgstr ""
 
 #. module: l10n_ec
@@ -445,26 +436,18 @@ msgid "Unknown"
 msgstr ""
 
 #. module: l10n_ec
-#: model:account.tax.group,name:l10n_ec.ec_tax_group_vat0
 #: model:ir.model.fields.selection,name:l10n_ec.selection__account_tax_group__l10n_ec_type__zero_vat
 msgid "VAT 0%"
 msgstr ""
 
 #. module: l10n_ec
-#: model:account.tax.group,name:l10n_ec.ec_tax_group_vat12
 #: model:ir.model.fields.selection,name:l10n_ec.selection__account_tax_group__l10n_ec_type__vat12
 msgid "VAT 12%"
 msgstr ""
 
 #. module: l10n_ec
-#: model:account.tax.group,name:l10n_ec.ec_tax_group_vat14
 #: model:ir.model.fields.selection,name:l10n_ec.selection__account_tax_group__l10n_ec_type__vat14
 msgid "VAT 14%"
-msgstr ""
-
-#. module: l10n_ec
-#: model:account.tax.group,name:l10n_ec.ec_tax_group_vat_excempt
-msgid "VAT Excempt"
 msgstr ""
 
 #. module: l10n_ec
@@ -473,13 +456,11 @@ msgid "VAT Exempt"
 msgstr ""
 
 #. module: l10n_ec
-#: model:account.tax.group,name:l10n_ec.ec_tax_group_vat_not_charged
 #: model:ir.model.fields.selection,name:l10n_ec.selection__account_tax_group__l10n_ec_type__not_charged_vat
 msgid "VAT Not Charged"
 msgstr ""
 
 #. module: l10n_ec
-#: model:account.tax.group,name:l10n_ec.ec_tax_group_withhold_vat
 #: model:ir.model.fields.selection,name:l10n_ec.selection__account_tax_group__l10n_ec_type__withhold_vat
 msgid "VAT Withhold"
 msgstr ""

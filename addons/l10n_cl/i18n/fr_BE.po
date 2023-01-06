@@ -113,7 +113,10 @@ msgstr ""
 #: model:ir.model.fields,help:l10n_cl.field_account_move__l10n_latam_internal_type
 #: model:ir.model.fields,help:l10n_cl.field_account_payment__l10n_latam_internal_type
 #: model:ir.model.fields,help:l10n_cl.field_l10n_latam_document_type__internal_type
-msgid "Analog to odoo account.move.move_type but with more options allowing to identify the kind of document we are working with. (not only related to account.move, could be for documents of other models like stock.picking)"
+msgid ""
+"Analog to odoo account.move.move_type but with more options allowing to "
+"identify the kind of document we are working with. (not only related to "
+"account.move, could be for documents of other models like stock.picking)"
 msgstr ""
 
 #. module: l10n_cl
@@ -251,7 +254,10 @@ msgstr ""
 #. module: l10n_cl
 #: code:addons/l10n_cl/models/account_move.py:0
 #, python-format
-msgid "Document types for foreign customers must be export type (codes 110, 111 or 112) or you                             should define the customer as an end consumer and use receipts (codes 39 or 41)"
+msgid ""
+"Document types for foreign customers must be export type (codes 110, 111 or "
+"112) or you                             should define the customer as an end"
+" consumer and use receipts (codes 39 or 41)"
 msgstr ""
 
 #. module: l10n_cl
@@ -303,25 +309,10 @@ msgid "ID"
 msgstr ""
 
 #. module: l10n_cl
-#: model:account.tax.group,name:l10n_cl.tax_group_ila
-msgid "ILA"
-msgstr ""
-
-#. module: l10n_cl
-#: model:account.tax.group,name:l10n_cl.tax_group_iva_19
-msgid "IVA 19%"
-msgstr ""
-
-#. module: l10n_cl
 #: model:ir.model.fields,help:l10n_cl.field_account_bank_statement_line__partner_id_vat
 #: model:ir.model.fields,help:l10n_cl.field_account_move__partner_id_vat
 #: model:ir.model.fields,help:l10n_cl.field_account_payment__partner_id_vat
 msgid "Identification Number for selected type"
-msgstr ""
-
-#. module: l10n_cl
-#: model:account.tax.group,name:l10n_cl.tax_group_impuestos_especificos
-msgid "Impuestos Específicos"
 msgstr ""
 
 #. module: l10n_cl
@@ -469,16 +460,6 @@ msgid "Región"
 msgstr ""
 
 #. module: l10n_cl
-#: model:account.tax.group,name:l10n_cl.tax_group_retenciones
-msgid "Retenciones"
-msgstr ""
-
-#. module: l10n_cl
-#: model:account.tax.group,name:l10n_cl.tax_group_2da_categ
-msgid "Retención de 2da Categoría"
-msgstr ""
-
-#. module: l10n_cl
 #: model:uom.uom,name:l10n_cl.product_uom_sum
 #: model:uom.uom,name:l10n_cl.product_uom_sum_99
 msgid "S.U.M"
@@ -545,13 +526,17 @@ msgstr ""
 #. module: l10n_cl
 #: code:addons/l10n_cl/models/account_move.py:0
 #, python-format
-msgid "Tax payer type and vat number are mandatory for this type of document. Please set the current tax payer type of this customer"
+msgid ""
+"Tax payer type and vat number are mandatory for this type of document. "
+"Please set the current tax payer type of this customer"
 msgstr ""
 
 #. module: l10n_cl
 #: code:addons/l10n_cl/models/account_move.py:0
 #, python-format
-msgid "Tax payer type and vat number are mandatory for this type of document. Please set the current tax payer type of this supplier"
+msgid ""
+"Tax payer type and vat number are mandatory for this type of document. "
+"Please set the current tax payer type of this supplier"
 msgstr ""
 
 #. module: l10n_cl
@@ -568,25 +553,33 @@ msgstr ""
 #. module: l10n_cl
 #: code:addons/l10n_cl/models/account_move.py:0
 #, python-format
-msgid "The DIN document is intended to be used only with RUT 60805000-0 (Tesorería General de La República)"
+msgid ""
+"The DIN document is intended to be used only with RUT 60805000-0 (Tesorería "
+"General de La República)"
 msgstr ""
 
 #. module: l10n_cl
 #: code:addons/l10n_cl/models/account_move.py:0
 #, python-format
-msgid "The tax payer type of this supplier is incorrect for the selected type of document."
+msgid ""
+"The tax payer type of this supplier is incorrect for the selected type of "
+"document."
 msgstr ""
 
 #. module: l10n_cl
 #: code:addons/l10n_cl/models/account_move.py:0
 #, python-format
-msgid "The tax payer type of this supplier is not entitled to deliver fees documents"
+msgid ""
+"The tax payer type of this supplier is not entitled to deliver fees "
+"documents"
 msgstr ""
 
 #. module: l10n_cl
 #: code:addons/l10n_cl/models/account_move.py:0
 #, python-format
-msgid "The tax payer type of this supplier is not entitled to deliver imports documents"
+msgid ""
+"The tax payer type of this supplier is not entitled to deliver imports "
+"documents"
 msgstr ""
 
 #. module: l10n_cl

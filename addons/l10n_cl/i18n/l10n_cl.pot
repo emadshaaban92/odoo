@@ -308,25 +308,10 @@ msgid "ID"
 msgstr ""
 
 #. module: l10n_cl
-#: model:account.tax.group,name:l10n_cl.tax_group_ila
-msgid "ILA"
-msgstr ""
-
-#. module: l10n_cl
-#: model:account.tax.group,name:l10n_cl.tax_group_iva_19
-msgid "IVA 19%"
-msgstr ""
-
-#. module: l10n_cl
 #: model:ir.model.fields,help:l10n_cl.field_account_bank_statement_line__partner_id_vat
 #: model:ir.model.fields,help:l10n_cl.field_account_move__partner_id_vat
 #: model:ir.model.fields,help:l10n_cl.field_account_payment__partner_id_vat
 msgid "Identification Number for selected type"
-msgstr ""
-
-#. module: l10n_cl
-#: model:account.tax.group,name:l10n_cl.tax_group_impuestos_especificos
-msgid "Impuestos Específicos"
 msgstr ""
 
 #. module: l10n_cl
@@ -471,16 +456,6 @@ msgstr ""
 #. module: l10n_cl
 #: model_terms:ir.ui.view,arch_db:l10n_cl.view_move_form
 msgid "Región"
-msgstr ""
-
-#. module: l10n_cl
-#: model:account.tax.group,name:l10n_cl.tax_group_retenciones
-msgid "Retenciones"
-msgstr ""
-
-#. module: l10n_cl
-#: model:account.tax.group,name:l10n_cl.tax_group_2da_categ
-msgid "Retención de 2da Categoría"
 msgstr ""
 
 #. module: l10n_cl

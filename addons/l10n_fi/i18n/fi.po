@@ -60,26 +60,6 @@ msgid "Journal Entries"
 msgstr "Päiväkirjaviennit"
 
 #. module: l10n_fi
-#: model:account.tax.group,name:l10n_fi.tax_group_0
-msgid "VAT 0%"
-msgstr "ALV 0%"
-
-#. module: l10n_fi
-#: model:account.tax.group,name:l10n_fi.tax_group_10
-msgid "VAT 10%"
-msgstr "ALV 10%"
-
-#. module: l10n_fi
-#: model:account.tax.group,name:l10n_fi.tax_group_14
-msgid "VAT 14%"
-msgstr "ALV 14%"
-
-#. module: l10n_fi
-#: model:account.tax.group,name:l10n_fi.tax_group_24
-msgid "VAT 24%"
-msgstr "ALV 24%"
-
-#. module: l10n_fi
 #: model:ir.model.fields,help:l10n_fi.field_account_journal__invoice_reference_model
 msgid ""
 "You can choose different models for each type of reference. The default one "

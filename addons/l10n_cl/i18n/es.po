@@ -270,9 +270,10 @@ msgid ""
 "Document types for foreign customers must be export type (codes 110, 111 or "
 "112) or you                             should define the customer as an end"
 " consumer and use receipts (codes 39 or 41)"
-msgstr "Los tipos de documento para clientes extranjeros deben ser de exportación. "
-"(Códigos 110, 111 o 112) o debe definir al cliente como consumidor final y utilizar "
-"recibos (códigos 39 o 41)"
+msgstr ""
+"Los tipos de documento para clientes extranjeros deben ser de exportación. "
+"(Códigos 110, 111 o 112) o debe definir al cliente como consumidor final y "
+"utilizar recibos (códigos 39 o 41)"
 
 #. module: l10n_cl
 #: code:addons/l10n_cl/models/res_partner.py:0
@@ -323,26 +324,11 @@ msgid "ID"
 msgstr "ID (identificación)"
 
 #. module: l10n_cl
-#: model:account.tax.group,name:l10n_cl.tax_group_ila
-msgid "ILA"
-msgstr ""
-
-#. module: l10n_cl
-#: model:account.tax.group,name:l10n_cl.tax_group_iva_19
-msgid "IVA 19%"
-msgstr ""
-
-#. module: l10n_cl
 #: model:ir.model.fields,help:l10n_cl.field_account_bank_statement_line__partner_id_vat
 #: model:ir.model.fields,help:l10n_cl.field_account_move__partner_id_vat
 #: model:ir.model.fields,help:l10n_cl.field_account_payment__partner_id_vat
 msgid "Identification Number for selected type"
 msgstr "Número de identificación para el tipo seleccionado"
-
-#. module: l10n_cl
-#: model:account.tax.group,name:l10n_cl.tax_group_impuestos_especificos
-msgid "Impuestos Específicos"
-msgstr ""
 
 #. module: l10n_cl
 #: model:ir.model.fields,field_description:l10n_cl.field_l10n_latam_document_type__internal_type
@@ -486,16 +472,6 @@ msgstr ""
 #. module: l10n_cl
 #: model_terms:ir.ui.view,arch_db:l10n_cl.view_move_form
 msgid "Región"
-msgstr ""
-
-#. module: l10n_cl
-#: model:account.tax.group,name:l10n_cl.tax_group_retenciones
-msgid "Retenciones"
-msgstr ""
-
-#. module: l10n_cl
-#: model:account.tax.group,name:l10n_cl.tax_group_2da_categ
-msgid "Retención de 2da Categoría"
 msgstr ""
 
 #. module: l10n_cl
