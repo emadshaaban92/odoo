@@ -212,7 +212,7 @@ class MailComposer(models.TransientModel):
         TDE FIXME: add or reset ?
         """
         for composer in self:
-            res_ids = composer._evaluate_res_ids() or [False]
+            res_ids = composer._evaluate_res_ids() or [0]
             if composer.composition_mode == 'mass_mail' and composer.template_id and composer.template_id.attachment_ids:
                 composer.attachment_ids = composer.template_id.attachment_ids
             elif composer.composition_mode == 'comment' and len(res_ids) == 1 and composer.template_id:
@@ -350,7 +350,7 @@ class MailComposer(models.TransientModel):
         for composer in self:
             if (composer.template_id and composer.composition_mode == 'comment'
                 and not composer.composition_batch):
-                res_ids = composer._evaluate_res_ids() or [False]
+                res_ids = composer._evaluate_res_ids() or [0]
                 rendered_values = composer._generate_template_for_composer(
                     res_ids,
                     {'email_cc', 'email_to', 'partner_ids'},
@@ -1014,7 +1014,7 @@ class MailComposer(models.TransientModel):
         if self.template_id and (self.template_id[template_fname] or force_void):
             if self.composition_mode == 'comment' and not self.composition_batch:
                 res_ids = self._evaluate_res_ids()
-                rendering_res_ids = res_ids or [False]
+                rendering_res_ids = res_ids or [0]
                 self[composer_fname] = self.template_id._generate_template(
                     rendering_res_ids,
                     {template_fname},
