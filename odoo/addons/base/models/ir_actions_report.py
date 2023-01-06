@@ -13,7 +13,7 @@ import urllib.parse
 
 from collections import OrderedDict
 from collections.abc import Iterable
-from contextlib import closing
+from contextlib import closing, nullcontext
 
 import werkzeug
 from lxml import etree
@@ -421,6 +421,21 @@ class IrActionsReport(models.Model):
 
             # Request the document right away using this same worker
             response = wsgi_client.get(f'{url.path}?{url.query}', follow_redirects=True)
+
+            if response.status_code == 404 and url.path.startswith('/web/assets'):
+                # the assets may not have been commited, trying another
+                # very ugly and error prone way
+                with (request.borrow_request() if request else nullcontext()):
+                    env = werkzeug.test.EnvironBuilder(url.path, base_url, url.query)
+                    routing_map = self.env['ir.http'].routing_map().bind_to_environ(env)
+                    try:
+                        func, args = routing_map.match('{url.path}?{url.query}')
+                        response = func(**args)
+                    except werkzeug.exceptions.HTTPException as exc:
+                        response = exc.get_response()
+                    except Exception:
+                        _logger.warning("couldn't download %s, skipped", url.path, exc_info=True)
+                        continue
 
             if response.status_code not in (200, 204):
                 _logger.warning("couldn't download %s [%s], skipped", url.path, response.status_code)
