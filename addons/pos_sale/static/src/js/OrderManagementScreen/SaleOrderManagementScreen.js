@@ -164,7 +164,7 @@ class SaleOrderManagementScreen extends ControlButtonsMixin(IndependentToOrderSc
                         continue;
                     }
 
-                    const new_line = Orderline.create(
+                    const new_line = new Orderline(
                         {},
                         {
                             pos: this.env.pos,

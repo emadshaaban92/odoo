@@ -20,7 +20,7 @@ cleanup.registerCleanup = () => {};
 
 const makePosTestEnv = env.session.is_bound
     .then(() => {
-        const pos = PosGlobalState.create({ env });
+        const pos = new PosGlobalState({ env });
         return pos.load_server_data().then(() => pos);
     })
     .then((pos) => {

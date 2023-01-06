@@ -19,7 +19,7 @@ class SplitBillScreen extends PosComponent {
             // Should create the new order outside of the constructor because
             // sequence_number of pos_session is modified. which will trigger
             // rerendering which will rerender this screen and will be infinite loop.
-            this.newOrder = Order.create(
+            this.newOrder = new Order(
                 {},
                 {
                     pos: this.env.pos,

@@ -11,7 +11,7 @@ const _t = core._t;
 const PaymentStripe = PaymentInterface.extend({
     init: function (pos, payment_method) {
         this._super(...arguments);
-        this.terminal = StripeTerminal.create({
+        this.terminal = new StripeTerminal({
             onFetchConnectionToken: this.stripeFetchConnectionToken.bind(this),
             onUnexpectedReaderDisconnect: this.stripeUnexpectedDisconnect.bind(this),
         });

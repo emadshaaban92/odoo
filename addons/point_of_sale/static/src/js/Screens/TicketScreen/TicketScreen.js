@@ -665,7 +665,7 @@ class TicketScreen extends IndependentToOrderScreen {
             // Cache these fetched orders so that next time, no need to fetch
             // them again, unless invalidated. See `_onInvoiceOrder`.
             fetchedOrders.forEach((order) => {
-                this._state.syncedOrders.cache[order.id] = Order.create(
+                this._state.syncedOrders.cache[order.id] = new Order(
                     {},
                     { pos: this.env.pos, json: order }
                 );

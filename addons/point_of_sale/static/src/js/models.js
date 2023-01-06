@@ -243,7 +243,7 @@ export class PosGlobalState extends PosModel {
             productTemplateMap[product.product_tmpl_id[0]] = (
                 productTemplateMap[product.product_tmpl_id[0]] || []
             ).concat(product);
-            return Product.create(product);
+            return new Product(product);
         });
 
         for (const pricelist of this.pricelists) {
@@ -427,7 +427,7 @@ export class PosGlobalState extends PosModel {
         if (json) {
             options.json = json;
         }
-        return this.makeOrderReactive(Order.create({}, options));
+        return this.makeOrderReactive(new Order({}, options));
     }
     makeOrderReactive(order) {
         const batchedCallback = batched(() => {
@@ -1654,7 +1654,7 @@ export class Orderline extends PosModel {
         var pack_lot_lines = json.pack_lot_ids;
         for (var i = 0; i < pack_lot_lines.length; i++) {
             var packlotline = pack_lot_lines[i][2];
-            var pack_lot_line = Packlotline.create(
+            var pack_lot_line = new Packlotline(
                 {},
                 { json: _.extend({...packlotline}, { order_line: this }) }
             );
@@ -1666,7 +1666,7 @@ export class Orderline extends PosModel {
         this.refunded_orderline_id = json.refunded_orderline_id;
     }
     clone() {
-        var orderline = Orderline.create(
+        var orderline = new Orderline(
             {},
             {
                 pos: this.pos,
@@ -1729,7 +1729,7 @@ export class Orderline extends PosModel {
         // Create new pack lot lines.
         let newPackLotLine;
         for (const newLotLine of newPackLotLines) {
-            newPackLotLine = Packlotline.create({}, { order_line: this });
+            newPackLotLine = new Packlotline({}, { order_line: this });
             newPackLotLine.lot_name = newLotLine.lot_name;
             this.pack_lot_lines.add(newPackLotLine);
         }
@@ -2622,7 +2622,7 @@ export class Order extends PosModel {
             var orderline = orderlines[i][2];
             if (this.pos.db.get_product_by_id(orderline.product_id)) {
                 this.add_orderline(
-                    Orderline.create({}, { pos: this.pos, order: this, json: orderline })
+                    new Orderline({}, { pos: this.pos, order: this, json: orderline })
                 );
             }
         }
@@ -2630,7 +2630,7 @@ export class Order extends PosModel {
         var paymentlines = json.statement_ids;
         for (i = 0; i < paymentlines.length; i++) {
             var paymentline = paymentlines[i][2];
-            var newpaymentline = Payment.create(
+            var newpaymentline = new Payment(
                 {},
                 { pos: this.pos, order: this, json: paymentline }
             );
@@ -2996,7 +2996,7 @@ export class Order extends PosModel {
         }
         this.assert_editable();
         options = options || {};
-        var line = Orderline.create({}, { pos: this.pos, order: this, product: product });
+        var line = new Orderline({}, { pos: this.pos, order: this, product: product });
         this.fix_tax_included_price(line);
 
         this.set_orderline_options(line, options);
@@ -3103,7 +3103,7 @@ export class Order extends PosModel {
         if (this.electronic_payment_in_progress()) {
             return false;
         } else {
-            var newPaymentline = Payment.create(
+            var newPaymentline = new Payment(
                 {},
                 { order: this, payment_method: payment_method, pos: this.pos }
             );
