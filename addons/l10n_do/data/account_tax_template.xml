@@ -5,8 +5,8 @@
         <record id="tax_0_sale" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">4</field>
-            <field name="name">Exento ITBIS Ventas</field>
-            <field name="description">Exento</field>
+            <field name="name">VAT Exempt Sales</field>
+            <field name="description">Exempt</field>
             <field name="amount">0</field>
             <field name="amount_type">percent</field>
             <field name="type_tax_use">sale</field>
@@ -32,8 +32,8 @@
         <record id="tax_0_purch" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">10</field>
-            <field name="name">Exento ITBIS Compras</field>
-            <field name="description">Exento</field>
+            <field name="name">VAT Exempt Purchases</field>
+            <field name="description">Exempt</field>
             <field name="amount">0</field>
             <field name="amount_type">percent</field>
             <field name="type_tax_use">purchase</field>
@@ -53,8 +53,8 @@
         <record id="tax_18_sale" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">1</field>
-            <field name="name">18% ITBIS Ventas</field>
-            <field name="description">18% ITBIS</field>
+            <field name="name">18% VAT Sales</field>
+            <field name="description">18% VAT</field>
             <field name="amount">18</field>
             <field name="amount_type">percent</field>
             <field name="type_tax_use">sale</field>
@@ -88,8 +88,8 @@
         <record id="tax_18_sale_incl" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">2</field>
-            <field name="name">18% ITBIS Incl. Ventas</field>
-            <field name="description">18% ITBIS</field>
+            <field name="name">18% VAT Incl. Sales</field>
+            <field name="description">18% VAT</field>
             <field name="amount">18</field>
             <field name="amount_type">percent</field>
             <field name="type_tax_use">sale</field>
@@ -149,9 +149,9 @@
         </record>
         <record id="tax_18_purch" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
-            <field name="name">18% ITBIS Compras</field>
+            <field name="name">18% VAT Purchases</field>
             <field name="sequence">11</field>
-            <field name="description">18% ITBIS (B)</field>
+            <field name="description">18% VAT (B)</field>
             <field name="amount">18</field>
             <field name="amount_type">percent</field>
             <field name="type_tax_use">purchase</field>
@@ -179,8 +179,8 @@
         <record id="tax_18_purch_incl" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">12</field>
-            <field name="name">18% ITBIS Incl. Compras</field>
-            <field name="description">18% ITBIS (Incl B)</field>
+            <field name="name">18% VAT Incl. Purchases</field>
+            <field name="description">18% VAT (Incl B)</field>
             <field name="amount">18</field>
             <field name="amount_type">percent</field>
             <field name="type_tax_use">purchase</field>
@@ -207,9 +207,9 @@
         </record>
         <record id="tax_16_purch" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
-            <field name="name">16% ITBIS Compras</field>
+            <field name="name">16% VAT Purchases</field>
             <field name="sequence">13</field>
-            <field name="description">16% ITBIS (B)</field>
+            <field name="description">16% VAT (B)</field>
             <field name="amount">16</field>
             <field name="amount_type">percent</field>
             <field name="type_tax_use">purchase</field>
@@ -234,9 +234,9 @@
         </record>
         <record id="tax_16_purch_incl" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
-            <field name="name">16% ITBIS Incl. Compras</field>
+            <field name="name">16% VAT Incl. Purchases</field>
             <field name="sequence">14</field>
-            <field name="description">16% ITBIS (Incl B)</field>
+            <field name="description">16% VAT (Incl B)</field>
             <field name="amount">16</field>
             <field name="amount_type">percent</field>
             <field name="type_tax_use">purchase</field>
@@ -261,9 +261,9 @@
         </record>
         <record id="tax_9_purch" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
-            <field name="name">9% ITBIS Compras</field>
+            <field name="name">9% VAT Purchases</field>
             <field name="sequence">15</field>
-            <field name="description">9% ITBIS (L690-16)</field>
+            <field name="description">9% VAT (L690-16)</field>
             <field name="amount">9</field>
             <field name="amount_type">percent</field>
             <field name="type_tax_use">purchase</field>
@@ -288,9 +288,9 @@
         </record>
         <record id="tax_9_purch_incl" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
-            <field name="name">9% ITBIS Incl. Compras</field>
+            <field name="name">9% VAT Incl. Purchases</field>
             <field name="sequence">16</field>
-            <field name="description">9% ITBIS (L690-16)</field>
+            <field name="description">9% VAT (L690-16)</field>
             <field name="amount">9</field>
             <field name="amount_type">percent</field>
             <field name="type_tax_use">purchase</field>
@@ -315,9 +315,9 @@
         </record>
         <record id="tax_8_purch" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
-            <field name="name">8% ITBIS Compras</field>
+            <field name="name">8% VAT Purchases</field>
             <field name="sequence">17</field>
-            <field name="description">8% ITBIS (L690-16)</field>
+            <field name="description">8% VAT (L690-16)</field>
             <field name="amount">8</field>
             <field name="amount_type">percent</field>
             <field name="type_tax_use">purchase</field>
@@ -342,9 +342,9 @@
         </record>
         <record id="tax_8_purch_incl" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
-            <field name="name">8% ITBIS Incl. Compras</field>
+            <field name="name">8% VAT Incl. Purchases</field>
             <field name="sequence">18</field>
-            <field name="description">8% ITBIS (L690-16)</field>
+            <field name="description">8% VAT (L690-16)</field>
             <field name="amount">8</field>
             <field name="amount_type">percent</field>
             <field name="type_tax_use">purchase</field>
@@ -397,8 +397,8 @@
         <record id="tax_18_purch_serv" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">20</field>
-            <field name="name">18% ITBIS Compras - Servicios</field>
-            <field name="description">18% ITBIS (S)</field>
+            <field name="name">18% VAT Purchases - Services</field>
+            <field name="description">18% VAT (S)</field>
             <field name="amount">18</field>
             <field name="amount_type">percent</field>
             <field name="type_tax_use">purchase</field>
@@ -426,8 +426,8 @@
         <record id="tax_18_purch_serv_incl" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">20</field>
-            <field name="name">18% ITBIS Incl. Compras - Servicios</field>
-            <field name="description">18% ITBIS (Incl S)</field>
+            <field name="name">18% VAT Incl. Purchases - Services</field>
+            <field name="description">18% VAT (Incl S)</field>
             <field name="amount">18</field>
             <field name="amount_type">percent</field>
             <field name="type_tax_use">purchase</field>
@@ -455,8 +455,8 @@
         <record id="tax_18_importation" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">20</field>
-            <field name="name">18% ITBIS - Importaciones</field>
-            <field name="description">18% ITBIS (IMP)</field>
+            <field name="name">18% VAT - Imports</field>
+            <field name="description">18% VAT (IMP)</field>
             <field name="amount">18</field>
             <field name="amount_type">percent</field>
             <field name="type_tax_use">purchase</field>
@@ -484,8 +484,8 @@
         <record id="tax_18_of_10" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">20</field>
-            <field name="name">18% ITBIS sobre el 10% del Monto Total</field>
-            <field name="description">18% del 10%</field>
+            <field name="name">18% VAT on 10% of the Total Amount</field>
+            <field name="description">18% of 10%</field>
             <field name="amount">1.8</field>
             <field name="amount_type">percent</field>
             <field name="type_tax_use">sale</field>
@@ -511,7 +511,7 @@
         <record id="tax_0015_bank" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">30</field>
-            <field name="name">0.15% Transferencia Bancaria</field>
+            <field name="name">0.15% Bank Transfer</field>
             <field name="description">0.15% Trans</field>
             <field name="amount">0.0015</field>
             <field name="amount_type">percent</field>
@@ -538,7 +538,7 @@
         <record id="tax_10_telco" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">30</field>
-            <field name="name">10% ISC Telecomunicaciones</field>
+            <field name="name">10% ISC Telecommunications</field>
             <field name="description">10% ISC</field>
             <field name="amount">10</field>
             <field name="amount_type">percent</field>
@@ -565,7 +565,7 @@
         <record id="tax_2_telco" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">30</field>
-            <field name="name">2% CDT Telecomunicaciones</field>
+            <field name="name">2% CDT Telecommunications</field>
             <field name="description">2% CDT</field>
             <field name="amount">2</field>
             <field name="amount_type">percent</field>
@@ -592,7 +592,7 @@
         <record id="tax_group_telco" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">30</field>
-            <field name="name">Impuestos a las Telecomunicaciones</field>
+            <field name="name">Telecommunications Taxes</field>
             <field eval="18" name="amount"/>
             <field name="amount_type">group</field>
             <field name="type_tax_use">purchase</field>
@@ -602,8 +602,8 @@
         <record id="ret_100_tax_security" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">40</field>
-            <field name="name">Retención 100% ITBIS Servicios de Seguridad (N07-09)</field>
-            <field name="description">-100% ITBIS (N07-09)</field>
+            <field name="name">Withholding 100% VAT Security Services (N07-09)</field>
+            <field name="description">-100% VAT (N07-09)</field>
             <field name="amount">-18</field>
             <field name="amount_type">percent</field>
             <field name="type_tax_use">purchase</field>
@@ -629,8 +629,8 @@
         <record id="ret_100_tax_nonprofit" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">41</field>
-            <field name="name">Retención 100% ITBIS Servicios No Lucrativas (N01-11)</field>
-            <field name="description">-100% ITBIS (N01-11)</field>
+            <field name="name">Withholding 100% VAT Non-profit Services (N01-11)</field>
+            <field name="description">-100% VAT (N01-11)</field>
             <field name="amount">-18</field>
             <field name="amount_type">percent</field>
             <field name="type_tax_use">purchase</field>
@@ -664,8 +664,8 @@
         <record id="ret_100_tax_person" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">42</field>
-            <field name="name">Retención 100% ITBIS Servicios a Físicas (R293-11)</field>
-            <field name="description">-100% ITBIS (R293-11)</field>
+            <field name="name">Withholding 100% VAT Services to Individuals (R293-11)</field>
+            <field name="description">-100% VAT (R293-11)</field>
             <field name="amount">-18</field>
             <field name="amount_type">percent</field>
             <field name="type_tax_use">purchase</field>
@@ -699,8 +699,8 @@
         <record id="ret_30_tax_moral" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">43</field>
-            <field name="name">Retención 30% ITBIS Servicios a Jurídicas (N02-05)</field>
-            <field name="description">-30% ITBIS (N02-05)</field>
+            <field name="name">Withholding 30% VAT Services to Legal Entities (N02-05)</field>
+            <field name="description">-30% VAT (N02-05)</field>
             <field name="amount">-5.4</field>
             <field name="amount_type">percent</field>
             <field name="type_tax_use">purchase</field>
@@ -727,8 +727,8 @@
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="active">False</field>
             <field name="sequence">43</field>
-            <field name="name">Retención 30% ITBIS Servicios Profesionales (N02-05)</field>
-            <field name="description">-30% ITBIS (N02-05)</field>
+            <field name="name">Withholding 30% VAT Professional Services (N02-05)</field>
+            <field name="description">-30% VAT (N02-05)</field>
             <field name="amount">-5.4</field>
             <field name="amount_type">percent</field>
             <field name="type_tax_use">none</field>
@@ -754,8 +754,8 @@
         <record id="ret_75_tax_nonformal" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">44</field>
-            <field name="name">Retención 75% ITBIS Bienes a Informales (N08-10)</field>
-            <field name="description">-75% ITBIS (N08-10)</field>
+            <field name="name">Withholding 75% VAT Goods to Informal Workers (N08-10)</field>
+            <field name="description">-75% VAT (N08-10)</field>
             <field name="amount">-13.5</field>
             <field name="amount_type">percent</field>
             <field name="type_tax_use">purchase</field>
@@ -781,7 +781,7 @@
         <record id="ret_10_income_person" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">40</field>
-            <field name="name">Retención 10% ISR Honorarios a Físicas</field>
+            <field name="name">Withholding 10% Income Tax Fees to Individuals</field>
             <field name="description">-10% ISR</field>
             <field name="amount">-10</field>
             <field name="amount_type">percent</field>
@@ -808,7 +808,7 @@
         <record id="ret_10_income_rent" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">50</field>
-            <field name="name">Retención 10% ISR Alquileres a Físicas</field>
+            <field name="name">Withholding 10% Income Tax Rentals to Individuals</field>
             <field name="description">-10% ISR</field>
             <field name="amount">-10</field>
             <field name="amount_type">percent</field>
@@ -835,7 +835,7 @@
         <record id="ret_10_income_dividend" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">51</field>
-            <field name="name">Retención 10% ISR por Dividendos (L253-12)</field>
+            <field name="name">Withholding 10% Income Tax on Dividends (L253-12)</field>
             <field name="description">-10% ISR</field>
             <field name="amount">-10</field>
             <field name="amount_type">percent</field>
@@ -862,7 +862,7 @@
         <record id="ret_2_income_person" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">52</field>
-            <field name="name">Retención 2% ISR a Física (con Materiales)</field>
+            <field name="name">Withholding 2% ISR to Individuals (with Materials)</field>
             <field name="description">-2% ISR (N07-07)</field>
             <field name="amount">-2</field>
             <field name="amount_type">percent</field>
@@ -889,7 +889,7 @@
         <record id="ret_2_income_transfer" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">53</field>
-            <field name="name">Retención 2% ISR por Transferencia de Títulos</field>
+            <field name="name">Withholding 2% ISR to Individuals (with Materials)</field>
             <field name="description">-2% ISR</field>
             <field name="amount">-2</field>
             <field name="amount_type">percent</field>
@@ -916,7 +916,7 @@
         <record id="ret_27_income_remittance" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">49</field>
-            <field name="name">Retención 27% ISR por Remesas al Exterior (L253-12)</field>
+            <field name="name">Withholding 27% Income Tax on Remittances Abroad (L253-12)</field>
             <field name="description">-27% ISR</field>
             <field name="amount">-27</field>
             <field name="amount_type">percent</field>
@@ -943,7 +943,7 @@
         <record id="ret_5_income_gov" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">50</field>
-            <field name="name">Retención 5% ISR Gubernamentales</field>
+            <field name="name">Withholding 5% Governmental Income Tax</field>
             <field name="description">-5% ISR</field>
             <field name="amount">-5</field>
             <field name="amount_type">percent</field>
@@ -970,7 +970,7 @@
         <record id="tax_group_nonformal" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">60</field>
-            <field name="name">Retención a Proveedores Informales de Bienes (75%)</field>
+            <field name="name">Withholding from Informal Suppliers of Goods (75%)</field>
             <field name="amount_type">group</field>
             <field eval="18" name="amount"/>
             <field name="type_tax_use">purchase</field>
@@ -980,7 +980,7 @@
         <record id="tax_group_person_construction" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">61</field>
-            <field name="name">Retención a Físicas por Servicios con Materiales (2%)</field>
+            <field name="name">Withholding to Individuals for Services with Materials (2%)</field>
             <field name="amount_type">group</field>
             <field eval="18" name="amount"/>
             <field name="type_tax_use">purchase</field>
@@ -990,7 +990,7 @@
         <record id="tax_group_person_services" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">58</field>
-            <field name="name">Retención a Físicas por Honorarios por Servicios (10%)</field>
+            <field name="name">Withholding to Individuals for Fees for Services (10%)</field>
             <field name="amount_type">group</field>
             <field eval="18" name="amount"/>
             <field name="type_tax_use">purchase</field>
@@ -1000,7 +1000,7 @@
         <record id="tax_group_moral_services" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">58</field>
-            <field name="name">Retención a Jurídicas por Servicios Profesionales (30%)</field>
+            <field name="name">Withholding to Individuals for Services with Materials (2%)</field>
             <field name="amount_type">group</field>
             <field eval="18" name="amount"/>
             <field name="type_tax_use">purchase</field>
@@ -1010,7 +1010,7 @@
         <record id="tax_group_restaurant_sale" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">64</field>
-            <field name="name">Ventas del Restaurante</field>
+            <field name="name">Restaurant Sales</field>
             <field name="amount_type">group</field>
             <field eval="18" name="amount"/>
             <field name="type_tax_use">sale</field>
@@ -1020,7 +1020,7 @@
         <record id="tax_group_restaurant_purch" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
             <field name="sequence">65</field>
-            <field name="name">Compras a Restaurantes</field>
+            <field name="name">Restaurant Purchases</field>
             <field name="amount_type">group</field>
             <field eval="18" name="amount"/>
             <field name="type_tax_use">purchase</field>
@@ -1029,8 +1029,8 @@
         </record>
         <record id="tax_18_10_total_mount" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
-            <field name="name">18% ITBIS sobre el 10% del Monto Total</field>
-            <field name="description">18% del 10%</field>
+            <field name="name">18% VAT on 10% of the Total Amount</field>
+            <field name="description">18% of 10%</field>
             <field name="amount">1.8</field>
             <field name="amount_type">percent</field>
             <field name="type_tax_use">purchase</field>
@@ -1055,7 +1055,7 @@
         </record>
         <record id="tax_18_property_cost" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
-            <field name="name">18% ITBIS llevado al Costo Bienes</field>
+            <field name="name">18% VAT carried at Cost Goods</field>
             <field name="description">18%</field>
             <field name="amount">18</field>
             <field name="amount_type">percent</field>
@@ -1083,7 +1083,7 @@
         </record>
         <record id="tax_18_serv_cost" model="account.tax.template">
             <field name="chart_template_id" ref="do_chart_template"/>
-            <field name="name">18% ITBIS llevado al Costo Servicios</field>
+            <field name="name">18% VAT carried at Cost Services</field>
             <field name="description">18%</field>
             <field name="amount">18</field>
             <field name="amount_type">percent</field>

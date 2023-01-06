@@ -7,43 +7,43 @@
         <!-- Principal Fiscal Position for Dominican Republic internally -->
         <record id="position_person" model="account.fiscal.position.template">
             <field name="chart_template_id" ref="do_chart_template"/>
-            <field name="name">P. Física de Servicios</field>
+            <field name="name">P. Physical Services</field>
         </record>
         <record id="position_service_moral" model="account.fiscal.position.template">
             <field name="chart_template_id" ref="do_chart_template"/>
-            <field name="name">P. Jurídica de Servicios</field>
+            <field name="name">P. Legal Services</field>
         </record>
         <record id="position_security_moral" model="account.fiscal.position.template">
             <field name="chart_template_id" ref="do_chart_template"/>
-            <field name="name">P. Jurídica de Vigilancia</field>
+            <field name="name">P. Legal Surveillance</field>
         </record>
         <record id="position_nonformal" model="account.fiscal.position.template">
             <field name="chart_template_id" ref="do_chart_template"/>
-            <field name="name">Proveedor Informal de Bienes</field>
+            <field name="name">Informal Supplier of Goods</field>
         </record>
         <record id="position_exterior" model="account.fiscal.position.template">
             <field name="chart_template_id" ref="do_chart_template"/>
-            <field name="name">Servicios del Exterior</field>
+            <field name="name">Outside Services</field>
         </record>
         <record id="position_gov" model="account.fiscal.position.template">
             <field name="chart_template_id" ref="do_chart_template"/>
-            <field name="name">Gubernamental</field>
+            <field name="name">Governmental</field>
         </record>
         <record id="position_nonprofit" model="account.fiscal.position.template">
             <field name="chart_template_id" ref="do_chart_template"/>
-            <field name="name">No Lucrativa de Servicios</field>
+            <field name="name">Non-Profit Services</field>
         </record>
         <record id="position_especial" model="account.fiscal.position.template">
             <field name="chart_template_id" ref="do_chart_template"/>
-            <field name="name">Regímenes Especiales</field>
+            <field name="name">Special Regimes</field>
         </record>
         <record id="position_restaurant" model="account.fiscal.position.template">
             <field name="chart_template_id" ref="do_chart_template"/>
-            <field name="name">Restaurantes</field>
+            <field name="name">Restaurants</field>
         </record>
         <record id="position_restaurant_takeout" model="account.fiscal.position.template">
             <field name="chart_template_id" ref="do_chart_template"/>
-            <field name="name">Para Llevar</field>
+            <field name="name">To Take Away</field>
         </record>
         <!-- = = = = = = = = = = = = = = = -->
         <!-- Fiscal Position Tax Templates -->

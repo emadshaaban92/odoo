@@ -2,7 +2,7 @@
 <odoo>
     <!-- Chart of Accounts Template -->
     <record id="do_chart_template" model="account.chart.template">
-        <field name="name">Catálogo de Cuentas Dominicano (NIIF)</field>
+        <field name="name">Dominican Chart of Accounts (IFRS)</field>
         <field name="code_digits">8</field>
         <field name="cash_account_code_prefix">110101</field>
         <field name="bank_account_code_prefix">110102</field>

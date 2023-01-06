@@ -17,8 +17,8 @@ msgstr ""
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1203
-msgid "1203 Deterioro de Valor Acumulado de Propiedades, Planta y Equipo"
-msgstr ""
+msgid "1203 Accumulated Impairment of Property, Plant and Equipment"
+msgstr "1203 Deterioro de Valor Acumulado de Propiedades, Planta y Equipo"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_ret_10_income_dividend
@@ -28,92 +28,92 @@ msgstr ""
 #: model:account.tax.template,description:l10n_do.ret_10_income_person
 #: model:account.tax.template,description:l10n_do.ret_10_income_rent
 msgid "-10% ISR"
-msgstr ""
+msgstr "-10% ISR"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_ret_100_tax_nonprofit
 #: model:account.tax.template,description:l10n_do.ret_100_tax_nonprofit
-msgid "-100% ITBIS (N01-11)"
-msgstr ""
+msgid "-100% VAT (N01-11)"
+msgstr "-100% ITBIS (N01-11)"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_ret_100_tax_security
 #: model:account.tax.template,description:l10n_do.ret_100_tax_security
-msgid "-100% ITBIS (N07-09)"
-msgstr ""
+msgid "-100% VAT (N07-09)"
+msgstr "-100% ITBIS (N07-09)"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_ret_100_tax_person
 #: model:account.tax.template,description:l10n_do.ret_100_tax_person
-msgid "-100% ITBIS (R293-11)"
-msgstr ""
+msgid "-100% VAT (R293-11)"
+msgstr "-100% ITBIS (R293-11)"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_ret_2_income_transfer
 #: model:account.tax.template,description:l10n_do.ret_2_income_transfer
 msgid "-2% ISR"
-msgstr ""
+msgstr "-2% ISR"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_ret_2_income_person
 #: model:account.tax.template,description:l10n_do.ret_2_income_person
 msgid "-2% ISR (N07-07)"
-msgstr ""
+msgstr "-2% ISR (N07-07)"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_ret_27_income_remittance
 #: model:account.tax.template,description:l10n_do.ret_27_income_remittance
 msgid "-27% ISR"
-msgstr ""
+msgstr "-27% ISR"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_ret_30_tax_freelance
 #: model:account.tax,description:l10n_do.2_ret_30_tax_moral
 #: model:account.tax.template,description:l10n_do.ret_30_tax_freelance
 #: model:account.tax.template,description:l10n_do.ret_30_tax_moral
-msgid "-30% ITBIS (N02-05)"
-msgstr ""
+msgid "-30% VAT (N02-05)"
+msgstr "-30% ITBIS (N02-05)"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_ret_5_income_gov
 #: model:account.tax.template,description:l10n_do.ret_5_income_gov
 msgid "-5% ISR"
-msgstr ""
+msgstr "-5% ISR"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_ret_75_tax_nonformal
 #: model:account.tax.template,description:l10n_do.ret_75_tax_nonformal
-msgid "-75% ITBIS (N08-10)"
-msgstr ""
+msgid "-75% VAT (N08-10)"
+msgstr "-75% ITBIS (N08-10)"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_tax_0015_bank
 #: model:account.tax.template,description:l10n_do.tax_0015_bank
 msgid "0.15% Trans"
-msgstr ""
+msgstr "0.15% Trans"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_0015_bank
 #: model:account.tax.template,name:l10n_do.tax_0015_bank
-msgid "0.15% Transferencia Bancaria"
-msgstr ""
+msgid "0.15% Bank Transfer"
+msgstr "0.15% Transferencia Bancaria"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1
-msgid "1 Activos"
-msgstr ""
+msgid "1 Assets"
+msgstr "1 Activos"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_tax_10_telco
 #: model:account.tax.template,description:l10n_do.tax_10_telco
 msgid "10% ISC"
-msgstr ""
+msgstr "10% ISC"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_10_telco
 #: model:account.tax.template,name:l10n_do.tax_10_telco
-msgid "10% ISC Telecomunicaciones"
-msgstr ""
+msgid "10% ISC Telecommunications"
+msgstr "10% ISC Telecomunicaciones"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_tax_tip_purch
@@ -121,7 +121,7 @@ msgstr ""
 #: model:account.tax.template,description:l10n_do.tax_tip_purch
 #: model:account.tax.template,description:l10n_do.tax_tip_sale
 msgid "10% Legal"
-msgstr ""
+msgstr "10% Legal"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_tip_purch
@@ -129,191 +129,191 @@ msgstr ""
 #: model:account.tax.template,name:l10n_do.tax_tip_purch
 #: model:account.tax.template,name:l10n_do.tax_tip_sale
 msgid "10% Propina Legal"
-msgstr ""
+msgstr "10% Propina Legal"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_11
-msgid "11 Activos Corrientes"
-msgstr ""
+msgid "11 Current Assets"
+msgstr "11 Activos Corrientes"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1101
-msgid "1101 Efectivo y Equivalentes de Efectivo"
-msgstr ""
+msgid "1101 Cash and Cash Equivalents"
+msgstr "1101 Efectivo y Equivalentes de Efectivo"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_110101
-msgid "110101 Caja"
-msgstr ""
+msgid "110101 Cash"
+msgstr "110101 Caja"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_110102
-msgid "110102 Bancos"
-msgstr ""
+msgid "110102 Bank"
+msgstr "110102 Bancos"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_110103
-msgid "110103 Inversiones Temporales Plazo Menor 90 días"
-msgstr ""
+msgid "110103 Short-term Investments Less than 90 days"
+msgstr "110103 Inversiones Temporales Plazo Menor 90 días"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1102
-msgid "1102 Inversiones en Valores a Corto Plazo"
-msgstr ""
+msgid "1102 Short-Term Investments in Securities"
+msgstr "1102 Inversiones en Valores a Corto Plazo"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1103
-msgid "1103 Cuentas y Documentos por Cobrar"
-msgstr ""
+msgid "1103 Accounts and notes receivable"
+msgstr "1103 Cuentas y Documentos por Cobrar"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_110301
-msgid "110301 Documentos por Cobrar"
-msgstr ""
+msgid "110301 Notes receivable"
+msgstr "110301 Documentos por Cobrar"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_110302
-msgid "110302 Cuentas por Cobrar"
-msgstr ""
+msgid "110302 Accounts receivable"
+msgstr "110302 Cuentas por Cobrar"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1104
-msgid "1104 Provisión para Cuentas Incobrables"
-msgstr ""
+msgid "1104 Provision for doubtful accounts"
+msgstr "1104 Provisión para Cuentas Incobrables"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1105
-msgid "1105 Inventarios"
-msgstr ""
+msgid "1105 Inventory"
+msgstr "1105 Inventarios"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1106
-msgid "1106 Deterioro Acumulado de Valor de Inventarios"
-msgstr ""
+msgid "1106 Accumulated impairment of inventories"
+msgstr "1106 Deterioro Acumulado de Valor de Inventarios"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1107
-msgid "1107 Estimación por Obsolecencia de Inventario"
-msgstr ""
+msgid "1107 Allowance for inventory obsolescence"
+msgstr "1107 Estimación por Obsolecencia de Inventario"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1108
-msgid "1108 Impuestos Adelantados"
-msgstr ""
+msgid "1108 Advance Taxes"
+msgstr "1108 Impuestos Adelantados"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_110801
-msgid "110801 ITBIS Pagado en Compras"
-msgstr ""
+msgid "110801 VAT Paid on Purchases"
+msgstr "110801 ITBIS Pagado en Compras"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_110803
-msgid "110803 Otros Impuestos y Saldos"
-msgstr ""
+msgid "110803 Other Taxes and Balances"
+msgstr "110803 Otros Impuestos y Saldos"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1109
-msgid "1109 Inversiones Temporales"
-msgstr ""
+msgid "1109 Temporary investments"
+msgstr "1109 Inversiones Temporales"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1110
-msgid "1110 Pagos Anticipados"
-msgstr ""
+msgid "1110 Advance Payments"
+msgstr "1110 Pagos Anticipados"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_12
-msgid "12 Activos Fijos"
-msgstr ""
+msgid "12 Fixed Assets"
+msgstr "12 Activos Fijos"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1201
-msgid "1201 Propiedades, Planta y Equipo"
-msgstr ""
+msgid "1201 Property, Plant and Equipment"
+msgstr "1201 Propiedades, Planta y Equipo"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_120101
-msgid "120101 Bienes Inmuebles (CAT 1)"
-msgstr ""
+msgid "120101 Real Estate (CAT 1)"
+msgstr "120101 Bienes Inmuebles (CAT 1)"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_120102
-msgid "120102 Bienes Muebles (CAT 2)"
-msgstr ""
+msgid "120102 Movable Property (CAT 2)"
+msgstr "120102 Bienes Muebles (CAT 2)"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_120103
-msgid "120103 Bienes Muebles (CAT 3)"
-msgstr ""
+msgid "120103 Movable Property (CAT 3)"
+msgstr "120103 Bienes Muebles (CAT 3)"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1202
-msgid "1202 Depreciación Acumulada de Propiedades, Planta y Equipo"
-msgstr ""
+msgid "1202 Accumulated Depreciation of Property, Plant and Equipment"
+msgstr "1202 Depreciación Acumulada de Propiedades, Planta y Equipo"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1204
-msgid "1204 Activos Intangibles"
-msgstr ""
+msgid "1204 Intangible assets"
+msgstr "1204 Activos Intangibles"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1205
-msgid "1205 Bienes en Arrendamiento"
-msgstr ""
+msgid "1205 Leased Assets"
+msgstr "1205 Bienes en Arrendamiento"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1206
-msgid "1206 Depreciación Acumulada de Bienes en Arrendamiento"
-msgstr ""
+msgid "1206 Accumulated depreciation of leased assets"
+msgstr "1206 Depreciación Acumulada de Bienes en Arrendamiento"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1207
-msgid "1207 Deterioro de Valor Acumulado de Bienes en Arrendamiento"
-msgstr ""
+msgid "1207 Accumulated impairment of leased assets"
+msgstr "1207 Deterioro de Valor Acumulado de Bienes en Arrendamiento"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1208
-msgid "1208 Inversiones Permanentes"
-msgstr ""
+msgid "1208 Permanent investments"
+msgstr "1208 Inversiones Permanentes"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1209
-msgid "1209 Activos Diferidos"
-msgstr ""
+msgid "1209 Deferred assets"
+msgstr "1209 Activos Diferidos"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_13
-msgid "13 Construcción en Proceso"
-msgstr ""
+msgid "13 Construction in progress"
+msgstr "13 Construcción en Proceso"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_1301
-msgid "1301 Construcción en Proceso"
-msgstr ""
+msgid "1301 Construction in Progress"
+msgstr "1301 Construcción en Proceso"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_tax_16_purch
 #: model:account.tax.template,description:l10n_do.tax_16_purch
-msgid "16% ITBIS (B)"
-msgstr ""
+msgid "16% VAT (B)"
+msgstr "16% ITBIS (B)"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_tax_16_purch_incl
 #: model:account.tax.template,description:l10n_do.tax_16_purch_incl
-msgid "16% ITBIS (Incl B)"
-msgstr ""
+msgid "16% VAT (Incl B)"
+msgstr "16% ITBIS (Incl B)"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_16_purch
 #: model:account.tax.template,name:l10n_do.tax_16_purch
-msgid "16% ITBIS Compras"
-msgstr ""
+msgid "16% VAT Purchases"
+msgstr "16% ITBIS Compras"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_16_purch_incl
 #: model:account.tax.template,name:l10n_do.tax_16_purch_incl
-msgid "16% ITBIS Incl. Compras"
-msgstr ""
+msgid "16% VAT Incl. Purchases"
+msgstr "16% ITBIS Incl. Compras"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_tax_18_property_cost
@@ -321,1373 +321,1374 @@ msgstr ""
 #: model:account.tax.template,description:l10n_do.tax_18_property_cost
 #: model:account.tax.template,description:l10n_do.tax_18_serv_cost
 msgid "18%"
-msgstr ""
+msgstr "18%"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_tax_18_sale
 #: model:account.tax,description:l10n_do.2_tax_18_sale_incl
 #: model:account.tax.template,description:l10n_do.tax_18_sale
 #: model:account.tax.template,description:l10n_do.tax_18_sale_incl
-msgid "18% ITBIS"
-msgstr ""
+msgid "18% VAT"
+msgstr "18% ITBIS"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_tax_18_purch
 #: model:account.tax.template,description:l10n_do.tax_18_purch
-msgid "18% ITBIS (B)"
-msgstr ""
+msgid "18% VAT (B)"
+msgstr "18% ITBIS (B)"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_tax_18_importation
 #: model:account.tax.template,description:l10n_do.tax_18_importation
-msgid "18% ITBIS (IMP)"
-msgstr ""
+msgid "18% VAT (IMP)"
+msgstr "18% ITBIS (IMP)"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_tax_18_purch_incl
 #: model:account.tax.template,description:l10n_do.tax_18_purch_incl
-msgid "18% ITBIS (Incl B)"
-msgstr ""
+msgid "18% VAT (Incl B)"
+msgstr "18% ITBIS (Incl B)"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_tax_18_purch_serv_incl
 #: model:account.tax.template,description:l10n_do.tax_18_purch_serv_incl
-msgid "18% ITBIS (Incl S)"
-msgstr ""
+msgid "18% VAT (Incl S)"
+msgstr "18% ITBIS (Incl S)"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_tax_18_purch_serv
 #: model:account.tax.template,description:l10n_do.tax_18_purch_serv
-msgid "18% ITBIS (S)"
-msgstr ""
+msgid "18% VAT (S)"
+msgstr "18% ITBIS (S)"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_18_importation
 #: model:account.tax.template,name:l10n_do.tax_18_importation
-msgid "18% ITBIS - Importaciones"
-msgstr ""
+msgid "18% VAT - Imports"
+msgstr "18% ITBIS - Importaciones"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_18_purch
 #: model:account.tax.template,name:l10n_do.tax_18_purch
-msgid "18% ITBIS Compras"
-msgstr ""
+msgid "18% VAT Purchases"
+msgstr "18% ITBIS Compras"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_18_purch_serv
 #: model:account.tax.template,name:l10n_do.tax_18_purch_serv
-msgid "18% ITBIS Compras - Servicios"
-msgstr ""
+msgid "18% VAT Purchases - Services"
+msgstr "18% ITBIS Compras - Servicios"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_18_purch_incl
 #: model:account.tax.template,name:l10n_do.tax_18_purch_incl
-msgid "18% ITBIS Incl. Compras"
-msgstr ""
+msgid "18% VAT Incl. Purchases"
+msgstr "18% ITBIS Incl. Compras"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_18_purch_serv_incl
 #: model:account.tax.template,name:l10n_do.tax_18_purch_serv_incl
-msgid "18% ITBIS Incl. Compras - Servicios"
-msgstr ""
+msgid "18% VAT Incl. Purchases - Services"
+msgstr "18% ITBIS Incl. Compras - Servicios"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_18_sale_incl
 #: model:account.tax.template,name:l10n_do.tax_18_sale_incl
-msgid "18% ITBIS Incl. Ventas"
-msgstr ""
+msgid "18% VAT Incl. Sales"
+msgstr "18% ITBIS Incl. Ventas"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_18_sale
 #: model:account.tax.template,name:l10n_do.tax_18_sale
-msgid "18% ITBIS Ventas"
-msgstr ""
+msgid "18% VAT Sales"
+msgstr "18% ITBIS Ventas"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_18_property_cost
 #: model:account.tax.template,name:l10n_do.tax_18_property_cost
-msgid "18% ITBIS llevado al Costo Bienes"
-msgstr ""
+msgid "18% VAT carried at Cost Goods"
+msgstr "18% ITBIS llevado al Costo Bienes"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_18_serv_cost
 #: model:account.tax.template,name:l10n_do.tax_18_serv_cost
-msgid "18% ITBIS llevado al Costo Servicios"
-msgstr ""
+msgid "18% VAT carried at Cost Services"
+msgstr "18% ITBIS llevado al Costo Servicios"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_18_10_total_mount
 #: model:account.tax,name:l10n_do.2_tax_18_of_10
 #: model:account.tax.template,name:l10n_do.tax_18_10_total_mount
 #: model:account.tax.template,name:l10n_do.tax_18_of_10
-msgid "18% ITBIS sobre el 10% del Monto Total"
-msgstr ""
+msgid "18% VAT on 10% of the Total Amount"
+msgstr "18% ITBIS sobre el 10% del Monto Total"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_tax_18_10_total_mount
 #: model:account.tax,description:l10n_do.2_tax_18_of_10
 #: model:account.tax.template,description:l10n_do.tax_18_10_total_mount
 #: model:account.tax.template,description:l10n_do.tax_18_of_10
-msgid "18% del 10%"
-msgstr ""
+msgid "18% of 10%"
+msgstr "18% del 10%"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_2
-msgid "2 Pasivos"
-msgstr ""
+msgid "2 Liabilities"
+msgstr "2 Pasivos"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_tax_2_telco
 #: model:account.tax.template,description:l10n_do.tax_2_telco
 msgid "2% CDT"
-msgstr ""
+msgstr "2% CDT"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_2_telco
 #: model:account.tax.template,name:l10n_do.tax_2_telco
-msgid "2% CDT Telecomunicaciones"
-msgstr ""
+msgid "2% CDT Telecommunications"
+msgstr "2% CDT Telecomunicaciones"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_21
-msgid "21 Pasivo Corriente"
-msgstr ""
+msgid "21 Current Liabilities"
+msgstr "21 Pasivo Corriente"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_2101
-msgid "2101 Cuentas y Documentos por Pagar a Corto Plazo"
-msgstr ""
+msgid "2101 Short-term accounts payable and notes payable"
+msgstr "2101 Cuentas y Documentos por Pagar a Corto Plazo"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_2102
-msgid "2102 Beneficios por Pagar a Corto Plazo"
-msgstr ""
+msgid "2102 Short-Term Benefits Payable"
+msgstr "2102 Beneficios por Pagar a Corto Plazo"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_2103
-msgid "2103 Impuestos y Retenciones"
-msgstr ""
+msgid "2103 Taxes and Withholdings"
+msgstr "2103 Impuestos y Retenciones"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_210301
-msgid "210301 ITBIS por Pagar"
-msgstr ""
+msgid "210301 VAT payable"
+msgstr "210301 ITBIS por Pagar"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_210302
-msgid "210302 ITBIS Retenido"
-msgstr ""
+msgid "210302 VAT Withheld"
+msgstr "210302 ITBIS Retenido"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_210303
-msgid "210303 ISR Retenido"
-msgstr ""
+msgid "210303 Income tax withheld"
+msgstr "210303 ISR Retenido"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_210304
-msgid "210304 Retenciones en Nómina"
-msgstr ""
+msgid "210304 Payroll deductions"
+msgstr "210304 Retenciones en Nómina"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_210305
-msgid "210305 Otros Impuestos o Retenciones"
-msgstr ""
+msgid "210305 Other Taxes or Withholdings"
+msgstr "210305 Otros Impuestos o Retenciones"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_2104
-msgid "2104 Provisiones a Corto Plazo"
-msgstr ""
+msgid "2104 Short-Term Provisions"
+msgstr "2104 Provisiones a Corto Plazo"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_2105
-msgid "2105 Tarjetas de Crédito"
-msgstr ""
+msgid "2105 Credit Cards"
+msgstr "2105 Tarjetas de Crédito"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_22
-msgid "22 Pasivo No Corriente"
-msgstr ""
+msgid "22 Non-Current Liabilities"
+msgstr "22 Pasivo No Corriente"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_2201
-msgid "2201 Cuentas y Documentos por Pagar a Largo Plazo"
-msgstr ""
+msgid "2201 Long-term accounts payable and notes payable"
+msgstr "2201 Cuentas y Documentos por Pagar a Largo Plazo"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_2202
-msgid "2202 Provisión para Obligaciones Laborales"
-msgstr ""
+msgid "2202 Provision for Labor Obligations"
+msgstr "2202 Provisión para Obligaciones Laborales"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_2203
-msgid "2203 Anticipos y Garantías de Clientes"
-msgstr ""
+msgid "2203 Customer Advances and Guarantees"
+msgstr "2203 Anticipos y Garantías de Clientes"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_2204
-msgid "2204 Provisiones a Largo Plazo"
-msgstr ""
+msgid "2204 Long-Term Provisions"
+msgstr "2204 Provisiones a Largo Plazo"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_3
 msgid "3 Capital"
-msgstr ""
+msgstr "3 Capital"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_31
-msgid "31 Capital Contable"
-msgstr ""
+msgid "31 Stockholders' equity"
+msgstr "31 Capital Contable"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_3101
-msgid "3101 Capital Social"
-msgstr ""
+msgid "3101 Capital stock"
+msgstr "3101 Capital Social"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_3102
-msgid "3102 Superávit por Revaluación de Activos"
-msgstr ""
+msgid "3102 Asset Revaluation Surplus"
+msgstr "3102 Superávit por Revaluación de Activos"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_32
-msgid "32 Utilidades Restringidas"
-msgstr ""
+msgid "32 Restricted Utilities"
+msgstr "32 Utilidades Restringidas"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_3201
-msgid "3201 Reserva Legal"
-msgstr ""
+msgid "3201 Legal reserve"
+msgstr "3201 Reserva Legal"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_33
-msgid "33 Resultados"
-msgstr ""
+msgid "33 Results"
+msgstr "33 Resultados"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_3301
-msgid "3301 Resultados Acumulados"
-msgstr ""
+msgid "3301 Retained earnings"
+msgstr "3301 Resultados Acumulados"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_3302
-msgid "3302 Resultados del Ejercicio"
-msgstr ""
+msgid "3302 Results for the year"
+msgstr "3302 Resultados del Ejercicio"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_3304
-msgid "3304 Otras Reservas de Patrimonio"
-msgstr ""
+msgid "3304 Other equity reserves"
+msgstr "3304 Otras Reservas de Patrimonio"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_4
-msgid "4 Ingresos y Ganancias"
-msgstr ""
+msgid "4 Revenues and Earnings"
+msgstr "4 Ingresos y Ganancias"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_41
-msgid "41 Ingresos por Operaciones"
-msgstr ""
+msgid "41 Operating income"
+msgstr "41 Ingresos por Operaciones"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_4101
-msgid "4101 Ventas de Bienes"
-msgstr ""
+msgid "4101 Sales of Goods"
+msgstr "4101 Ventas de Bienes"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_4102
-msgid "4102 Ventas de Servicios"
-msgstr ""
+msgid "4102 Sales of Services"
+msgstr "4102 Ventas de Servicios"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_4103
-msgid "4103 Devoluciones"
-msgstr ""
+msgid "4103 Returns"
+msgstr "4103 Devoluciones"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_4104
-msgid "4104 Descuentos"
-msgstr ""
+msgid "4104 Discounts"
+msgstr "4104 Descuentos"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_42
-msgid "42 Ingresos No Operacionales"
-msgstr ""
+msgid "42 Non-operating Income"
+msgstr "42 Ingresos No Operacionales"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_4201
-msgid "4201 Intereses Ganados"
-msgstr ""
+msgid "4201 Interest Earned"
+msgstr "4201 Intereses Ganados"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_4202
-msgid "4202 Ventas de Activos"
-msgstr ""
+msgid "4202 Sales of Assets"
+msgstr "4202 Ventas de Activos"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_4203
-msgid "4203 Dividendos Ganados"
-msgstr ""
+msgid "4203 Dividends Earned"
+msgstr "4203 Dividendos Ganados"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_4204
-msgid "4204 Ingresos Extraordinarios"
-msgstr ""
+msgid "4204 Extraordinary Income"
+msgstr "4204 Ingresos Extraordinarios"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_5
-msgid "5 Costos Directos e Indirectos"
-msgstr ""
+msgid "5 Direct and Indirect Costs"
+msgstr "5 Costos Directos e Indirectos"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_51
-msgid "51 Costos y Gastos de Operación"
-msgstr ""
+msgid "51 Operating Costs and Expenses"
+msgstr "51 Costos y Gastos de Operación"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_5101
-msgid "5101 Costos de Ventas"
-msgstr ""
+msgid "5101 Cost of sales"
+msgstr "5101 Costos de Ventas"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_5102
-msgid "5102 Costos de Producción"
-msgstr ""
+msgid "5102 Production costs"
+msgstr "5102 Costos de Producción"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_6
-msgid "6 Gastos y Pérdidas"
-msgstr ""
+msgid "6 Expenses and losses"
+msgstr "6 Gastos y Pérdidas"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_61
-msgid "61 Gastos de Operación"
-msgstr ""
+msgid "61 Operating expenses"
+msgstr "61 Gastos de Operación"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_6101
-msgid "6101 Gastos de Personal"
-msgstr ""
+msgid "6101 Personnel Expenses"
+msgstr "6101 Gastos de Personal"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_610101
-msgid "610101 Aportes a la Seguridad Social"
-msgstr ""
+msgid "610101 Social Security contributions"
+msgstr "610101 Aportes a la Seguridad Social"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_610102
-msgid "610102 Otras Cargas Patronales"
-msgstr ""
+msgid "610102 Other Employer's Liabilities"
+msgstr "610102 Otras Cargas Patronales"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_6102
-msgid "6102 Gastos de Administración"
-msgstr ""
+msgid "6102 Administrative expenses"
+msgstr "6102 Gastos de Administración"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_6103
-msgid "6103 Gastos por Trabajo, Suministros y Servicios"
-msgstr ""
+msgid "6103 Expenses for Labor, Supplies and Services"
+msgstr "6103 Gastos por Trabajo, Suministros y Servicios"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_610301
-msgid "610301 Gastos Honorarios por Servicios Profesionales (P. Física)"
-msgstr ""
+msgid "610301 Expenses Fees for Professional Services (Individual)"
+msgstr "610301 Gastos Honorarios por Servicios Profesionales (P. Física)"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_610302
-msgid "610302 Gastos Honorarios por Servicios Profesionales (P. Jurídica)"
-msgstr ""
+msgid "610302 Expenses Fees for Professional Services (Legal)"
+msgstr "610302 Gastos Honorarios por Servicios Profesionales (P. Jurídica)"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_610303
-msgid "610303 Gastos Honorarios por Servicios Profesionales (P. Jurídica)"
-msgstr ""
+msgid "610303 Expenses Fees for Professional Services (Legal)"
+msgstr "610303 Gastos Honorarios por Servicios Profesionales (P. Jurídica)"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_6104
-msgid "6104 Gastos por Depreciación"
-msgstr ""
+msgid "6104 Depreciation expense"
+msgstr "6104 Gastos por Depreciación"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_6105
-msgid "6105 Gastos por Reparaciones"
-msgstr ""
+msgid "6105 Expenses for repairs"
+msgstr "6105 Gastos por Reparaciones"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_6106
-msgid "6106 Gastos de Representación"
-msgstr ""
+msgid "6106 Representation Expenses"
+msgstr "6106 Gastos de Representación"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_6107
-msgid "6107 Gastos Financieros"
-msgstr ""
+msgid "6107 Financial Expenses"
+msgstr "6107 Gastos Financieros"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_6108
-msgid "6108 Gastos Extraordinarios"
-msgstr ""
+msgid "6108 Extraordinary Expenses"
+msgstr "6108 Gastos Extraordinarios"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_7
-msgid "7 Cuentas Liquidadoras de Resultados"
-msgstr ""
+msgid "7 Income Statement Clearing Accounts"
+msgstr "7 Cuentas Liquidadoras de Resultados"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_71
-msgid "71 Cuenta Liquidadora"
-msgstr ""
+msgid "71 Settlement Account"
+msgstr "71 Cuenta Liquidadora"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_7101
-msgid "7101 Pérdidas y Ganancias"
-msgstr ""
+msgid "7101 Profit and loss"
+msgstr "7101 Pérdidas y Ganancias"
 
 #. module: l10n_do
 #: model:account.account.tag,name:l10n_do.account_tag_7102
-msgid "7102 Gastos por Impuestos"
-msgstr ""
+msgid "7102 Tax Expenses"
+msgstr "7102 Gastos por Impuestos"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_tax_8_purch
 #: model:account.tax,description:l10n_do.2_tax_8_purch_incl
 #: model:account.tax.template,description:l10n_do.tax_8_purch
 #: model:account.tax.template,description:l10n_do.tax_8_purch_incl
-msgid "8% ITBIS (L690-16)"
-msgstr ""
+msgid "8% VAT (L690-16)"
+msgstr "8% ITBIS (L690-16)"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_8_purch
 #: model:account.tax.template,name:l10n_do.tax_8_purch
-msgid "8% ITBIS Compras"
-msgstr ""
+msgid "8% VAT Purchases"
+msgstr "8% ITBIS Compras"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_8_purch_incl
 #: model:account.tax.template,name:l10n_do.tax_8_purch_incl
-msgid "8% ITBIS Incl. Compras"
-msgstr ""
+msgid "8% VAT Incl. Purchases"
+msgstr "8% ITBIS Incl. Compras"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_tax_9_purch
 #: model:account.tax,description:l10n_do.2_tax_9_purch_incl
 #: model:account.tax.template,description:l10n_do.tax_9_purch
 #: model:account.tax.template,description:l10n_do.tax_9_purch_incl
-msgid "9% ITBIS (L690-16)"
-msgstr ""
+msgid "9% VAT (L690-16)"
+msgstr "9% ITBIS (L690-16)"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_9_purch
 #: model:account.tax.template,name:l10n_do.tax_9_purch
-msgid "9% ITBIS Compras"
-msgstr ""
+msgid "9% VAT Purchases"
+msgstr "9% ITBIS Compras"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_9_purch_incl
 #: model:account.tax.template,name:l10n_do.tax_9_purch_incl
-msgid "9% ITBIS Incl. Compras"
-msgstr ""
+msgid "9% VAT Incl. Purchases"
+msgstr "9% ITBIS Incl. Compras"
 
 #. module: l10n_do
 #: model:account.report.line,name:l10n_do.account_tax_report_A
-msgid "A ITBIS RETENIDO"
-msgstr ""
+msgid "A VAT WITHHELD"
+msgstr "A ITBIS RETENIDO"
 
 #. module: l10n_do
 #: model:account.report.line,name:l10n_do.account_tax_report_A39_base
-msgid "A.39 Servicios Sujetos a Retención Personas = Físicas y Entidad"
-msgstr ""
+msgid ""
+"A.39 Services Subject to Withholding Individuals = Individuals and Entity"
+msgstr "A.39 Servicios Sujetos a Retención Personas = Físicas y Entidad"
 
 #. module: l10n_do
 #: model:account.report.line,name:l10n_do.account_tax_report_A50_tax
-msgid "A.50 Itbis Por Servicios Sujetos A Retencion Personas Físicas"
-msgstr ""
+msgid "A.50 VAT For Services Subject To Withholding Taxes Individuals"
+msgstr "A.50 ITBIS Por Servicios Sujetos A Retencion Personas Físicas"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11090100
 #: model:account.account.template,name:l10n_do.l10n_do_11090100
-msgid "Acciones Temporales"
-msgstr ""
+msgid "Temporary Actions"
+msgstr "Acciones Temporales"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12080100
 #: model:account.account.template,name:l10n_do.l10n_do_12080100
-msgid "Acciones en otras sociedades"
-msgstr ""
+msgid "Shares in other companies"
+msgstr "Acciones en otras sociedades"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_31010500
 #: model:account.account.template,name:l10n_do.l10n_do_31010500
-msgid "Acciones o Participaciones en Tesorería"
-msgstr ""
+msgid "Shares or Treasury Stock"
+msgstr "Acciones o Participaciones en Tesorería"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_12
 #: model:account.group.template,name:l10n_do.account_group_12
-msgid "Activo Fijos"
-msgstr ""
+msgid "Fixed Assets"
+msgstr "Activo Fijos"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_1
 #: model:account.group.template,name:l10n_do.account_group_1
-msgid "Activos"
-msgstr ""
+msgid "Assets"
+msgstr "Activos"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_11
 #: model:account.group.template,name:l10n_do.account_group_11
-msgid "Activos Corrientes"
-msgstr ""
+msgid "Current Assets"
+msgstr "Activos Corrientes"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_1209
 #: model:account.group.template,name:l10n_do.account_group_1209
-msgid "Activos Diferidos"
-msgstr ""
+msgid "Deferred Assets"
+msgstr "Activos Diferidos"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_1204
 #: model:account.group.template,name:l10n_do.account_group_1204
-msgid "Activos Intangibles"
-msgstr ""
+msgid "Intangible Assets"
+msgstr "Activos Intangibles"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61020500
 #: model:account.account.template,name:l10n_do.l10n_do_61020500
-msgid "Agua y Basura"
-msgstr ""
+msgid "Water and Garbage"
+msgstr "Agua y Basura"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61021500
 #: model:account.account.template,name:l10n_do.l10n_do_61021500
-msgid "Alojamiento en Hoteles"
-msgstr ""
+msgid "Hotel Accommodations"
+msgstr "Alojamiento en Hoteles"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61020800
 #: model:account.account.template,name:l10n_do.l10n_do_61020800
-msgid "Alquileres / Arrendamientos"
-msgstr ""
+msgid "Rentals / Leases"
+msgstr "Alquileres / Arrendamientos"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11100200
 #: model:account.account.template,name:l10n_do.l10n_do_11100200
-msgid "Alquileres pagados por Anticipado"
-msgstr ""
+msgid "Prepaid rents"
+msgstr "Alquileres pagados por Anticipado"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21030502
 #: model:account.account.template,name:l10n_do.l10n_do_21030502
-msgid "Anticipos ISR por Pagar"
-msgstr ""
+msgid "Advances ISR payable"
+msgstr "Anticipos ISR por Pagar"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_2203
 #: model:account.group.template,name:l10n_do.account_group_2203
-msgid "Anticipos de Clientes y Pagos no Identificados"
-msgstr ""
+msgid "Customer Advances and Unidentified Payments"
+msgstr "Anticipos de Clientes y Pagos no Identificados"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_22030100
 #: model:account.account.template,name:l10n_do.l10n_do_22030100
-msgid "Anticipos o Garantías de Clientes"
-msgstr ""
+msgid "Customer Advances or Guarantees"
+msgstr "Anticipos o Garantías de Clientes"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11100600
 #: model:account.account.template,name:l10n_do.l10n_do_11100600
-msgid "Anticipos para 1% Activos"
-msgstr ""
+msgid "Advances for 1% Assets"
+msgstr "Anticipos para 1% Activos"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11100500
 #: model:account.account.template,name:l10n_do.l10n_do_11100500
-msgid "Anticipos para Gastos"
-msgstr ""
+msgid "Advances for Expenses"
+msgstr "Anticipos para Gastos"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11100400
 #: model:account.account.template,name:l10n_do.l10n_do_11100400
-msgid "Anticipos para ISR"
-msgstr ""
+msgid "Advances for income tax"
+msgstr "Anticipos para ISR"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11100300
 #: model:account.account.template,name:l10n_do.l10n_do_11100300
-msgid "Anticipos para Seguros"
-msgstr ""
+msgid "Advances for Insurance"
+msgstr "Anticipos para Seguros"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21020800
 #: model:account.account.template,name:l10n_do.l10n_do_21020800
-msgid "Aporte a Fondo de Pensiones (AFP) por Pagar"
-msgstr ""
+msgid "Pension Fund (AFP) Contribution Payable"
+msgstr "Aporte a Fondo de Pensiones (AFP) por Pagar"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_610101
 #: model:account.group.template,name:l10n_do.account_group_610101
-msgid "Aportes a la Seguridad Social"
-msgstr ""
+msgid "Social Security Contributions"
+msgstr "Aportes a la Seguridad Social"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61030107
 #: model:account.account.template,name:l10n_do.l10n_do_61030107
-msgid "Asesorías (P. Física)"
-msgstr ""
+msgid "Counseling (Individual)"
+msgstr "Asesorías (P. Física)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61030207
 #: model:account.account.template,name:l10n_do.l10n_do_61030207
-msgid "Asesorías (P. Jurídica)"
-msgstr ""
+msgid "Counseling (Legal)"
+msgstr "Asesorías (P. Jurídica)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11100100
 #: model:account.account.template,name:l10n_do.l10n_do_11100100
-msgid "Avance a Proveedores"
-msgstr ""
+msgid "Advance to Suppliers"
+msgstr "Avance a Proveedores"
 
 #. module: l10n_do
 #: model:account.report.column,name:l10n_do.tax_report_balance
 msgid "Balance"
-msgstr ""
+msgstr "Balanza"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_110102
 #: model:account.group.template,name:l10n_do.account_group_110102
-msgid "Bancos"
-msgstr ""
+msgid "Banks"
+msgstr "Bancos"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_2102
 #: model:account.group.template,name:l10n_do.account_group_2102
-msgid "Beneficios por Pagar a Corto Plazo"
-msgstr ""
+msgid "Short-Term Benefits Payable"
+msgstr "Beneficios por Pagar a Corto Plazo"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11050600
 #: model:account.account.template,name:l10n_do.l10n_do_11050600
-msgid "Bienes Enviados No Facturados"
-msgstr ""
+msgid "Goods Shipped Not Invoiced"
+msgstr "Bienes Enviados No Facturados"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_120101
 #: model:account.group.template,name:l10n_do.account_group_120101
-msgid "Bienes Inmuebles (CAT 1)"
-msgstr ""
+msgid "Real Estate (CAT 1)"
+msgstr "Bienes Inmuebles (CAT 1)"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_120102
 #: model:account.group.template,name:l10n_do.account_group_120102
-msgid "Bienes Muebles (CAT 2)"
-msgstr ""
+msgid "Personal Property (CAT 2)"
+msgstr "Bienes Muebles (CAT 2)"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_120103
 #: model:account.group.template,name:l10n_do.account_group_120103
-msgid "Bienes Muebles (CAT 3)"
-msgstr ""
+msgid "Personal Property (CAT 3)"
+msgstr "Bienes Muebles (CAT 3)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21021200
 #: model:account.account.template,name:l10n_do.l10n_do_21021200
-msgid "Bienes Recibidos no Facturados"
-msgstr ""
+msgid "Unbilled Goods Received"
+msgstr "Bienes Recibidos no Facturados"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_1205
 #: model:account.group.template,name:l10n_do.account_group_1205
-msgid "Bienes en Arrendamiento"
-msgstr ""
+msgid "Leased Assets"
+msgstr "Bienes en Arrendamiento"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21020400
 #: model:account.account.template,name:l10n_do.l10n_do_21020400
-msgid "Bonificaciones por Pagar"
-msgstr ""
+msgid "Bonuses Payable"
+msgstr "Bonificaciones por Pagar"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61010800
 #: model:account.account.template,name:l10n_do.l10n_do_61010800
-msgid "Bonificaciones y Gratificaciones"
-msgstr ""
+msgid "Bonuses and Gratuities"
+msgstr "Bonificaciones y Gratificaciones"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61010400
 #: model:account.account.template,name:l10n_do.l10n_do_61010400
-msgid "Bono Vacacional"
-msgstr ""
+msgid "Vacation Bonus"
+msgstr "Bono Vacacional"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61010500
 #: model:account.account.template,name:l10n_do.l10n_do_61010500
-msgid "Bono por Desempeño"
-msgstr ""
+msgid "Performance Bonus"
+msgstr "Bono por Desempeño"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11090300
 #: model:account.account.template,name:l10n_do.l10n_do_11090300
-msgid "Bonos Temporales"
-msgstr ""
+msgid "Temporary Bonds"
+msgstr "Bonos Temporales"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11020100
 #: model:account.account.template,name:l10n_do.l10n_do_11020100
-msgid "Bonos y Acciones Temporales"
-msgstr ""
+msgid "Bonds and Temporary Shares"
+msgstr "Bonos y Acciones Temporales"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_110101
 #: model:account.group.template,name:l10n_do.account_group_110101
-msgid "Caja"
-msgstr ""
+msgid "Cash"
+msgstr "Caja"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_3
 #: model:account.group.template,name:l10n_do.account_group_3
 msgid "Capital"
-msgstr ""
+msgstr "Capital"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_31
 #: model:account.group.template,name:l10n_do.account_group_31
-msgid "Capital Contable"
-msgstr ""
+msgid "Stockholders' equity"
+msgstr "Capital Contable"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_3101
 #: model:account.group.template,name:l10n_do.account_group_3101
-msgid "Capital Social"
-msgstr ""
+msgid "Capital Stock"
+msgstr "Capital Social"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_31010100
 #: model:account.account.template,name:l10n_do.l10n_do_31010100
-msgid "Capital Social Autorizado"
-msgstr ""
+msgid "Authorized Capital Stock"
+msgstr "Capital Social Autorizado"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_31010400
 #: model:account.account.template,name:l10n_do.l10n_do_31010400
-msgid "Capital Social No Pagado"
-msgstr ""
+msgid "Unpaid Capital Stock"
+msgstr "Capital Social No Pagado"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_31010300
 #: model:account.account.template,name:l10n_do.l10n_do_31010300
-msgid "Capital Social Pagado"
-msgstr ""
+msgid "Paid-in capital stock"
+msgstr "Capital Social Pagado"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_31010200
 #: model:account.account.template,name:l10n_do.l10n_do_31010200
-msgid "Capital Social en Acciones no Emitidas"
-msgstr ""
+msgid "Capital Stock in Unissued Shares"
+msgstr "Capital Social en Acciones no Emitidas"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61070600
 #: model:account.account.template,name:l10n_do.l10n_do_61070600
-msgid "Cargos Bancarios"
-msgstr ""
+msgid "Bank Charges"
+msgstr "Cargos Bancarios"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_42040400
 #: model:account.account.template,name:l10n_do.l10n_do_42040400
 msgid "Cash Discount Gain"
-msgstr ""
+msgstr "Ganancia por descuento"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61081000
 #: model:account.account.template,name:l10n_do.l10n_do_61081000
 msgid "Cash Discount Loss"
-msgstr ""
+msgstr "Pérdida por descuento"
 
 #. module: l10n_do
 #: model:account.chart.template,name:l10n_do.do_chart_template
-msgid "Catálogo de Cuentas Dominicano (NIIF)"
-msgstr ""
+msgid "Dominican Chart of Accounts (IFRS)"
+msgstr "Catálogo de Cuentas Dominicano (NIIF)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11030101
 #: model:account.account.template,name:l10n_do.l10n_do_11030101
-msgid "Cheques Devueltos por Cobrar"
-msgstr ""
+msgid "Returned Checks Receivable"
+msgstr "Cheques Devueltos por Cobrar"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_42040200
 #: model:account.account.template,name:l10n_do.l10n_do_42040200
-msgid "Cobro de Cuentas Incobrables"
-msgstr ""
+msgid "Collection of uncollectible accounts"
+msgstr "Cobro de Cuentas Incobrables"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61020700
 #: model:account.account.template,name:l10n_do.l10n_do_61020700
-msgid "Combustibles y Lubricantes"
-msgstr ""
+msgid "Fuels and Lubricants"
+msgstr "Combustibles y Lubricantes"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61010900
 #: model:account.account.template,name:l10n_do.l10n_do_61010900
-msgid "Comidas o Dietas al Personal"
-msgstr ""
+msgid "Meals or Per Diems to Personnel"
+msgstr "Comidas o Dietas al Personal"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61070400
 #: model:account.account.template,name:l10n_do.l10n_do_61070400
-msgid "Comisiones Bancarias"
-msgstr ""
+msgid "Banking Commissions"
+msgstr "Comisiones Bancarias"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61010600
 #: model:account.account.template,name:l10n_do.l10n_do_61010600
-msgid "Comisiones a Empleados"
-msgstr ""
+msgid "Employee Commissions"
+msgstr "Comisiones a Empleados"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61070500
 #: model:account.account.template,name:l10n_do.l10n_do_61070500
-msgid "Comisiones de Tarjeta de Crédito"
-msgstr ""
+msgid "Credit Card Fees"
+msgstr "Comisiones de Tarjeta de Crédito"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21020200
 #: model:account.account.template,name:l10n_do.l10n_do_21020200
-msgid "Comisiones por Pagar"
-msgstr ""
+msgid "Commissions Payable"
+msgstr "Comisiones por Pagar"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_group_restaurant_purch
 #: model:account.tax.template,name:l10n_do.tax_group_restaurant_purch
-msgid "Compras a Restaurantes"
-msgstr ""
+msgid "Restaurant Purchases"
+msgstr "Compras a Restaurantes"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61020200
 #: model:account.account.template,name:l10n_do.l10n_do_61020200
-msgid "Comunicaciones"
-msgstr ""
+msgid "Communications"
+msgstr "Comunicaciones"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_1301
 #: model:account.group.template,name:l10n_do.account_group_1301
-msgid "Construcción en Proceso"
-msgstr ""
+msgid "Construction in Progress"
+msgstr "Construcción en Proceso"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61030102
 #: model:account.account.template,name:l10n_do.l10n_do_61030102
-msgid "Contabilidad y Auditoría (P. Física)"
-msgstr ""
+msgid "Accounting and Auditing (Individual)"
+msgstr "Contabilidad y Auditoría (P. Física)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61030202
 #: model:account.account.template,name:l10n_do.l10n_do_61030202
-msgid "Contabilidad y Auditoría (P. Jurídica)"
-msgstr ""
+msgid "Accounting and Auditing (Legal)"
+msgstr "Contabilidad y Auditoría (P. Jurídica)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61010204
 #: model:account.account.template,name:l10n_do.l10n_do_61010204
-msgid "Contribución Seguros de Vida"
-msgstr ""
+msgid "Life Insurance Contribution"
+msgstr "Contribución Seguros de Vida"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61010203
 #: model:account.account.template,name:l10n_do.l10n_do_61010203
-msgid "Contribución a Planes Complementarios de Salud"
-msgstr ""
+msgid "Contribution to Supplemental Health Plans"
+msgstr "Contribución a Planes Complementarios de Salud"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61010202
 #: model:account.account.template,name:l10n_do.l10n_do_61010202
-msgid "Contribución a Seguros del Personal"
-msgstr ""
+msgid "Contribution to Staff Insurance"
+msgstr "Contribución a Seguros del Personal"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61010102
 #: model:account.account.template,name:l10n_do.l10n_do_61010102
-msgid "Contribución a la Administradora de Fondos de Pensiones (AFP)"
-msgstr ""
+msgid "Contribution to the Pension Fund Administrators (AFP)"
+msgstr "Contribución a la Administradora de Fondos de Pensiones (AFP)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61010201
 #: model:account.account.template,name:l10n_do.l10n_do_61010201
-msgid "Contribución a la Administradora de Riesgos de Salud (ARS)"
-msgstr ""
+msgid "Contribution to the Health Risk Management System (ARS)"
+msgstr "Contribución a la Administradora de Riesgos de Salud (ARS)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61010205
 #: model:account.account.template,name:l10n_do.l10n_do_61010205
-msgid "Contribución al INFOTEP"
-msgstr ""
+msgid "Contribution to INFOTEP"
+msgstr "Contribución al INFOTEP"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61010104
 #: model:account.account.template,name:l10n_do.l10n_do_61010104
-msgid "Contribución al Seguro Familiar de Salud (SFS)"
-msgstr ""
+msgid "Contribution to the Family Health Insurance (FHIS)"
+msgstr "Contribución al Seguro Familiar de Salud (SFS)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61010103
 #: model:account.account.template,name:l10n_do.l10n_do_61010103
-msgid "Contribución al Seguro Riesgo Laboral (SRL)"
-msgstr ""
+msgid "Contribution to Occupational Risk Insurance (SRL)"
+msgstr "Contribución al Seguro Riesgo Laboral (SRL)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61030109
 #: model:account.account.template,name:l10n_do.l10n_do_61030109
-msgid "Copias y Escaneos (P. Física)"
-msgstr ""
+msgid "Copies and Scans (Individual)"
+msgstr "Copias y Escaneos (P. Física)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61030209
 #: model:account.account.template,name:l10n_do.l10n_do_61030209
-msgid "Copias y Escaneos (P. Jurídica)"
-msgstr ""
+msgid "Copies and Scans (Legal)"
+msgstr "Copias y Escaneos (P. Jurídica)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_51020300
 #: model:account.account.template,name:l10n_do.l10n_do_51020300
-msgid "Costos Indirectos"
-msgstr ""
+msgid "Indirect Costs"
+msgstr "Costos Indirectos"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_51010100
 #: model:account.account.template,name:l10n_do.l10n_do_51010100
-msgid "Costos de Bienes"
-msgstr ""
+msgid "Cost of Goods"
+msgstr "Costos de Bienes"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_13
 #: model:account.group.template,name:l10n_do.account_group_13
-msgid "Costos de Construcción"
-msgstr ""
+msgid "Construction Costs"
+msgstr "Costos de Construcción"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_13010100
 #: model:account.account.template,name:l10n_do.l10n_do_13010100
-msgid "Costos de Construcción en Proceso"
-msgstr ""
+msgid "Construction in Progress Costs"
+msgstr "Costos de Construcción en Proceso"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_130101
 #: model:account.group.template,name:l10n_do.account_group_130101
-msgid "Costos de Costrucción en Proceso"
-msgstr ""
+msgid "In-Process Construction Costs"
+msgstr "Costos de Costrucción en Proceso"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_51020400
 #: model:account.account.template,name:l10n_do.l10n_do_51020400
-msgid "Costos de Importación"
-msgstr ""
+msgid "Import Costs"
+msgstr "Costos de Importación"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_51020200
 #: model:account.account.template,name:l10n_do.l10n_do_51020200
-msgid "Costos de Mano de Obra"
-msgstr ""
+msgid "Labor Costs"
+msgstr "Costos de Mano de Obra"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_51020100
 #: model:account.account.template,name:l10n_do.l10n_do_51020100
-msgid "Costos de Materia Prima"
-msgstr ""
+msgid "Raw material costs"
+msgstr "Costos de Materia Prima"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_51
 #: model:account.group.template,name:l10n_do.account_group_51
-msgid "Costos de Operación"
-msgstr ""
+msgid "Operating Costs"
+msgstr "Costos de Operación"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_5102
 #: model:account.group.template,name:l10n_do.account_group_5102
-msgid "Costos de Producción"
-msgstr ""
+msgid "Production Costs"
+msgstr "Costos de Producción"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_51010200
 #: model:account.account.template,name:l10n_do.l10n_do_51010200
-msgid "Costos de Servicios"
-msgstr ""
+msgid "Cost of Services"
+msgstr "Costos de Servicios"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_5101
 #: model:account.group.template,name:l10n_do.account_group_5101
-msgid "Costos de Ventas"
-msgstr ""
+msgid "Cost of sales"
+msgstr "Costos de Ventas"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_5
 #: model:account.group.template,name:l10n_do.account_group_5
-msgid "Costos, Gastos y Pérdidas"
-msgstr ""
+msgid "Costs, Expenses and Losses"
+msgstr "Costos, Gastos y Pérdidas"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_71
 #: model:account.group.template,name:l10n_do.account_group_71
-msgid "Cuenta Liquidadora"
-msgstr ""
+msgid "Settlement Account"
+msgstr "Cuenta Liquidadora"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_7
 #: model:account.group.template,name:l10n_do.account_group_7
-msgid "Cuentas Liquidadoras de Resultados"
-msgstr ""
+msgid "Income Statement Clearing Accounts"
+msgstr "Cuentas Liquidadoras de Resultados"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_110302
 #: model:account.group.template,name:l10n_do.account_group_110302
-msgid "Cuentas por Cobrar"
-msgstr ""
+msgid "Accounts Receivable"
+msgstr "Cuentas por Cobrar"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11030204
 #: model:account.account.template,name:l10n_do.l10n_do_11030204
-msgid "Cuentas por Cobrar a Accionistas"
-msgstr ""
+msgid "Accounts Receivable from Shareholders"
+msgstr "Cuentas por Cobrar a Accionistas"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11030203
 #: model:account.account.template,name:l10n_do.l10n_do_11030203
-msgid "Cuentas por Cobrar a Afiliadas"
-msgstr ""
+msgid "Accounts Receivable from Affiliates"
+msgstr "Cuentas por Cobrar a Afiliadas"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11030201
 #: model:account.account.template,name:l10n_do.l10n_do_11030201
-msgid "Cuentas por Cobrar a Clientes"
-msgstr ""
+msgid "Accounts Receivable from Customers"
+msgstr "Cuentas por Cobrar a Clientes"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11030210
 #: model:account.account.template,name:l10n_do.l10n_do_11030210
-msgid "Cuentas por Cobrar a Clientes (PoS)"
-msgstr ""
+msgid "Trade Accounts Receivable (PoS)"
+msgstr "Cuentas por Cobrar a Clientes (PoS)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11030202
 #: model:account.account.template,name:l10n_do.l10n_do_11030202
-msgid "Cuentas por Cobrar a Funcionarios y Empleados"
-msgstr ""
+msgid "Accounts Receivable from Officers and Employees"
+msgstr "Cuentas por Cobrar a Funcionarios y Empleados"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21010500
 #: model:account.account.template,name:l10n_do.l10n_do_21010500
-msgid "Cuentas por Pagar a Accionistas"
-msgstr ""
+msgid "Accounts Payable to Shareholders"
+msgstr "Cuentas por Pagar a Accionistas"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21010400
 #: model:account.account.template,name:l10n_do.l10n_do_21010400
-msgid "Cuentas por Pagar a Afiliadas"
-msgstr ""
+msgid "Accounts Payable to Affiliates"
+msgstr "Cuentas por Pagar a Afiliadas"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21010200
 #: model:account.account.template,name:l10n_do.l10n_do_21010200
-msgid "Cuentas por Pagar a Proveedores Locales"
-msgstr ""
+msgid "Accounts Payable to Local Suppliers"
+msgstr "Accounts Payable to Local Suppliers"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21010300
 #: model:account.account.template,name:l10n_do.l10n_do_21010300
-msgid "Cuentas por Pagar a Proveedores del Exterior"
-msgstr ""
+msgid "Accounts Payable to Foreign Suppliers"
+msgstr "Cuentas por Pagar a Proveedores del Exterior"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_1103
 #: model:account.group.template,name:l10n_do.account_group_1103
-msgid "Cuentas y Documentos por Cobrar"
-msgstr ""
+msgid "Accounts and notes receivable"
+msgstr "Cuentas y Documentos por Cobrar"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_2101
 #: model:account.group.template,name:l10n_do.account_group_2101
-msgid "Cuentas y Documentos por Pagar a Corto Plazo"
-msgstr ""
+msgid "Short-term accounts payable and notes payable"
+msgstr "Cuentas y Documentos por Pagar a Corto Plazo"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_2201
 #: model:account.group.template,name:l10n_do.account_group_2201
-msgid "Cuentas y Documentos por Pagar a Largo Plazo"
-msgstr ""
+msgid "Long-term accounts payable and notes payable"
+msgstr "Cuentas y Documentos por Pagar a Largo Plazo"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61021400
 #: model:account.account.template,name:l10n_do.l10n_do_61021400
-msgid "Cuotas y Suscripciones"
-msgstr ""
+msgid "Fees and Subscriptions"
+msgstr "Cuotas y Suscripciones"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61011000
 #: model:account.account.template,name:l10n_do.l10n_do_61011000
-msgid "Cursos y Entrenamientos"
-msgstr ""
+msgid "Courses and Training"
+msgstr "Cursos y Entrenamientos"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12060100
 #: model:account.account.template,name:l10n_do.l10n_do_12060100
-msgid "Depreciación Acum. Edificaciones y Locales Arrendados"
-msgstr ""
+msgid "Accumulated Depreciation Buildings and Leased Premises"
+msgstr "Depreciación Acum. Edificaciones y Locales Arrendados"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12060300
 #: model:account.account.template,name:l10n_do.l10n_do_12060300
-msgid "Depreciación Acum. Instalaciones Arrendadas"
-msgstr ""
+msgid "Accumulated Depreciation Leased Facilities"
+msgstr "Depreciación Acum. Instalaciones Arrendadas"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12060200
 #: model:account.account.template,name:l10n_do.l10n_do_12060200
-msgid "Depreciación Acum. Maquinarias y Equipos Arrendados"
-msgstr ""
+msgid "Accumulated Depreciation Leased Machinery and Equipment"
+msgstr "Depreciación Acum. Maquinarias y Equipos Arrendados"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12020100
 #: model:account.account.template,name:l10n_do.l10n_do_12020100
-msgid "Depreciación Acum. de Edificios"
-msgstr ""
+msgid "Accumulated Depreciation of Buildings"
+msgstr "Depreciación Acum. de Edificios"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12020200
 #: model:account.account.template,name:l10n_do.l10n_do_12020200
-msgid "Depreciación Acum. de Equipos de Transporte"
-msgstr ""
+msgid "Accumulated Depreciation of Transportation Equipment"
+msgstr "Depreciación Acum. de Equipos de Transporte"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12020500
 #: model:account.account.template,name:l10n_do.l10n_do_12020500
-msgid "Depreciación Acum. de Herramientas"
-msgstr ""
+msgid "Accumulated depreciation of tools"
+msgstr "Depreciación Acum. de Herramientas"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12020600
 #: model:account.account.template,name:l10n_do.l10n_do_12020600
-msgid "Depreciación Acum. de Instalaciones"
-msgstr ""
+msgid "Accumulated Depreciation of Facilities"
+msgstr "Depreciación Acum. de Instalaciones"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12020400
 #: model:account.account.template,name:l10n_do.l10n_do_12020400
-msgid "Depreciación Acum. de Maquinarias"
-msgstr ""
+msgid "Accumulated Depreciation of Machinery"
+msgstr "Depreciación Acum. de Maquinarias"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12020300
 #: model:account.account.template,name:l10n_do.l10n_do_12020300
-msgid "Depreciación Acum. de Mobiliarios y Equipos"
-msgstr ""
+msgid "Accumulated Depreciation of Furniture and Equipment"
+msgstr "Depreciación Acum. de Mobiliarios y Equipos"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_1206
 #: model:account.group.template,name:l10n_do.account_group_1206
-msgid "Depreciación Acumulada de Bienes en Arrendamiento"
-msgstr ""
+msgid "Accumulated Depreciation of Leased Assets"
+msgstr "Depreciación Acumulada de Bienes en Arrendamiento"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_1202
 #: model:account.group.template,name:l10n_do.account_group_1202
-msgid "Depreciación Acumulada de Propiedades, Planta y Equipo"
-msgstr ""
+msgid "Accumulated Depreciation of Property, Plant and Equipment"
+msgstr "Depreciación Acumulada de Propiedades, Planta y Equipo"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11090200
 #: model:account.account.template,name:l10n_do.l10n_do_11090200
-msgid "Depósitos a Plazo Temporales"
-msgstr ""
+msgid "Temporary Time Deposits"
+msgstr "Depósitos a Plazo Temporales"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11010301
 #: model:account.account.template,name:l10n_do.l10n_do_11010301
-msgid "Depósitos a corto plazo en RD$"
-msgstr ""
+msgid "Short-term deposits in RD$"
+msgstr "Depósitos a corto plazo en RD$"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11010302
 #: model:account.account.template,name:l10n_do.l10n_do_11010302
-msgid "Depósitos a corto plazo en USD$"
-msgstr ""
+msgid "Short-term deposits in USD$"
+msgstr "Depósitos a corto plazo en USD$"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_22030200
 #: model:account.account.template,name:l10n_do.l10n_do_22030200
-msgid "Depósitos por Identificar"
-msgstr ""
+msgid "Deposits to be identified"
+msgstr "Depósitos por Identificar"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_4104
 #: model:account.group.template,name:l10n_do.account_group_4104
-msgid "Descuentos"
-msgstr ""
+msgid "Discounts"
+msgstr "Descuentos"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_41040100
 #: model:account.account.template,name:l10n_do.l10n_do_41040100
-msgid "Descuentos por Ventas (por NC)"
-msgstr ""
+msgid "Sales discounts (per NC)"
+msgstr "Descuentos por Ventas (por NC)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11060300
 #: model:account.account.template,name:l10n_do.l10n_do_11060300
-msgid "Deterioro Acum. de Combustibles"
-msgstr ""
+msgid "Impairment of Fuel Accum."
+msgstr "Deterioro Acum. de Combustibles"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11060100
 #: model:account.account.template,name:l10n_do.l10n_do_11060100
-msgid "Deterioro Acum. de Inventario en Almacen"
-msgstr ""
+msgid "Impairment Accum. of Inventory in Warehouse"
+msgstr "Deterioro Acum. de Inventario en Almacen"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11060200
 #: model:account.account.template,name:l10n_do.l10n_do_11060200
-msgid "Deterioro Acum. de Materiales y Suministros"
-msgstr ""
+msgid "Accumulated Impairment of Materials and Supplies"
+msgstr "Deterioro Acum. de Materiales y Suministros"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_1106
 #: model:account.group.template,name:l10n_do.account_group_1106
-msgid "Deterioro Acumulado de Valor de Inventarios"
-msgstr ""
+msgid "Accumulated Impairment of Inventory Value"
+msgstr "Deterioro Acumulado de Valor de Inventarios"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12070100
 #: model:account.account.template,name:l10n_do.l10n_do_12070100
-msgid "Deterioro Valor Acum. Edificios y Locales Arrendados"
-msgstr ""
+msgid "Accumulated Impairment Leased Buildings and Premises"
+msgstr "Deterioro Valor Acum. Edificios y Locales Arrendados"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12070300
 #: model:account.account.template,name:l10n_do.l10n_do_12070300
-msgid "Deterioro Valor Acum. Instalaciones Arrendadas"
-msgstr ""
+msgid "Accumulated Impairment Leased Facilities"
+msgstr "Deterioro Valor Acum. Instalaciones Arrendadas"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12070200
 #: model:account.account.template,name:l10n_do.l10n_do_12070200
-msgid "Deterioro Valor Acum. Maquinaria y Equipo Arrendado"
-msgstr ""
+msgid "Accumulated Impairment Leased Machinery and Equipment"
+msgstr "Deterioro Valor Acum. Maquinaria y Equipo Arrendado"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_1207
 #: model:account.group.template,name:l10n_do.account_group_1207
-msgid "Deterioro de Valor Acumulado de Bienes en Arrendamiento"
-msgstr ""
+msgid "Accumulated Impairment Loss on Leased Assets"
+msgstr "Deterioro de Valor Acumulado de Bienes en Arrendamiento"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_1203
 #: model:account.group.template,name:l10n_do.account_group_1203
-msgid "Deterioro de Valor Acumulado de Propiedades, Planta y Equipo"
-msgstr ""
+msgid "Accumulated Impairment of Property, Plant and Equipment"
+msgstr "Deterioro de Valor Acumulado de Propiedades, Planta y Equipo"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_4103
 #: model:account.group.template,name:l10n_do.account_group_4103
-msgid "Devoluciones"
-msgstr ""
+msgid "Returns"
+msgstr "Devoluciones"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_41030100
 #: model:account.account.template,name:l10n_do.l10n_do_41030100
-msgid "Devoluciones de Bienes"
-msgstr ""
+msgid "Return of Goods"
+msgstr "Devoluciones de Bienes"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_41030200
 #: model:account.account.template,name:l10n_do.l10n_do_41030200
-msgid "Devoluciones por Servicios"
-msgstr ""
+msgid "Returns for Services"
+msgstr "Devoluciones por Servicios"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_51010300
 #: model:account.account.template,name:l10n_do.l10n_do_51010300
-msgid "Diferencia en Precio"
-msgstr ""
+msgid "Price Difference"
+msgstr "Diferencia en Precio"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12090100
 #: model:account.account.template,name:l10n_do.l10n_do_12090100
-msgid "Diferencias temporales deducibles"
-msgstr ""
+msgid "Deductible temporary differences"
+msgstr "Diferencias temporales deducibles"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_4203
 #: model:account.group.template,name:l10n_do.account_group_4203
-msgid "Dividendos Ganados"
-msgstr ""
+msgid "Dividends Earned"
+msgstr "Dividendos Ganados"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21020100
 #: model:account.account.template,name:l10n_do.l10n_do_21020100
-msgid "Dividendos por Pagar"
-msgstr ""
+msgid "Dividends Payable"
+msgstr "Dividendos por Pagar"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_110301
 #: model:account.group.template,name:l10n_do.account_group_110301
-msgid "Documentos por Cobrar"
-msgstr ""
+msgid "Notes Receivable"
+msgstr "Documentos por Cobrar"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61060400
 #: model:account.account.template,name:l10n_do.l10n_do_61060400
-msgid "Donaciones"
-msgstr ""
+msgid "Donations"
+msgstr "Donaciones"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61060500
 #: model:account.account.template,name:l10n_do.l10n_do_61060500
-msgid "Donaciones a ProIndustria (Ley 392-07)"
-msgstr ""
+msgid "Donations to ProIndustria (Law 392-07)"
+msgstr "Donaciones a ProIndustria (Ley 392-07)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_33040200
 #: model:account.account.template,name:l10n_do.l10n_do_33040200
-msgid "Déficit en Reserva"
-msgstr ""
+msgid "Deficit in Reserve"
+msgstr "Déficit en Reserva"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12010102
 #: model:account.account.template,name:l10n_do.l10n_do_12010102
-msgid "Edificaciones"
-msgstr ""
+msgid "Buildings"
+msgstr "Edificaciones"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12050100
 #: model:account.account.template,name:l10n_do.l10n_do_12050100
-msgid "Edificaciones y Locales Arrendados"
-msgstr ""
+msgid "Leased Buildings and Premises"
+msgstr "Edificaciones y Locales Arrendados"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_1101
 #: model:account.group.template,name:l10n_do.account_group_1101
-msgid "Efectivo y Equivalentes de Efectivo"
-msgstr ""
+msgid "Cash and Cash Equivalents"
+msgstr "Efectivo y Equivalentes de Efectivo"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61020100
 #: model:account.account.template,name:l10n_do.l10n_do_61020100
-msgid "Energía Eléctrica"
-msgstr ""
+msgid "Electric Power"
+msgstr "Energía Eléctrica"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12010201
 #: model:account.account.template,name:l10n_do.l10n_do_12010201
-msgid "Equipos de Transporte Liviano"
-msgstr ""
+msgid "Light Transportation Equipment"
+msgstr "Equipos de Transporte Liviano"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_1107
 #: model:account.group.template,name:l10n_do.account_group_1107
-msgid "Estimación por Obsolencia de Inventario"
-msgstr ""
+msgid "Inventory obsolescence estimate"
+msgstr "Estimación por Obsolencia de Inventario"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61021000
 #: model:account.account.template,name:l10n_do.l10n_do_61021000
-msgid "Eventos"
-msgstr ""
+msgid "Events"
+msgstr "Eventos"
 
 #. module: l10n_do
 #: model:account.tax,description:l10n_do.2_tax_0_purch
@@ -1695,1778 +1696,1778 @@ msgstr ""
 #: model:account.tax.group,name:l10n_do.tax_group_itbis_0
 #: model:account.tax.template,description:l10n_do.tax_0_purch
 #: model:account.tax.template,description:l10n_do.tax_0_sale
-msgid "Exento"
-msgstr ""
+msgid "Exempt"
+msgstr "Exento"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_0_purch
 #: model:account.tax.template,name:l10n_do.tax_0_purch
-msgid "Exento ITBIS Compras"
-msgstr ""
+msgid "VAT Exempt Purchases"
+msgstr "Exento ITBIS Compras"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_0_sale
 #: model:account.tax.template,name:l10n_do.tax_0_sale
-msgid "Exento ITBIS Ventas"
-msgstr ""
+msgid "VAT Exempt Sales"
+msgstr "Exento ITBIS Ventas"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11090400
 #: model:account.account.template,name:l10n_do.l10n_do_11090400
-msgid "Fianzas y Depósitos"
-msgstr ""
+msgid "Bonds and Deposits"
+msgstr "Fianzas y Depósitos"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61021300
 #: model:account.account.template,name:l10n_do.l10n_do_61021300
-msgid "Flete y Carga"
-msgstr ""
+msgid "Freight and Cargo"
+msgstr "Flete y Carga"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61020900
 #: model:account.account.template,name:l10n_do.l10n_do_61020900
-msgid "Franquicias"
-msgstr ""
+msgid "Franchises"
+msgstr "Franquicias"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61030108
 #: model:account.account.template,name:l10n_do.l10n_do_61030108
-msgid "Fumigaciones (P. Física)"
-msgstr ""
+msgid "Fumigation (Individal)"
+msgstr "Fumigaciones (P. Física)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61030208
 #: model:account.account.template,name:l10n_do.l10n_do_61030208
-msgid "Fumigaciones (P. Jurídica)"
-msgstr ""
+msgid "Fumigation (Legal)"
+msgstr "Fumigaciones (P. Jurídica)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_71010100
 #: model:account.account.template,name:l10n_do.l10n_do_71010100
-msgid "Ganancias o Pérdidas"
-msgstr ""
+msgid "Profit or Loss"
+msgstr "Ganancias o Pérdidas"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_6108
 #: model:account.group.template,name:l10n_do.account_group_6108
-msgid "Gastos Extraordinarios"
-msgstr ""
+msgid "Extraordinary Expenses"
+msgstr "Gastos Extraordinarios"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_6107
 #: model:account.group.template,name:l10n_do.account_group_6107
-msgid "Gastos Financieros"
-msgstr ""
+msgid "Financial Expenses"
+msgstr "Gastos Financieros"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_610301
 #: model:account.group.template,name:l10n_do.account_group_610301
-msgid "Gastos Honorarios por Servicios Profesionales (P. Física)"
-msgstr ""
+msgid "Expenses Fees for Professional Services (Individual)"
+msgstr "Gastos Honorarios por Servicios Profesionales (P. Física)"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_610302
 #: model:account.group,name:l10n_do.2_account_group_610303
 #: model:account.group.template,name:l10n_do.account_group_610302
 #: model:account.group.template,name:l10n_do.account_group_610303
-msgid "Gastos Honorarios por Servicios Profesionales (P. Jurídica)"
-msgstr ""
+msgid "Fees for professional services (Legal)"
+msgstr "Gastos Honorarios por Servicios Profesionales (P. Jurídica)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61080900
 #: model:account.account.template,name:l10n_do.l10n_do_61080900
-msgid "Gastos No Deducibles"
-msgstr ""
+msgid "Non-Deductible Expenses"
+msgstr "Gastos No Deducibles"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12090200
 #: model:account.account.template,name:l10n_do.l10n_do_12090200
-msgid "Gastos Organizacionales Diferidos"
-msgstr ""
+msgid "Deferred Organizational Expenses"
+msgstr "Gastos Organizacionales Diferidos"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_6102
 #: model:account.group.template,name:l10n_do.account_group_6102
-msgid "Gastos de Administración"
-msgstr ""
+msgid "Administrative Expenses"
+msgstr "Gastos de Administración"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_61
 #: model:account.group.template,name:l10n_do.account_group_61
-msgid "Gastos de Operación"
-msgstr ""
+msgid "Operating Expenses"
+msgstr "Gastos de Operación"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_6101
 #: model:account.group.template,name:l10n_do.account_group_6101
-msgid "Gastos de Personal"
-msgstr ""
+msgid "Personnel Expenses"
+msgstr "Gastos de Personal"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_6106
 #: model:account.group.template,name:l10n_do.account_group_6106
-msgid "Gastos de Representación"
-msgstr ""
+msgid "Representation Expenses"
+msgstr "Gastos de Representación"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61060300
 #: model:account.account.template,name:l10n_do.l10n_do_61060300
-msgid "Gastos de Viajes y Representación"
-msgstr ""
+msgid "Travel and Representation Expenses"
+msgstr "Gastos de Viajes y Representación"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61060700
 #: model:account.account.template,name:l10n_do.l10n_do_61060700
-msgid "Gastos en Restaurantes"
-msgstr ""
+msgid "Restaurant Expenses"
+msgstr "Gastos en Restaurantes"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_6104
 #: model:account.group.template,name:l10n_do.account_group_6104
-msgid "Gastos por Depreciación"
-msgstr ""
+msgid "Depreciation expense"
+msgstr "Gastos por Depreciación"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61040100
 #: model:account.account.template,name:l10n_do.l10n_do_61040100
-msgid "Gastos por Depreciación de Edificios"
-msgstr ""
+msgid "Building Depreciation Expense"
+msgstr "Gastos por Depreciación de Edificios"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61040200
 #: model:account.account.template,name:l10n_do.l10n_do_61040200
-msgid "Gastos por Depreciación de Equipo de Transporte"
-msgstr ""
+msgid "Transportation Equipment Depreciation Expense"
+msgstr "Gastos por Depreciación de Equipo de Transporte"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61040500
 #: model:account.account.template,name:l10n_do.l10n_do_61040500
-msgid "Gastos por Depreciación de Herramientas"
-msgstr ""
+msgid "Tools Depreciation Expense"
+msgstr "Gastos por Depreciación de Herramientas"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61040600
 #: model:account.account.template,name:l10n_do.l10n_do_61040600
-msgid "Gastos por Depreciación de Instalaciones"
-msgstr ""
+msgid "Depreciation and amortization expense"
+msgstr "Gastos de depreciación y amortización"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61040400
 #: model:account.account.template,name:l10n_do.l10n_do_61040400
-msgid "Gastos por Depreciación de Maquinaria"
-msgstr ""
+msgid "Machinery Depreciation Expense"
+msgstr "Gastos por Depreciación de Maquinaria"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61040300
 #: model:account.account.template,name:l10n_do.l10n_do_61040300
-msgid "Gastos por Depreciación de Mobiliario y Equipos"
-msgstr ""
+msgid "Depreciation and amortization expense"
+msgstr "Gastos por Depreciación de Mobiliario y Equipos"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_71020200
 #: model:account.account.template,name:l10n_do.l10n_do_71020200
-msgid "Gastos por ISR"
-msgstr ""
+msgid "Income tax expense"
+msgstr "Gastos por ISR"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_71020100
 #: model:account.account.template,name:l10n_do.l10n_do_71020100
-msgid "Gastos por Impuestos"
-msgstr ""
+msgid "Tax Expenses"
+msgstr "Gastos por Impuestos"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61080600
 #: model:account.account.template,name:l10n_do.l10n_do_61080600
-msgid "Gastos por Penalidades/Recargos de DGII"
-msgstr ""
+msgid "Penalty Expenses/DGII Charges"
+msgstr "Gastos por Penalidades/Recargos de DGII"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61080700
 #: model:account.account.template,name:l10n_do.l10n_do_61080700
-msgid "Gastos por Penalidades/Recargos de TSS"
-msgstr ""
+msgid "TSS Penalty Charges/Penalty Expenses"
+msgstr "Gastos por Penalidades/Recargos de TSS"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61070100
 #: model:account.account.template,name:l10n_do.l10n_do_61070100
-msgid "Gastos por Préstamos Financieros"
-msgstr ""
+msgid "Financial Loan Expenses"
+msgstr "Financial Loan Expenses"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_6105
 #: model:account.group.template,name:l10n_do.account_group_6105
-msgid "Gastos por Reparaciones"
-msgstr ""
+msgid "Expenses for repairs"
+msgstr "Gastos por Reparaciones"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61050100
 #: model:account.account.template,name:l10n_do.l10n_do_61050100
-msgid "Gastos por Reparación de Edificios"
-msgstr ""
+msgid "Building Repair Expenses"
+msgstr "Gastos por Reparación de Edificios"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61050200
 #: model:account.account.template,name:l10n_do.l10n_do_61050200
-msgid "Gastos por Reparación de Equipo de Transporte"
-msgstr ""
+msgid "Transportation Equipment Repair Expenses"
+msgstr "Gastos por Reparación de Equipo de Transporte"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61050500
 #: model:account.account.template,name:l10n_do.l10n_do_61050500
-msgid "Gastos por Reparación de Herramientas"
-msgstr ""
+msgid "Tool Repair Expenses"
+msgstr "Gastos por Reparación de Herramientas"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61050600
 #: model:account.account.template,name:l10n_do.l10n_do_61050600
-msgid "Gastos por Reparación de Instalaciones"
-msgstr ""
+msgid "Expenses for Repair of Facilities"
+msgstr "Gastos por Reparación de Instalaciones"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61050400
 #: model:account.account.template,name:l10n_do.l10n_do_61050400
-msgid "Gastos por Reparación de Maquinaria"
-msgstr ""
+msgid "Machinery Repair Expenses"
+msgstr "Gastos por Reparación de Maquinaria"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61050300
 #: model:account.account.template,name:l10n_do.l10n_do_61050300
-msgid "Gastos por Reparación de Mobiliario y Equipos"
-msgstr ""
+msgid "Furniture and Equipment Repair Expenses"
+msgstr "Gastos por Reparación de Mobiliario y Equipos"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_6103
 #: model:account.group.template,name:l10n_do.account_group_6103
-msgid "Gastos por Trabajo, Suministros y Servicios"
-msgstr ""
+msgid "Expenses for Labor, Supplies and Services"
+msgstr "Gastos por Trabajo, Suministros y Servicios"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61080800
 #: model:account.account.template,name:l10n_do.l10n_do_61080800
-msgid "Gastos sin Comprobantes"
-msgstr ""
+msgid "Expenses without Vouchers"
+msgstr "Gastos sin Comprobantes"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_6
 #: model:account.group.template,name:l10n_do.account_group_6
-msgid "Gastos y Pérdidas"
-msgstr ""
+msgid "Expenses and Losses"
+msgstr "Gastos y Pérdidas"
 
 #. module: l10n_do
 #: model:account.fiscal.position,name:l10n_do.2_position_gov
 #: model:account.fiscal.position.template,name:l10n_do.position_gov
-msgid "Gubernamental"
-msgstr ""
+msgid "Governmental"
+msgstr "Gubernamental"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12010302
 #: model:account.account.template,name:l10n_do.l10n_do_12010302
-msgid "Herramientas"
-msgstr ""
+msgid "Tools"
+msgstr "Herramientas"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61030301
 #: model:account.account.template,name:l10n_do.l10n_do_61030301
-msgid "Honorarios por Servicios del Exterior - Relacionadas"
-msgstr ""
+msgid "Foreign Service Fees - Related"
+msgstr "Honorarios por Servicios del Exterior - Relacionadas"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61030302
 #: model:account.account.template,name:l10n_do.l10n_do_61030302
-msgid "Honorarios por Servicios del Exterior - Terceros"
-msgstr ""
+msgid "Foreign Services Fees - Third Parties"
+msgstr "Honorarios por Servicios del Exterior - Terceros"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61011300
 #: model:account.account.template,name:l10n_do.l10n_do_61011300
-msgid "Horas Extras"
-msgstr ""
+msgid "Overtime"
+msgstr "Horas Extras"
 
 #. module: l10n_do
 #: model:account.report.line,name:l10n_do.account_tax_report_total_operaciones
-msgid "II-1 TOTAL DE OPERATIONES DEL PERIODO"
-msgstr ""
+msgid "II-1 TOTAL OPERATIONS FOR THE PERIOD"
+msgstr "II-1 TOTAL DE OPERATIONES DEL PERIODO"
 
 #. module: l10n_do
 #: model:account.report.line,name:l10n_do.account_tax_report_2A
-msgid "II.A NO GRAVADAS"
-msgstr ""
+msgid "II.A NON-TAXABLE"
+msgstr "II.A NO GRAVADAS"
 
 #. module: l10n_do
 #: model:account.report.line,name:l10n_do.account_tax_report_2A2_base
-msgid "II.A.2 INGRESOS POR EXPORTACIONES DE BIENES SEGUN"
-msgstr ""
+msgid "II.A.2 INCOME FROM EXPORTS OF GOODS"
+msgstr "II.A.2 INGRESOS POR EXPORTACIONES DE BIENES"
 
 #. module: l10n_do
 #: model:account.report.line,name:l10n_do.account_tax_report_2A3_base
-msgid "II.A.3 INGRESOS POR EXPORTACIONES DE SERVICIOS SEGUN"
-msgstr ""
+msgid "II.A.3 INCOME FROM SERVICES EXPORTS"
+msgstr "II.A.3 INGRESOS POR EXPORTACIONES DE SERVICIOS"
 
 #. module: l10n_do
 #: model:account.report.line,name:l10n_do.account_tax_report_2A4_base
-msgid "II.A.4 INGRESOS POR VENTAS LOCALES DE BIENES O SERVICIOS EXENTOS"
-msgstr ""
+msgid "II.A.4 INCOME FROM LOCAL SALES OF EXEMPT GOODS OR SERVICES"
+msgstr "II.A.4 INGRESOS POR VENTAS LOCALES DE BIENES O SERVICIOS EXENTOS"
 
 #. module: l10n_do
 #: model:account.report.line,name:l10n_do.account_tax_report_2A5_base
-msgid "II.A.5 INGRESOS POR VENTAS DE BIENES O SERVICIOS EXENTOS POR DESTINO"
-msgstr ""
+msgid "II.A.5 INCOME FROM SALES OF EXEMPT GOODS OR SERVICES BY DESTINATION"
+msgstr "II.A.5 INGRESOS POR VENTAS DE BIENES O SERVICIOS EXENTOS POR DESTINO"
 
 #. module: l10n_do
 #: model:account.report.line,name:l10n_do.account_tax_report_2A6_base
-msgid "II.A.6 NO SUJETAS A ITBIS POR SERVICIOS DE CONSTRUCTION"
-msgstr ""
+msgid "II.A.6 NOT SUBJECT TO VAT FOR CONSTRUCTION SERVICES"
+msgstr "II.A.6 NO SUJETAS A ITBIS POR SERVICIOS DE CONSTRUCTION"
 
 #. module: l10n_do
 #: model:account.report.line,name:l10n_do.account_tax_report_2A7_base
-msgid "II.A.7 NO SUJETAS A ITBIS POR COMISIONES"
-msgstr ""
+msgid "II.A.7 NOT SUBJECT TO VAT FOR COMMISSIONS"
+msgstr "II.A.7 NO SUJETAS A ITBIS POR COMISIONES"
 
 #. module: l10n_do
 #: model:account.report.line,name:l10n_do.account_tax_report_2A8_base
-msgid "II.A.8 INGRESOS POR VENTAS LOCALES DE BIENES EXENTOS SEGUN"
-msgstr ""
+msgid "II.A.8 INCOME FROM LOCAL SALES OF EXEMPT GOODS"
+msgstr "II.A.8 INGRESOS POR VENTAS LOCALES DE BIENES EXENTOS"
 
 #. module: l10n_do
 #: model:account.report.line,name:l10n_do.account_tax_report_2B
-msgid "II.B GRAVADAS"
-msgstr ""
+msgid "II.B. TAXED"
+msgstr "II.B GRAVADAS"
 
 #. module: l10n_do
 #: model:account.report.line,name:l10n_do.account_tax_report_2B11_base
-msgid "II.B.11 OPERACIONES GRAVADAS AL 18%"
-msgstr ""
+msgid "II.B.11 TRANSACTIONS TAXED AT 18%"
+msgstr "II.B.11 OPERACIONES GRAVADAS AL 18%"
 
 #. module: l10n_do
 #: model:account.report.line,name:l10n_do.account_tax_report_2B12_base
-msgid "II.B.12 OPERACIONES GRAVADAS AL 16%"
-msgstr ""
+msgid "II.B.12 TRANSACTIONS TAXED AT 16%"
+msgstr "II.B.12 OPERACIONES GRAVADAS AL 16%"
 
 #. module: l10n_do
 #: model:account.report.line,name:l10n_do.account_tax_report_2B13_base
-msgid "II.B.13 OPERACIONES GRAVADAS AL 9%"
-msgstr ""
+msgid "II.B.13 TRANSACTIONS TAXED AT 9%"
+msgstr "II.B.13 OPERACIONES GRAVADAS AL 9%"
 
 #. module: l10n_do
 #: model:account.report.line,name:l10n_do.account_tax_report_2B14_base
-msgid "II.B.14 OPERACIONES GRAVADAS AL 8%"
-msgstr ""
+msgid "II.B.13 TRANSACTIONS TAXED AT 8%"
+msgstr "II.B.14 OPERACIONES GRAVADAS AL 8%"
 
 #. module: l10n_do
 #: model:account.report.line,name:l10n_do.account_tax_report_2B15_base
-msgid "II.B.15 OPERATIONES GRAVADAS POR VENTAS DE ACTIVOS DEPRECIABLES"
-msgstr ""
+msgid "II.B.15 TRANSACTIONS TAXED ON SALES OF DEPRECIABLE ASSETS"
+msgstr "II.B.15 OPERATIONES GRAVADAS POR VENTAS DE ACTIVOS DEPRECIABLES"
 
 #. module: l10n_do
 #: model:account.report.line,name:l10n_do.account_tax_report_3
-msgid "III LIQUIDACION"
-msgstr ""
+msgid "III SETTLEMENT"
+msgstr "III LIQUIDACION"
 
 #. module: l10n_do
 #: model:account.report.line,name:l10n_do.account_tax_report_3_16_tax
-msgid "III.16 ITBIS COBRADO (18% de la casilla 11)"
-msgstr ""
+msgid "III.16 VAT COLLECTED (18% of box 11)"
+msgstr "III.16 ITBIS COBRADO (18% de la casilla 11)"
 
 #. module: l10n_do
 #: model:account.report.line,name:l10n_do.account_tax_report_3_17_tax
-msgid "III.17 ITBIS COBRADO (16% de la casilla 12)"
-msgstr ""
+msgid "III.17 VAT COLLECTED (16% of box 12)"
+msgstr "III.17 ITBIS COBRADO (16% de la casilla 12)"
 
 #. module: l10n_do
 #: model:account.report.line,name:l10n_do.account_tax_report_3_18_tax
-msgid "III.18 ITBIS COBRADO (9% de la casilla 13)"
-msgstr ""
+msgid "III.18 VAT COLLECTED (9% of box 13)"
+msgstr "III.18 ITBIS COBRADO (9% de la casilla 13)"
 
 #. module: l10n_do
 #: model:account.report.line,name:l10n_do.account_tax_report_3_19_tax
-msgid "III.19 ITBIS COBRADO (8% de la casilla 14)"
-msgstr ""
+msgid "III.19 VAT COLLECTED (8% of box 14)"
+msgstr "III.19 ITBIS COBRADO (8% de la casilla 14)"
 
 #. module: l10n_do
 #: model:account.report.line,name:l10n_do.account_tax_report_3_20_tax
-msgid "III.20 ITBIS COBRADO POR VENTAS DE ACTIVO DEPRECIABLES"
-msgstr ""
+msgid "III.20 VAT CHARGED ON SALES OF DEPRECIABLE ASSETS"
+msgstr "III.20 ITBIS COBRADO POR VENTAS DE ACTIVO DEPRECIABLES"
 
 #. module: l10n_do
 #: model:account.report.line,name:l10n_do.account_tax_report_3_21_total
-msgid "III.21 TOTAL ITBIS COBRADO (Sumar casillas 16+17+18+19+20)"
-msgstr ""
+msgid "III.21 TOTAL VAT COLLECTED (Add Boxes 16+17+18+19+20)"
+msgstr "III.21 TOTAL ITBIS COBRADO (Sumar casillas 16+17+18+19+20)"
 
 #. module: l10n_do
 #: model:account.report.line,name:l10n_do.account_tax_report_3_22_tax
-msgid "III.22 ITBIS PAGADO EN COMPRAS LOCALES"
-msgstr ""
+msgid "III.22 VAT PAID ON LOCAL PURCHASES"
+msgstr "III.22 ITBIS PAGADO EN COMPRAS LOCALES"
 
 #. module: l10n_do
 #: model:account.report.line,name:l10n_do.account_tax_report_3_23_tax
-msgid "III.23 ITBIS PAGADO POR SERVICIOS DEDUCIBLES"
-msgstr ""
+msgid "III.23 VAT PAID FOR DEDUCTIBLE SERVICES"
+msgstr "III.23 ITBIS PAGADO POR SERVICIOS DEDUCIBLES"
 
 #. module: l10n_do
 #: model:account.report.line,name:l10n_do.account_tax_report_3_24_tax
-msgid "III.24 ITBIS PAGADO EN IMPORTACIONES"
-msgstr ""
+msgid "III.24 VAT PAID ON IMPORTS"
+msgstr "III.24 ITBIS PAGADO EN IMPORTACIONES"
 
 #. module: l10n_do
 #: model:account.report.line,name:l10n_do.account_tax_report_3_25_total
-msgid "III.25 TOTAL ITBIS DEDUCTIBLE (Sumar casillas 22+23+24)"
-msgstr ""
+msgid "III.25 TOTAL VAT DEDUCTIBLE (Add boxes 22+23+24)"
+msgstr "III.25 TOTAL ITBIS DEDUCTIBLE (Sumar casillas 22+23+24)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21021000
 #: model:account.account.template,name:l10n_do.l10n_do_21021000
-msgid "INFOTEP por Pagar"
-msgstr ""
+msgid "INFOTEP Payable"
+msgstr "INFOTEP por Pagar"
 
 #. module: l10n_do
 #: model:account.tax.group,name:l10n_do.tax_group_isc
 msgid "ISC"
-msgstr ""
+msgstr "ISC"
 
 #. module: l10n_do
 #: model:account.tax.group,name:l10n_do.group_isr
 msgid "ISR"
-msgstr ""
+msgstr "ISR"
 
 #. module: l10n_do
 #: model:account.tax.group,name:l10n_do.tax_group_retencion_10
 msgid "ISR -10%"
-msgstr ""
+msgstr "ISR -10%"
 
 #. module: l10n_do
 #: model:account.tax.group,name:l10n_do.tax_group_retencion_2
 msgid "ISR -2%"
-msgstr ""
+msgstr "ISR -2%"
 
 #. module: l10n_do
 #: model:account.tax.group,name:l10n_do.tax_group_retencion_27
 msgid "ISR -27%"
-msgstr ""
+msgstr "ISR -27%"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12090300
 #: model:account.account.template,name:l10n_do.l10n_do_12090300
-msgid "ISR Deducible"
-msgstr ""
+msgid "Deductible ISR"
+msgstr "ISR Deducible"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_210303
 #: model:account.group.template,name:l10n_do.account_group_210303
-msgid "ISR Retenido"
-msgstr ""
+msgid "ISR withheld"
+msgstr "ISR Retenido"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21030302
 #: model:account.account.template,name:l10n_do.l10n_do_21030302
-msgid "ISR Retenido por Alquileres Pagados a Personas Físicas"
-msgstr ""
+msgid "ISR withheld on rent paid to individuals"
+msgstr "ISR Retenido por Alquileres Pagados a Personas Físicas"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21030303
 #: model:account.account.template,name:l10n_do.l10n_do_21030303
-msgid "ISR Retenido por Dividendos Pagados"
-msgstr ""
+msgid "Income tax withheld on dividends paid"
+msgstr "ISR Retenido por Dividendos Pagados"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21030301
 #: model:account.account.template,name:l10n_do.l10n_do_21030301
-msgid "ISR Retenido por Honorarios Profesionales de Personas Físicas"
-msgstr ""
+msgid "Income tax withheld for professional fees of individuals"
+msgstr "ISR Retenido por Honorarios Profesionales de Personas Físicas"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21030305
 #: model:account.account.template,name:l10n_do.l10n_do_21030305
-msgid "ISR Retenido por Intereses Pagados"
-msgstr ""
+msgid "ISR withheld on interest paid"
+msgstr "ISR Retenido por Intereses Pagados"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21030304
 #: model:account.account.template,name:l10n_do.l10n_do_21030304
-msgid "ISR Retenido por Intereses Pagados al Exterior"
-msgstr ""
+msgid "ISR Withheld on Interest Paid Abroad"
+msgstr "ISR Retenido por Intereses Pagados al Exterior"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21030307
 #: model:account.account.template,name:l10n_do.l10n_do_21030307
-msgid "ISR Retenido por Remesas al Exterior (L253-12)"
-msgstr ""
+msgid "ISR Withheld on Remittances Abroad (L253-12)"
+msgstr "ISR Retenido por Remesas al Exterior (L253-12)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21030306
 #: model:account.account.template,name:l10n_do.l10n_do_21030306
-msgid "ISR Retenido por Transferencias de Títulos y Propiedades"
-msgstr ""
+msgid "ISR withheld on transfers of securities and properties"
+msgstr "ISR Retenido por Transferencias de Títulos y Propiedades"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21030501
 #: model:account.account.template,name:l10n_do.l10n_do_21030501
-msgid "ISR por Pagar"
-msgstr ""
+msgid "ISR payable"
+msgstr "ISR por Pagar"
 
 #. module: l10n_do
 #: model:account.tax.group,name:l10n_do.group_itbis
-msgid "ITBIS"
-msgstr ""
+msgid "VAT"
+msgstr "ITBIS"
 
 #. module: l10n_do
 #: model:account.tax.group,name:l10n_do.tax_group_retencion_18
-msgid "ITBIS -100%"
-msgstr ""
+msgid "VAT -100%"
+msgstr "ITBIS -100%"
 
 #. module: l10n_do
 #: model:account.tax.group,name:l10n_do.tax_group_retencion_54
-msgid "ITBIS -30%"
-msgstr ""
+msgid "VAT -30%"
+msgstr "ITBIS -30%"
 
 #. module: l10n_do
 #: model:account.tax.group,name:l10n_do.tax_group_itbis_00015
-msgid "ITBIS 0.0015%"
-msgstr ""
+msgid "VAT 0.0015%"
+msgstr "ITBIS 0.0015%"
 
 #. module: l10n_do
 #: model:account.tax.group,name:l10n_do.tax_group_itbis_18
-msgid "ITBIS 18%"
-msgstr ""
+msgid "VAT 18%"
+msgstr "ITBIS 18%"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_110801
 #: model:account.group.template,name:l10n_do.account_group_110801
-msgid "ITBIS Adelantado en Compras"
-msgstr ""
+msgid "VAT Advance on Purchases"
+msgstr "ITBIS Adelantado en Compras"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11080101
 #: model:account.account.template,name:l10n_do.l10n_do_11080101
-msgid "ITBIS Pagado en Compras de Bienes Locales"
-msgstr ""
+msgid "VAT Paid on Purchases of Local Good"
+msgstr "ITBIS Pagado en Compras de Bienes Locales"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11080102
 #: model:account.account.template,name:l10n_do.l10n_do_11080102
-msgid "ITBIS Pagado en Compras de Servicios Deducibles"
-msgstr ""
+msgid "VAT Paid on Deductible Service Purchases"
+msgstr "ITBIS Pagado en Compras de Servicios Deducibles"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11080103
 #: model:account.account.template,name:l10n_do.l10n_do_11080103
-msgid "ITBIS Pagado en Importaciones"
-msgstr ""
+msgid "VAT Paid on Imports"
+msgstr "ITBIS Pagado en Importaciones"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11080106
 #: model:account.account.template,name:l10n_do.l10n_do_11080106
-msgid "ITBIS Pagado en Importaciones Sujeto a Proporcionalidad"
-msgstr ""
+msgid "VAT Paid on Imports Subject to Proportionality"
+msgstr "ITBIS Pagado en Importaciones Sujeto a Proporcionalidad"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_210302
 #: model:account.group.template,name:l10n_do.account_group_210302
-msgid "ITBIS Retenido"
-msgstr ""
+msgid "VAT Withheld"
+msgstr "ITBIS Retenido"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21030203
 #: model:account.account.template,name:l10n_do.l10n_do_21030203
-msgid "ITBIS Retenido a Entidades No Lucrativas (N01-11)"
-msgstr ""
+msgid "VAT Withheld from Non-Profit Entities (N01-11)"
+msgstr "ITBIS Retenido a Entidades No Lucrativas (N01-11)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21030205
 #: model:account.account.template,name:l10n_do.l10n_do_21030205
-msgid "ITBIS Retenido a Informales de Bienes (N08-10)"
-msgstr ""
+msgid "VAT Withheld from Informal Goods (N08-10)"
+msgstr "ITBIS Retenido a Informales de Bienes (N08-10)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21030202
 #: model:account.account.template,name:l10n_do.l10n_do_21030202
-msgid "ITBIS Retenido a Persona Física (R293-11)"
-msgstr ""
+msgid "VAT Withheld from Individuals (R293-11)"
+msgstr "ITBIS Retenido a Persona Física (R293-11)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21030201
 #: model:account.account.template,name:l10n_do.l10n_do_21030201
-msgid "ITBIS Retenido a Persona Jurídica (N02-05)"
-msgstr ""
+msgid "VAT Withheld from Legal Entity (N02-05)"
+msgstr "ITBIS Retenido a Persona Jurídica (N02-05)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11080302
 #: model:account.account.template,name:l10n_do.l10n_do_11080302
-msgid "ITBIS Retenido por Entidades del Estado (5%)"
-msgstr ""
+msgid "VAT Retained by State Entities (5%)"
+msgstr "ITBIS Retenido por Entidades del Estado (5%)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21030204
 #: model:account.account.template,name:l10n_do.l10n_do_21030204
-msgid "ITBIS Retenido por Servicios Profesionales (N02-05)"
-msgstr ""
+msgid "VAT Withheld for Professional Services (N02-05)"
+msgstr "ITBIS Retenido por Servicios Profesionales (N02-05)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11080301
 #: model:account.account.template,name:l10n_do.l10n_do_11080301
-msgid "ITBIS Retenido por Ventas (N08-04 y N02-05)"
-msgstr ""
+msgid "VAT Withheld on Sales (N08-04 and N02-05)"
+msgstr "ITBIS Retenido por Ventas (N08-04 y N02-05)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11080104
 #: model:account.account.template,name:l10n_do.l10n_do_11080104
-msgid "ITBIS en Compras de Bienes o Servicios Sujetos a Proporcionalidad"
-msgstr ""
+msgid "VAT on Purchases of Goods or Services Subject to Proportionality"
+msgstr "ITBIS en Compras de Bienes o Servicios Sujetos a Proporcionalidad"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11080105
 #: model:account.account.template,name:l10n_do.l10n_do_11080105
-msgid "ITBIS en Importaciones Sujeto a Proporcionalidad"
-msgstr ""
+msgid "VAT on Imports Subject to Proportionalit"
+msgstr "ITBIS en Importaciones Sujeto a Proporcionalidad"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_51010500
 #: model:account.account.template,name:l10n_do.l10n_do_51010500
-msgid "ITBIS llevado al Costo"
-msgstr ""
+msgid "VAT carried at Cost"
+msgstr "ITBIS llevado al Costo"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_210301
 #: model:account.group.template,name:l10n_do.account_group_210301
-msgid "ITBIS por Pagar"
-msgstr ""
+msgid "VAT Payable"
+msgstr "ITBIS por Pagar"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21030102
 #: model:account.account.template,name:l10n_do.l10n_do_21030102
-msgid "ITBIS por Venta Bienes"
-msgstr ""
+msgid "VAT on Sale of Goods"
+msgstr "ITBIS por Venta Bienes"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21030101
 #: model:account.account.template,name:l10n_do.l10n_do_21030101
-msgid "ITBIS por Venta Servicios"
-msgstr ""
+msgid "VAT on Sale of Services"
+msgstr "ITBIS por Venta Servicios"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21030103
 #: model:account.account.template,name:l10n_do.l10n_do_21030103
-msgid "ITBIS por Venta Servicios en Nombre de Terceros"
-msgstr ""
+msgid "VAT for sale of services on behalf of 3th Parties"
+msgstr "ITBIS por Venta Servicios en Nombre de Terceros"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_1108
 #: model:account.group.template,name:l10n_do.account_group_1108
-msgid "Impuestos Adelantados"
-msgstr ""
+msgid "Advanced Taxes"
+msgstr "Impuestos Adelantados"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_group_telco
 #: model:account.tax.template,name:l10n_do.tax_group_telco
-msgid "Impuestos a las Telecomunicaciones"
-msgstr ""
+msgid "Telecommunications Taxes"
+msgstr "Impuestos a las Telecomunicaciones"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61080500
 #: model:account.account.template,name:l10n_do.l10n_do_61080500
-msgid "Impuestos a los Activos"
-msgstr ""
+msgid "Asset Taxes"
+msgstr "Impuestos a los Activos"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_2103
 #: model:account.group.template,name:l10n_do.account_group_2103
-msgid "Impuestos y Retenciones"
-msgstr ""
+msgid "Taxes and Withholdings"
+msgstr "Impuestos y Retenciones"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61011200
 #: model:account.account.template,name:l10n_do.l10n_do_61011200
-msgid "Incentivos"
-msgstr ""
+msgid "Incentives"
+msgstr "Incentivos"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61010700
 #: model:account.account.template,name:l10n_do.l10n_do_61010700
-msgid "Indemnizaciones"
-msgstr ""
+msgid "Indemnifications"
+msgstr "Indemnizaciones"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_4204
 #: model:account.group.template,name:l10n_do.account_group_4204
-msgid "Ingresos Extraordinarios"
-msgstr ""
+msgid "Extraordinary Income"
+msgstr "Ingresos Extraordinarios"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_42
 #: model:account.group.template,name:l10n_do.account_group_42
-msgid "Ingresos No Operacionales"
-msgstr ""
+msgid "Non-Operating Income"
+msgstr "Ingresos No Operacionales"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_42040100
 #: model:account.account.template,name:l10n_do.l10n_do_42040100
-msgid "Ingresos por Diferencia Cambiaria"
-msgstr ""
+msgid "Income from Exchange Differences"
+msgstr "Ingresos por Diferencia Cambiaria"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_42030100
 #: model:account.account.template,name:l10n_do.l10n_do_42030100
-msgid "Ingresos por Dividendos Ganados"
-msgstr ""
+msgid "Dividend Income Earned"
+msgstr "Ingresos por Dividendos Ganados"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_41
 #: model:account.group.template,name:l10n_do.account_group_41
-msgid "Ingresos por Operaciones"
-msgstr ""
+msgid "Operating Revenues"
+msgstr "Ingresos por Operaciones"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_42040300
 #: model:account.account.template,name:l10n_do.l10n_do_42040300
-msgid "Ingresos por Sobrante en Caja"
-msgstr ""
+msgid "Surplus Cash Revenues"
+msgstr "Ingresos por Sobrante en Caja"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_42020100
 #: model:account.account.template,name:l10n_do.l10n_do_42020100
-msgid "Ingresos por Ventas de Activos Depreciables (CAT II y III) "
-msgstr ""
+msgid "Revenues from Sales of Depreciable Assets (CAT II and III)"
+msgstr "Ingresos por Ventas de Activos Depreciables (CAT II y III)"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_4
 #: model:account.group.template,name:l10n_do.account_group_4
-msgid "Ingresos y Ganancias"
-msgstr ""
+msgid "Revenues and Earnings"
+msgstr "Ingresos y Ganancias"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12010303
 #: model:account.account.template,name:l10n_do.l10n_do_12010303
-msgid "Instalaciones"
-msgstr ""
+msgid "Facilities"
+msgstr "Instalaciones"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12050300
 #: model:account.account.template,name:l10n_do.l10n_do_12050300
-msgid "Instalaciones Arrendadas"
-msgstr ""
+msgid "Leased Facilities"
+msgstr "Instalaciones Arrendadas"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61070300
 #: model:account.account.template,name:l10n_do.l10n_do_61070300
-msgid "Intereses Bancarios"
-msgstr ""
+msgid "Bank Interest"
+msgstr "Intereses Bancarios"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_4201
 #: model:account.group.template,name:l10n_do.account_group_4201
-msgid "Intereses Ganados"
-msgstr ""
+msgid "Interest Earned"
+msgstr "Intereses Ganados"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11030102
 #: model:account.account.template,name:l10n_do.l10n_do_11030102
-msgid "Intereses por Cobrar"
-msgstr ""
+msgid "Interest receivable"
+msgstr "Intereses por Cobrar"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_42010200
 #: model:account.account.template,name:l10n_do.l10n_do_42010200
-msgid "Intereses por Cuentas Bancarias"
-msgstr ""
+msgid "Interest on Bank Accounts"
+msgstr "Intereses por Cuentas Bancarias"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_42010300
 #: model:account.account.template,name:l10n_do.l10n_do_42010300
-msgid "Intereses por Financiamientos"
-msgstr ""
+msgid "Interest on financing"
+msgstr "Intereses por Financiamientos"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21010700
 #: model:account.account.template,name:l10n_do.l10n_do_21010700
-msgid "Intereses por Pagar"
-msgstr ""
+msgid "Interest payable"
+msgstr "Intereses por Pagar"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_42010100
 #: model:account.account.template,name:l10n_do.l10n_do_42010100
-msgid "Intereses sobre Certificados"
-msgstr ""
+msgid "Interest on Certificates"
+msgstr "Intereses sobre Certificados"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11050500
 #: model:account.account.template,name:l10n_do.l10n_do_11050500
-msgid "Inventario de Combustibles"
-msgstr ""
+msgid "Fuel Inventory"
+msgstr "Inventario de Combustibles"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11050200
 #: model:account.account.template,name:l10n_do.l10n_do_11050200
-msgid "Inventario de Materia Prima"
-msgstr ""
+msgid "Raw Materials Inventory"
+msgstr "Inventario de Materia Prima"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11050400
 #: model:account.account.template,name:l10n_do.l10n_do_11050400
-msgid "Inventario de Materiales y Suministros"
-msgstr ""
+msgid "Materials and Supplies Inventory"
+msgstr "Inventario de Materiales y Suministros"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11050100
 #: model:account.account.template,name:l10n_do.l10n_do_11050100
-msgid "Inventario de Mercancías o Productos Terminados"
-msgstr ""
+msgid "Inventory of merchandise or finished products"
+msgstr "Inventario de Mercancías o Productos Terminados"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11050300
 #: model:account.account.template,name:l10n_do.l10n_do_11050300
-msgid "Inventario en Tránsito"
-msgstr ""
+msgid "Inventory in Transit"
+msgstr "Inventario en Tránsito"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_1105
 #: model:account.group.template,name:l10n_do.account_group_1105
-msgid "Inventarios"
-msgstr ""
+msgid "Inventories"
+msgstr "Inventarios"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_1208
 #: model:account.group.template,name:l10n_do.account_group_1208
-msgid "Inversiones Permanentes"
-msgstr ""
+msgid "Permanent Investments"
+msgstr "Inversiones Permanentes"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_1109
 #: model:account.group.template,name:l10n_do.account_group_1109
-msgid "Inversiones Temporales"
-msgstr ""
+msgid "Temporary Investments"
+msgstr "Inversiones Temporales"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_110103
 #: model:account.group.template,name:l10n_do.account_group_110103
-msgid "Inversiones Temporales Plazo Menor 90 días"
-msgstr ""
+msgid "Temporary Investments Less than 90 days"
+msgstr "Inversiones Temporales Plazo Menor 90 días"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_1102
 #: model:account.group.template,name:l10n_do.account_group_1102
-msgid "Inversiones en Valores a Corto Plazo"
-msgstr ""
+msgid "Short-Term Investments in Securities"
+msgstr "Inversiones en Valores a Corto Plazo"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61030101
 #: model:account.account.template,name:l10n_do.l10n_do_61030101
-msgid "Legales (P. Física)"
-msgstr ""
+msgid "Legal (Individual)"
+msgstr "Legales (P. Física)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61030201
 #: model:account.account.template,name:l10n_do.l10n_do_61030201
-msgid "Legales (P. Jurídica)"
-msgstr ""
+msgid "Legal (Legal)"
+msgstr "Legales (P. Jurídica)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12040200
 #: model:account.account.template,name:l10n_do.l10n_do_12040200
-msgid "Licencias y Programas Informáticos"
-msgstr ""
+msgid "Licenses and Software"
+msgstr "Licencias y Programas Informáticos"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_do_chart_template_liquidity_transfer
 msgid "Liquidity Transfer"
-msgstr ""
+msgstr "Liquidity Transfer"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61030206
 #: model:account.account.template,name:l10n_do.l10n_do_61030206
-msgid "Mantenimiento Mobiliario y Equipos (P. Jurídica)"
-msgstr ""
+msgid "Furniture and Equipment Maintenance (Legal)"
+msgstr "Mantenimiento Mobiliario y Equipos (P. Jurídica)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61030204
 #: model:account.account.template,name:l10n_do.l10n_do_61030204
-msgid "Mantenimiento de Planta (P. Jurídica)"
-msgstr ""
+msgid "Plant Maintenance (Legal)"
+msgstr "Mantenimiento de Planta (P. Jurídica)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61030205
 #: model:account.account.template,name:l10n_do.l10n_do_61030205
-msgid "Mantenimiento del Local (P. Jurídica)"
-msgstr ""
+msgid "Maintenance of Premises (Legal"
+msgstr "Mantenimiento del Local (P. Jurídica)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61030106
 #: model:account.account.template,name:l10n_do.l10n_do_61030106
-msgid "Mantenimientos Mobiliarios y Equipos (P. Física)"
-msgstr ""
+msgid "Furniture and Equipment Maintenance (Personal)"
+msgstr "Mantenimientos Mobiliarios y Equipos (P. Física)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61030105
 #: model:account.account.template,name:l10n_do.l10n_do_61030105
-msgid "Mantenimientos de Local (P. Física)"
-msgstr ""
+msgid "Premises Maintenance (Personal)"
+msgstr "Mantenimientos de Local (P. Física)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61030104
 #: model:account.account.template,name:l10n_do.l10n_do_61030104
-msgid "Mantenimientos de Planta (P. Física)"
-msgstr ""
+msgid "Plant Maintenance (Individual)"
+msgstr "Mantenimientos de Planta (P. Física)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12010301
 #: model:account.account.template,name:l10n_do.l10n_do_12010301
-msgid "Maquinarias"
-msgstr ""
+msgid "Machinery"
+msgstr "Maquinarias"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12050200
 #: model:account.account.template,name:l10n_do.l10n_do_12050200
-msgid "Maquinarias y Equipos Arrendados"
-msgstr ""
+msgid "Leased Machinery and Equipment"
+msgstr "Maquinarias y Equipos Arrendados"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12040100
 #: model:account.account.template,name:l10n_do.l10n_do_12040100
-msgid "Marcas y Patentes"
-msgstr ""
+msgid "Trademarks and Patents"
+msgstr "Marcas y Patentes"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12010103
 #: model:account.account.template,name:l10n_do.l10n_do_12010103
-msgid "Mejoras en Edificaciones"
-msgstr ""
+msgid "Building Improvements"
+msgstr "Mejoras en Edificaciones"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12010104
 #: model:account.account.template,name:l10n_do.l10n_do_12010104
-msgid "Mejoras en Edificaciones y Locales Arrendados"
-msgstr ""
+msgid "Improvements to Leased Premises and Buildings"
+msgstr "Mejoras en Edificaciones y Locales Arrendados"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12010305
 #: model:account.account.template,name:l10n_do.l10n_do_12010305
-msgid "Misceláneos u otros activos"
-msgstr ""
+msgid "Miscellaneous or other assets"
+msgstr "Misceláneos u otros activos"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12010202
 #: model:account.account.template,name:l10n_do.l10n_do_12010202
-msgid "Mobiliarios y Equipos de Oficina"
-msgstr ""
+msgid "Office Furniture and Equipment"
+msgstr "Mobiliarios y Equipos de Oficina"
 
 #. module: l10n_do
 #: model:account.fiscal.position,name:l10n_do.2_position_nonprofit
 #: model:account.fiscal.position.template,name:l10n_do.position_nonprofit
-msgid "No Lucrativa de Servicios"
-msgstr ""
+msgid "Non-Profit Services"
+msgstr "No Lucrativa de Servicios"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21010600
 #: model:account.account.template,name:l10n_do.l10n_do_21010600
-msgid "Nóminas por Pagar"
-msgstr ""
+msgid "Payrolls Payable"
+msgstr "Nóminas por Pagar"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11070300
 #: model:account.account.template,name:l10n_do.l10n_do_11070300
-msgid "Obsolescencia de Combustibles"
-msgstr ""
+msgid "Fuel Obsolescence"
+msgstr "Obsolescencia de Combustibles"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11070100
 #: model:account.account.template,name:l10n_do.l10n_do_11070100
-msgid "Obsolescencia de Inventario en Almacen"
-msgstr ""
+msgid "Warehouse Inventory Obsolescence"
+msgstr "Obsolescencia de Inventario en Almacen"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11070200
 #: model:account.account.template,name:l10n_do.l10n_do_11070200
-msgid "Obsolescencia de Materiales y Suministros"
-msgstr ""
+msgid "Obsolescence of Materials and Supplies"
+msgstr "Obsolescencia de Materiales y Suministros"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11020200
 #: model:account.account.template,name:l10n_do.l10n_do_11020200
-msgid "Operaciones en Bolsa"
-msgstr ""
+msgid "Stock market operations"
+msgstr "Operaciones en Bolsa"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_610102
 #: model:account.group.template,name:l10n_do.account_group_610102
-msgid "Otras Cargas Patronales"
-msgstr ""
+msgid "Other Employer's Liabilities"
+msgstr "Otras Cargas Patronales"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11030205
 #: model:account.account.template,name:l10n_do.l10n_do_11030205
-msgid "Otras Cuentas por Cobrar"
-msgstr ""
+msgid "Other Accounts Receivable"
+msgstr "Otras Cuentas por Cobrar"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21010800
 #: model:account.account.template,name:l10n_do.l10n_do_21010800
-msgid "Otras Cuentas por Pagar"
-msgstr ""
+msgid "Other accounts payable"
+msgstr "Otras Cuentas por Pagar"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_3304
 #: model:account.group.template,name:l10n_do.account_group_3304
-msgid "Otras Reservas de Patrimonio"
-msgstr ""
+msgid "Other Equity Reserves"
+msgstr "Otras Reservas de Patrimonio"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21030309
 #: model:account.account.template,name:l10n_do.l10n_do_21030309
-msgid "Otras Retenciones"
-msgstr ""
+msgid "Other Withholdings"
+msgstr "Otras Retenciones"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21030308
 #: model:account.account.template,name:l10n_do.l10n_do_21030308
-msgid "Otras Retenciones (N07-07)"
-msgstr ""
+msgid "Other Withholdings (N07-07)"
+msgstr "Otras Retenciones (N07-07)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61070900
 #: model:account.account.template,name:l10n_do.l10n_do_61070900
-msgid "Otro Gastos Financieros"
-msgstr ""
+msgid "Other Financial Expenses"
+msgstr "Otro Gastos Financieros"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61011500
 #: model:account.account.template,name:l10n_do.l10n_do_61011500
-msgid "Otros Gastos de Personal"
-msgstr ""
+msgid "Other Personnel Expenses"
+msgstr "Otros Gastos de Personal"
 
 #. module: l10n_do
 #: model:account.tax.group,name:l10n_do.group_tax
-msgid "Otros Impuestos"
-msgstr ""
+msgid "Other Taxes"
+msgstr "Otros Impuestos"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_210305
 #: model:account.group.template,name:l10n_do.account_group_210305
-msgid "Otros Impuestos o Retenciones"
-msgstr ""
+msgid "Other Taxes or Withholdings"
+msgstr "Otros Impuestos o Retenciones"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21030504
 #: model:account.account.template,name:l10n_do.l10n_do_21030504
-msgid "Otros Impuestos por Pagar"
-msgstr ""
+msgid "Other Taxes Payable"
+msgstr "Otros Impuestos por Pagar"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_110803
 #: model:account.group.template,name:l10n_do.account_group_110803
-msgid "Otros Impuestos y Saldos"
-msgstr ""
+msgid "Other Taxes and Balances"
+msgstr "Otros Impuestos y Saldos"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61030211
 #: model:account.account.template,name:l10n_do.l10n_do_61030211
-msgid "Otros Servicios Profesionales  (P. Jurídica)"
-msgstr ""
+msgid "Other Professional Services (Legal)"
+msgstr "Otros Servicios Profesionales  (P. Jurídica)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61030111
 #: model:account.account.template,name:l10n_do.l10n_do_61030111
-msgid "Otros Servicios Profesionales (P. Física)"
-msgstr ""
+msgid "Other Professional Services (Individual)"
+msgstr "Otros Servicios Profesionales (P. Física)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11020300
 #: model:account.account.template,name:l10n_do.l10n_do_11020300
-msgid "Otros Valores Negociables"
-msgstr ""
+msgid "Other marketable securities"
+msgstr "Otros Valores Negociables"
 
 #. module: l10n_do
 #: model:account.fiscal.position,name:l10n_do.2_position_person
 #: model:account.fiscal.position.template,name:l10n_do.position_person
-msgid "P. Física de Servicios"
-msgstr ""
+msgid "P. Physical Services"
+msgstr "P. Física de Servicios"
 
 #. module: l10n_do
 #: model:account.fiscal.position,name:l10n_do.2_position_service_moral
 #: model:account.fiscal.position.template,name:l10n_do.position_service_moral
-msgid "P. Jurídica de Servicios"
-msgstr ""
+msgid "P. Legal Services"
+msgstr "P. Jurídica de Servicios"
 
 #. module: l10n_do
 #: model:account.fiscal.position,name:l10n_do.2_position_security_moral
 #: model:account.fiscal.position.template,name:l10n_do.position_security_moral
-msgid "P. Jurídica de Vigilancia"
-msgstr ""
+msgid "P. Legal Surveillance"
+msgstr "P. Jurídica de Vigilancia"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_1110
 #: model:account.group.template,name:l10n_do.account_group_1110
-msgid "Pagos Anticipados"
-msgstr ""
+msgid "Advance Payments"
+msgstr "Pagos Anticipados"
 
 #. module: l10n_do
 #: model:account.fiscal.position,name:l10n_do.2_position_restaurant_takeout
 #: model:account.fiscal.position.template,name:l10n_do.position_restaurant_takeout
-msgid "Para Llevar"
-msgstr ""
+msgid "To Take Away"
+msgstr "Para Llevar"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_21
 #: model:account.group.template,name:l10n_do.account_group_21
-msgid "Pasivo Corriente"
-msgstr ""
+msgid "Current Liabilities"
+msgstr "Pasivo Corriente"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_22
 #: model:account.group.template,name:l10n_do.account_group_22
-msgid "Pasivo No Corriente"
-msgstr ""
+msgid "Non-Current Liabilities"
+msgstr "Pasivo No Corriente"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_2
 #: model:account.group.template,name:l10n_do.account_group_2
-msgid "Pasivos"
-msgstr ""
+msgid "Liabilities"
+msgstr "Pasivos"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61011100
 #: model:account.account.template,name:l10n_do.l10n_do_61011100
-msgid "Prestaciones Laborales (Preaviso y Cesantia)"
-msgstr ""
+msgid "Labor Benefits (Notice and Severance Pay)"
+msgstr "Prestaciones Laborales (Preaviso y Cesantia)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21050200
 #: model:account.account.template,name:l10n_do.l10n_do_21050200
-msgid "Prima de Tarjetas de Crédito"
-msgstr ""
+msgid "Credit Card Premium"
+msgstr "Prima de Tarjetas de Crédito"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61060600
 #: model:account.account.template,name:l10n_do.l10n_do_61060600
-msgid "Promociones"
-msgstr ""
+msgid "Promotions"
+msgstr "Promociones"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_1201
 #: model:account.group.template,name:l10n_do.account_group_1201
-msgid "Propiedades, Planta y Equipo"
-msgstr ""
+msgid "Property, Plant and Equipment"
+msgstr "Propiedades, Planta y Equipo"
 
 #. module: l10n_do
 #: model:account.tax.group,name:l10n_do.tax_group_tip
 msgid "Propina"
-msgstr ""
+msgstr "Propina"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21030503
 #: model:account.account.template,name:l10n_do.l10n_do_21030503
-msgid "Propina Legal por Pagar (L16-92)"
-msgstr ""
+msgid "Statutory Propina Payable (L16-92)"
+msgstr "Propina Legal por Pagar (L16-92)"
 
 #. module: l10n_do
 #: model:account.fiscal.position,name:l10n_do.2_position_nonformal
 #: model:account.fiscal.position.template,name:l10n_do.position_nonformal
-msgid "Proveedor Informal de Bienes"
-msgstr ""
+msgid "Informal Supplier of Goods"
+msgstr "Proveedor Informal de Bienes"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21040200
 #: model:account.account.template,name:l10n_do.l10n_do_21040200
-msgid "Provisiones Arrendamiento Financiero"
-msgstr ""
+msgid "Provisions Finance Lease"
+msgstr "Provisiones Arrendamiento Financiero"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_22040100
 #: model:account.account.template,name:l10n_do.l10n_do_22040100
-msgid "Provisiones Arrendamiento Financiero LP"
-msgstr ""
+msgid "Provisions Finance Lease LP"
+msgstr "Provisiones Arrendamiento Financiero LP"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_22020100
 #: model:account.account.template,name:l10n_do.l10n_do_22020100
-msgid "Provisiones Beneficios de Empleados LP"
-msgstr ""
+msgid "Provisions Employee Benefits LP"
+msgstr "Provisiones Beneficios de Empleados LP"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21040300
 #: model:account.account.template,name:l10n_do.l10n_do_21040300
-msgid "Provisiones Gastos Fijos"
-msgstr ""
+msgid "Provisions Fixed Expenses"
+msgstr "Provisiones Gastos Fijos"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_22020300
 #: model:account.account.template,name:l10n_do.l10n_do_22020300
-msgid "Provisiones Indemnizaciones"
-msgstr ""
+msgid "Provisions Indemnifications"
+msgstr "Provisiones Indemnizaciones"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21040100
 #: model:account.account.template,name:l10n_do.l10n_do_21040100
-msgid "Provisiones Pago Alquileres"
-msgstr ""
+msgid "Provisions for Rent Payments"
+msgstr "Provisiones Pago Alquileres"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_22020200
 #: model:account.account.template,name:l10n_do.l10n_do_22020200
-msgid "Provisiones Prestaciones Laborales"
-msgstr ""
+msgid "Provisions for employee benefits"
+msgstr "Provisiones Prestaciones Laborales"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_2104
 #: model:account.group.template,name:l10n_do.account_group_2104
-msgid "Provisiones a Corto Plazo"
-msgstr ""
+msgid "Short-Term Provisions"
+msgstr "Provisiones a Corto Plazo"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_2204
 #: model:account.group.template,name:l10n_do.account_group_2204
-msgid "Provisiones a Largo Plazo"
-msgstr ""
+msgid "Long-Term Provisions"
+msgstr "Provisiones a Largo Plazo"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11040400
 #: model:account.account.template,name:l10n_do.l10n_do_11040400
-msgid "Provisiones de Incobrables a Accionistas"
-msgstr ""
+msgid "Provisions for Uncollectible Provisions to Shareholders"
+msgstr "Provisiones de Incobrables a Accionistas"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11040300
 #: model:account.account.template,name:l10n_do.l10n_do_11040300
-msgid "Provisiones de Incobrables a Afiliadas"
-msgstr ""
+msgid "Allowance for Uncollectible Provisions to Affiliates"
+msgstr "Provisiones de Incobrables a Afiliadas"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11040100
 #: model:account.account.template,name:l10n_do.l10n_do_11040100
-msgid "Provisiones de Incobrables a Clientes"
-msgstr ""
+msgid "Allowance for doubtful accounts receivable from customers"
+msgstr "Provisiones de Incobrables a Clientes"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11040200
 #: model:account.account.template,name:l10n_do.l10n_do_11040200
-msgid "Provisiones de Incobrables a Funcionarios y Empleados"
-msgstr ""
+msgid "Provisions for Uncollectible Provisions to Officers and Employees"
+msgstr "Provisiones de Incobrables a Funcionarios y Empleados"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11040500
 #: model:account.account.template,name:l10n_do.l10n_do_11040500
-msgid "Provisiones de Otras Cuentas Incobrables"
-msgstr ""
+msgid "Provisions for Other Uncollectible Accounts"
+msgstr "Provisiones de Otras Cuentas Incobrables"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_1104
 #: model:account.group.template,name:l10n_do.account_group_1104
-msgid "Provisión para Cuentas Incobrables"
-msgstr ""
+msgid "Allowance for doubtful accounts"
+msgstr "Provisión para Cuentas Incobrables"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_2202
 #: model:account.group.template,name:l10n_do.account_group_2202
-msgid "Provisión para Obligaciones Laborales"
-msgstr ""
+msgid "Provision for Labor Obligations"
+msgstr "Provisión para Obligaciones Laborales"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_22012300
 #: model:account.account.template,name:l10n_do.l10n_do_22012300
-msgid "Préstamos Accionistas / Particulares"
-msgstr ""
+msgid "Shareholder / Individual Loans"
+msgstr "Préstamos Accionistas / Particulares"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_22010100
 #: model:account.account.template,name:l10n_do.l10n_do_22010100
-msgid "Préstamos Bancarios Largo Plazo"
-msgstr ""
+msgid "Long-Term Bank Loans"
+msgstr "Préstamos Bancarios Largo Plazo"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21010100
 #: model:account.account.template,name:l10n_do.l10n_do_21010100
-msgid "Préstamos Bancarios por Pagar"
-msgstr ""
+msgid "Bank loans payable"
+msgstr "Préstamos Bancarios por Pagar"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_22010200
 #: model:account.account.template,name:l10n_do.l10n_do_22010200
-msgid "Préstamos Hipotecarios LP"
-msgstr ""
+msgid "LP Mortgage Loans"
+msgstr "Préstamos Hipotecarios LP"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61060200
 #: model:account.account.template,name:l10n_do.l10n_do_61060200
-msgid "Publicidad"
-msgstr ""
+msgid "Advertising"
+msgstr "Publicidad"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_33010200
 #: model:account.account.template,name:l10n_do.l10n_do_33010200
-msgid "Pérdidas de Ejercicios Anteriores"
-msgstr ""
+msgid "Prior Years' Losses"
+msgstr "Pérdidas de Ejercicios Anteriores"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_33020200
 #: model:account.account.template,name:l10n_do.l10n_do_33020200
-msgid "Pérdidas del Ejercicio"
-msgstr ""
+msgid "Loss for the year"
+msgstr "Pérdidas del Ejercicio"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61080300
 #: model:account.account.template,name:l10n_do.l10n_do_61080300
-msgid "Pérdidas por Cuentas Incobrables"
-msgstr ""
+msgid "Losses on uncollectible accounts"
+msgstr "Pérdidas por Cuentas Incobrables"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61070800
 #: model:account.account.template,name:l10n_do.l10n_do_61070800
-msgid "Pérdidas por Diferencia Cambiaria"
-msgstr ""
+msgid "Foreign exchange losses"
+msgstr "Pérdidas por Diferencia Cambiaria"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61080100
 #: model:account.account.template,name:l10n_do.l10n_do_61080100
-msgid "Pérdidas por Faltante en Caja"
-msgstr ""
+msgid "Cash Shortage Losses"
+msgstr "Pérdidas por Faltante en Caja"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61080200
 #: model:account.account.template,name:l10n_do.l10n_do_61080200
-msgid "Pérdidas por Ventas de Activos Fijos"
-msgstr ""
+msgid "Losses on Sales of Fixed Assets"
+msgstr "Pérdidas por Ventas de Activos Fijos"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_7101
 #: model:account.group.template,name:l10n_do.account_group_7101
-msgid "Pérdidas y Ganancias"
-msgstr ""
+msgid "Profit and loss"
+msgstr "Pérdidas y Ganancias"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61010200
 #: model:account.account.template,name:l10n_do.l10n_do_61010200
-msgid "Regalía Pascual"
-msgstr ""
+msgid "Easter Royalty"
+msgstr "Regalía Pascual"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21020500
 #: model:account.account.template,name:l10n_do.l10n_do_21020500
-msgid "Regalía Pascual por Pagar"
-msgstr ""
+msgid "Easter Royalty Payable"
+msgstr "Regalía Pascual por Pagar"
 
 #. module: l10n_do
 #: model:account.fiscal.position,name:l10n_do.2_position_especial
 #: model:account.fiscal.position.template,name:l10n_do.position_especial
-msgid "Regímenes Especiales"
-msgstr ""
+msgid "Special Regimes"
+msgstr "Regímenes Especiales"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61060100
 #: model:account.account.template,name:l10n_do.l10n_do_61060100
-msgid "Relaciones Públicas"
-msgstr ""
+msgid "Public Relations"
+msgstr "Relaciones Públicas"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_32010100
 #: model:account.account.template,name:l10n_do.l10n_do_32010100
 #: model:account.group,name:l10n_do.2_account_group_3201
 #: model:account.group.template,name:l10n_do.account_group_3201
-msgid "Reserva Legal"
-msgstr ""
+msgid "Legal Reserve"
+msgstr "Reserva Legal"
 
 #. module: l10n_do
 #: model:account.fiscal.position,name:l10n_do.2_position_restaurant
 #: model:account.fiscal.position.template,name:l10n_do.position_restaurant
-msgid "Restaurantes"
-msgstr ""
+msgid "Restaurants"
+msgstr "Restaurantes"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_33
 #: model:account.group.template,name:l10n_do.account_group_33
-msgid "Resultados"
-msgstr ""
+msgid "Results"
+msgstr "Resultados"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_3301
 #: model:account.group.template,name:l10n_do.account_group_3301
-msgid "Resultados Acumulados"
-msgstr ""
+msgid "Accumulated Results"
+msgstr "Resultados Acumulados"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_3302
 #: model:account.group.template,name:l10n_do.account_group_3302
-msgid "Resultados del Ejercicio"
-msgstr ""
+msgid "Results for the year"
+msgstr "Resultados del Ejercicio"
 
 #. module: l10n_do
 #: model:account.tax.group,name:l10n_do.group_ret
-msgid "Retenciones"
-msgstr ""
+msgid "Withholdings"
+msgstr "Retenciones"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_210304
 #: model:account.group.template,name:l10n_do.account_group_210304
-msgid "Retenciones en Nómina"
-msgstr ""
+msgid "Payroll withholdings"
+msgstr "Retenciones en Nómina"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_ret_10_income_rent
 #: model:account.tax.template,name:l10n_do.ret_10_income_rent
-msgid "Retención 10% ISR Alquileres a Físicas"
-msgstr ""
+msgid "Withholding 10% Income Tax Rentals to Individuals"
+msgstr "Retención 10% ISR Alquileres a Físicas"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_ret_10_income_person
 #: model:account.tax.template,name:l10n_do.ret_10_income_person
-msgid "Retención 10% ISR Honorarios a Físicas"
-msgstr ""
+msgid "Withholding 10% Income Tax Fees to Individuals"
+msgstr "Retención 10% ISR Honorarios a Físicas"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_ret_10_income_dividend
 #: model:account.tax.template,name:l10n_do.ret_10_income_dividend
-msgid "Retención 10% ISR por Dividendos (L253-12)"
-msgstr ""
+msgid "Withholding 10% Income Tax on Dividends (L253-12)"
+msgstr "Retención 10% ISR por Dividendos (L253-12)"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_ret_100_tax_nonprofit
 #: model:account.tax.template,name:l10n_do.ret_100_tax_nonprofit
-msgid "Retención 100% ITBIS Servicios No Lucrativas (N01-11)"
-msgstr ""
+msgid "Withholding 100% VAT Non-profit Services (N01-11)"
+msgstr "Retención 100% ITBIS Servicios No Lucrativas (N01-11)"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_ret_100_tax_person
 #: model:account.tax.template,name:l10n_do.ret_100_tax_person
-msgid "Retención 100% ITBIS Servicios a Físicas (R293-11)"
-msgstr ""
+msgid "Withholding 100% VAT Services to Individuals (R293-11)"
+msgstr "Retención 100% ITBIS Servicios a Físicas (R293-11)"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_ret_100_tax_security
 #: model:account.tax.template,name:l10n_do.ret_100_tax_security
-msgid "Retención 100% ITBIS Servicios de Seguridad (N07-09)"
-msgstr ""
+msgid "Withholding 100% VAT Security Services (N07-09)"
+msgstr "Retención 100% ITBIS Servicios de Seguridad (N07-09)"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_ret_2_income_person
 #: model:account.tax.template,name:l10n_do.ret_2_income_person
-msgid "Retención 2% ISR a Física (con Materiales)"
-msgstr ""
+msgid "Withholding 2% ISR to Individuals (with Materials)"
+msgstr "Retención 2% ISR a Física (con Materiales)"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_ret_2_income_transfer
 #: model:account.tax.template,name:l10n_do.ret_2_income_transfer
-msgid "Retención 2% ISR por Transferencia de Títulos"
-msgstr ""
+msgid "Withholding 2% ISR to Individuals (with Materials)"
+msgstr "Retención 2% ISR por Transferencia de Títulos"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_ret_27_income_remittance
 #: model:account.tax.template,name:l10n_do.ret_27_income_remittance
-msgid "Retención 27% ISR por Remesas al Exterior (L253-12)"
-msgstr ""
+msgid "Withholding 27% Income Tax on Remittances Abroad (L253-12)"
+msgstr "Retención 27% ISR por Remesas al Exterior (L253-12)"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_ret_30_tax_freelance
 #: model:account.tax.template,name:l10n_do.ret_30_tax_freelance
-msgid "Retención 30% ITBIS Servicios Profesionales (N02-05)"
-msgstr ""
+msgid "Withholding 30% VAT Professional Services (N02-05)"
+msgstr "Retención 30% ITBIS Servicios Profesionales (N02-05)"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_ret_30_tax_moral
 #: model:account.tax.template,name:l10n_do.ret_30_tax_moral
-msgid "Retención 30% ITBIS Servicios a Jurídicas (N02-05)"
-msgstr ""
+msgid "Withholding 30% VAT Services to Legal Entities (N02-05)"
+msgstr "Retención 30% ITBIS Servicios a Jurídicas (N02-05)"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_ret_5_income_gov
 #: model:account.tax.template,name:l10n_do.ret_5_income_gov
-msgid "Retención 5% ISR Gubernamentales"
-msgstr ""
+msgid "Withholding 5% Governmental Income Tax"
+msgstr "Retención 5% ISR Gubernamentales"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_ret_75_tax_nonformal
 #: model:account.tax.template,name:l10n_do.ret_75_tax_nonformal
-msgid "Retención 75% ITBIS Bienes a Informales (N08-10)"
-msgstr ""
+msgid "Withholding 75% VAT Goods to Informal Workers (N08-10)"
+msgstr "Retención 75% ITBIS Bienes a Informales (N08-10)"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_group_person_services
 #: model:account.tax.template,name:l10n_do.tax_group_person_services
-msgid "Retención a Físicas por Honorarios por Servicios (10%)"
-msgstr ""
+msgid "Withholding to Individuals for Fees for Services (10%)"
+msgstr "Retención a Físicas por Honorarios por Servicios (10%)"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_group_person_construction
 #: model:account.tax.template,name:l10n_do.tax_group_person_construction
-msgid "Retención a Físicas por Servicios con Materiales (2%)"
-msgstr ""
+msgid "Withholding to Individuals for Services with Materials (2%)"
+msgstr "Retención a Físicas por Servicios con Materiales (2%)"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_group_moral_services
 #: model:account.tax.template,name:l10n_do.tax_group_moral_services
-msgid "Retención a Jurídicas por Servicios Profesionales (30%)"
-msgstr ""
+msgid "Withholding to Individuals for Services with Materials (2%)"
+msgstr "Retención a Jurídicas por Servicios Profesionales (30%)"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_group_nonformal
 #: model:account.tax.template,name:l10n_do.tax_group_nonformal
-msgid "Retención a Proveedores Informales de Bienes (75%)"
-msgstr ""
+msgid "Withholding from Informal Suppliers of Goods (75%)"
+msgstr "Retención a Proveedores Informales de Bienes (75%)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21030403
 #: model:account.account.template,name:l10n_do.l10n_do_21030403
-msgid "Retención de Fondo de Pensiones (AFP)"
-msgstr ""
+msgid "Pension Fund Retention (AFP)"
+msgstr "Retención de Fondo de Pensiones (AFP)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21030404
 #: model:account.account.template,name:l10n_do.l10n_do_21030404
-msgid "Retención de INFOTEP (0.5%)"
-msgstr ""
+msgid "INFOTEP retention (0.5%)"
+msgstr "Retención de INFOTEP (0.5%)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21030401
 #: model:account.account.template,name:l10n_do.l10n_do_21030401
-msgid "Retención de Impuesto al Salario (ISR del IR3)"
-msgstr ""
+msgid "Income Tax Withholding (IR3 ISR)"
+msgstr "Retención de Impuesto al Salario (ISR del IR3)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21030402
 #: model:account.account.template,name:l10n_do.l10n_do_21030402
-msgid "Retención de Seguro Familiar de Salud (SFS)"
-msgstr ""
+msgid "Family Health Insurance (FHI) Withholding"
+msgstr "Retención de Seguro Familiar de Salud (SFS)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61070200
 #: model:account.account.template,name:l10n_do.l10n_do_61070200
-msgid "Retención por Cheques o Transferencias Electrónicas (0.15%)"
-msgstr ""
+msgid "Withholding for Checks or Wire Transfers (0.15%)"
+msgstr "Retención por Cheques o Transferencias Electrónicas (0.15%)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61010300
 #: model:account.account.template,name:l10n_do.l10n_do_61010300
-msgid "Retribuciones Complementarias"
-msgstr ""
+msgid "Supplementary Remuneration"
+msgstr "Retribuciones Complementarias"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_11080303
 #: model:account.account.template,name:l10n_do.l10n_do_11080303
-msgid "Saldo a Favor Anterior"
-msgstr ""
+msgid "Balance in Favor Previous"
+msgstr "Saldo a Favor Anterior"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21020700
 #: model:account.account.template,name:l10n_do.l10n_do_21020700
-msgid "Seguro Familiar de Salud (SFS) por Pagar"
-msgstr ""
+msgid "Family Health Insurance (FHIS) Payable"
+msgstr "Seguro Familiar de Salud (SFS) por Pagar"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21020600
 #: model:account.account.template,name:l10n_do.l10n_do_21020600
-msgid "Seguro Médico por Pagar"
-msgstr ""
+msgid "Paid Medical Insurance"
+msgstr "Seguro Médico por Pagar"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61020600
 #: model:account.account.template,name:l10n_do.l10n_do_61020600
-msgid "Seguro de Edificio y Locales"
-msgstr ""
+msgid "Building and Premises Insurance"
+msgstr "Seguro de Edificio y Locales"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21020900
 #: model:account.account.template,name:l10n_do.l10n_do_21020900
-msgid "Seguro de Riesgo Laboral (SRL) por Pagar"
-msgstr ""
+msgid "Labor Risk Insurance (SRL) Payable"
+msgstr "Seguro de Riesgo Laboral (SRL) por Pagar"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61070700
 #: model:account.account.template,name:l10n_do.l10n_do_61070700
-msgid "Seguro sobre Préstamos Bancarios"
-msgstr ""
+msgid "Bank Loan Insurance"
+msgstr "Seguro sobre Préstamos Bancarios"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61021100
 #: model:account.account.template,name:l10n_do.l10n_do_61021100
-msgid "Seguros"
-msgstr ""
+msgid "Insurance"
+msgstr "Seguros"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61021200
 #: model:account.account.template,name:l10n_do.l10n_do_61021200
-msgid "Servicios de Mensajería"
-msgstr ""
+msgid "Messaging Services"
+msgstr "Servicios de Mensajería"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61030110
 #: model:account.account.template,name:l10n_do.l10n_do_61030110
-msgid "Servicios de Vigilancia (P. Física)"
-msgstr ""
+msgid "Surveillance Services (Individual)"
+msgstr "Servicios de Vigilancia (P. Física)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61030210
 #: model:account.account.template,name:l10n_do.l10n_do_61030210
-msgid "Servicios de Vigilancia (P. Jurídica)"
-msgstr ""
+msgid "Surveillance Services (Legal)"
+msgstr "Servicios de Vigilancia (P. Jurídica)"
 
 #. module: l10n_do
 #: model:account.fiscal.position,name:l10n_do.2_position_exterior
 #: model:account.fiscal.position.template,name:l10n_do.position_exterior
-msgid "Servicios del Exterior"
-msgstr ""
+msgid "Outside Services"
+msgstr "Servicios del Exterior"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12010304
 #: model:account.account.template,name:l10n_do.l10n_do_12010304
-msgid "Sistemas de Cámara y Seguridad"
-msgstr ""
+msgid "Camera and Security Systems"
+msgstr "Sistemas de Cámara y Seguridad"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61010100
 #: model:account.account.template,name:l10n_do.l10n_do_61010100
-msgid "Sueldos y Salarios"
-msgstr ""
+msgid "Wages and Salaries"
+msgstr "Sueldos y Salarios"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61020300
 #: model:account.account.template,name:l10n_do.l10n_do_61020300
-msgid "Suministros de Oficina (Papelería y útiles)"
-msgstr ""
+msgid "Office Supplies (Stationery and supplies)"
+msgstr "Suministros de Oficina (Papelería y útiles)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_33040100
 #: model:account.account.template,name:l10n_do.l10n_do_33040100
-msgid "Superávit en Reserva"
-msgstr ""
+msgid "Surplus in Reserve"
+msgstr "Superávit en Reserva"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_3102
 #: model:account.group.template,name:l10n_do.account_group_3102
-msgid "Superávit por Revaluación de Activos"
-msgstr ""
+msgid "Asset revaluation surplus"
+msgstr "Superávit por Revaluación de Activos"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_31020200
 #: model:account.account.template,name:l10n_do.l10n_do_31020200
-msgid "Superávit por Revaluación de Edificaciones"
-msgstr ""
+msgid "Surplus from Revaluation of Buildings"
+msgstr "Superávit por Revaluación de Edificaciones"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_31020300
 #: model:account.account.template,name:l10n_do.l10n_do_31020300
-msgid "Superávit por Revaluación de Instalaciones"
-msgstr ""
+msgid "Facilities Revaluation Surplus"
+msgstr "Superávit por Revaluación de Instalaciones"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_31020400
 #: model:account.account.template,name:l10n_do.l10n_do_31020400
-msgid "Superávit por Revaluación de Mobiliario y Equipo"
-msgstr ""
+msgid "Surplus from revaluation of furniture and equipment"
+msgstr "Superávit por Revaluación de Mobiliario y Equipo"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_31020100
 #: model:account.account.template,name:l10n_do.l10n_do_31020100
-msgid "Superávit por Revaluación de Terrenos"
-msgstr ""
+msgid "Land revaluation surplus"
+msgstr "Superávit por Revaluación de Terrenos"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21050100
 #: model:account.account.template,name:l10n_do.l10n_do_21050100
-msgid "Tarjeta de Crédito Empresarial"
-msgstr ""
+msgid "Business Credit Card"
+msgstr "Tarjeta de Crédito Empresarial"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_2105
 #: model:account.group.template,name:l10n_do.account_group_2105
-msgid "Tarjetas de Crédito"
-msgstr ""
+msgid "Credit Cards"
+msgstr "Tarjetas de Crédito"
 
 #. module: l10n_do
 #: model:account.report,name:l10n_do.tax_report
 msgid "Tax Report"
-msgstr ""
+msgstr "Tax Report"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61030103
 #: model:account.account.template,name:l10n_do.l10n_do_61030103
-msgid "Tecnología (P. Física)"
-msgstr ""
+msgid "Technology (Individual)"
+msgstr "Tecnología (P. Física)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61030203
 #: model:account.account.template,name:l10n_do.l10n_do_61030203
-msgid "Tecnología (P. Jurídica)"
-msgstr ""
+msgid "Technology (Legal)"
+msgstr "Tecnología (P. Jurídica)"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_12010101
 #: model:account.account.template,name:l10n_do.l10n_do_12010101
-msgid "Terrenos"
-msgstr ""
+msgid "Land"
+msgstr "Terrenos"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21021100
 #: model:account.account.template,name:l10n_do.l10n_do_21021100
-msgid "Tesorería de la Seguridad Social (TSS) por Pagar"
-msgstr ""
+msgid "Social Security Treasury (TSS) Payable"
+msgstr "Tesorería de la Seguridad Social (TSS) por Pagar"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61011400
 #: model:account.account.template,name:l10n_do.l10n_do_61011400
-msgid "Uniformes"
-msgstr ""
+msgid "Uniforms"
+msgstr "Uniformes"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_33020100
 #: model:account.account.template,name:l10n_do.l10n_do_33020100
-msgid "Utilidad del Ejercicio"
-msgstr ""
+msgid "Profit for the year"
+msgstr "Utilidad del Ejercicio"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_32
 #: model:account.group.template,name:l10n_do.account_group_32
-msgid "Utilidades Restringidas"
-msgstr ""
+msgid "Restricted Utilities"
+msgstr "Utilidades Restringidas"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_33010100
 #: model:account.account.template,name:l10n_do.l10n_do_33010100
 msgid "Utilidades de Ejercicios Anteriores"
-msgstr ""
+msgstr "Utilidades de Ejercicios Anteriores"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_21020300
 #: model:account.account.template,name:l10n_do.l10n_do_21020300
-msgid "Vacaciones por Pagar"
-msgstr ""
+msgid "Vacation Payable"
+msgstr "Vacaciones por Pagar"
 
 #. module: l10n_do
 #: model:account.group,name:l10n_do.2_account_group_4202
 #: model:account.group.template,name:l10n_do.account_group_4202
-msgid "Ventas de Activos"
-msgstr ""
+msgid "Sales of Assets"
+msgstr "Ventas de Activos"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_41010100
 #: model:account.account.template,name:l10n_do.l10n_do_41010100
 #: model:account.group,name:l10n_do.2_account_group_4101
 #: model:account.group.template,name:l10n_do.account_group_4101
-msgid "Ventas de Bienes"
-msgstr ""
+msgid "Sales of Goods"
+msgstr "Ventas de Bienes"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_41020100
 #: model:account.account.template,name:l10n_do.l10n_do_41020100
 #: model:account.group,name:l10n_do.2_account_group_4102
 #: model:account.group.template,name:l10n_do.account_group_4102
-msgid "Ventas de Servicios"
-msgstr ""
+msgid "Sales of Services"
+msgstr "Ventas de Servicios"
 
 #. module: l10n_do
 #: model:account.tax,name:l10n_do.2_tax_group_restaurant_sale
 #: model:account.tax.template,name:l10n_do.tax_group_restaurant_sale
-msgid "Ventas del Restaurante"
-msgstr ""
+msgid "Restaurant Sales"
+msgstr "Ventas del Restaurante"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_41010200
 #: model:account.account.template,name:l10n_do.l10n_do_41010200
-msgid "Ventas por Exportaciones de Bienes"
-msgstr ""
+msgid "Sales from Exports of Goods"
+msgstr "Ventas por Exportaciones de Bienes"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_41020200
 #: model:account.account.template,name:l10n_do.l10n_do_41020200
-msgid "Ventas por Exportaciones de Servicios"
-msgstr ""
+msgid "Sales from Services Exports"
+msgstr "Ventas por Exportaciones de Servicios"
 
 #. module: l10n_do
 #: model:account.account,name:l10n_do.2_l10n_do_61020400
 #: model:account.account.template,name:l10n_do.l10n_do_61020400
-msgid "Útiles de Aseo y Limpieza"
-msgstr ""
+msgid "Cleaning and Cleaning Supplies"
+msgstr "Útiles de Aseo y Limpieza"
