@@ -427,7 +427,7 @@ QUnit.module("Fields", (hooks) => {
                 arch: `
                     <form>
                         <field name="p">
-                            <tree>
+                            <tree no_open="0">
                                 <field name="datetime" />
                             </tree>
                             <form>

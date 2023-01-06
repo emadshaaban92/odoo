@@ -96,7 +96,7 @@ QUnit.module("SlideCategoryOneToManyField", (hooks) => {
             arch: `
                 <form>
                     <field name="lines" widget="slide_category_one2many">
-                        <tree>
+                        <tree no_open="1">
                             <field name="is_category" invisible="1" />
                             <field name="name" />
                             <field name="int" />

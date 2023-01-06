@@ -93,7 +93,7 @@ QUnit.module("QuestionPageOneToManyField", (hooks) => {
             arch: `
                 <form>
                     <field name="lines" widget="question_page_one2many">
-                        <tree>
+                        <tree no_open="0">
                             <field name="is_page" invisible="1" />
                             <field name="title" />
                             <field name="random_questions_count" />
