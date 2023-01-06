@@ -142,6 +142,42 @@ function queryStep(step) {
 }
 
 /**
+ * Wrapper around localStorage for basic persistence of running tours.
+ * Useful for resuming running tours when the page refreshed.
+ */
+const tourState = {
+    get(tourName, key) {
+        const prefixedName = `tour_${tourName}_${key}`;
+        const savedValue = browser.localStorage.getItem(prefixedName);
+        if (key === "done") {
+            return savedValue === "true";
+        } else if (key === "currentIndex" || key === "interval") {
+            return parseInt(savedValue, 10);
+        } else {
+            return savedValue;
+        }
+    },
+    set(tourName, key, value) {
+        const prefixedName = `tour_${tourName}_${key}`;
+        browser.localStorage.setItem(prefixedName, value);
+    },
+    getActiveTours() {
+        const activeTourNames = Object.keys(localStorage)
+            .filter((key) => key.startsWith("tour_") && key.endsWith("_done"))
+            .map((key) => key.substring(5, key.length - 5));
+        return activeTourNames.filter((tourName) => !this.get(tourName, "done"));
+    },
+    reset(tourName, obj) {
+        for (const key in obj) {
+            this.set(tourName, key, obj[key]);
+        }
+        this.set(tourName, "interval", 0);
+        this.set(tourName, "currentIndex", 0);
+        this.set(tourName, "done", false);
+    },
+};
+
+/**
  * Augments `step` for a tour for 'auto' (run) mode.
  * @param {*} step
  * @param {*} options
@@ -184,7 +220,6 @@ function augmentStepAuto(macroDesc, [stepIndex, step], options) {
             },
             action: (stepEl) => {
                 if (skipAction) {
-                    browser.localStorage.setItem(macroDesc.name, stepIndex + 1);
                     return;
                 }
 
@@ -217,7 +252,11 @@ function augmentStepAuto(macroDesc, [stepIndex, step], options) {
                 } else {
                     actionHelper.auto();
                 }
-                browser.localStorage.setItem(macroDesc.name, stepIndex + 1);
+            },
+        },
+        {
+            action: () => {
+                tourState.set(macroDesc.name, "currentIndex", stepIndex + 1);
             },
         },
     ];
@@ -321,7 +360,7 @@ function augmentStepManual(macroDesc, [stepIndex, step], options) {
                 $anchorEl = undefined;
                 currentAnchor = undefined;
                 options.pointerMethods.setState({ isVisible: false, mode: "bubble" });
-                browser.localStorage.setItem(macroDesc.name, stepIndex + 1);
+                tourState.set(macroDesc.name, "currentIndex", stepIndex + 1);
             },
         },
     ];
@@ -333,7 +372,8 @@ function augmentStepManual(macroDesc, [stepIndex, step], options) {
  * @returns
  */
 function augmentMacro(macroDescription, augmenter, options) {
-    const { currentStepIndex, pointerMethods } = options;
+    const { pointerMethods } = options;
+    const currentStepIndex = tourState.get(macroDescription.name, "currentIndex");
     return {
         ...macroDescription,
         steps: macroDescription.steps
@@ -349,6 +389,7 @@ function augmentMacro(macroDescription, augmenter, options) {
                 {
                     action: () => {
                         console.log("Tour done!");
+                        tourState.set(macroDescription.name, "done", true);
                         pointerMethods.setState({ isVisible: false });
                     },
                 },
@@ -434,6 +475,7 @@ function createPointerState({ x, y, isVisible, position, content, mode, fixed })
     return [state, { update, setState, updateOnIntersection }];
 }
 
+// TODO-JCB: This stinks. Refactor please.
 function intersectionService() {
     let root, target, observer, _isIntersecting, _rootBounds;
 
@@ -564,7 +606,7 @@ function intersectionService() {
 export const tourService = {
     // TODO-JCB: avoid legacy
     dependencies: ["orm", "tour_legacy"],
-    start: async (_env, { orm, tour_legacy }) => {
+    start: async (_env, { orm: _orm, tour_legacy }) => {
         // Wait for all the tours to be registered. Some are extending the others.
         await whenReady();
 
@@ -584,18 +626,19 @@ export const tourService = {
         intersection.start(null, pointerMethods.updateOnIntersection);
 
         /**
+         * TODO-JCB: The interval is not really "respected". During "auto" mode, the engine advances very fast because
+         * TODO-JCB: [continuation above] it immediately performs the next step as long as it finds the trigger.
          * @param {string} tourName
-         * @param {"auto" | "manual"} mode
-         * @param {number} interval
+         * @param {{ mode: "auto" | "manual", interval: number } | undefined} [options] - if provided, it means a force restart.
          */
-        function run(tourName, { mode, interval }) {
-            const tourDesc = tour_legacy.tourMap[tourName];
-            const currentStepIndex = parseInt(browser.localStorage.getItem(tourName) || 0);
-            if (currentStepIndex >= tourDesc.steps.length) {
-                // TODO-JCB: log something here?
-                return;
+        function run(tourName, options) {
+            if (options) {
+                tourState.reset(tourName, options);
+                macroEngine.stopMacro(tourName);
             }
-
+            const tourDesc = tour_legacy.tourMap[tourName];
+            const mode = tourState.get(tourName, "mode");
+            const interval = tourState.get(tourName, "interval");
             const augmentedMacro = augmentMacro(
                 Object.assign(tourDesc, { interval: mode === "manual" ? 0 : interval }),
                 mode === "manual" ? augmentStepManual : augmentStepAuto,
@@ -604,10 +647,8 @@ export const tourService = {
                     pointerMethods,
                     mode,
                     intersection,
-                    currentStepIndex,
                 }
             );
-
             // The pointer points to the trigger and waits for the user to do the action.
             macroEngine.activate(augmentedMacro);
         }
@@ -616,6 +657,11 @@ export const tourService = {
             Component: TourPointer,
             props: { pointerState, setPointerState: pointerMethods.setState },
         });
+
+        // Resume active tours.
+        for (const tourName of tourState.getActiveTours()) {
+            run(tourName);
+        }
 
         return { run, legacy: tour_legacy };
     },

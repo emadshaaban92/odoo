@@ -162,6 +162,25 @@ export class MacroEngine {
         this.delayedCheck();
     }
 
+    stopMacro(name) {
+        if (this.isRunning) {
+            const macrosToDelete = [...this.macros].filter((macro) => macro.name === name);
+            for (const macro of macrosToDelete) {
+                this.macros.delete(macro);
+            }
+            if (this.macros.size === 0) {
+                this.stop();
+            } else {
+                // TODO-JCB: Refactor. The following code is duplicated below (advanceMacros).
+                // recompute current interval, because it may need to be increased
+                this.interval = Infinity;
+                for (const macro of this.macros) {
+                    this.interval = Math.min(this.interval, macro.interval);
+                }
+            }
+        }
+    }
+
     stop() {
         if (this.isRunning) {
             this.isRunning = false;
@@ -174,7 +193,7 @@ export class MacroEngine {
     delayedCheck(mutations) {
         // NOTE: This check is introduced because of the use of jquery in finding the trigger.
         // When jquery is completely unused, we can maybe remove this check.
-        if (!hasTrackedMutations(mutations)) {
+        if (mutations && !hasTrackedMutations(mutations)) {
             return;
         }
         if (this.timeout) {
