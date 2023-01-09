@@ -80,7 +80,7 @@ export class KanbanCompiler extends ViewCompiler {
         const strParams = Object.entries(nodeParams)
             .map(([k, v]) => [k, toStringExpression(v)].join(":"))
             .join(",");
-        el.setAttribute("t-on-click", `()=>__abcde__.triggerAction({${strParams}})`);
+        el.setAttribute("t-on-click", `()=>__comp__.triggerAction({${strParams}})`);
 
         const compiled = createElement(el.nodeName);
         for (const { name, value } of el.attributes) {
@@ -102,7 +102,7 @@ export class KanbanCompiler extends ViewCompiler {
     compileColorPicker() {
         return createElement("t", {
             "t-call": "web.KanbanColorPicker",
-            "t-call-context": "__abcde__",
+            "t-call-context": "__comp__",
         });
     }
 
@@ -120,7 +120,7 @@ export class KanbanCompiler extends ViewCompiler {
         } else {
             compiled = super.compileField(el, params);
             const fieldId = el.getAttribute("field_id") || el.getAttribute("name");
-            compiled.setAttribute("id", `'${fieldId}_' + __abcde__.props.record.id`);
+            compiled.setAttribute("id", `'${fieldId}_' + __comp__.props.record.id`);
         }
 
         const { bold, display } = extractAttributes(el, ["bold", "display"]);
@@ -182,7 +182,7 @@ export class KanbanCompiler extends ViewCompiler {
         if (tname in this.templates) {
             compiled.setAttribute(
                 "t-call",
-                `{{__abcde__.templates[${toStringExpression(tname)}]}}`
+                `{{__comp__.templates[${toStringExpression(tname)}]}}`
             );
         }
         return compiled;

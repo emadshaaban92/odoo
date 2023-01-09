@@ -44,7 +44,7 @@ export class ActivityRecord extends Component {
             activity_image: (...args) => getImageSrcFromRecordInfo(record, ...args),
             user_context: this.user.context,
             widget: this.widget,
-            __abcde__: Object.assign(Object.create(this), { this: this }),
+            __comp__: Object.assign(Object.create(this), { this: this }),
         };
     }
 }

@@ -1412,6 +1412,7 @@ export class Record extends DataPoint {
             delete this.virtualId;
             this.data.id = this.resId;
             this.resIds.push(this.resId);
+            this.changes = {};
             this.invalidateCache();
         } else if (keys.length > 0) {
             try {
@@ -1422,16 +1423,17 @@ export class Record extends DataPoint {
                 }
                 throw e;
             }
+            this._changes = {};
             this.invalidateCache();
         }
 
-        // Switch to the parent active fields
-        if (this.parentActiveFields) {
-            this.setActiveFields(this.parentActiveFields);
-            this.parentActiveFields = false;
-        }
         this.isInQuickCreation = false;
         if (shouldReload) {
+            // Switch to the parent active fields
+            if (this.parentActiveFields) {
+                this.setActiveFields(this.parentActiveFields);
+                this.parentActiveFields = false;
+            }
             await this.model.reloadRecords(this);
         }
         if (!options.stayInEdition) {
@@ -2494,7 +2496,6 @@ export class DynamicGroupList extends DynamicList {
                 const value = data[key];
                 switch (key) {
                     case this.firstGroupBy: {
-                        groupParams.__rawValue = value;
                         groupParams.value = this._getValueFromGroupData(data, key);
                         if (groupByField.type === "selection") {
                             groupParams.displayName = Object.fromEntries(groupByField.selection)[
@@ -2600,7 +2601,6 @@ DynamicGroupList.DEFAULT_LOAD_LIMIT = 10;
 
 export class Group extends DataPoint {
     setup(params, state) {
-        this.__rawValue = params.__rawValue;
         this.value = params.value;
         this.displayName = params.displayName;
         this.aggregates = params.aggregates;

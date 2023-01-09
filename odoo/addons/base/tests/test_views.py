@@ -17,7 +17,7 @@ from odoo.exceptions import AccessError, ValidationError
 from odoo.tests import common
 from odoo.tools import get_cache_key_counter, mute_logger, view_validation
 from odoo.addons.base.models.ir_ui_view import (
-    transfer_field_to_modifiers, transfer_node_to_modifiers, simplify_modifiers, ABCDE_REGEX
+    transfer_field_to_modifiers, transfer_node_to_modifiers, simplify_modifiers, COMP_REGEX
 )
 
 _logger = logging.getLogger(__name__)
@@ -3402,14 +3402,14 @@ Forbidden attribute used in arch (t-attf-data-tooltip-template)."""
         )
 
     @mute_logger('odoo.addons.base.models.ir_ui_view')
-    def test_forbidden_use_of___abcde___in_kanban(self):
+    def test_forbidden_use_of___comp___in_kanban(self):
         arch = "<kanban><templates><t t-name='kanban-box'>%s</t></templates></kanban>"
         self.assertInvalid(
-            arch % '<t t-esc="__abcde__.props.resId"/>',
+            arch % '<t t-esc="__comp__.props.resId"/>',
             """Error while validating view near:
 
-<kanban __validate__="1"><templates><t t-name="kanban-box"><t t-esc="__abcde__.props.resId"/></t></templates></kanban>
-Forbidden use of `__abcde__` in arch."""
+<kanban __validate__="1"><templates><t t-name="kanban-box"><t t-esc="__comp__.props.resId"/></t></templates></kanban>
+Forbidden use of `__comp__` in arch."""
         )
 
 
@@ -4152,23 +4152,23 @@ class TestRenderAllViews(common.TransactionCase):
             count, self.env.user.name, elapsed)
 
 
-class ThisRegexTest(common.TransactionCase):
-    def test_this_regex(self):
-        self.assertIsNone(re.search(ABCDE_REGEX, ""))
-        self.assertIsNone(re.search(ABCDE_REGEX, "__abcde__2"))
-        self.assertIsNone(re.search(ABCDE_REGEX, "__abcde___that"))
-        self.assertIsNone(re.search(ABCDE_REGEX, "a__abcde__"))
+class CompRegexTest(common.TransactionCase):
+    def test_comp_regex(self):
+        self.assertIsNone(re.search(COMP_REGEX, ""))
+        self.assertIsNone(re.search(COMP_REGEX, "__comp__2"))
+        self.assertIsNone(re.search(COMP_REGEX, "__comp___that"))
+        self.assertIsNone(re.search(COMP_REGEX, "a__comp__"))
 
-        self.assertIsNotNone(re.search(ABCDE_REGEX, "__abcde__"))
-        self.assertIsNotNone(re.search(ABCDE_REGEX, "__abcde__ "))
-        self.assertIsNotNone(re.search(ABCDE_REGEX, " __abcde__ "))
-        self.assertIsNotNone(re.search(ABCDE_REGEX, "__abcde__.props"))
-        self.assertIsNotNone(re.search(ABCDE_REGEX, "__abcde__ .props"))
-        self.assertIsNotNone(re.search(ABCDE_REGEX, "__abcde__['props']"))
-        self.assertIsNotNone(re.search(ABCDE_REGEX, "__abcde__ ['props']"))
-        self.assertIsNotNone(re.search(ABCDE_REGEX, "__abcde__[\"props\"]"))
-        self.assertIsNotNone(re.search(ABCDE_REGEX, "__abcde__ [\"props\"]"))
-        self.assertIsNotNone(re.search(ABCDE_REGEX, "    __abcde__     [\"props\"]    "))
-        self.assertIsNotNone(re.search(ABCDE_REGEX, "record ? __abcde__ : false"))
-        self.assertIsNotNone(re.search(ABCDE_REGEX, "!__abcde__.props.resId"))
-        self.assertIsNotNone(re.search(ABCDE_REGEX, "{{ __abcde__ }}"))
+        self.assertIsNotNone(re.search(COMP_REGEX, "__comp__"))
+        self.assertIsNotNone(re.search(COMP_REGEX, "__comp__ "))
+        self.assertIsNotNone(re.search(COMP_REGEX, " __comp__ "))
+        self.assertIsNotNone(re.search(COMP_REGEX, "__comp__.props"))
+        self.assertIsNotNone(re.search(COMP_REGEX, "__comp__ .props"))
+        self.assertIsNotNone(re.search(COMP_REGEX, "__comp__['props']"))
+        self.assertIsNotNone(re.search(COMP_REGEX, "__comp__ ['props']"))
+        self.assertIsNotNone(re.search(COMP_REGEX, "__comp__[\"props\"]"))
+        self.assertIsNotNone(re.search(COMP_REGEX, "__comp__ [\"props\"]"))
+        self.assertIsNotNone(re.search(COMP_REGEX, "    __comp__     [\"props\"]    "))
+        self.assertIsNotNone(re.search(COMP_REGEX, "record ? __comp__ : false"))
+        self.assertIsNotNone(re.search(COMP_REGEX, "!__comp__.props.resId"))
+        self.assertIsNotNone(re.search(COMP_REGEX, "{{ __comp__ }}"))

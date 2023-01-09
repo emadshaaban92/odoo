@@ -35,10 +35,10 @@ _logger = logging.getLogger(__name__)
 MOVABLE_BRANDING = ['data-oe-model', 'data-oe-id', 'data-oe-field', 'data-oe-xpath', 'data-oe-source-id']
 
 # Some views have a js compiler that generates an owl template from the arch. In that template,
-# `__abcde__` is a reserved keyword giving access to the component instance (e.g. the form renderer
+# `__comp__` is a reserved keyword giving access to the component instance (e.g. the form renderer
 # or the kanban record). However, we don't want to see implementation details leaking in archs, so
-# we use the following regex to detect the use of `__abcde__` in dynamic attributes, to forbid it.
-ABCDE_REGEX = r'(^|[^\w])\s*__abcde__\s*([^\w]|$)'
+# we use the following regex to detect the use of `__comp__` in dynamic attributes, to forbid it.
+COMP_REGEX = r'(^|[^\w])\s*__comp__\s*([^\w]|$)'
 
 ref_re = re.compile(r"""
 # first match 'form_view_ref' key, backrefs are used to handle single or
@@ -1833,8 +1833,8 @@ actual arch.
 
             elif (attr.startswith("t-")):
                 self._validate_qweb_directive(node, attr, node_info["view_type"])
-                if (re.search(ABCDE_REGEX, expr)):
-                    self._raise_view_error(_("Forbidden use of `__abcde__` in arch."), node)
+                if (re.search(COMP_REGEX, expr)):
+                    self._raise_view_error(_("Forbidden use of `__comp__` in arch."), node)
 
     def _validate_classes(self, node, expr):
         """ Validate the classes present on node. """
