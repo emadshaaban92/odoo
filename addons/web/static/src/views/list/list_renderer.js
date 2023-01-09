@@ -1743,6 +1743,15 @@ export class ListRenderer extends Component {
      */
     sortStart({ element }) {
         element.classList.add("o_dragged");
+        const table = this.tableRef.el;
+        const headers = [...table.querySelectorAll("thead th")];
+        const cells = [...element.querySelectorAll("td")];
+        for (const [index, header] of Object.entries(headers)) {
+            const style = getComputedStyle(header);
+            cells[index].style.width = style.width;
+            cells[index].style.height = "100%";
+            cells[index].style.display = "inline-block";
+        }
     }
 
     /**
@@ -1752,6 +1761,11 @@ export class ListRenderer extends Component {
      */
     sortStop({ element }) {
         element.classList.remove("o_dragged");
+        for (const cell of element.querySelectorAll("td")) {
+            cell.style.width = null;
+            cell.style.height = null;
+            cell.style.display = null;
+        }
     }
 
     ignoreEventInSelectionMode(ev) {
