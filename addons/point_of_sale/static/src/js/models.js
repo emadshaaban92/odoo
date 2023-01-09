@@ -15,7 +15,6 @@ var _t = core._t;
 var round_di = utils.round_decimals;
 var round_pr = utils.round_precision;
 
-import Registries from "@point_of_sale/js/Registries";
 const { markRaw, reactive } = owl;
 
 // Container of the product images fetched during rendering
@@ -1447,7 +1446,6 @@ export class PosGlobalState extends PosModel {
     }
 }
 PosGlobalState.prototype.electronic_payment_interfaces = {};
-Registries.Model.add(PosGlobalState);
 
 /**
  * Call this function to map your PaymentInterface implementation to
@@ -1595,7 +1593,6 @@ export class Product extends PosModel {
         }
     }
 }
-Registries.Model.add(Product);
 
 var orderline_id = 1;
 
@@ -2325,7 +2322,6 @@ export class Orderline extends PosModel {
         return this.product.standard_price * this.quantity;
     }
 }
-Registries.Model.add(Orderline);
 
 export class Packlotline extends PosModel {
     constructor(obj, options) {
@@ -2357,7 +2353,6 @@ export class Packlotline extends PosModel {
         };
     }
 }
-Registries.Model.add(Packlotline);
 
 // Every Paymentline contains a cashregister and an amount of money.
 export class Payment extends PosModel {
@@ -2492,7 +2487,6 @@ export class Payment extends PosModel {
         return Boolean(this.get_payment_status());
     }
 }
-Registries.Model.add(Payment);
 
 // An order more or less represents the content of a customer's shopping cart (the OrderLines)
 // plus the associated payment information (the Paymentlines)
@@ -3631,4 +3625,3 @@ export class Order extends PosModel {
         }
     }
 }
-Registries.Model.add(Order);
