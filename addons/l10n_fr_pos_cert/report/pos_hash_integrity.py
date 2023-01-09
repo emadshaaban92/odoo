@@ -1,19 +1,23 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-from odoo import api, fields, models
+from odoo import api, _, models
+from odoo.exceptions import UserError
 
 
 class ReportPosHashIntegrity(models.AbstractModel):
     _name = 'report.l10n_fr_pos_cert.report_pos_hash_integrity'
+    _inherit = 'report.base_hash.report_hash_integrity'
     _description = 'Get french pos hash integrity result as PDF.'
 
     @api.model
     def _get_report_values(self, docids, data=None):
+        if self.env.company.country_id != self.env.ref('base.fr'):
+            raise UserError(_('This report is only available for french companies.'))
         if data:
             data.update(self.env.company._check_pos_hash_integrity())
         else:
-            data = self.env.company._check_hash_pos_integrity()
+            data = self.env.company._check_pos_hash_integrity()
         return {
             'doc_ids' : docids,
             'doc_model' : self.env['res.company'],

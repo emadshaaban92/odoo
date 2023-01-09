@@ -4,8 +4,6 @@ from collections import defaultdict
 from contextlib import ExitStack, contextmanager
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
-from hashlib import sha256
-from json import dumps
 import re
 from textwrap import shorten
 from unittest.mock import patch
@@ -29,11 +27,6 @@ from odoo.tools import (
     sql
 )
 
-
-#forbidden fields
-INTEGRITY_HASH_MOVE_FIELDS = ('date', 'journal_id', 'company_id')
-INTEGRITY_HASH_LINE_FIELDS = ('debit', 'credit', 'account_id', 'partner_id')
-
 TYPE_REVERSE_MAP = {
     'entry': 'entry',
     'out_invoice': 'out_refund',
@@ -47,7 +40,7 @@ TYPE_REVERSE_MAP = {
 
 class AccountMove(models.Model):
     _name = "account.move"
-    _inherit = ['portal.mixin', 'mail.thread', 'mail.activity.mixin', 'sequence.mixin']
+    _inherit = ['portal.mixin', 'mail.thread', 'mail.activity.mixin', 'sequence.mixin', 'hash.mixin']
     _description = "Journal Entry"
     _order = 'date desc, name desc, id desc'
     _mail_post_access = 'read'
@@ -235,9 +228,6 @@ class AccountMove(models.Model):
 
     # === Hash Fields === #
     restrict_mode_hash_table = fields.Boolean(related='journal_id.restrict_mode_hash_table')
-    secure_sequence_number = fields.Integer(string="Inalteralbility No Gap Sequence #", readonly=True, copy=False)
-    inalterable_hash = fields.Char(string="Inalterability Hash", readonly=True, copy=False)
-    string_to_hash = fields.Char(compute='_compute_string_to_hash', readonly=True)
 
     # ==============================================================================================
     #                                          INVOICE
@@ -2189,10 +2179,6 @@ class AccountMove(models.Model):
             return True
         self._sanitize_vals(vals)
         for move in self:
-            if (move.restrict_mode_hash_table and move.state == "posted" and set(vals).intersection(INTEGRITY_HASH_MOVE_FIELDS)):
-                raise UserError(_("You cannot edit the following fields due to restrict mode being activated on the journal: %s.") % ', '.join(INTEGRITY_HASH_MOVE_FIELDS))
-            if (move.restrict_mode_hash_table and move.inalterable_hash and 'inalterable_hash' in vals) or (move.secure_sequence_number and 'secure_sequence_number' in vals):
-                raise UserError(_('You cannot overwrite the values ensuring the inalterability of the accounting.'))
             if (move.posted_before and 'journal_id' in vals and move.journal_id.id != vals['journal_id']):
                 raise UserError(_('You cannot edit the journal of an account move if it has been posted once.'))
             if (move.name and move.name != '/' and move.sequence_number not in (0, 1) and 'journal_id' in vals and move.journal_id.id != vals['journal_id']):
@@ -2236,15 +2222,6 @@ class AccountMove(models.Model):
                     posted_move = self.filtered(lambda m: m.state == 'posted')
                     posted_move._check_fiscalyear_lock_date()
                     posted_move.line_ids._check_tax_lock_date()
-
-                # Hash the move
-                if vals.get('state') == 'posted':
-                    for move in self.filtered(lambda m: m.restrict_mode_hash_table and not(m.secure_sequence_number or m.inalterable_hash)).sorted(lambda m: (m.date, m.ref or '', m.id)):
-                        new_number = move.journal_id.secure_sequence_id.next_by_id()
-                        res |= super(AccountMove, move).write({
-                            'secure_sequence_number': new_number,
-                            'inalterable_hash': move._get_new_hash(new_number),
-                        })
 
             self._synchronize_business_models(set(vals.keys()))
 
@@ -2636,50 +2613,43 @@ class AccountMove(models.Model):
     # HASH
     # -------------------------------------------------------------------------
 
-    def _get_new_hash(self, secure_seq_number):
-        """ Returns the hash to write on journal entries when they get posted"""
-        self.ensure_one()
-        #get the only one exact previous move in the securisation sequence
-        prev_move = self.search([('state', '=', 'posted'),
-                                 ('company_id', '=', self.company_id.id),
-                                 ('journal_id', '=', self.journal_id.id),
-                                 ('secure_sequence_number', '!=', 0),
-                                 ('secure_sequence_number', '=', int(secure_seq_number) - 1)])
-        if prev_move and len(prev_move) != 1:
-            raise UserError(
-               _('An error occurred when computing the inalterability. Impossible to get the unique previous posted journal entry.'))
-
-        #build and return the hash
-        return self._compute_hash(prev_move.inalterable_hash if prev_move else u'')
-
-    def _compute_hash(self, previous_hash):
-        """ Computes the hash of the browse_record given as self, based on the hash
-        of the previous record in the company's securisation sequence given as parameter"""
-        self.ensure_one()
-        hash_string = sha256((previous_hash + self.string_to_hash).encode('utf-8'))
-        return hash_string.hexdigest()
-
-    def _compute_string_to_hash(self):
-        def _getattrstring(obj, field_str):
-            field_value = obj[field_str]
-            if obj._fields[field_str].type == 'many2one':
-                field_value = field_value.id
-            return str(field_value)
-
+    # Override hash.mixin
+    @api.depends('state')
+    def _compute_must_hash(self):
         for move in self:
-            values = {}
-            for field in INTEGRITY_HASH_MOVE_FIELDS:
-                values[field] = _getattrstring(move, field)
+            move.must_hash = move.must_hash or (
+                move.state == 'posted'
+                and move.restrict_mode_hash_table
+                and move.date
+            )
 
-            for line in move.line_ids:
-                for field in INTEGRITY_HASH_LINE_FIELDS:
-                    k = 'line_%d_%s' % (line.id, field)
-                    values[k] = _getattrstring(line, field)
-            #make the json serialization canonical
-            #  (https://tools.ietf.org/html/draft-staykov-hu-json-canonical-form-00)
-            move.string_to_hash = dumps(values, sort_keys=True,
-                                                ensure_ascii=True, indent=None,
-                                                separators=(',', ':'))
+    # Override hash.mixin
+    def _get_fields_used_by_hash(self):
+        return 'date', 'journal_id', 'company_id'
+
+    # Override hash.mixin
+    def _get_sorting_keys(self):
+        return ['date', 'id']
+
+    # Override hash.mixin
+    def _get_secure_sequence(self):
+        self.ensure_one()
+        self.env['hash.mixin']._create_secure_sequence(self.journal_id, self.company_id.id)
+        return self.journal_id.secure_sequence_id
+
+    # Override hash.mixin
+    def _get_previous_record_domain(self):
+        return [
+            ('state', '=', 'posted'),
+            ('company_id', '=', self.company_id.id),
+            ('journal_id', '=', self.journal_id.id),
+            ('secure_sequence_number', '!=', 0),
+            ('secure_sequence_number', '=', int(self.secure_sequence_number) - 1),
+        ]
+
+    # Override hash.mixin
+    def _get_dict_fields_values_to_hash(self, lines=()):
+        return super()._get_dict_fields_values_to_hash(self.line_ids)
 
     # -------------------------------------------------------------------------
     # RECURRING ENTRIES
@@ -3591,7 +3561,7 @@ class AccountMove(models.Model):
                 # so we also check tax_cash_basis_origin_move_id, which stays unchanged
                 # (we need both, as tax_cash_basis_origin_move_id did not exist in older versions).
                 raise UserError(_('You cannot reset to draft a tax cash basis journal entry.'))
-            if move.restrict_mode_hash_table and move.state == 'posted':
+            if move.restrict_mode_hash_table and move.state == 'posted' and move.inalterable_hash:
                 raise UserError(_('You cannot modify a posted entry of this journal because it is in strict mode.'))
             # We remove all the analytics entries for this journal
             move.mapped('line_ids.analytic_line_ids').unlink()

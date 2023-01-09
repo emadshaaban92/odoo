@@ -13,10 +13,10 @@ const PosFrPaymentScreen = (PaymentScreen) =>
                         model: "pos.order",
                         method: "search_read",
                         domain: [["id", "in", order_server_ids]],
-                        fields: ["l10n_fr_hash"],
+                        fields: ["inalterable_hash"],
                         context: session.user_context,
                     });
-                    order.set_l10n_fr_hash(result[0].l10n_fr_hash || false);
+                    order.set_inalterable_hash(result[0].inalterable_hash || false);
                 }
             } catch {
                 // FIXME this doesn't seem correct but is equivalent to return in finally which we had before.

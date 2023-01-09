@@ -10,12 +10,10 @@ from odoo.tools import frozendict, formatLang, format_date, float_is_zero
 from odoo.tools.sql import create_index
 from odoo.addons.web.controllers.utils import clean_action
 
-INTEGRITY_HASH_LINE_FIELDS = ('debit', 'credit', 'account_id', 'partner_id')
-
 
 class AccountMoveLine(models.Model):
     _name = "account.move.line"
-    _inherit = "analytic.mixin"
+    _inherit = ["analytic.mixin", "sub.hash.mixin"]
     _description = "Journal Item"
     _order = "date desc, move_name desc, id"
     _check_company_auto = True
@@ -1398,8 +1396,6 @@ class AccountMoveLine(models.Model):
                 continue
 
             if line.parent_state == 'posted':
-                if line.move_id.restrict_mode_hash_table and set(vals).intersection(INTEGRITY_HASH_LINE_FIELDS):
-                    raise UserError(_("You cannot edit the following fields due to restrict mode being activated on the journal: %s.") % ', '.join(INTEGRITY_HASH_LINE_FIELDS))
                 if any(key in vals for key in ('tax_ids', 'tax_line_id')):
                     raise UserError(_('You cannot modify the taxes related to a posted journal item, you should reset the journal entry to draft to do so.'))
 
@@ -2468,6 +2464,18 @@ class AccountMoveLine(models.Model):
             'user_id': self.move_id.invoice_user_id.id or self._uid,
             'company_id': account.company_id.id or self.company_id.id or self.env.company.id,
         }
+
+    # -------------------------------------------------------------------------
+    # HASH
+    # -------------------------------------------------------------------------
+    # Override sub.hash.mixin
+    def _get_hash_parent(self):
+        self.ensure_one()
+        return self.move_id
+
+    # Override sub.hash.mixin
+    def _get_fields_used_by_hash(self):
+        return 'debit', 'credit', 'account_id', 'partner_id'
 
     # -------------------------------------------------------------------------
     # MISC

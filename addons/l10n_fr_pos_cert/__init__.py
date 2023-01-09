@@ -13,4 +13,5 @@ def _setup_inalterability(cr, registry):
 
     fr_companies = env['res.company'].search([('partner_id.country_id.code', 'in', env['res.company']._get_unalterable_country())])
     if fr_companies:
-        fr_companies._create_secure_sequence(['l10n_fr_pos_cert_sequence_id'])
+        for fr_company in fr_companies:
+            env['hash.mixin']._create_secure_sequence(fr_company, fr_company.id, "l10n_fr_pos_cert_sequence_id")

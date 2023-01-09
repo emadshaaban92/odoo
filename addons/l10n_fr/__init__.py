@@ -25,8 +25,7 @@ def _setup_inalterability(cr, registry):
 
     fr_companies = env['res.company'].search([('partner_id.country_id.code', 'in', env['res.company']._get_unalterable_country())])
     if fr_companies:
-        fr_companies._create_secure_sequence(['l10n_fr_closing_sequence_id'])
-
         for fr_company in fr_companies:
+            env['hash.mixin']._create_secure_sequence(fr_company, fr_company.id, "l10n_fr_closing_sequence_id")
             fr_journals = env['account.journal'].search([('company_id', '=', fr_company.id)])
-            fr_journals.filtered(lambda x: not x.secure_sequence_id)._create_secure_sequence(['secure_sequence_id'])
+            env['hash.mixin']._create_secure_sequence(fr_journals, fr_company.id)
