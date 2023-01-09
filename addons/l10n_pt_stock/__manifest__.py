@@ -6,7 +6,7 @@
     'icon': '/l10n_pt/static/description/icon.png',
     'version': '1.0',
     'description': """Stock module for Portugal which allows hash and QR code on delivery notes""",
-    'category': 'Accounting/Localizations',
+    'category': 'Accounting/Localizations/Stock',
     'depends': [
         'stock',
         'base_hash',

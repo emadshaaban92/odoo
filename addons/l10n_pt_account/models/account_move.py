@@ -11,7 +11,7 @@ class AccountMove(models.Model):
     @api.depends('move_type', 'sequence_prefix', 'sequence_number')
     def _compute_l10n_pt_document_number(self):
         for move in self.filtered(lambda m: m.company_id.account_fiscal_country_id.code == 'PT'):
-            move.l10n_pt_document_number = f"{move.move_type} {move.sequence_prefix.replace('/', '.', 1)}{str(move.sequence_number)}"
+            move.l10n_pt_document_number = f"{move.move_type} {move.sequence_prefix}{move.sequence_number}"
 
     # Override hash.mixin
     def _get_previous_record_domain(self):

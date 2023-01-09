@@ -83,11 +83,11 @@ class TestL10nPtAccount(AccountTestInvoicingCommon):
         self.out_invoice1.line_ids[0]['discount_percentage'] = 10
 
     def test_l10n_pt_account_document_no(self):
-        self.assertEqual(self.out_invoice1.l10n_pt_document_number, 'out_invoice INV.2022/1')
-        self.assertEqual(self.out_invoice2.l10n_pt_document_number, 'out_invoice INV.2022/2')
-        self.assertEqual(self.out_invoice3.l10n_pt_document_number, 'out_invoice INV.2022/3')
-        self.assertEqual(self.out_invoice4.l10n_pt_document_number, 'out_invoice INV.2022/4')
-        self.assertEqual(self.in_invoice1.l10n_pt_document_number, 'in_invoice BILL.2022/01/1')
-        self.assertEqual(self.out_refund1.l10n_pt_document_number, 'out_refund RINV.2022/1')
-        self.assertEqual(self.in_refund1.l10n_pt_document_number, 'in_refund RBILL.2022/01/1')
-        self.assertEqual(self.in_refund2.l10n_pt_document_number, 'in_refund RBILL.2022/01/2')
+        self.assertEqual(self.out_invoice1.l10n_pt_document_number, 'out_invoice INV/2022/1')
+        self.assertEqual(self.out_invoice2.l10n_pt_document_number, 'out_invoice INV/2022/2')
+        self.assertEqual(self.out_invoice3.l10n_pt_document_number, 'out_invoice INV/2022/3')
+        self.assertEqual(self.out_invoice4.l10n_pt_document_number, 'out_invoice INV/2022/4')
+        self.assertEqual(self.in_invoice1.l10n_pt_document_number, 'in_invoice BILL/2022/01/1')
+        self.assertEqual(self.out_refund1.l10n_pt_document_number, 'out_refund RINV/2022/1')
+        self.assertEqual(self.in_refund1.l10n_pt_document_number, 'in_refund RBILL/2022/01/1')
+        self.assertEqual(self.in_refund2.l10n_pt_document_number, 'in_refund RBILL/2022/01/2')
