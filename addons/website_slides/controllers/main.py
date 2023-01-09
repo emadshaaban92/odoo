@@ -636,7 +636,7 @@ class WebsiteSlides(WebsiteProfile):
             return {}
 
         channel_partner = channel_sudo.channel_partner_all_ids.filtered(lambda cp: cp.partner_id.id == partner_id)
-        if channel_partner.member_status != 'invited' or channel_partner.create_date + relativedelta(months=1) < fields.Datetime.now():
+        if channel_partner.member_status != 'invited' or channel_partner.last_invitation_date + relativedelta(months=3) < fields.Datetime.now():
             return {}
 
         valid_invite_values = {}
@@ -756,7 +756,7 @@ class WebsiteSlides(WebsiteProfile):
             return redirect_channel(channel) if has_rights else redirect_slides_main('expired')
 
         # --- Partner invited but expired invitation
-        if channel_partner_sudo.member_status == 'invited' and channel_partner_sudo.create_date + relativedelta(months=1) < fields.Datetime.now():
+        if channel_partner_sudo.member_status == 'invited' and channel_partner_sudo.last_invitation_date + relativedelta(months=3) < fields.Datetime.now():
             return redirect_slides_main('expired')
 
         # --- A user is logged

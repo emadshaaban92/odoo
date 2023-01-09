@@ -77,7 +77,8 @@ class SlideChannelInvite(models.TransientModel):
         """ Process the wizard content and proceed with sending the related
             email(s), rendering any template patterns on the fly if needed.
             This method is used both to add members as 'joined' (on invitation)
-            and as 'invited' (on share), depending on the value of with_enrollment"""
+            and as 'invited' (on share), depending on the value of with_enrollment.
+            Invited members can be reinvited, or enrolled depending on that value. """
         self.ensure_one()
 
         if not self.env.user.email:
@@ -86,10 +87,26 @@ class SlideChannelInvite(models.TransientModel):
             raise UserError(_("Please select at least one recipient."))
 
         mail_values = []
-        for partner_id in self.partner_ids:
+
+        # Resend invitations to 'invited' members and refresh their last invitation date
+        attendees_to_reinvite = self.env['slide.channel.partner']
+        if not self.with_enrollment:
+            attendees_to_reinvite = self.env['slide.channel.partner'].search([
+                ('member_status', '=', 'invited'),
+                ('channel_id', '=', self.channel_id.id),
+                ('partner_id', 'in', self.partner_ids.ids)
+            ])
+            for attendee in attendees_to_reinvite:
+                attendee.last_invitation_date = fields.Datetime.now()
+                mail_values.append(self._prepare_mail_values(attendee))
+
+        for partner_id in (self.partner_ids - attendees_to_reinvite.partner_id):
             slide_channel_partner = self.channel_id._action_add_members(partner_id, member_status='joined' if self.with_enrollment else 'invited')
+            # New (invited) member or member upgraded from 'invited' to 'joined'
             if slide_channel_partner:
                 mail_values.append(self._prepare_mail_values(slide_channel_partner))
+                if not self.with_enrollment:
+                    slide_channel_partner.last_invitation_date = fields.Datetime.now()
 
         self.env['mail.mail'].sudo().create(mail_values)
 

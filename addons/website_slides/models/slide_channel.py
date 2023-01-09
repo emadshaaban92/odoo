@@ -42,6 +42,7 @@ class ChannelUsersRelation(models.Model):
         string='Member Status', readonly=True, store=True, default='joined')
     # Invitation
     invitation_link_with_hash = fields.Char('Invitation Link', compute="_compute_invitation_link_with_hash")
+    last_invitation_date = fields.Datetime('Last Invitation')
 
     _sql_constraints = [
         ('channel_partner_uniq',
@@ -215,6 +216,13 @@ class ChannelUsersRelation(models.Model):
 
         if mail_mail_values:
             self.env['mail.mail'].sudo().create(mail_mail_values)
+
+    @api.autovacuum
+    def _gc_slide_channel_partner(self):
+        # The invitation of members is only valid 3 months after their invitation
+        limit_dt = fields.Datetime.subtract(fields.Datetime.now(), months=3)
+        invited_members = self.env['slide.channel.partner'].search([('last_invitation_date', '<', limit_dt), ('member_status', '=', 'invited')])
+        invited_members.unlink()
 
 
 class Channel(models.Model):

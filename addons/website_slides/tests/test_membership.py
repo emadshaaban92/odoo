@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
+from odoo import fields
 from odoo.addons.mail.tests.common import mail_new_test_user
 from odoo.addons.base.tests.common import HttpCaseWithUserPortal
 from odoo.addons.http_routing.models.ir_http import slug
@@ -145,6 +146,25 @@ class TestMembershipCase(HttpCaseWithUserPortal):
             'partner_id': self.partner_no_user.id
         }])
         self.common_base_url = "http://%s:%s" % (HOST, config['http_port'])
+
+    def test_direct_invite_members_invitation_expiration(self):
+        ''' When sharing a course with members visibility to a partner, they are 'invited'. They access a the course as if it were public,
+        but only for three months. Afterwards, they will be removed by garbage collector.'''
+        # Logged user has been invited more than three months ago.
+        self.channel_partner_emp.write({
+            'member_status': 'invited',
+            'last_invitation_date': fields.Datetime.subtract(fields.Datetime.now(), months=4)
+        })
+        self.channel.visibility = 'members'
+        self.authenticate("user_emp", "user_emp")
+        res = self.url_open(self.channel_partner_emp.invitation_link_with_hash)
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue('/slides?invite_state=expired' in res.url, "Using an expired link should redirect to the main /slides page")
+
+        # Clean outdated records
+        invited_member_id = self.channel_partner_emp.id
+        self.env['slide.channel.partner']._gc_slide_channel_partner()
+        self.assertFalse(self.env['slide.channel.partner'].search([('id', '=', invited_member_id)]))
 
     def test_direct_invite_public_or_members_visibility(self):
         ''' Invite route redirects properly the (not) logged user in a course with public visibility.
