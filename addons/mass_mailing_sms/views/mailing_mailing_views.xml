@@ -27,17 +27,17 @@
                 <field name="schedule_type" invisible="1"/>
                 <button name="action_put_in_queue" type="object"
                     string="Send" class="oe_highlight" data-hotkey="v"
-                    attrs="{'invisible': ['|', '|', ('mailing_type', '=', 'mail'), ('state', 'in', ('in_queue', 'sending', 'done')), ('sms_force_send', '=', True)]}"
+                    invisible="['|', '|', ('mailing_type', '=', 'mail'), ('state', 'in', ('in_queue', 'sending', 'done')), ('sms_force_send', '=', True)]"
                     confirm="This will send SMS to all recipients. Do you still want to proceed ?"/>
                 <button name="action_send_mail" type="object"
                     string="Send Now" class="oe_highlight" data-hotkey="g"
-                    attrs="{'invisible': ['|', '|', '|', ('mailing_type', '=', 'mail'), ('state', 'in', ('in_queue', 'done')), ('schedule_type', '=', 'scheduled'), ('sms_force_send', '!=', True)]}"
+                    invisible="['|', '|', '|', ('mailing_type', '=', 'mail'), ('state', 'in', ('in_queue', 'done')), ('schedule_type', '=', 'scheduled'), ('sms_force_send', '!=', True)]"
                     confirm="This will send SMS to all recipients now. Do you still want to proceed ?"/>
             </xpath>
             <!-- Headers / Warnings -->
             <xpath expr="//header" position="after">
                 <field name="sms_has_insufficient_credit" invisible="1"/>
-                <div class="alert alert-warning text-center o-hidden-ios" attrs="{'invisible': [('sms_has_insufficient_credit', '=', False)]}" role="alert">
+                <div class="alert alert-warning text-center o-hidden-ios" invisible="[('sms_has_insufficient_credit', '=', False)]" role="alert">
                     <button class="btn-link py-0"
                             name="action_buy_sms_credits"
                             type="object">
@@ -47,7 +47,7 @@
                     </button>
                 </div>
                 <field name="sms_has_unregistered_account" invisible="1"/>
-                <div class="alert alert-warning text-center o-hidden-ios" attrs="{'invisible': [('sms_has_unregistered_account', '=', False)]}" role="alert">
+                <div class="alert alert-warning text-center o-hidden-ios" invisible="[('sms_has_unregistered_account', '=', False)]" role="alert">
                     <button class="btn-link py-0"
                             name="action_buy_sms_credits"
                             type="object">
@@ -61,31 +61,31 @@
                 <attribute name="attrs">{'invisible': [('mailing_type', '!=', 'mail')]}</attribute>
             </xpath>
             <xpath expr="//span[@name='canceled_text']" position="after">
-                <span name="canceled_text_sms" attrs="{'invisible': [('mailing_type', '!=', 'sms')]}">SMS Text Message have been canceled and will not be sent.</span>
+                <span name="canceled_text_sms" invisible="[('mailing_type', '!=', 'sms')]">SMS Text Message have been canceled and will not be sent.</span>
             </xpath>
             <xpath expr="//span[@name='scheduled_text']" position="attributes">
                 <attribute name="attrs">{'invisible': [('mailing_type', '!=', 'mail')]}</attribute>
             </xpath>
             <xpath expr="//span[@name='scheduled_text']" position="after">
-                <span name="scheduled_text_sms" attrs="{'invisible': [('mailing_type', '!=', 'sms')]}">SMS Text Message are in queue and will be sent soon.</span>
+                <span name="scheduled_text_sms" invisible="[('mailing_type', '!=', 'sms')]">SMS Text Message are in queue and will be sent soon.</span>
             </xpath>
             <xpath expr="//span[@name='sent']" position="attributes">
                 <attribute name="attrs">{'invisible': [('mailing_type', '!=', 'mail')]}</attribute>
             </xpath>
             <xpath expr="//span[@name='sent']" position="after">
-                <span name="sent_sms" attrs="{'invisible': [('mailing_type', '!=', 'sms')]}">SMS Text Message have been sent.</span>
+                <span name="sent_sms" invisible="[('mailing_type', '!=', 'sms')]">SMS Text Message have been sent.</span>
             </xpath>
             <xpath expr="//span[@name='failed_text']" position="attributes">
                 <attribute name="attrs">{'invisible': [('mailing_type', '!=', 'mail')]}</attribute>
             </xpath>
             <xpath expr="//span[@name='failed_text']" position="after">
-                <span name="failed_text_sms" attrs="{'invisible': [('mailing_type', '!=', 'sms')]}">SMS Text Message could not be sent.</span>
+                <span name="failed_text_sms" invisible="[('mailing_type', '!=', 'sms')]">SMS Text Message could not be sent.</span>
             </xpath>
             <xpath expr="//span[@name='next_departure_text']" position='attributes'>
                 <attribute name="attrs">{'invisible': [('mailing_type', '!=', 'mail')]}</attribute>
             </xpath>
             <xpath expr="//span[@name='next_departure_text']" position='after'>
-                <span name="next_departure_text" attrs="{'invisible': [('mailing_type', '!=', 'sms')]}">This SMS marketing is scheduled for </span>
+                <span name="next_departure_text" invisible="[('mailing_type', '!=', 'sms')]">This SMS marketing is scheduled for </span>
             </xpath>
             <!-- Stat Buttons -->
             <xpath expr="//button[@name='action_view_opened']" position="attributes">
@@ -102,7 +102,7 @@
                     For an SMS Text Message, internal Title of the Message.</attribute>
             </xpath>
             <xpath expr="//field[@name='subject']" position="after">
-                <field class="text-break" name="sms_subject" string="Title" placeholder="e.g. Black Friday SMS coupon" attrs="{'invisible': [('mailing_type', '!=', 'sms')], 'readonly': [('state', 'in', ('sending', 'done'))], 'required': [('mailing_type', '=', 'sms')]}"/>
+                <field class="text-break" name="sms_subject" string="Title" placeholder="e.g. Black Friday SMS coupon" invisible="[('mailing_type', '!=', 'sms')], 'readonly': [('state', 'in', ('sending', 'done'))], 'required': [('mailing_type', '=', 'sms')]"/>
             </xpath>
             <xpath expr="//button[@name='action_set_favorite']" position="attributes">
                 <attribute name="attrs">{'invisible': ['|', ('mailing_type', '!=', 'mail'), ('favorite', '=', True)]}</attribute>
@@ -117,15 +117,15 @@
                 <attribute name="attrs">{'invisible': [('mailing_type', '!=', 'mail')]}</attribute>
             </xpath>
             <xpath expr="//page[@name='mail_body']" position="after">
-                <page string="SMS Content" name="sms_body" attrs="{'invisible': [('mailing_type', '!=', 'sms')]}">
+                <page string="SMS Content" name="sms_body" invisible="[('mailing_type', '!=', 'sms')]">
                     <field name="body_plaintext" widget="sms_widget"
-                        attrs="{'required': [('mailing_type', '=', 'sms')], 'readonly': [('state', 'in', ('sending', 'done'))]}"
+                        required="[('mailing_type', '=', 'sms')], 'readonly': [('state', 'in', ('sending', 'done'))]"
                         options="{'dynamic_placeholder': true}" enable_emojis="true"/>
                 </page>
             </xpath>
             <xpath expr="//page[@name='settings']/group/group[@name='email_content']" position="after">
-                <group string="Options" attrs="{'invisible': [('mailing_type', '!=', 'sms')]}">
-                    <field name="sms_allow_unsubscribe" attrs="{'invisible': [('mailing_type', '!=', 'sms')], 'readonly': [('state', 'in', ('sending', 'done'))]}"/>
+                <group string="Options" invisible="[('mailing_type', '!=', 'sms')]">
+                    <field name="sms_allow_unsubscribe" invisible="[('mailing_type', '!=', 'sms')], 'readonly': [('state', 'in', ('sending', 'done'))]"/>
                 </group>
             </xpath>
 
@@ -161,13 +161,13 @@
             <!-- A/B Testing -->
             <xpath expr="//field[@name='ab_testing_winner_selection']" position="after">
                 <label for="ab_testing_sms_winner_selection" string="Winner Selection"
-                    attrs="{'invisible': ['|', ('ab_testing_enabled', '=', False), ('mailing_type', '!=', 'sms')]}"/>
+                    invisible="['|', ('ab_testing_enabled', '=', False), ('mailing_type', '!=', 'sms')]"/>
                 <field name="ab_testing_sms_winner_selection" nolabel="1"
-                    attrs="{'required': [('ab_testing_enabled', '=', True), ('mailing_type', '=', 'sms')], 'invisible': ['|', ('ab_testing_enabled', '=', False), ('mailing_type', '!=', 'sms')], 'readonly': [('state', '!=', 'draft')]}"/>
+                    required="[('ab_testing_enabled', '=', True), ('mailing_type', '=', 'sms')], 'invisible': ['|', ('ab_testing_enabled', '=', False), ('mailing_type', '!=', 'sms')], 'readonly': [('state', '!=', 'draft')]"/>
             </xpath>
             <xpath expr="//field[@name='ab_testing_schedule_datetime']" position="replace">
                  <field name="ab_testing_schedule_datetime"
-                        attrs="{'required': [('ab_testing_enabled', '=', True), ('ab_testing_winner_selection', '!=', 'manual'), ('ab_testing_sms_winner_selection', '!=', 'manual')], 'readonly': ['|', ('ab_testing_enabled', '=', False), ('state', '!=', 'draft')], 'invisible': ['|', '|', ('ab_testing_enabled', '=', False), ('ab_testing_winner_selection', '=', 'manual'), ('ab_testing_sms_winner_selection', '=', 'manual')]}"/>
+                        required="[('ab_testing_enabled', '=', True), ('ab_testing_winner_selection', '!=', 'manual'), ('ab_testing_sms_winner_selection', '!=', 'manual')], 'readonly': ['|', ('ab_testing_enabled', '=', False), ('state', '!=', 'draft')], 'invisible': ['|', '|', ('ab_testing_enabled', '=', False), ('ab_testing_winner_selection', '=', 'manual'), ('ab_testing_sms_winner_selection', '=', 'manual')]"/>
             </xpath>
             <xpath expr="//span[@name='ab_test_manual']" position="attributes">
                 <attribute name="attrs">{'invisible': ['|', ('ab_testing_winner_selection', '!=', 'manual'),
@@ -217,10 +217,10 @@
                 <attribute name="attrs">{'invisible': [('mailing_type', '!=', 'mail')]}</attribute>
             </xpath>
             <xpath expr="//div[@name='div_responsible_avatar']" position="after">
-                <div class="alert alert-warning mb-0 mt-3 o-hidden-ios" role="alert" attrs="{'invisible': [('sms_has_insufficient_credit', '=', False)]}">
+                <div class="alert alert-warning mb-0 mt-3 o-hidden-ios" role="alert" invisible="[('sms_has_insufficient_credit', '=', False)]">
                     <a name="action_buy_sms_credits" type="object">Insufficient credits</a>
                 </div>
-                <div class="alert alert-warning mb-0 mt-3" role="alert" attrs="{'invisible': [('sms_has_unregistered_account', '=', False)]}">
+                <div class="alert alert-warning mb-0 mt-3" role="alert" invisible="[('sms_has_unregistered_account', '=', False)]">
                     <a name="action_buy_sms_credits" type="object">Unregistered account</a>
                 </div>
             </xpath>

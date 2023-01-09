@@ -126,7 +126,7 @@
                                  <button name="mail_action_blacklist_remove" class="fa fa-ban text-danger"
                                     title="This email is blacklisted for mass mailings. Click to unblacklist."
                                     type="object" context="{'default_email': email}" groups="base.group_user"
-                                    attrs="{'invisible': [('is_blacklisted', '=', False)]}"/>
+                                    invisible="[('is_blacklisted', '=', False)]"/>
                                 <field name="email" widget="email"/>
                                 <field name="is_blacklisted" invisible="1"/>
                             </div>
@@ -135,8 +135,8 @@
                             <field name="country_id" options="{'no_open': True, 'no_create': True}"/>
                         </group>
                         <group>
-                            <field name="create_date" attrs="{'invisible': [('id', '=', False)]}" readonly="1"/>
-                            <field name="message_bounce" attrs="{'invisible': [('id', '=', False)]}" readonly="1"/>
+                            <field name="create_date" invisible="[('id', '=', False)]" readonly="1"/>
+                            <field name="message_bounce" invisible="[('id', '=', False)]" readonly="1"/>
                         </group>
                     </group>
                     <field name="subscription_list_ids">

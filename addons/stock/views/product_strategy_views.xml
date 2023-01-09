@@ -13,12 +13,12 @@
                        options="{'no_create': True}"
                        readonly="context.get('fixed_location', False)"/>
                 <field name="product_id" string="Product"
-                       attrs="{'readonly': [('category_id', '!=', False)], 'required': [('category_id', '=', False), ('package_type_ids', '=', False)]}"
+                       readonly="[('category_id', '!=', False)], 'required': [('category_id', '=', False), ('package_type_ids', '=', False)]"
                        options="{'no_create': True, 'no_open': True}"
                        readonly="context.get('single_product', False)"
                        force_save="1"/>
                 <field name="category_id" string="Product Category"
-                       attrs="{'readonly': [('product_id', '!=', False)], 'required': [('product_id', '=', False), ('package_type_ids', '=', False)]}"
+                       readonly="[('product_id', '!=', False)], 'required': [('product_id', '=', False), ('package_type_ids', '=', False)]"
                        options="{'no_create': True, 'no_open': True}"
                        readonly="context.get('fixed_category', False)"
                        force_save="1"/>
@@ -27,7 +27,7 @@
                        groups="stock.group_tracking_lot" widget="many2many_tags"
                        optional="show"/>
                 <field name="location_out_id"
-                       attrs="{'readonly': [('location_in_id', '=', False)]}"
+                       readonly="[('location_in_id', '=', False)]"
                        options="{'no_create': True}"
                        optional="show"/>
                 <field name="storage_category_id" string="Having Category"

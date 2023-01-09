@@ -16,8 +16,8 @@
                     <field name="user_ids" widget="many2many_tags" domain="[('share', '=', False)]"/>
                     <field name="force_assignment"/>
                 </group>
-                <label for="duplicated_lead_ids" string="Leads with existing duplicates (for information)" help="Leads that you selected that have duplicates. If the list is empty, it means that no duplicates were found" attrs="{'invisible': [('deduplicate', '=', False)]}"/>
-                <group attrs="{'invisible': [('deduplicate', '=', False)]}">
+                <label for="duplicated_lead_ids" string="Leads with existing duplicates (for information)" help="Leads that you selected that have duplicates. If the list is empty, it means that no duplicates were found" invisible="[('deduplicate', '=', False)]"/>
+                <group invisible="[('deduplicate', '=', False)]">
                     <field name="duplicated_lead_ids" colspan="4" nolabel="1" readonly="1">
                         <tree create="false" delete="false">
                             <field name="create_date" widget="date"/>
@@ -32,12 +32,12 @@
                         </tree>
                     </field>
                 </group>
-                <group attrs="{'invisible': [('name', '!=', 'convert')]}" string="Customers" col="1">
+                <group invisible="[('name', '!=', 'convert')]" string="Customers" col="1">
                     <field name="action" class="oe_inline" widget="radio"/>
                     <group col="2">
                         <field name="partner_id"
                             widget="res_partner_many2one"
-                            attrs="{'required': [('action', '=', 'exist')], 'invisible':[('action','!=','exist')]}"
+                            required="[('action', '=', 'exist')], 'invisible':[('action','!=','exist')]"
                             context="{'show_vat': True}"
                             class="oe_inline"/>
                     </group>

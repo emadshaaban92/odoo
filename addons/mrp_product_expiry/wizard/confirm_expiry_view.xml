@@ -24,17 +24,17 @@
                 <button name="confirm_produce"
                     string="Confirm"
                     type="object"
-                    attrs="{'invisible': [('production_ids', '=', [])]}"
+                    invisible="[('production_ids', '=', [])]"
                     class="btn-primary"/>
                 <button special="cancel" data-hotkey="z"
                     string="Discard"
-                    attrs="{'invisible': [('production_ids', '=', [])]}"
+                    invisible="[('production_ids', '=', [])]"
                     class="btn-secondary"/>
                 <!-- From a Workorder -->
                 <button name="confirm_workorder"
                     string="Confirm"
                     type="object"
-                    attrs="{'invisible': [('workorder_id', '=', False)]}"
+                    invisible="[('workorder_id', '=', False)]"
                     class="btn-primary"/>
             </xpath>
         </field>

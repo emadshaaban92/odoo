@@ -6,7 +6,7 @@
         <field name="inherit_id" ref="website_forum.view_forum_forum_form"/>
         <field name="arch" type="xml">
             <xpath expr="//group[@name='group_order']" position="after">
-                <group string="eLearning" name="group_slides" attrs="{'invisible': [('slide_channel_id', '=', False)]}">
+                <group string="eLearning" name="group_slides" invisible="[('slide_channel_id', '=', False)]">
                     <field name="slide_channel_id" readonly="True"/>
                 </group>
             </xpath>
@@ -17,7 +17,7 @@
                 <attribute name="attrs">{'invisible': ['|', ('privacy', '!=', 'private'), ('slide_channel_id', '!=', False)], 'required': [('privacy', '=', 'private')]}</attribute>
             </xpath>
             <xpath expr="//field[@name='privacy']" position="before">
-                <field name="visibility" attrs="{'invisible': [('slide_channel_id', '=', False)]}"/>
+                <field name="visibility" invisible="[('slide_channel_id', '=', False)]"/>
             </xpath>
         </field>
     </record>

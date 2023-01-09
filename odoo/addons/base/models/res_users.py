@@ -1439,7 +1439,7 @@ class GroupsView(models.Model):
                 'class': "alert alert-warning",
                 'role': "alert",
                 'colspan': "2",
-                'invisible': str((field_name, '=', False)]),
+                'invisible': str([(field_name, '=', False)]),
             })
             user_group_warning_xml.append(E.label({
                 'for': field_name,
