@@ -11,6 +11,10 @@ options.registry.NavTabs = options.registry.MultipleItems.extend({
      */
     start: function () {
         this._findLinksAndPanes();
+        // TODO Remove in master.
+        for (const tabEl of this.$tabPanes) {
+            tabEl.classList.add('o_not_editable');
+        }
         return this._super.apply(this, arguments);
     },
     /**
