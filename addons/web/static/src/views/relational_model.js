@@ -862,6 +862,9 @@ export class Record extends DataPoint {
     isReadonly(fieldName) {
         const activeField = this.activeFields[fieldName];
         const { readonly } = activeField.modifiers || {};
+        if (activeField.relatedPropertyField && this.selected && this.model.multiEdit) {
+            return true;
+        }
         return readonly ? evalDomain(readonly, this.evalContext) : false;
     }
 
@@ -3655,8 +3658,19 @@ export class RelationalModel extends Model {
                 for (const record of properties[fieldName]) {
                     for (const definition of record.definitions) {
                         const propertyFieldName = `${fieldName}.${definition.name}`;
-                        const widget =
-                            definition.type === "many2many" ? "many2many_tags" : definition.type;
+                        let widget = definition.type;
+                        if (definition.type === "many2many") {
+                            if (["res.users", "res.partner"].includes(definition.comodel)) {
+                                widget = "many2many_tags_avatar";
+                            } else {
+                                widget = "many2many_tags";
+                            }
+                        } else if (
+                            definition.type === "many2one" &&
+                            ["res.users", "res.partner"].includes(definition.comodel)
+                        ) {
+                            widget = "many2one_avatar";
+                        }
                         const propsFromAttrs = ["many2many", "many2one"].includes(definition.type)
                             ? { relation: definition.comodel }
                             : {};
