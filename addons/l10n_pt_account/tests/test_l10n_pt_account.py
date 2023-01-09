@@ -74,7 +74,7 @@ class TestL10nPtAccount(AccountTestInvoicingCommon):
         with self.assertRaisesRegex(UserError, f"{expected_error_msg} Document number"):
             self.out_invoice1['l10n_pt_document_number'] = "Fake document number"
         with self.assertRaisesRegex(UserError, f"{expected_error_msg} Document number"):
-            self.out_invoice1['move_type'] = 'in_refund' # Move type is used by l10n_pt_document_number so it cannot be modified either
+            self.out_invoice1['move_type'] = 'in_refund'  # Move type is used by l10n_pt_document_number so it cannot be modified either
         with self.assertRaisesRegex(UserError, f"{expected_error_msg} Document number"):
             self.out_invoice1['sequence_number'] = 666  # Sequence number is used by l10n_pt_document_number so it cannot be modified either
 
