@@ -1,2 +1,1 @@
-from . import account_account
-from . import chart_template
+from . import l10n_pt_mixin

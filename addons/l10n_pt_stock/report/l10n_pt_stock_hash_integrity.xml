@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <data>
+        <template id="report_stock_hash_integrity" primary="True" inherit_id="base_hash.report_hash_integrity">
+        </template>
+    </data>
+</odoo>
