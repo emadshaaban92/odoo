@@ -519,6 +519,8 @@ export class KanbanDynamicGroupList extends DynamicGroupList {
         }
 
         this.model.transaction.commit(dataRecordId);
+
+        return true;
     }
 
     // ------------------------------------------------------------------------
