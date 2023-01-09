@@ -43,9 +43,9 @@ class TestL10nFrPosCertInalterableHash(TestPoSCommon):
     def test_l10n_fr_pos_order_get_dict_fields_values_to_hash(self):
         """
         Knowing that:
-        pos.order()._get_inalterable_fields() = ['date_order', 'user_id', 'lines', 'payment_ids', 'pricelist_id', 'partner_id',
+        pos.order()._get_inalterable_hash_fields() = ['date_order', 'user_id', 'lines', 'payment_ids', 'pricelist_id', 'partner_id',
                                                   'session_id', 'pos_reference', 'sale_journal', 'fiscal_position_id']
-        pos.order.line()._get_inalterable_fields() = ['notice', 'product_id', 'qty', 'price_unit', 'discount',
+        pos.order.line()._get_inalterable_hash_fields() = ['notice', 'product_id', 'qty', 'price_unit', 'discount',
                                                        'tax_ids', 'tax_ids_after_fiscal_position']
         //!\\ This test should probably not be modified as it makes sure that the
         computation of the hash is not altered between versions which would break

@@ -63,9 +63,9 @@ class pos_order(models.Model):
         return self.company_id.l10n_fr_pos_cert_sequence_id
 
     # Override hash.mixin
-    def _get_inalterable_fields(self):
+    def _get_inalterable_hash_fields(self):
         if self.company_id.country_id.code != 'FR':
-            return super()._get_inalterable_fields()
+            return super()._get_inalterable_hash_fields()
         return 'date_order', 'user_id', 'lines', 'payment_ids', 'pricelist_id', 'partner_id', \
                'session_id', 'pos_reference', 'sale_journal', 'fiscal_position_id'
 
@@ -111,7 +111,7 @@ class PosOrderLine(models.Model):
         return self.order_id
 
     # Override sub.hash.mixin
-    def _get_inalterable_fields(self):
+    def _get_inalterable_hash_fields(self):
         if self.company_id.country_id.code != 'FR':
-            return super()._get_inalterable_fields()
+            return super()._get_inalterable_hash_fields()
         return 'notice', 'product_id', 'qty', 'price_unit', 'discount', 'tax_ids', 'tax_ids_after_fiscal_position'

@@ -22,10 +22,10 @@ class Picking(models.Model):
             picking.l10n_pt_document_number = f'{picking_type.code} {picking_type.sequence_code}/{picking.secure_sequence_number}'
 
     # Override hash.mixin
-    def _get_inalterable_fields(self):
+    def _get_inalterable_hash_fields(self):
         if self.company_id.country_id.code != 'PT':
-            return super()._get_inalterable_fields()
-        return 'date_done', 'create_date', 'secure_sequence_number'
+            return super()._get_inalterable_hash_fields()
+        return 'date_done', 'create_date', 'l10n_pt_document_number'
 
     # Override hash.mixin
     def _get_sorting_keys(self):
@@ -71,4 +71,4 @@ class Picking(models.Model):
         self.ensure_one()
         if self.company_id.country_id.code != 'PT':
             return super()._create_hash_string(previous_hash)
-        return self._l10n_pt_create_hash_string(self.date_done, 0.0)
+        return self._l10n_pt_create_hash_string(self.date_done, 0.0, previous_hash)

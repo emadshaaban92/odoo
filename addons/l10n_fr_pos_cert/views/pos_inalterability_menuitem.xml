@@ -7,7 +7,7 @@
         <field name="report_file">l10n_fr_pos_cert.report_pos_hash_integrity</field>
     </record>
     <record model="ir.actions.server" id="action_check_pos_hash_integrity">
-        <field name="name">POS Inalterability Check</field>
+        <field name="name">POS Inalterability Check (FR)</field>
         <field name="model_id" ref="account.model_res_company"/>
         <field name="type">ir.actions.server</field>
         <field name="state">code</field>

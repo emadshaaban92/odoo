@@ -2624,7 +2624,7 @@ class AccountMove(models.Model):
             )
 
     # Override hash.mixin
-    def _get_inalterable_fields(self):
+    def _get_inalterable_hash_fields(self):
         return 'date', 'journal_id', 'company_id'
 
     # Override hash.mixin

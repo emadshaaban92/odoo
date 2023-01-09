@@ -32,8 +32,8 @@ class TestAccountMoveInalterableHash(AccountTestInvoicingCommon):
     def test_account_move_get_dict_fields_values_to_hash(self):
         """
         Knowing that:
-        account.move()._get_inalterable_fields() = ['name', 'date', 'journal_id']
-        account.move.line()._get_inalterable_fields() = ['debit', 'credit', 'account_id', 'partner_id']
+        account.move()._get_inalterable_hash_fields() = ['name', 'date', 'journal_id']
+        account.move.line()._get_inalterable_hash_fields() = ['debit', 'credit', 'account_id', 'partner_id']
         //!\\ This test should probably not be modified as it makes sure that the
         computation of the hash is not altered between versions which would break
         the inalterability hash report.
