@@ -135,9 +135,6 @@ var steps = [
         run: function () {},
     },
     {
-        trigger: '.opening-cash-control .button:contains("Open session")',
-    },
-    {
         // Leave category displayed by default
         content: "click category switch",
         trigger: ".breadcrumb-home",

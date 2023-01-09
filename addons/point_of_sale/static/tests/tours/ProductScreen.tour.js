@@ -9,7 +9,6 @@ import Tour from "web_tour.tour";
 // when finished, steps can be taken from getSteps
 startSteps();
 
-ProductScreen.do.confirmOpeningPopup();
 // Go by default to home category
 ProductScreen.do.clickHomeCategory();
 

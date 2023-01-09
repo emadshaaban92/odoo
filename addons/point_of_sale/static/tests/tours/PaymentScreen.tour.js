@@ -7,7 +7,6 @@ import Tour from "web_tour.tour";
 
 startSteps();
 
-ProductScreen.do.confirmOpeningPopup();
 ProductScreen.exec.addOrderline("Letter Tray", "10");
 ProductScreen.check.selectedOrderlineHas("Letter Tray", "10.0");
 ProductScreen.do.clickPayButton();

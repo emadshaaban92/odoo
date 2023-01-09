@@ -10,11 +10,10 @@ import { browser } from "@web/core/browser/browser";
 import { device } from "web.config";
 import { findTrigger } from "web_tour.utils";
 import RunningTourActionHelper from "web_tour.RunningTourActionHelper";
-// TODO-JCB: Find `config.device.isMobile` from non-legacy module.
-import config from "web.config";
 
 const getEdition = () => (odoo.info.isEnterprise ? "enterprise" : "community");
 const isMobile = device.isMobile;
+const isActionOnly = (step) => "action" in step && !("trigger" in step);
 
 /**
  * TODO-JCB: Don't forget the following:
@@ -24,6 +23,8 @@ const isMobile = device.isMobile;
  * - Maybe partially 'hiding' our reliance to jQuery is a good thing?
  * TODO-JCB: Should be able to recover the last performed step after page reload.
  * TODO-JCB: Make sure all the comments are correct.
+ * TODO-JCB: Should take into account the modals in pos.
+ * TODO-JCB: IDEA: Would be nice to allow creation of step that checks whether a trigger is **NOT** there. Basically, only when not there that we continue on next step.
  */
 
 /**
@@ -57,7 +58,7 @@ function getConsumeEventType($element, run) {
             return "apply.daterangepicker input";
         }
         if (
-            config.device.isMobile &&
+            device.isMobile &&
             $element.closest(".o_field_widget").is(".o_field_many2one, .o_field_many2many")
         ) {
             return "click";
@@ -382,13 +383,19 @@ function augmentMacro(macroDescription, augmenter, options) {
                     // Don't include the step because it's already done.
                     return newSteps;
                 } else {
-                    return [...newSteps, ...augmenter(macroDescription, [i, step], options)];
+                    return [
+                        ...newSteps,
+                        ...(isActionOnly(step)
+                            ? [step] // No need to augment action-only step.
+                            : augmenter(macroDescription, [i, step], options)),
+                    ];
                 }
             }, [])
             .concat([
                 {
                     action: () => {
-                        console.log("Tour done!");
+                        // Used by the test runner to assert the test tour is done.
+                        console.log("test successful");
                         tourState.set(macroDescription.name, "done", true);
                         pointerMethods.setState({ isVisible: false });
                     },
@@ -536,7 +543,6 @@ function intersectionService() {
                     observe(elements.target);
                 }
             } else {
-                root = newRoot;
                 stop();
                 start();
                 if (sameTarget) {
@@ -546,7 +552,6 @@ function intersectionService() {
                 }
             }
         } else {
-            root = newRoot;
             target = elements.target;
         }
     }
@@ -663,9 +668,29 @@ export const tourService = {
             run(tourName);
         }
 
+        // Checking whether the tour is ready is stateful so we use a higher order function.
+        // We do this so that the `wait_for` is not spawn everytime the tour runner calls `isTourReady`.
+        // We're doing this because we don't want to await for all the `wait_for` of the tours.
+        function makeIsTourReady() {
+            const isTourReadyMap = {};
+            const isWaiting = {};
+            return (tourName) => {
+                if (!isWaiting[tourName]) {
+                    isWaiting[tourName] = true;
+                    const tourDesc = tour_legacy.tourMap[tourName];
+                    tourDesc.wait_for.then(() => {
+                        isTourReadyMap[tourName] = true;
+                    });
+                } else {
+                    return isTourReadyMap[tourName];
+                }
+            };
+        }
+
         odoo.startTour = (name, stepDelay) => {
             run(name, { mode: "auto", interval: stepDelay });
         };
+        odoo.isTourReady = makeIsTourReady();
 
         return { run, legacy: tour_legacy };
     },

@@ -2,6 +2,7 @@
 
 import { createTourMethods } from "@point_of_sale/../tests/tours/helpers/utils";
 import { TextAreaPopup } from "@point_of_sale/../tests/tours/helpers/TextAreaPopupTourMethods";
+import NumberBuffer from "../../../src/js/Misc/NumberBuffer";
 
 class Do {
     clickDisplayedProduct(name) {
@@ -76,7 +77,16 @@ class Do {
                 trigger,
             };
         }
-        return keys.split(" ").map(generateStep);
+        return [
+            ...keys.split(" ").map(generateStep),
+            {
+                action: () => {
+                    // So that immediately, the handler is triggered on the buffered keys
+                    // and the buffer is cleared.
+                    NumberBuffer.capture();
+                },
+            },
+        ];
     }
 
     clickPayButton(shouldCheck = true) {
