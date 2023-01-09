@@ -15,11 +15,13 @@ class Picking(models.Model):
 
     country_code = fields.Char(related='company_id.country_id.code', depends=['company_id.country_id'])
 
-    @api.depends('picking_type_id.code', 'picking_type_id.sequence_code', 'secure_sequence_number')
+    @api.depends('picking_type_id.code', 'picking_type_id.sequence_code', 'name')
     def _compute_l10n_pt_document_number(self):
         for picking in self.filtered(lambda p: p.company_id.country_id.code == 'PT'):
             picking_type = picking.picking_type_id
-            picking.l10n_pt_document_number = f'{picking_type.code} {picking_type.sequence_code}/{picking.secure_sequence_number}'
+            picking_seq_code = picking_type.sequence_code
+            picking_seq_number = picking.name.replace(picking_seq_code, '')
+            picking.l10n_pt_document_number = f'{picking_type.code} {picking_seq_code}/{picking_seq_number}'
 
     # Override hash.mixin
     def _get_inalterable_hash_fields(self):

@@ -112,12 +112,16 @@ class TestL10nPtStock(TestStockCommon):
             picking['date_done'] = fields.Date.from_string('2000-01-01')
         with self.assertRaisesRegex(UserError, expected_error_msg):
             picking['create_date'] = fields.Datetime.now()
+        with self.assertRaisesRegex(UserError, f"{expected_error_msg} Document number"):
+            picking['l10n_pt_document_number'] = "Fake document number"
+        with self.assertRaisesRegex(UserError, f"{expected_error_msg} Document number"):
+            picking['name'] = "Fake name"  # Name is used by l10n_pt_document_number so it cannot be modified either
 
         # The following field is not part of the hash so it can be modified
         picking['note'] = 'new note'
 
     def test_l10n_pt_stock_document_no(self):
-        for expected in ['outgoing OUT/1', 'outgoing OUT/2', 'outgoing OUT/3']:
+        for expected in ['outgoing OUT/00001', 'outgoing OUT/00002', 'outgoing OUT/00003']:
             picking = self._create_picking(self.picking_type_out.id)
             picking._action_done()
             self.assertEqual(picking.l10n_pt_document_number, expected)

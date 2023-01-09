@@ -71,6 +71,12 @@ class TestL10nPtAccount(AccountTestInvoicingCommon):
             self.out_invoice1['create_date'] = fields.Datetime.now()
         with self.assertRaisesRegex(UserError, f"{expected_error_msg} Total"):
             self.out_invoice1['amount_total'] = 666
+        with self.assertRaisesRegex(UserError, f"{expected_error_msg} Document number"):
+            self.out_invoice1['l10n_pt_document_number'] = "Fake document number"
+        with self.assertRaisesRegex(UserError, f"{expected_error_msg} Document number"):
+            self.out_invoice1['move_type'] = 'in_refund' # Move type is used by l10n_pt_document_number so it cannot be modified either
+        with self.assertRaisesRegex(UserError, f"{expected_error_msg} Document number"):
+            self.out_invoice1['sequence_number'] = 666  # Sequence number is used by l10n_pt_document_number so it cannot be modified either
 
         # The following fields are not part of the hash so they can be modified
         self.out_invoice1['name'] = 'new_name'

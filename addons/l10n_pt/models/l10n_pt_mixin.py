@@ -9,7 +9,7 @@ class L10nPtMixin(models.AbstractModel):
     _name = 'l10n_pt.mixin'
     _description = "Portugal Mixin - Contains common things between Portuguese apps"
 
-    l10n_pt_document_number = fields.Char(string='Document number', compute='_compute_l10n_pt_document_number', store=False)
+    l10n_pt_document_number = fields.Char(string='Document number', compute='_compute_l10n_pt_document_number', store=True)
 
     def _compute_l10n_pt_document_number(self):
         raise NotImplementedError("'_compute_l10n_pt_document_number' must be overriden by the inheriting class"
