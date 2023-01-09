@@ -61,13 +61,13 @@ class TestAccountMoveInalterableHash(AccountTestInvoicingCommon):
         expected_error_msg = "You cannot edit the following fields due to restrict mode being activated.*"
 
         with self.assertRaisesRegex(UserError, f"{expected_error_msg} Inalterable hash"):
-            self.move1['inalterable_hash'] = 'fake_hash'
+            self.move1.inalterable_hash = 'fake_hash'
         with self.assertRaisesRegex(UserError, f"{expected_error_msg}Inalteralbile no-gap sequence number"):
-            self.move1['secure_sequence_number'] = 666
+            self.move1.secure_sequence_number = 666
         with self.assertRaisesRegex(UserError, f"{expected_error_msg} Date"):
-            self.move1['date'] = fields.Date.from_string('2022-01-02')
+            self.move1.date = fields.Date.from_string('2022-01-02')
         with self.assertRaisesRegex(UserError, f"{expected_error_msg} Company"):
-            self.move1['company_id'] = 666
+            self.move1.company_id = 666
         with self.assertRaisesRegex(UserError, f"{expected_error_msg} Company.*Date|Date.*Company"):
             self.move1.write({
                 'company_id': 666,
@@ -75,12 +75,12 @@ class TestAccountMoveInalterableHash(AccountTestInvoicingCommon):
             })
 
         with self.assertRaisesRegex(UserError, f"{expected_error_msg} Account"):
-            self.move1.line_ids[0]['account_id'] = self.move1.line_ids[1]['account_id']
+            self.move1.line_ids[0].account_id = self.move1.line_ids[1]['account_id']
         with self.assertRaisesRegex(UserError, f"{expected_error_msg} Partner"):
-            self.move1.line_ids[0]['partner_id'] = 666
+            self.move1.line_ids[0].partner_id = 666
 
         # The following fields are not part of the hash so they can be modified
-        self.move1['name'] = 'new_name'
+        self.move1.name = 'new_name'
         self.move1.line_ids[0]['discount_percentage'] = 10
 
     def test_account_move_hash_integrity_report(self):

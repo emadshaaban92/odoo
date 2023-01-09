@@ -82,17 +82,17 @@ class TestL10nFrPosCertInalterableHash(TestPoSCommon):
         expected_error_msg = "You cannot edit the following fields due to restrict mode being activated.*"
 
         with self.assertRaisesRegex(UserError, f"{expected_error_msg} Responsible"):
-            order['user_id'] = 666
+            order.user_id = 666
         with self.assertRaisesRegex(UserError, f"{expected_error_msg} Sales Journal"):
-            order['sale_journal'] = 666
+            order.sale_journal = 666
         with self.assertRaisesRegex(UserError, f"{expected_error_msg} Quantity"):
-            order.lines[0]['qty'] = 666
+            order.lines[0].qty = 666
         with self.assertRaisesRegex(UserError, f"{expected_error_msg} Notice"):
-            order.lines[0]['notice'] = 'fake notice'
+            order.lines[0].notice = 'fake notice'
 
         # The following fields are not part of the hash so they can be modified
-        order['note'] = 'new note'
-        order.lines[0]['customer_note'] = "some customer note"
+        order.note = 'new note'
+        order.lines[0].customer_note = "some customer note"
 
     def test_l10n_fr_pos_cert_hash_integrity_report(self):
         """Test the hash integrity report"""

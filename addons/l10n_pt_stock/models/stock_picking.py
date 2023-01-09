@@ -15,13 +15,19 @@ class Picking(models.Model):
 
     country_code = fields.Char(related='company_id.country_id.code', depends=['company_id.country_id'])
 
+    # Override l10n_pt.mixin
     @api.depends('picking_type_id.code', 'picking_type_id.sequence_code', 'name')
     def _compute_l10n_pt_document_number(self):
-        for picking in self.filtered(lambda p: p.company_id.country_id.code == 'PT'):
+        for picking in self.filtered(lambda p: (
+            p.company_id.country_id.code == 'PT'
+            and p.picking_type_id.code == 'outgoing'
+            and p.picking_type_id.sequence_code
+            and p.name
+        )):
             picking_type = picking.picking_type_id
             picking_seq_code = picking_type.sequence_code
             picking_seq_number = picking.name.replace(picking_seq_code, '')
-            picking.l10n_pt_document_number = f'{picking_type.code} {picking_seq_code}/{picking_seq_number}'
+            picking.write({'l10n_pt_document_number': f'{picking_type.code} {picking_seq_code}/{picking_seq_number}'})
 
     # Override hash.mixin
     def _get_inalterable_hash_fields(self):
@@ -57,7 +63,7 @@ class Picking(models.Model):
         ]
 
     # Override hash.mixin
-    @api.depends('country_code', 'picking_type_id.code', 'state', 'date_done')
+    @api.depends('country_code', 'picking_type_id.code', 'state', 'date_done', 'l10n_pt_document_number')
     def _compute_must_hash(self):
         super()._compute_must_hash()
         for picking in self:
@@ -66,6 +72,7 @@ class Picking(models.Model):
                 and picking.picking_type_id.code == 'outgoing'
                 and picking.state == 'done'
                 and picking.date_done
+                and picking.l10n_pt_document_number
             )
 
     # Override hash.mixin

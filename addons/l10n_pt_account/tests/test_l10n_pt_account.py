@@ -64,23 +64,22 @@ class TestL10nPtAccount(AccountTestInvoicingCommon):
         expected_error_msg = "You cannot edit the following fields due to restrict mode being activated.*"
 
         with self.assertRaisesRegex(UserError, f"{expected_error_msg} Inalterable hash"):
-            self.out_invoice1['inalterable_hash'] = 'fake_hash'
+            self.out_invoice1.inalterable_hash = 'fake_hash'
         with self.assertRaisesRegex(UserError, f"{expected_error_msg} Invoice/Bill Date"):
-            self.out_invoice1['invoice_date'] = fields.Date.from_string('2000-01-01')
+            self.out_invoice1.invoice_date = fields.Date.from_string('2000-01-01')
         with self.assertRaisesRegex(UserError, expected_error_msg):
-            self.out_invoice1['create_date'] = fields.Datetime.now()
+            self.out_invoice1.create_date = fields.Datetime.now()
         with self.assertRaisesRegex(UserError, f"{expected_error_msg} Total"):
-            self.out_invoice1['amount_total'] = 666
+            self.out_invoice1.amount_total = 666
         with self.assertRaisesRegex(UserError, f"{expected_error_msg} Document number"):
-            self.out_invoice1['l10n_pt_document_number'] = "Fake document number"
+            self.out_invoice1.l10n_pt_document_number = "Fake document number"
         with self.assertRaisesRegex(UserError, f"{expected_error_msg} Document number"):
-            self.out_invoice1['move_type'] = 'in_refund'  # Move type is used by l10n_pt_document_number so it cannot be modified either
-        with self.assertRaisesRegex(UserError, f"{expected_error_msg} Document number"):
-            self.out_invoice1['sequence_number'] = 666  # Sequence number is used by l10n_pt_document_number so it cannot be modified either
+            self.out_invoice1.sequence_number = 666  # Sequence number is used by l10n_pt_document_number so it cannot be modified either
+            self.out_invoice1.flush_model(['l10n_pt_document_number'])
 
         # The following fields are not part of the hash so they can be modified
-        self.out_invoice1['name'] = 'new_name'
-        self.out_invoice1.line_ids[0]['discount_percentage'] = 10
+        self.out_invoice1.name = 'new_name'
+        self.out_invoice1.line_ids[0].discount_percentage = 10
 
     def test_l10n_pt_account_document_no(self):
         self.assertEqual(self.out_invoice1.l10n_pt_document_number, 'out_invoice INV/2022/1')

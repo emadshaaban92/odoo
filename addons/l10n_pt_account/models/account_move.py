@@ -8,10 +8,27 @@ class AccountMove(models.Model):
     _name = 'account.move'
     _inherit = ['account.move', 'l10n_pt.mixin']
 
+    # Override l10n_pt.mixin
     @api.depends('move_type', 'sequence_prefix', 'sequence_number')
     def _compute_l10n_pt_document_number(self):
-        for move in self.filtered(lambda m: m.company_id.account_fiscal_country_id.code == 'PT'):
-            move.l10n_pt_document_number = f"{move.move_type} {move.sequence_prefix}{move.sequence_number}"
+        for move in self.filtered(lambda m: (
+            m.company_id.account_fiscal_country_id.code == 'PT'
+            and m.move_type in ('out_invoice', 'out_refund', 'in_invoice', 'in_refund')
+            and m.sequence_prefix
+            and m.sequence_number
+        )):
+            move.write({'l10n_pt_document_number': f"{move.move_type} {move.sequence_prefix}{move.sequence_number}"})
+
+    # Override hash.mixin
+    @api.depends('state', 'l10n_pt_document_number')
+    def _compute_must_hash(self):
+        for move in self:
+            move.must_hash = move.must_hash or (
+                move.state == 'posted'
+                and move.restrict_mode_hash_table
+                and move.invoice_date
+                and move.l10n_pt_document_number
+            )
 
     # Override hash.mixin
     def _get_previous_record_domain(self):

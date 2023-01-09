@@ -107,18 +107,19 @@ class TestL10nPtStock(TestStockCommon):
         expected_error_msg = "You cannot edit the following fields due to restrict mode being activated.*"
 
         with self.assertRaisesRegex(UserError, f"{expected_error_msg} Inalterable hash"):
-            picking['inalterable_hash'] = 'fake_hash'
+            picking.inalterable_hash = 'fake_hash'
         with self.assertRaisesRegex(UserError, f"{expected_error_msg} Date of Transfer"):
-            picking['date_done'] = fields.Date.from_string('2000-01-01')
+            picking.date_done = fields.Date.from_string('2000-01-01')
         with self.assertRaisesRegex(UserError, expected_error_msg):
-            picking['create_date'] = fields.Datetime.now()
+            picking.create_date = fields.Datetime.now()
         with self.assertRaisesRegex(UserError, f"{expected_error_msg} Document number"):
-            picking['l10n_pt_document_number'] = "Fake document number"
+            picking.l10n_pt_document_number = "Fake document number"
         with self.assertRaisesRegex(UserError, f"{expected_error_msg} Document number"):
-            picking['name'] = "Fake name"  # Name is used by l10n_pt_document_number so it cannot be modified either
+            picking.name = "Fake name"  # Name is used by l10n_pt_document_number so it cannot be modified either
+            picking.flush_model(['l10n_pt_document_number'])
 
         # The following field is not part of the hash so it can be modified
-        picking['note'] = 'new note'
+        picking.note = 'new note'
 
     def test_l10n_pt_stock_document_no(self):
         for expected in ['outgoing OUT/00001', 'outgoing OUT/00002', 'outgoing OUT/00003']:
