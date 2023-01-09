@@ -1,10 +1,12 @@
 /** @odoo-module */
 
 import PosComponent from "@point_of_sale/js/PosComponent";
-import Registries from "@point_of_sale/js/Registries";
 import { renderToString } from "@web/core/utils/render";
 
-class SaleDetailsButton extends PosComponent {
+export class SaleDetailsButton extends PosComponent {
+    static template = "SaleDetailsButton";
+    static components = {};
+
     async onClick() {
         // IMPROVEMENT: Perhaps put this logic in a parent component
         // so that for unit testing, we can check if this simple
@@ -30,8 +32,3 @@ class SaleDetailsButton extends PosComponent {
         }
     }
 }
-SaleDetailsButton.template = "SaleDetailsButton";
-
-Registries.Component.add(SaleDetailsButton);
-
-export default SaleDetailsButton;

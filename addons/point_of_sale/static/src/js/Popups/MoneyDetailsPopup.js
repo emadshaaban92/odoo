@@ -2,10 +2,14 @@
 
 import AbstractAwaitablePopup from "@point_of_sale/js/Popups/AbstractAwaitablePopup";
 import Registries from "@point_of_sale/js/Registries";
+import { CurrencyAmount } from "./../Misc/CurrencyAmount";
 
 const { useState } = owl;
 
-class MoneyDetailsPopup extends AbstractAwaitablePopup {
+export class MoneyDetailsPopup extends AbstractAwaitablePopup {
+    static template = "MoneyDetailsPopup";
+    static components = { CurrencyAmount };
+
     setup() {
         super.setup();
         this.currency = this.env.pos.currency;
@@ -51,8 +55,3 @@ class MoneyDetailsPopup extends AbstractAwaitablePopup {
         };
     }
 }
-
-MoneyDetailsPopup.template = "MoneyDetailsPopup";
-Registries.Component.add(MoneyDetailsPopup);
-
-export default MoneyDetailsPopup;

@@ -1,7 +1,6 @@
 /** @odoo-module */
 
 import PosComponent from "@point_of_sale/js/PosComponent";
-import Registries from "@point_of_sale/js/Registries";
 
 const { useRef } = owl;
 
@@ -11,7 +10,7 @@ const { useRef } = owl;
  * `order-receipt` in the template of the Component that extends
  * this abstract component.
  */
-class AbstractReceiptScreen extends PosComponent {
+export class AbstractReceiptScreen extends PosComponent {
     setup() {
         super.setup();
         this.orderReceipt = useRef("order-receipt");
@@ -56,7 +55,3 @@ class AbstractReceiptScreen extends PosComponent {
         }
     }
 }
-
-Registries.Component.add(AbstractReceiptScreen);
-
-export default AbstractReceiptScreen;

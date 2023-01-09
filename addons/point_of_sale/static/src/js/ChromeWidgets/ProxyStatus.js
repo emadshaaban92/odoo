@@ -1,12 +1,14 @@
 /** @odoo-module */
 
 import PosComponent from "@point_of_sale/js/PosComponent";
-import Registries from "@point_of_sale/js/Registries";
 
 const { onMounted, onWillUnmount, useState } = owl;
 
 // Previously ProxyStatusWidget
-class ProxyStatus extends PosComponent {
+export class ProxyStatus extends PosComponent {
+    static template = "ProxyStatus";
+    static components = {};
+
     setup() {
         super.setup();
         const initialProxyStatus = this.env.proxy.get("status");
@@ -69,8 +71,3 @@ class ProxyStatus extends PosComponent {
         }
     }
 }
-ProxyStatus.template = "ProxyStatus";
-
-Registries.Component.add(ProxyStatus);
-
-export default ProxyStatus;

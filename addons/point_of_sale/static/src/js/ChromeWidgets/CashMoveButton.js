@@ -1,7 +1,6 @@
 /** @odoo-module */
 
 import PosComponent from "@point_of_sale/js/PosComponent";
-import Registries from "@point_of_sale/js/Registries";
 import { _t } from "web.core";
 import { renderToString } from "@web/core/utils/render";
 
@@ -10,7 +9,10 @@ const TRANSLATED_CASH_MOVE_TYPE = {
     out: _t("out"),
 };
 
-class CashMoveButton extends PosComponent {
+export class CashMoveButton extends PosComponent {
+    static template = "point_of_sale.CashMoveButton";
+    static components = {};
+
     async onClick() {
         const { confirmed, payload } = await this.showPopup("CashMovePopup");
         if (!confirmed) {
@@ -55,8 +57,3 @@ class CashMoveButton extends PosComponent {
         return result;
     }
 }
-CashMoveButton.template = "point_of_sale.CashMoveButton";
-
-Registries.Component.add(CashMoveButton);
-
-export default CashMoveButton;

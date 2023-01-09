@@ -1,12 +1,15 @@
 /** @odoo-module */
 
 import AbstractAwaitablePopup from "@point_of_sale/js/Popups/AbstractAwaitablePopup";
-import Registries from "@point_of_sale/js/Registries";
+import { SaleDetailsButton } from "./../ChromeWidgets/SaleDetailsButton";
 import { identifyError } from "@point_of_sale/app/error_handlers/error_handlers";
 import { ConnectionLostError } from "@web/core/network/rpc_service";
 const { useState } = owl;
 
-class ClosePosPopup extends AbstractAwaitablePopup {
+export class ClosePosPopup extends AbstractAwaitablePopup {
+    static template = "ClosePosPopup";
+    static components = { SaleDetailsButton };
+
     setup() {
         super.setup();
         this.manualInputCashCount = false;
@@ -183,8 +186,3 @@ class ClosePosPopup extends AbstractAwaitablePopup {
         return pm.type == "bank" && pm.number !== 0;
     }
 }
-
-ClosePosPopup.template = "ClosePosPopup";
-Registries.Component.add(ClosePosPopup);
-
-export default ClosePosPopup;

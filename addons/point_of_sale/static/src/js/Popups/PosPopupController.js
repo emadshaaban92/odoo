@@ -26,6 +26,8 @@ import { useBus } from "@web/core/utils/hooks";
  * @typedef {{ name: string, component: AbstractAwaitablePopup, props: BasePopupProps, key: string }} Popup
  */
 class PosPopupController extends PosComponent {
+    static template = "point_of_sale.PosPopupController";
+
     setup() {
         super.setup();
         useBus(this.env.posbus, "show-popup", this._showPopup);
@@ -120,7 +122,3 @@ class PosPopupController extends PosComponent {
         return this.topPopup === popup || popup.props.keepBehind;
     }
 }
-PosPopupController.template = "point_of_sale.PosPopupController";
-Registries.Component.add(PosPopupController);
-
-export default PosPopupController;

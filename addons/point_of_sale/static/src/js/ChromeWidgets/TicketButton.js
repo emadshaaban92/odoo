@@ -2,9 +2,11 @@
 
 import { usePos } from "@point_of_sale/app/pos_store";
 import PosComponent from "@point_of_sale/js/PosComponent";
-import Registries from "@point_of_sale/js/Registries";
 
-class TicketButton extends PosComponent {
+export class TicketButton extends PosComponent {
+    static template = "TicketButton";
+    static components = {};
+
     setup() {
         this.pos = usePos();
     }
@@ -26,8 +28,3 @@ class TicketButton extends PosComponent {
         }
     }
 }
-TicketButton.template = "TicketButton";
-
-Registries.Component.add(TicketButton);
-
-export default TicketButton;

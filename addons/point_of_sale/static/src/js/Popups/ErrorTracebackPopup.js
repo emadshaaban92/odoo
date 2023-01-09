@@ -5,7 +5,19 @@ import Registries from "@point_of_sale/js/Registries";
 import { _lt } from "@web/core/l10n/translation";
 
 // formerly ErrorTracebackPopupWidget
-class ErrorTracebackPopup extends ErrorPopup {
+export class ErrorTracebackPopup extends ErrorPopup {
+    static template = "ErrorTracebackPopup";
+    static defaultProps = {
+        confirmText: _lt("Ok"),
+        cancelText: _lt("Cancel"),
+        confirmKey: false,
+        title: _lt("Error with Traceback"),
+        body: "",
+        exitButtonIsShown: false,
+        exitButtonText: _lt("Exit Pos"),
+        exitButtonTrigger: "close-pos",
+    };
+
     get tracebackUrl() {
         const blob = new Blob([this.props.body]);
         const URL = window.URL || window.webkitURL;
@@ -27,18 +39,3 @@ class ErrorTracebackPopup extends ErrorPopup {
         );
     }
 }
-ErrorTracebackPopup.template = "ErrorTracebackPopup";
-ErrorTracebackPopup.defaultProps = {
-    confirmText: _lt("Ok"),
-    cancelText: _lt("Cancel"),
-    confirmKey: false,
-    title: _lt("Error with Traceback"),
-    body: "",
-    exitButtonIsShown: false,
-    exitButtonText: _lt("Exit Pos"),
-    exitButtonTrigger: "close-pos",
-};
-
-Registries.Component.add(ErrorTracebackPopup);
-
-export default ErrorTracebackPopup;
