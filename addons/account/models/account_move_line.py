@@ -2474,7 +2474,7 @@ class AccountMoveLine(models.Model):
         return self.move_id
 
     # Override sub.hash.mixin
-    def _get_fields_used_by_hash(self):
+    def _get_inalterable_fields(self):
         return 'debit', 'credit', 'account_id', 'partner_id'
 
     # -------------------------------------------------------------------------

@@ -22,9 +22,9 @@ class Picking(models.Model):
             picking.l10n_pt_document_number = f'{picking_type.code} {picking_type.sequence_code}/{picking.secure_sequence_number}'
 
     # Override hash.mixin
-    def _get_fields_used_by_hash(self):
+    def _get_inalterable_fields(self):
         if self.company_id.country_id.code != 'PT':
-            return super()._get_fields_used_by_hash()
+            return super()._get_inalterable_fields()
         return 'date_done', 'create_date', 'secure_sequence_number'
 
     # Override hash.mixin

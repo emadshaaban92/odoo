@@ -21,8 +21,8 @@ class HashMixin(models.AbstractModel):
     9. If the inalterable_hash field is not set yet, it will be by calling the _create_hash_string method
     10. The _create_hash_string method will compute the hash of the current record using:
         - the hash of the previous record in the secure sequence chain
-        - the fields defined in _get_fields_used_by_hash
-    11. If the inalterable_hash, the secure_sequence_number or any of the fields defined in _get_fields_used_by_hash is modified, an error will be raised
+        - the fields defined in _get_inalterable_fields
+    11. If the inalterable_hash, the secure_sequence_number or any of the fields defined in _get_inalterable_fields is modified, an error will be raised
     """
     _name = 'hash.mixin'
     _description = "Hash Mixin"
@@ -74,7 +74,7 @@ class HashMixin(models.AbstractModel):
         """
         raise NotImplementedError("'_get_previous_record_domain' must be overriden by the inheriting class")
 
-    def _get_fields_used_by_hash(self):
+    def _get_inalterable_fields(self):
         """
         This method must be overriden by the inheriting class.
         :returns: the list of fields used to compute the hash
@@ -83,7 +83,7 @@ class HashMixin(models.AbstractModel):
         (otherwise the newly computed hash would be different)
         E.g.: ('create_date', 'done_date', 'name')
         """
-        raise NotImplementedError("'_get_fields_used_by_hash' must be overriden by the inheriting class")
+        raise NotImplementedError("'_get_inalterable_fields' must be overriden by the inheriting class")
 
     @api.depends('must_hash')
     def _compute_secure_sequence_number(self):
@@ -127,7 +127,7 @@ class HashMixin(models.AbstractModel):
     def _create_hash_string(self, previous_hash=None):
         """
         :param previous_hash: the hash of the previous record in the secure sequence chain
-        :returns: the hash computed using the previous hash and the fields defined in _get_fields_used_by_hash
+        :returns: the hash computed using the previous hash and the fields defined in _get_inalterable_fields
         :rtype: str
         """
         self.ensure_one()
@@ -164,11 +164,11 @@ class HashMixin(models.AbstractModel):
         """
         self.ensure_one()
         result = {}
-        for field in self._get_fields_used_by_hash():
+        for field in self._get_inalterable_fields():
             result[field] = self._get_field_as_string(self, field)
 
         for line in lines:
-            for field in line._get_fields_used_by_hash():
+            for field in line._get_inalterable_fields():
                 k = 'line_%d_%s' % (line.id, field)
                 result[k] = self._get_field_as_string(line, field)
         return result
@@ -185,7 +185,7 @@ class HashMixin(models.AbstractModel):
     def write(self, vals):
         for record in self:
             if record.inalterable_hash:
-                inalterable_fields = set(record._get_fields_used_by_hash()).union({'inalterable_hash', 'secure_sequence_number'})
+                inalterable_fields = set(record._get_inalterable_fields()).union({'inalterable_hash', 'secure_sequence_number'})
                 violated_fields = ", ".join([
                     record._fields[violated_field].string
                     for violated_field
@@ -202,7 +202,7 @@ class SubHashMixin(models.AbstractModel):
     In such case, the base model must inherit from HashMixin and the sub-models must inherit from SubHashMixin.
     For instance, if we want account.move to use hash.mixin, and we want to use some fields of account.move.line in
     the hash of account.move, then account.move.line must inherit from sub.hash.mixin and implement the following methods.
-    This allows us to verify that, if the parent model is hashed, then the fields returned by _get_fields_used_by_hash()
+    This allows us to verify that, if the parent model is hashed, then the fields returned by _get_inalterable_fields()
     cannot be modified.
     """
     _name = 'sub.hash.mixin'
@@ -217,18 +217,18 @@ class SubHashMixin(models.AbstractModel):
         """
         raise NotImplementedError("'get_parent' must be overriden by the inheriting class")
 
-    def _get_fields_used_by_hash(self):
+    def _get_inalterable_fields(self):
         """
         This method must be overriden by the inheriting class.
         :returns: a tuple of fields which are used to compute the hash of the parent model
         in `HashMixin._get_dict_fields_values_to_hash`
         E.g.: ('create_date', 'debit', 'done_date')
         """
-        raise NotImplementedError("'_get_fields_used_by_hash' must be overriden by the inheriting class")
+        raise NotImplementedError("'_get_inalterable_fields' must be overriden by the inheriting class")
 
     def write(self, vals):
         for record in self:
-            violated_fields = set(vals).intersection(record._get_fields_used_by_hash())
+            violated_fields = set(vals).intersection(record._get_inalterable_fields())
             violated_fields = ", ".join([record._fields[violated_field].string for violated_field in violated_fields])
             if record._get_hash_parent().inalterable_hash and violated_fields:
                 raise UserError(_("You cannot edit the following fields due to restrict mode being activated: %s.", violated_fields))

@@ -35,9 +35,9 @@ class AccountMove(models.Model):
         ]
 
     # Override hash.mixin
-    def _get_fields_used_by_hash(self):
+    def _get_inalterable_fields(self):
         if self.company_id.account_fiscal_country_id.code != 'PT':
-            return super()._get_fields_used_by_hash()
+            return super()._get_inalterable_fields()
         return 'invoice_date', 'create_date', 'amount_total'
 
     # Override hash.mixin
