@@ -263,27 +263,27 @@ class TestSurveyCommon(SurveyCase):
         """ Create test data: a survey with some pre-defined questions and various test users for ACL """
         cls.survey_manager = mail_new_test_user(
             cls.env, name='Gustave Doré', login='survey_manager', email='survey.manager@example.com',
-            groups='survey.group_survey_manager,base.group_user'
+            groups='survey.group_survey_manager,base.group_user',
         )
 
         cls.survey_user = mail_new_test_user(
             cls.env, name='Lukas Peeters', login='survey_user', email='survey.user@example.com',
-            groups='survey.group_survey_user,base.group_user'
+            groups='survey.group_survey_user,base.group_user',
         )
 
         cls.user_emp = mail_new_test_user(
             cls.env, name='Eglantine Employee', login='user_emp', email='employee@example.com',
-            groups='base.group_user', password='user_emp'
+            groups='base.group_user', password='user_emp',
         )
 
         cls.user_portal = mail_new_test_user(
             cls.env, name='Patrick Portal', login='user_portal', email='portal@example.com',
-            groups='base.group_portal'
+            groups='base.group_portal',
         )
 
         cls.user_public = mail_new_test_user(
             cls.env, name='Pauline Public', login='user_public', email='public@example.com',
-            groups='base.group_public'
+            groups='base.group_public',
         )
 
         cls.customer = cls.env['res.partner'].create({

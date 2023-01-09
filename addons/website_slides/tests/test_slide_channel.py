@@ -157,7 +157,7 @@ class TestSlidesManagement(slides_common.SlidesCase):
             'slide_id': slide_1.id,
             'channel_id': self.channel.id,
             'partner_id': self.user_portal.partner_id.id,
-            'completed': True
+            'completed': True,
         })
 
         channel_partner.invalidate_model()

@@ -28,7 +28,7 @@ class TestCourseCertificationRemoveMembership(TestSurveyCommon):
             'enroll': 'public',
             'visibility': 'public',
             'is_published': True,
-            'karma_gen_channel_finish': 10
+            'karma_gen_channel_finish': 10,
         })
 
         # Step 2: link the certification to a slide of category 'certification'
@@ -43,7 +43,9 @@ class TestCourseCertificationRemoveMembership(TestSurveyCommon):
     def setUp(self):
         super().setUp()
         self._add_question(
-            None, 'Question 1', 'simple_choice',
+            None,
+            'Question 1',
+            'simple_choice',
             sequence=1,
             survey_id=self.certification.id,
             labels=[
@@ -52,7 +54,9 @@ class TestCourseCertificationRemoveMembership(TestSurveyCommon):
             ])
 
         self._add_question(
-            None, 'Question 2', 'simple_choice',
+            None,
+            'Question 2',
+            'simple_choice',
             sequence=2,
             survey_id=self.certification.id,
             labels=[
@@ -72,7 +76,7 @@ class TestCourseCertificationRemoveMembership(TestSurveyCommon):
 
         channel_partner = self.env['slide.channel.partner'].search([
             ('channel_id', 'in', self.channel.ids),
-            ('partner_id', 'in', slide_partner.partner_id.ids)
+            ('partner_id', 'in', slide_partner.partner_id.ids),
         ])
         self.slide_certification.with_user(self.user_portal)._generate_certification_url()
 

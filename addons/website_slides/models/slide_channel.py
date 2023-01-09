@@ -49,36 +49,34 @@ class ChannelUsersRelation(models.Model):
     ]
 
     def _compute_next_slide_id(self):
+        self.flush_model()
         query = """
-            SELECT DISTINCT ON (partner_id, channel_id)
-                SS.id AS slide_id,
-                SS.channel_id AS channel_id,
-                p.id AS partner_id
-            FROM
-                slide_slide SS
-            JOIN res_partner p
-                 ON p.id IN %s
-            WHERE
-                SS.channel_id IN %s
+            SELECT DISTINCT ON (SCP.id)
+                SCP.id AS id,
+                SS.id AS slide_id
+            FROM slide_channel_partner SCP
+            JOIN slide_slide SS
+                ON SS.channel_id = SCP.channel_id
                 AND SS.is_published = TRUE
                 AND SS.active = TRUE
                 AND NOT EXISTS (
                     SELECT 1
                       FROM slide_slide_partner
                      WHERE slide_id = SS.id
-                       AND partner_id = p.id
+                       AND partner_id = SCP.partner_id
                        AND completed = TRUE
                 )
-            ORDER BY partner_id, channel_id, SS.sequence
+            WHERE SCP.id IN %s
+            ORDER BY SCP.id, SS.sequence, SS.id
         """
-        self.env.cr.execute(query, [tuple(self.mapped('partner_id').ids), tuple(self.mapped('channel_id').ids)])
+        self.env.cr.execute(query, [tuple(self.ids)])
         data = {
-            (line['channel_id'], line['partner_id']): line['slide_id']
+            line['id']: line['slide_id']
             for line in self.env.cr.dictfetchall()
         }
 
         for sc in self:
-            sc.next_slide_id = data.get((sc.channel_id.id, sc.partner_id.id), False)
+            sc.next_slide_id = data.get(sc.id, False)
 
     def _recompute_completion(self):
         read_group_res = self.env['slide.slide.partner'].sudo()._read_group(
@@ -710,13 +708,14 @@ class Channel(models.Model):
         if to_join:
             existing_channel_partners = self.env['slide.channel.partner'].with_context(active_test=False).sudo().search([
                 ('channel_id', 'in', self.ids),
-                ('partner_id', 'in', target_partners.ids)
+                ('partner_id', 'in', target_partners.ids),
             ])
             existing_map = dict((cid, list()) for cid in self.ids)
             for item in existing_channel_partners:
                 existing_map[item.channel_id.id].append(item.partner_id.id)
 
-            archived_members = existing_channel_partners.filtered(lambda channel_partner: not channel_partner.active)
+            archived_members = existing_channel_partners.filtered(
+                lambda channel_partner: not channel_partner.active)
             if archived_members:
                 archived_members.action_unarchive()
                 self._update_users_karma(archived_members.partner_id.ids, joining=True)
