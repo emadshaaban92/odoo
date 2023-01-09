@@ -455,6 +455,7 @@ class TestComposerInternals(TestMailComposer):
             self.assertEqual(composer.record_name, 'CustomName')
 
     @users('employee')
+<<<<<<< HEAD
     @mute_logger('odoo.models.unlink')
     def test_mail_composer_recipients(self):
         """ Test content management (partner_ids, reply_to) in both comment and
@@ -594,6 +595,11 @@ class TestComposerInternals(TestMailComposer):
 
     @users('employee')
     @mute_logger('odoo.tests', 'odoo.addons.mail.models.mail_mail', 'odoo.models.unlink')
+||||||| parent of 60a5cb27557 (temp)
+    @mute_logger('odoo.tests', 'odoo.addons.mail.models.mail_mail')
+=======
+    @mute_logger('odoo.tests', 'odoo.addons.mail.models.mail_mail', 'odoo.models.unlink')
+>>>>>>> 60a5cb27557 (temp)
     def test_mail_composer_parent(self):
         """ Test specific management in comment mode when having parent_id set:
         record_name, subject, parent's partners. """
@@ -612,7 +618,7 @@ class TestComposerInternals(TestMailComposer):
         self.assertEqual(composer.subject, 'Re: %s' % self.test_record.name)
 
     @users('user_rendering_restricted')
-    @mute_logger('odoo.tests', 'odoo.addons.mail.models.mail_mail', 'odoo.models.unlink')
+    @mute_logger('odoo.tests', 'odoo.addons.base.models.ir_rule', 'odoo.addons.mail.models.mail_mail', 'odoo.models.unlink')
     def test_mail_composer_rights_attachments(self):
         """ Ensure a user without write access to a template can send an email"""
         template_1 = self.template.copy({
