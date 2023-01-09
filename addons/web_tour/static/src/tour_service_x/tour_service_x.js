@@ -152,7 +152,7 @@ const tourState = {
         const savedValue = browser.localStorage.getItem(prefixedName);
         if (key === "done") {
             return savedValue === "true";
-        } else if (key === "currentIndex" || key === "interval") {
+        } else if (key === "currentIndex" || key === "interval" || key === "stepDelay") {
             return parseInt(savedValue, 10);
         } else {
             return savedValue;
@@ -178,6 +178,33 @@ const tourState = {
     },
 };
 
+function describeStep(step) {
+    return step.content ? `${step.content} (trigger: ${step.trigger})` : step.trigger;
+}
+
+function describeFailedStep(step) {
+    // TODO-JCB: properly describe failed step
+    // console.log("_check_for_tooltip");
+    // console.log("- modal_displayed: " + this.$modal_displayed.length);
+    // console.log("- trigger '" + tip.trigger + "': " + $trigger.length);
+    // console.log("- visible trigger '" + tip.trigger + "': " + $visible_trigger.length);
+    // if ($extra_trigger !== undefined) {
+    //     console.log("- extra_trigger '" + tip.extra_trigger + "': " + $extra_trigger.length);
+    //     console.log("- visible extra_trigger '" + tip.extra_trigger + "': " + extra_trigger);
+    // }
+    return ["content", "trigger", "alt_trigger", "extra_trigger", "skip_trigger"]
+        .reduce((str, key) => {
+            if (key in step) {
+                return `${str}\n${key}: ${step[key]}`;
+            } else {
+                return str;
+            }
+        }, "")
+        .trim();
+}
+
+let tourTimeout;
+
 /**
  * Augments `step` for a tour for 'auto' (run) mode.
  * @param {*} step
@@ -185,7 +212,7 @@ const tourState = {
  * @returns
  */
 function augmentStepAuto(macroDesc, [stepIndex, step], options) {
-    const { mode } = options;
+    const { mode, stepDelay } = options;
 
     if (shouldOmit(step, mode)) {
         return [];
@@ -194,14 +221,15 @@ function augmentStepAuto(macroDesc, [stepIndex, step], options) {
     let skipAction = false;
     return [
         {
-            ...step,
-            ...{
-                action: () => {
-                    console.log(step.trigger);
-                    skipAction = false;
-                },
+            action: () => {
+                skipAction = false;
+                clearTimeout(tourTimeout);
+                tourTimeout = setTimeout(() => {
+                    console.error(describeFailedStep(step));
+                }, step.timeout || 10000 + stepDelay);
             },
         },
+        { ...step },
         {
             trigger: () => {
                 const { triggerEl, altTriggerEl, extraTriggerOkay, skipTriggerEl } = queryStep(
@@ -258,6 +286,7 @@ function augmentStepAuto(macroDesc, [stepIndex, step], options) {
         {
             action: () => {
                 tourState.set(macroDesc.name, "currentIndex", stepIndex + 1);
+                console.log(`Tour ${macroDesc.name}: ${describeStep(step)}`);
             },
         },
     ];
@@ -644,6 +673,7 @@ export const tourService = {
             const tourDesc = tour_legacy.tourMap[tourName];
             const mode = tourState.get(tourName, "mode");
             const interval = tourState.get(tourName, "interval");
+            const stepDelay = tourState.get(tourName, "stepDelay");
             const augmentedMacro = augmentMacro(
                 Object.assign(tourDesc, { interval: mode === "manual" ? 0 : interval }),
                 mode === "manual" ? augmentStepManual : augmentStepAuto,
@@ -652,6 +682,7 @@ export const tourService = {
                     pointerMethods,
                     mode,
                     intersection,
+                    stepDelay,
                 }
             );
             // The pointer points to the trigger and waits for the user to do the action.
@@ -688,7 +719,8 @@ export const tourService = {
         }
 
         odoo.startTour = (name, stepDelay) => {
-            run(name, { mode: "auto", interval: stepDelay });
+            tourState.set(name, "stepDelay", stepDelay || 0);
+            run(name, { mode: "auto" });
         };
         odoo.isTourReady = makeIsTourReady();
 
