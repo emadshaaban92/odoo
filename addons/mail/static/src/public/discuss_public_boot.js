@@ -3,10 +3,7 @@
 import { data } from "mail.discuss_public_channel_template";
 import { messagingToLegacyEnv } from "@mail/utils/make_messaging_to_legacy_env";
 
-import { DialogManagerContainer } from "@mail/components/dialog_manager_container/dialog_manager_container";
 import { DiscussPublicViewContainer } from "@mail/components/discuss_public_view_container/discuss_public_view_container";
-import { PopoverManagerContainer } from "@mail/components/popover_manager_container/popover_manager_container";
-import { messagingService } from "@mail/services/messaging_service";
 
 import { MainComponentsContainer } from "@web/core/main_components_container";
 import { registry } from "@web/core/registry";
@@ -47,7 +44,6 @@ Component.env = legacyEnv;
     serviceRegistry.add("legacy_crash_manager", makeLegacyCrashManagerService(Component.env));
     serviceRegistry.add("legacy_dialog_mapping", makeLegacyDialogMappingService(Component.env));
 
-    serviceRegistry.add("messaging", messagingService);
     serviceRegistry.add("messagingValues", messagingValuesService);
 
     registry
@@ -59,9 +55,6 @@ Component.env = legacyEnv;
         Component: DiscussPublicViewContainer,
         props: { data },
     });
-    // needed by the attachment viewer
-    mainComponentsRegistry.add("DialogManagerContainer", { Component: DialogManagerContainer });
-    mainComponentsRegistry.add("PopoverManagerContainer", { Component: PopoverManagerContainer });
 
     await legacySession.is_bound;
     Object.assign(odoo, {

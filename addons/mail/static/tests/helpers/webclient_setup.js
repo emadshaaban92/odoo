@@ -7,20 +7,14 @@ import { makeMultiTabToLegacyEnv } from "@bus/services/legacy/make_multi_tab_to_
 import { makeBusServiceToLegacyEnv } from "@bus/services/legacy/make_bus_service_to_legacy_env";
 import { makeFakePresenceService } from "@bus/../tests/helpers/mock_services";
 
-import { DialogManagerContainer } from "@mail/components/dialog_manager_container/dialog_manager_container";
-import { PopoverManagerContainer } from "@mail/components/popover_manager_container/popover_manager_container";
 import { ActivityMenu } from "@mail/new/activity/activity_menu";
 import { ChatWindowContainer } from "@mail/new/chat/chat_window_container";
 import { MessagingMenu } from "@mail/new/messaging_menu/messaging_menu";
-import { messagingService as newMessagingService } from "@mail/new/core/messaging_service";
+import { messagingService } from "@mail/new/core/messaging_service";
 import { attachmentViewerService } from "@mail/new/attachment_viewer/attachment_viewer_service";
-import { messagingService } from "@mail/services/messaging_service";
-import { systrayService } from "@mail/services/systray_service";
-import { makeMessagingToLegacyEnv } from "@mail/utils/make_messaging_to_legacy_env";
 
 import { fileUploadService } from "@web/core/file_upload/file_upload_service";
 import { registry } from "@web/core/registry";
-import { patchWithCleanup } from "@web/../tests/helpers/utils";
 import { createWebClient } from "@web/../tests/webclient/helpers";
 import { effectService } from "@web/core/effects/effect_service";
 import { soundEffects } from "@mail/new/core/sound_effects_service";
@@ -62,9 +56,7 @@ function setupMainComponentRegistry() {
     mainComponentRegistry.add("mail.ChatWindowContainer", {
         Component: ChatWindowContainer,
     });
-    mainComponentRegistry.add("DialogManagerContainer", { Component: DialogManagerContainer });
     registry.category("actions").add("mail.action_discuss", DiscussClientAction);
-    mainComponentRegistry.add("PopoverManagerContainer", { Component: PopoverManagerContainer });
 }
 
 /**
@@ -79,12 +71,6 @@ function setupMainComponentRegistry() {
  */
 function setupMessagingServiceRegistries({ loadingBaseDelayDuration = 0, messagingBus, services }) {
     const serviceRegistry = registry.category("services");
-
-    patchWithCleanup(messagingService, {
-        async _startModelManager() {
-            // never start model manager since it interferes with tests.
-        },
-    });
 
     const messagingValues = {
         start() {
@@ -109,17 +95,15 @@ function setupMessagingServiceRegistries({ loadingBaseDelayDuration = 0, messagi
         "mail.thread": threadService,
         "mail.message": messageService,
         "mail.chat_window": chatWindowService,
-        "mail.messaging": newMessagingService,
+        "mail.messaging": messagingService,
         "mail.rtc": rtcService,
         "mail.soundEffects": soundEffects,
         "mail.userSettings": userSettingsService,
-        messaging: messagingService,
         attachmentViewer: attachmentViewerService,
         messagingValues,
         presence: makeFakePresenceService({
             isOdooFocused: () => true,
         }),
-        systrayService,
         multi_tab: multiTabService,
         ...services,
     };
@@ -136,9 +120,6 @@ function setupMessagingServiceRegistries({ loadingBaseDelayDuration = 0, messagi
     registry
         .category("wowlToLegacyServiceMappers")
         .add("multi_tab_to_legacy_env", makeMultiTabToLegacyEnv);
-    registry
-        .category("wowlToLegacyServiceMappers")
-        .add("messaging_service_to_legacy_env", makeMessagingToLegacyEnv);
 
     registry.category("systray").add(
         "mail.activity_menu",

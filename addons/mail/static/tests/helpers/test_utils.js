@@ -410,7 +410,6 @@ async function start(param0 = {}) {
         click: getClick({ afterNextRender }),
         env: webClient.env,
         insertText,
-        messaging: webClient.env.services.messaging.modelManager.messaging,
         mouseenter: getMouseenter({ afterNextRender }),
         openDiscuss: getOpenDiscuss(webClient, discuss),
         openView,
