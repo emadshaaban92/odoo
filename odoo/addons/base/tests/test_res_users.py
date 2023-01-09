@@ -2,7 +2,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from odoo.addons.base.models.res_users import is_selection_groups, get_selection_groups
-from odoo.tests.common import TransactionCase, Form, tagged
+from odoo.tests.common import TransactionCase, Form, tagged, new_test_user
 
 
 class TestUsers(TransactionCase):
@@ -217,3 +217,12 @@ class TestUsers2(TransactionCase):
 
         setattr(user_form, group_field_name, group_public.id)
         self.assertTrue(user_form.share, 'The groups_id onchange should have been triggered')
+
+    def test_context_get_lang_false(self):
+        user = new_test_user(self.env, 'jackoneill')
+        user = user.with_user(user)
+
+        self.assertEqual(user.context_get()['lang'], 'en_US')
+
+        user.lang = False
+        self.assertEqual(user.context_get()['lang'], 'en_US')

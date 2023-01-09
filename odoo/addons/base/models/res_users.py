@@ -664,9 +664,8 @@ class Users(models.Model):
         # ensure the language is set and is compatible with the web client
         lang = context.get('lang') or (request and request.default_lang()) or DEFAULT_LANG
         if lang == 'ar_AR':
-            context['lang'] = 'ar'
-        if lang in babel.core.LOCALE_ALIASES:
-            context['lang'] = babel.core.LOCALE_ALIASES[lang]
+            lang = 'ar'
+        context['lang'] = babel.core.LOCALE_ALIASES.get(lang, lang)
 
         # ensure uid is set
         context['uid'] = self.env.uid
