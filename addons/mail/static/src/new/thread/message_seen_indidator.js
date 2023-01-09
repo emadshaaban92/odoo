@@ -20,11 +20,14 @@ export class MessageSeenIndicator extends Component {
     }
 
     get hasEveryoneSeen() {
-        const otherPartnerSeenInfosDidNotSee = this.props.thread.partnerSeenInfos.filter(
-            (partnerSeenInfo) =>
-                partnerSeenInfo.partner.id !== this.props.message.author.id &&
-                (!partnerSeenInfo.lastSeenMessage ||
-                    partnerSeenInfo.lastSeenMessage.id < this.props.message.id)
+        const otherPartnerSeenInfosDidNotSee = [...this.props.thread.partnerSeenInfos].filter(
+            (partnerSeenInfo) => {
+                return (
+                    partnerSeenInfo.partner.id !== this.props.message.author.id &&
+                    (!partnerSeenInfo.lastSeenMessage ||
+                        partnerSeenInfo.lastSeenMessage.id < this.props.message.id)
+                );
+            }
         );
         return otherPartnerSeenInfosDidNotSee.length === 0;
     }
@@ -37,7 +40,7 @@ export class MessageSeenIndicator extends Component {
     }
 
     get hasSomeoneSeen() {
-        const otherPartnerSeenInfosSeen = this.props.thread.partnerSeenInfos.filter(
+        const otherPartnerSeenInfosSeen = [...this.props.thread.partnerSeenInfos].filter(
             (partnerSeenInfo) =>
                 partnerSeenInfo.partner.id !== this.props.message.author.id &&
                 partnerSeenInfo.lastSeenMessage &&
@@ -47,7 +50,7 @@ export class MessageSeenIndicator extends Component {
     }
 
     get hasSomeoneFetched() {
-        const otherPartnerSeenInfosFetched = this.props.thread.partnerSeenInfos.filter(
+        const otherPartnerSeenInfosFetched = [...this.props.thread.partnerSeenInfos].filter(
             (partnerSeenInfo) =>
                 partnerSeenInfo.partner.id !== this.props.message.author.id &&
                 partnerSeenInfo.lastFetchedMessage &&

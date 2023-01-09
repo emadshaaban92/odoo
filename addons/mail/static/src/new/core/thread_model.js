@@ -20,11 +20,11 @@ export class Thread {
     /** @type {string} */
     model;
     canLeave = false;
-    /** @type {import("@mail/new/core/channel_member_model").channelMember[]} */
+    /** @type {import("@mail/new/core/channel_member_model").ChannelMember[]} */
     channelMembers = [];
-    /** @type {import("@mail/new/rtc/rtc_session_model").rtcSession{}} */
+    /** @type {import("@mail/new/rtc/rtc_session_model").RtcSession{}} */
     rtcSessions = {};
-    /** @type {import("@mail/new/core/partner_model").partner[]} */
+    /** @type {import("@mail/new/core/partner_model").Partner[]} */
     invitedPartners = [];
     /** @type {integer} */
     chatPartnerId;
@@ -57,9 +57,11 @@ export class Thread {
     _store;
     /** @type {string} */
     defaultDisplayMode;
-    seenInfo = [];
-    fetchedInfo = [];
-    partnerSeenInfos = [];
+
+    // TODO: This need to have a system that track partner and seen message
+    // because you should not have duplicated partner in last message seen.
+    // Maybe store this inside channel member ? We just need fecthed and seen key
+    partnerSeenInfos = new Set();
 
     /**
      * @param {import("@mail/new/core/store_service").Store} store
@@ -182,16 +184,20 @@ export class Thread {
             }
 
             if ("seen_partners_info" in serverData) {
-                this.partnerSeenInfos = serverData.seen_partners_info.map(
-                    ({ fetched_message_id, partner_id, seen_message_id }) => {
-                        return {
-                            lastFetchedMessage: fetched_message_id
-                                ? { id: fetched_message_id }
-                                : undefined,
-                            lastSeenMessage: seen_message_id ? { id: seen_message_id } : undefined,
-                            partner: { id: partner_id },
-                        };
-                    }
+                this.partnerSeenInfos.add(
+                    ...serverData.seen_partners_info.map(
+                        ({ fetched_message_id, partner_id, seen_message_id }) => {
+                            return {
+                                lastFetchedMessage: fetched_message_id
+                                    ? { id: fetched_message_id }
+                                    : undefined,
+                                lastSeenMessage: seen_message_id
+                                    ? { id: seen_message_id }
+                                    : undefined,
+                                partner: { id: partner_id },
+                            };
+                        }
+                    )
                 );
                 // const messageIds = serverData.seen_partners_info.reduce(
                 //     (currentSet, { fetched_message_id, seen_message_id }) => {
@@ -451,7 +457,7 @@ export class Thread {
     }
 
     get lastCurrentPartnerMessageSeenByEveryone() {
-        const otherPartnerSeenInfos = this.partnerSeenInfos.filter(
+        const otherPartnerSeenInfos = [...this.partnerSeenInfos].filter(
             (partnerSeenInfo) => partnerSeenInfo.partner.id !== this._store.user.partnerId
         );
         if (otherPartnerSeenInfos.length === 0) {
