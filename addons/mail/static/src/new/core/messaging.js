@@ -6,13 +6,8 @@ import { memoize } from "@web/core/utils/functions";
 import { cleanTerm, htmlToTextContentInline } from "@mail/new/utils/format";
 import { removeFromArray } from "@mail/new/utils/arrays";
 import { ChatWindow } from "./chat_window_model";
-import { Thread } from "./thread_model";
-import { Partner } from "./partner_model";
 import { Guest } from "./guest_model";
-import { ChannelMember } from "../core/channel_member_model";
-import { RtcSession } from "@mail/new/rtc/rtc_session_model";
 import { LinkPreview } from "./link_preview_model";
-import { Message } from "./message_model";
 import { CannedResponse } from "./canned_response_model";
 import { browser } from "@web/core/browser/browser";
 import { sprintf } from "@web/core/utils/strings";
@@ -66,7 +61,9 @@ export class Messaging {
         userSettings,
         chatWindow,
         thread,
-        message
+        message,
+        partner,
+        rtc
     ) {
         this.env = env;
         /** @type {import("@mail/new/core/store_service").Store} */
@@ -76,9 +73,16 @@ export class Messaging {
         this.notification = notification;
         this.soundEffects = soundEffects;
         this.userSettings = userSettings;
+        /** @type {import("@mail/new/chat/chat_window_service").ChatWindow} */
         this.chatWindow = chatWindow;
+        /** @type {import("@mail/new/thread/thread_service").ThreadService} */
         this.thread = thread;
+        /** @type {import("@mail/new/thread/message_service").MessageService} */
         this.message = message;
+        /** @type {import("@mail/new/core/partner_service").PartnerService} */
+        this.partner = partner;
+        /** @type {import("@mail/new/rtc/rtc").Rtc} */
+        this.rtc = rtc;
         this.nextId = 1;
         this.router = router;
         this.bus = bus;
@@ -105,20 +109,20 @@ export class Messaging {
         this.registeredImStatusPartners = reactive([], () => this.updateImStatusRegistration());
         this.store.registeredImStatusPartners = this.registeredImStatusPartners;
         this.store.discuss.threadLocalId = initialThreadLocalId;
-        this.store.discuss.inbox = Thread.insert(this.store, {
+        this.store.discuss.inbox = this.thread.insert({
             id: "inbox",
             model: "mail.box",
             name: _t("Inbox"),
             type: "mailbox",
         });
-        this.store.discuss.starred = Thread.insert(this.store, {
+        this.store.discuss.starred = this.thread.insert({
             id: "starred",
             model: "mail.box",
             name: _t("Starred"),
             type: "mailbox",
             counter: 0,
         });
-        this.store.discuss.history = Thread.insert(this.store, {
+        this.store.discuss.history = this.thread.insert({
             id: "history",
             model: "mail.box",
             name: _t("History"),
@@ -134,7 +138,7 @@ export class Messaging {
     initialize() {
         this.rpc("/mail/init_messaging", {}, { silent: true }).then((data) => {
             if (data.current_partner) {
-                Partner.insert(this.store, data.current_partner);
+                this.partner.insert(data.current_partner);
             }
             if (data.currentGuest) {
                 this.store.currentGuest = Guest.insert(this.store, data.currentGuest);
@@ -142,7 +146,7 @@ export class Messaging {
             if (session.user_context.uid) {
                 this.loadFailures();
             }
-            this.store.partnerRoot = Partner.insert(this.store, data.partner_root);
+            this.store.partnerRoot = this.partner.insert(data.partner_root);
             for (const channelData of data.channels) {
                 const thread = this.thread.createChannelThread(channelData);
                 if (channelData.is_minimized && channelData.state !== "closed") {
@@ -164,7 +168,7 @@ export class Messaging {
             this.store.internalUserGroupId = data.internalUserGroupId;
             this.store.discuss.starred.counter = data.starred_counter;
             (data.shortcodes ?? []).forEach((code) => {
-                CannedResponse.insert(this.store, code);
+                this.insertCannedResponse(code);
             });
             this.isReady.resolve();
         });
@@ -173,7 +177,7 @@ export class Messaging {
     loadFailures() {
         this.rpc("/mail/load_message_failures", {}, { silent: true }).then((messages) => {
             messages.map((messageData) =>
-                Message.insert(this.store, {
+                this.message.insert({
                     ...messageData,
                     body: messageData.body ? markup(messageData.body) : messageData.body,
                     // implicit: failures are sent by the server at
@@ -337,7 +341,7 @@ export class Messaging {
                                     message.parentMessage.body = markup(message.parentMessage.body);
                                 }
                                 const data = Object.assign(message, { body: markup(message.body) });
-                                Message.insert(this.store, data, channel);
+                                this.message.insert(data, channel);
                                 if (
                                     !this.presence.isOdooFocused() &&
                                     channel.type === "chat" &&
@@ -354,7 +358,7 @@ export class Messaging {
                     break;
                 case "mail.channel/leave":
                     {
-                        const thread = Thread.insert(this.store, {
+                        const thread = this.thread.insert({
                             ...notif.payload,
                             model: "mail.channel",
                         });
@@ -379,7 +383,7 @@ export class Messaging {
                 case "mail.record/insert":
                     {
                         if (notif.payload.RtcSession) {
-                            RtcSession.insert(this.store, notif.payload.RtcSession);
+                            this.rtc.insertSession(notif.payload.RtcSession);
                         }
                         if (notif.payload.Partner) {
                             const partners = Array.isArray(notif.payload.Partner)
@@ -387,7 +391,7 @@ export class Messaging {
                                 : [notif.payload.Partner];
                             for (const partner of partners) {
                                 if (partner.im_status) {
-                                    Partner.insert(this.store, partner);
+                                    this.partner.insert(partner);
                                 }
                             }
                         }
@@ -411,7 +415,7 @@ export class Messaging {
                         }
                         const { Message: messageData } = notif.payload;
                         if (messageData) {
-                            Message.insert(this.store, {
+                            this.message.insert({
                                 ...messageData,
                                 body: messageData.body
                                     ? markup(messageData.body)
@@ -426,7 +430,7 @@ export class Messaging {
                     break;
                 case "mail.channel/joined": {
                     const { channel, invited_by_user_id: invitedByUserId } = notif.payload;
-                    const thread = Thread.insert(this.store, {
+                    const thread = this.thread.insert({
                         ...channel,
                         model: "mail.channel",
                         serverData: {
@@ -443,7 +447,7 @@ export class Messaging {
                     break;
                 }
                 case "mail.channel/legacy_insert":
-                    Thread.insert(this.store, {
+                    this.thread.insert({
                         id: notif.payload.channel.id,
                         model: "mail.channel",
                         serverData: notif.payload,
@@ -465,7 +469,7 @@ export class Messaging {
                     break;
                 case "mail.message/inbox": {
                     const data = Object.assign(notif.payload, { body: markup(notif.payload.body) });
-                    Message.insert(this.store, data);
+                    this.message.insert(data);
                     break;
                 }
                 case "mail.message/mark_as_read": {
@@ -511,7 +515,7 @@ export class Messaging {
                             continue;
                         }
                         this.message.updateStarred(message, starred);
-                        this.store.discuss.starred.sortMessages();
+                        this.thread.sortMessages(this.store.discuss.starred);
                     }
                     break;
                 }
@@ -532,12 +536,12 @@ export class Messaging {
                     const isTyping = notif.payload.isTyping;
                     const channel =
                         this.store.threads[createLocalId("mail.channel", notif.payload.channel.id)];
-                    const member = ChannelMember.insert(this.store, {
+                    const member = this.thread.insertChannelMember({
                         id: notif.payload.id,
                         partnerId: notif.payload.persona.partner.id,
                         threadId: channel.id,
                     });
-                    Partner.insert(this.store, {
+                    this.partner.insert({
                         id: notif.payload.persona.partner.id,
                         name: notif.payload.persona.partner.name,
                     });
@@ -575,7 +579,7 @@ export class Messaging {
                 case "mail.message/notification_update":
                     {
                         notif.payload.elements.map((message) => {
-                            Message.insert(this.store, {
+                            this.message.insert({
                                 ...message,
                                 body: markup(message.body),
                                 // implicit: failures are sent by the server at
@@ -599,12 +603,12 @@ export class Messaging {
         switch (command) {
             case "insert-and-unlink":
                 for (const sessionData of sessionsData) {
-                    RtcSession.delete(this.store, sessionData.id);
+                    this.rtc.deleteSession(sessionData.id);
                 }
                 break;
             case "insert":
                 for (const sessionData of sessionsData) {
-                    const session = RtcSession.insert(this.store, sessionData);
+                    const session = this.rtc.insertSession(sessionData);
                     channel.rtcSessions[session.id] = session;
                 }
                 break;
@@ -634,7 +638,7 @@ export class Messaging {
                 const data = Object.assign(preview.last_message, {
                     body: markup(preview.last_message.body),
                 });
-                Message.insert(this.store, data, thread);
+                this.message.insert(data, thread);
             }
         }
     });
@@ -670,7 +674,7 @@ export class Messaging {
                 searchTerm,
                 limit,
             ]);
-            partners = partnersData.map((data) => Partner.insert(this.store, data));
+            partners = partnersData.map((data) => this.partner.insert(data));
         }
         return partners;
     }
@@ -688,5 +692,19 @@ export class Messaging {
         return this.rpc("/mail/attachment/delete", {
             attachment_id: attachment.id,
         });
+    }
+
+    insertCannedResponse(data) {
+        let cannedResponse = this.store.cannedResponses[data.id];
+        if (!cannedResponse) {
+            this.store.cannedResponses[data.id] = new CannedResponse();
+            cannedResponse = this.store.cannedResponses[data.id];
+        }
+        Object.assign(cannedResponse, {
+            id: data.id,
+            name: data.source,
+            substitution: data.substitution,
+        });
+        return cannedResponse;
     }
 }

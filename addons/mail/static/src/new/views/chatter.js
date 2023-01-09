@@ -52,6 +52,7 @@ export class Chatter extends Component {
         this.messaging = useMessaging();
         this.activity = useState(useService("mail.activity"));
         this.chatter = useState(useService("mail.chatter"));
+        this.threadService = useService("mail.thread");
         this.store = useService("mail.store");
         this.orm = useService("orm");
         this.rpc = useService("rpc");
@@ -152,13 +153,13 @@ export class Chatter extends Component {
             }
             if ("attachments" in result) {
                 this.state.attachments = result.attachments.map((attachment) =>
-                    Attachment.insert(this.store, attachment)
+                    this.threadService.insertAttachment(attachment)
                 );
                 this.state.isLoadingAttachments = false;
             }
             if ("followers" in result) {
                 for (const followerData of result.followers) {
-                    Follower.insert(this.store, {
+                    this.chatter.insertFollower({
                         followedThread: this.thread,
                         ...followerData,
                     });

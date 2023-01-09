@@ -13,6 +13,7 @@ export const rtcService = {
         "bus_service",
         "mail.soundEffects",
         "mail.userSettings",
+        "mail.thread",
     ],
     start(
         env,
@@ -24,9 +25,19 @@ export const rtcService = {
             bus_service: bus,
             "mail.soundEffects": soundEffects,
             "mail.userSettings": userSettings,
+            "mail.thread": thread,
         }
     ) {
-        const rtc = new Rtc(env, store, messaging, notification, rpc, soundEffects, userSettings);
+        const rtc = new Rtc(
+            env,
+            store,
+            messaging,
+            notification,
+            rpc,
+            soundEffects,
+            userSettings,
+            thread
+        );
         bus.addEventListener("notification", (notifEvent) => {
             for (const notif of notifEvent.detail) {
                 switch (notif.type) {

@@ -9,6 +9,7 @@ import { reactive } from "@odoo/owl";
 
 import { RtcSession } from "./rtc_session_model";
 import { debounce } from "@web/core/utils/timing";
+import { createLocalId } from "../core/thread_model.create_local_id";
 
 const PEER_NOTIFICATION_WAIT_DELAY = 50;
 const RECOVERY_TIMEOUT = 15_000;
@@ -62,7 +63,7 @@ function getTransceiver(peerConnection, trackKind) {
 }
 
 export class Rtc {
-    constructor(env, store, messaging, notification, rpc, soundEffects, userSettings) {
+    constructor(env, store, messaging, notification, rpc, soundEffects, userSettings, thread) {
         // services
         this.env = env;
         /** @type {import("@mail/new/core/store_service").Store} */
@@ -72,6 +73,8 @@ export class Rtc {
         this.rpc = rpc;
         this.soundEffects = soundEffects;
         this.userSettings = userSettings;
+        /** @type {import("@mail/new/thread/thread_service").ThreadService} */
+        this.thread = thread;
         this.state = reactive({
             hasPendingRequest: false,
             selfSession: undefined,
@@ -543,7 +546,7 @@ export class Rtc {
         peerConnection.ontrack = ({ transceiver, track }) => {
             this.log(session, `received ${track.kind} track`);
             const volume = this.userSettings.partnerVolumes.get(session.channelMember.partnerId);
-            session?.updateStream(track, {
+            this.updateStream(session, track, {
                 mute: this.state.selfSession.isDeaf,
                 volume: volume ?? 1,
             });
@@ -609,7 +612,7 @@ export class Rtc {
         // Initializing a new session implies closing the current session.
         this.clear();
         this.state.channel = channel;
-        this.state.channel.update({
+        this.thread.update(this.state.channel, {
             serverData: {
                 rtcSessions,
                 invitedPartners,
@@ -707,12 +710,12 @@ export class Rtc {
         if (this.state.channel) {
             const activeSessionsData = rtcSessions[0][1];
             for (const sessionData of activeSessionsData) {
-                const session = RtcSession.insert(this.store, sessionData);
+                const session = this.insertSession(sessionData);
                 this.state.channel.rtcSessions[session.id] = session;
             }
             const outdatedSessionsData = rtcSessions[1][1];
             for (const sessionData of outdatedSessionsData) {
-                const session = RtcSession.delete(this.store, sessionData);
+                const session = this.deleteSession(sessionData);
                 delete this.state.channel.rtcSessions[session.id];
             }
         }
@@ -750,7 +753,7 @@ export class Rtc {
     }
 
     disconnect(session) {
-        session.clear();
+        this.clearSession(session);
         browser.clearTimeout(this.state.recoverTimeouts.get(session.id));
         this.state.recoverTimeouts.delete(session.id);
         this.state.outgoingSessions.delete(session.id);
@@ -880,9 +883,9 @@ export class Rtc {
         }
         if (this.state.selfSession) {
             if (!this.state.videoTrack) {
-                this.state.selfSession.removeVideo();
+                this.removeVideoFromSession(this.state.selfSession);
             } else {
-                this.state.selfSession.updateStream(this.state.videoTrack);
+                this.updateStream(this.state.selfSession, this.state.videoTrack);
             }
         }
         for (const session of Object.values(this.state.channel.rtcSessions)) {
@@ -1125,5 +1128,141 @@ export class Rtc {
             this.state.selfSession.isTalking = true;
         }
         await this.refreshAudioStatus();
+    }
+
+    /**
+     * @param {Object} data
+     * @returns {RtcSession}
+     */
+    insertSession(data) {
+        let session;
+        if (this.store.rtcSessions[data.id]) {
+            session = this.store.rtcSessions[data.id];
+        } else {
+            session = new RtcSession();
+            session._store = this.store;
+        }
+        const { channelMember, ...remainingData } = data;
+        for (const key in remainingData) {
+            session[key] = remainingData[key];
+        }
+        if (channelMember?.channel) {
+            session.channelId = channelMember.channel.id;
+        }
+        if (channelMember) {
+            this.thread.insertChannelMember(channelMember);
+            session.channelMemberId = channelMember.id;
+        }
+        this.store.rtcSessions[session.id] = session;
+        // return reactive version
+        return this.store.rtcSessions[session.id];
+    }
+
+    /**
+     * @param {import("@mail/new/rtc/rtc_session_model").id} id
+     */
+    deleteSession(id) {
+        const session = this.store.rtcSessions[id];
+        if (session) {
+            delete this.store.threads[createLocalId("mail.channel", session.channelId)]
+                ?.rtcSessions[id];
+            this.clearSession(session);
+        }
+        delete this.store.rtcSessions[id];
+    }
+
+    /**
+     * @param {RtcSession} session
+     * @param {Track} [track]
+     * @param {Object} parm1
+     * @param {boolean} parm1.mute
+     * @param {number} parm1.volume
+     */
+    async updateStream(session, track, { mute, volume } = {}) {
+        const stream = new window.MediaStream();
+        stream.addTrack(track);
+        if (track.kind === "audio") {
+            const audioElement = session.audioElement || new window.Audio();
+            try {
+                audioElement.srcObject = stream;
+            } catch {
+                session.isAudioInError = true;
+            }
+            audioElement.load();
+            audioElement.muted = mute;
+            // Using both autoplay and play() as safari may prevent play() outside of user interactions
+            // while some browsers may not support or block autoplay.
+            audioElement.autoplay = true;
+            session.audioElement = audioElement;
+            session.audioStream = stream;
+            session.isSelfMuted = false;
+            session.isTalking = false;
+            try {
+                await audioElement.play();
+                session.isAudioInError = false;
+            } catch (error) {
+                if (typeof error === "object" && error.name === "NotAllowedError") {
+                    // Ignored as some browsers may reject play() calls that do not
+                    // originate from a user input.
+                    return;
+                }
+                session.isAudioInError = true;
+            }
+        }
+        if (track.kind === "video") {
+            session.videoStream = stream;
+        }
+        console.log("updateStream", session.id);
+    }
+
+    clearSession(session) {
+        if (session.audioStream) {
+            for (const track of session.audioStream.getTracks() || []) {
+                track.stop();
+            }
+        }
+        if (session.audioElement) {
+            session.audioElement.pause();
+            try {
+                session.audioElement.srcObject = undefined;
+            } catch {
+                // ignore error during remove, the value will be overwritten at next usage anyway
+            }
+        }
+        session.audioStream = undefined;
+        session.isAudioInError = false;
+        session.isTalking = false;
+        this.removeVideoFromSession(session);
+        session.dataChannel?.close();
+        delete session.dataChannel;
+        const peerConnection = session.peerConnection;
+        if (peerConnection) {
+            const RTCRtpSenders = peerConnection.getSenders();
+            for (const sender of RTCRtpSenders) {
+                try {
+                    peerConnection.removeTrack(sender);
+                } catch {
+                    // ignore error
+                }
+            }
+            for (const transceiver of peerConnection.getTransceivers()) {
+                try {
+                    transceiver.stop();
+                } catch {
+                    // transceiver may already be stopped by the remote.
+                }
+            }
+            peerConnection.close();
+            delete session.peerConnection;
+        }
+    }
+
+    removeVideoFromSession(session) {
+        if (session.videoStream) {
+            for (const track of session.videoStream.getTracks() || []) {
+                track.stop();
+            }
+        }
+        session.videoStream = undefined;
     }
 }
