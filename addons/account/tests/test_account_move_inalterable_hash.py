@@ -1,5 +1,3 @@
-from unittest.mock import patch
-
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 from odoo.models import Model
 from odoo.tests import tagged

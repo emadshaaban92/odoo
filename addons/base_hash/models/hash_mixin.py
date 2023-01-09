@@ -43,7 +43,7 @@ class HashMixin(models.AbstractModel):
         """
         This method must be overriden by the inheriting class.
         Get the sequence object used to build the hash chain.
-        :returns: the linked sequence 
+        :returns: the linked sequence
         :rtype: Model<ir.sequence>
         E.g.: account.move is a link (i.e. has a secure_sequence_number) in the
         chain of account.journal (i.e. has a secure_sequence).
@@ -55,7 +55,6 @@ class HashMixin(models.AbstractModel):
         This method must be overriden by the inheriting class.
         :returns: True if the record must be hashed (depending on some record fields), False otherwise
         """
-        pass
 
     def _get_sorting_keys(self):
         """
