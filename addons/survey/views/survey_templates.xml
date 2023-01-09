@@ -30,7 +30,7 @@
                             <t t-set="page_number" t-value="page_ids.index(page.id) + (1 if survey.progression_mode == 'number' else 0)"/>
                         </t>
                         <t t-else="">
-                            <t t-if="not survey.session_state">
+                            <t t-if="not answer.is_session_answer">
                                 <t t-set="page_ids" t-value="answer.predefined_question_ids.ids"/>
                             </t>
                             <t t-else="">
@@ -108,7 +108,6 @@
             </div>
 
             <div class="o_survey_form_content w-100">
-                <t t-out="1+1"/>
                 <t t-if="answer.state == 'new'" t-call="survey.survey_fill_form_start"/>
                 <t t-elif="answer.state == 'in_progress'" t-call="survey.survey_fill_form_in_progress" />
                 <t t-else="" t-call="survey.survey_fill_form_done"/>

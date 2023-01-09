@@ -362,7 +362,7 @@ class Survey(http.Controller):
                 })
             elif survey_sudo.questions_layout == 'page_per_question':
                 page_ids = (answer_sudo.predefined_question_ids.ids
-                            if not survey_sudo.session_state
+                            if not answer_sudo.is_session_answer
                             else survey_sudo.question_ids.ids)
                 survey_progress = request.env.ref('survey.survey_progression')._render({
                     'survey': survey_sudo,
