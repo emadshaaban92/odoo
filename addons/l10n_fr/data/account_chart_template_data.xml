@@ -24,6 +24,8 @@
         <field name="default_pos_receivable_account_id" ref="fr_pcg_recv_pos"/>
         <field name="account_journal_early_pay_discount_loss_account_id" ref="pcg_665"/>
         <field name="account_journal_early_pay_discount_gain_account_id" ref="pcg_765"/>
+        <field name="l10n_fr_rounding_difference_loss_account_id" ref="pcg_658"/>
+        <field name="l10n_fr_rounding_difference_profit_account_id" ref="pcg_758"/>
         <field name="currency_id" ref="base.EUR"/>
         <field name="spoken_languages" eval="'fr_FR;'"/>
     </record>
