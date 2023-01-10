@@ -26,14 +26,14 @@ class PosOrder(models.Model):
     l10n_eg_pos_eta_error = fields.Text("EDI Error")
     l10n_eg_pos_qrcode = fields.Char("QR Code", compute="_l10n_eg_pos_compute_qrcode")
 
-    @api.depends('company_id.l10n_eg_production_env', 'date_order', 'l10n_eg_pos_uuid')
+    @api.depends('config_id.l10n_eg_pos_production_env', 'date_order', 'l10n_eg_pos_uuid')
     def _l10n_eg_pos_compute_qrcode(self):
         """
             Compute the QR code string used to render the QR code on the receipt.
         :return: QR Code string
         :rtype: str
         """
-        api_domain = self.env.company.l10n_eg_production_env and ETA_DOMAINS['production'] or ETA_DOMAINS[
+        api_domain = self.config_id.l10n_eg_pos_production_env and ETA_DOMAINS['production'] or ETA_DOMAINS[
             'preproduction']
         for order in self:
             order.l10n_eg_pos_qrcode = ''
@@ -213,7 +213,7 @@ class PosOrder(models.Model):
         self.ensure_one()
         partner_type = self._l10n_eg_get_partner_tax_type(self.partner_id)
         buyer_dict = {'type': partner_type, 'paymentNumber': ''}
-        threshold_exceeded = self.amount_total >= (self.company_id.l10n_eg_invoicing_threshold or float("inf"))
+        threshold_exceeded = self.amount_total >= (self.config_id.l10n_eg_pos_receipt_threshold or float("inf"))
         if (threshold_exceeded and partner_type == 'P') or partner_type == 'B':
             buyer_dict['id'] = self.partner_id.vat or ''
             buyer_dict['name'] = self.partner_id.name
@@ -275,18 +275,18 @@ class PosOrder(models.Model):
                     _("You are trying to submit a refund order with no reference to the refunded document."))
             item_data, totals = receipt._l10n_eg_pos_eta_prepare_receipt_item_data()
             tax_data = receipt._l10n_eg_pos_eta_prepare_receipt_tax_data(totals['total_net'])
-            journal_id = receipt.sale_journal
-            branch_id = journal_id.l10n_eg_branch_id
+            config_id = receipt.config_id
+            branch_id = config_id.l10n_eg_pos_branch_id
             receipt_json = {
                 'header': receipt._l10n_eg_pos_eta_prepare_receipt_header(old_UUID),
                 'documentType': {
                     'receiptType': 'r' if old_UUID else 'S',
-                    'typeVersion': '1.1'
+                    'typeVersion': '1.2'
                 },
                 'seller': {
                     'rin': branch_id.vat,
                     'companyTradeName': branch_id.name,
-                    'branchCode': journal_id.l10n_eg_branch_identifier,
+                    'branchCode': config_id.l10n_eg_pos_branch_identifier,
                     'branchAddress': {
                         'country': branch_id.country_id.code,
                         'governate': branch_id.state_id.name,
@@ -294,8 +294,8 @@ class PosOrder(models.Model):
                         'street': branch_id.street,
                         'buildingNumber': branch_id.l10n_eg_building_no or ''
                     },
-                    'deviceSerialNumber': receipt.config_id.l10n_eg_pos_serial,
-                    'activityCode': journal_id.l10n_eg_activity_type_id.code,
+                    'deviceSerialNumber': config_id.l10n_eg_pos_serial,
+                    'activityCode': config_id.l10n_eg_pos_activity_type_id.code,
                 },
                 'buyer': receipt._l10n_eg_pos_eta_prepare_receipt_buyer(),
                 'itemData': item_data,
@@ -319,23 +319,22 @@ class PosOrder(models.Model):
         :rtype: dict
         """
         request_url = '/connect/token'
-        company_id = config_id.company_id
         request_data = {
             'body': {
                 'grant_type': 'client_credentials',
-                'client_id': company_id.l10n_eg_client_identifier,
-                'client_secret': company_id.l10n_eg_client_secret,
+                'client_id': config_id.l10n_eg_pos_client_identifier,
+                'client_secret': config_id.l10n_eg_pos_client_secret,
             },
             'header': {
                 'posserial': config_id.l10n_eg_pos_serial,
                 'pososversion': config_id.l10n_eg_pos_version,
                 'posmodelframework': config_id.l10n_eg_pos_model_framework,
-                'presharedkey': config_id.l10n_eg_pos_pre_shared_key,
+                'presharedkey': config_id.l10n_eg_pos_pre_shared_key or '',
                 'Content-Type': 'application/x-www-form-urlencoded'
             }
         }
         response_data = self._l10n_eg_eta_connect_to_server(request_data, request_url, 'POST', is_access_token_req=True,
-                                                            production_enviroment=company_id.l10n_eg_production_env)
+                                                            production_enviroment=config_id.l10n_eg_pos_production_env)
         if response_data.get('error'):
             return response_data
         return {'access_token': response_data.get('response').json().get('access_token')}
@@ -442,7 +441,6 @@ class PosOrder(models.Model):
         request_url = '/api/v1/receiptsubmissions'
         self.write({'l10n_eg_pos_eta_state': 'pending'})
         config_id = self.config_id
-        company_id = self.company_id
         access_data = self._l10n_eg_pos_eta_authenticate_pos(config_id)
 
         if access_data.get('error'):
@@ -463,7 +461,7 @@ class PosOrder(models.Model):
 
         # Submit requests to ETA and await response
         response_data = self._l10n_eg_eta_connect_to_server(request_data, request_url, 'POST',
-                                                            production_enviroment=company_id.l10n_eg_production_env)
+                                                            production_enviroment=config_id.l10n_eg_pos_production_env)
         return self._l10n_eg_pos_eta_postprocess_submissions(response_data, receipt_dict)
 
     @api.model
@@ -506,10 +504,9 @@ class PosOrder(models.Model):
         if session_id.company_id.country_id.code != 'EG':
             return
 
-        company_id = session_id.company_id
         config_id = session_id.config_id
         partner_id = self.env['res.partner'].browse(order_vals['partner_id'])
-        threshold_exceeded = order_vals['amount_total'] >= (company_id.l10n_eg_invoicing_threshold or float("inf"))
+        threshold_exceeded = order_vals['amount_total'] >= (config_id.l10n_eg_pos_receipt_threshold or float("inf"))
         edi = self._l10n_eg_pos_eta_edi_document_format()
 
         refunded_line_ids = [
@@ -525,26 +522,30 @@ class PosOrder(models.Model):
         if is_refund and not sent_refunds:
             order_errors.append(_("You cannot issue a Return Receipt that has no reference to an un-refunded order."))
 
+        payment_method_ids = {p[2].get('payment_method_id') for p in order_vals.get('statement_ids',[])}
+        if len(payment_method_ids) > 1:
+            order_errors.append(_("Please use a single payment method for this order to be sent to ETA, or make an invoice instead."))
+
         if any(not config_id[f] for f in ('l10n_eg_pos_serial', 'l10n_eg_pos_model_framework', 'l10n_eg_pos_version')):
             order_errors.append(
                 _("Please, make sure your POS is configured correctly to authenticate with the ETA for receipt submission"))
-        if config_id.journal_id.l10n_eg_branch_id.vat == partner_id.vat:
+        if config_id.l10n_eg_pos_branch_id.vat == partner_id.vat:
             order_errors.append(
                 _("You cannot issue a receipt to a partner with the same VAT number as the branch."))
-        if not edi._l10n_eg_get_eta_token_domain(company_id.l10n_eg_production_env):
+        if not edi._l10n_eg_get_eta_token_domain(config_id.l10n_eg_pos_production_env):
             order_errors.append(_("Please configure the token domain from the system parameters"))
-        if not edi._l10n_eg_get_eta_api_domain(company_id.l10n_eg_production_env):
+        if not edi._l10n_eg_get_eta_api_domain(config_id.l10n_eg_pos_production_env):
             order_errors.append(_("Please configure the API domain from the system parameters"))
-        if not all([config_id.journal_id.l10n_eg_branch_id, config_id.journal_id.l10n_eg_branch_identifier,
-                    config_id.journal_id.l10n_eg_activity_type_id]):
+        if not all([config_id.l10n_eg_pos_branch_id, config_id.l10n_eg_pos_branch_identifier,
+                    config_id.l10n_eg_pos_activity_type_id]):
             order_errors.append(_("Please set all the ETA information on the receipt's sale journal"))
-        if not self._l10n_eg_validate_info_address(config_id.journal_id.l10n_eg_branch_id, threshold_exceeded):
+        if not self._l10n_eg_validate_info_address(config_id.l10n_eg_pos_branch_id, threshold_exceeded):
             order_errors.append(_("Please set all the required fields in the branch details"))
         if not self._l10n_eg_validate_info_address(partner_id, threshold_exceeded):
             order_errors.append(_("Please set all the required fields in the customer details"))
         if not self._l10n_eg_validate_buyer(partner_id, threshold_exceeded):
             order_errors.append(_("Please make sure the Buyer data is setup properly, including the VAT number"))
-        if not config_id.journal_id.l10n_eg_branch_id.l10n_eg_building_no:
+        if not config_id.l10n_eg_pos_branch_id.l10n_eg_building_no:
             order_errors.append(_("Please, make sure the building number is defined on the Company Branch"))
 
         for line_val in order_vals['lines']:
@@ -603,7 +604,7 @@ class PosOrder(models.Model):
                                                                       'Authorization': 'Bearer %s' % access_data.get(
                                                                           'access_token')}
                                                                  }, request_url, 'GET',
-                                                                production_enviroment=receipt.company_id.l10n_eg_production_env)
+                                                                production_enviroment=receipt.config_id.l10n_eg_pos_production_env)
             try:
                 receipt_data = response_data.get('response').json()
             except json.decoder.JSONDecodeError:
@@ -624,7 +625,7 @@ class PosOrder(models.Model):
             Scheduled action that retrieves the submission state of all submitted receipts.
         """
         submissions = self.search(
-            [('l10n_eg_pos_eta_state', '=', 'sent'), ('l10n_eg_pos_eta_validity', '=', 'pending')])
+            [('l10n_eg_pos_eta_state', '=', 'sent'), ('l10n_eg_pos_eta_submission_state', '=', 'pending')])
         submissions.l10n_eg_pos_eta_check_submissions()
 
     # region OVERRIDES

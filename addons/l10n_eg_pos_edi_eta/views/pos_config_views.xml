@@ -28,18 +28,57 @@
                         </div>
                         <div class="col-12 col-lg-6 o_setting_box">
                             <div class="o_setting_right_pane">
+                                <span class="o_form_label">POS Client ID</span>
+                                
+                                <field name="l10n_eg_pos_client_identifier" attrs="{'required': [('country_code', '=', 'EG')]}"/>
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <span class="o_form_label">POS Client Secret</span>
+                                <field name="l10n_eg_pos_client_secret" attrs="{'required': [('country_code', '=', 'EG')]}"/>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <span class="o_form_label">Branch</span>
+                                
+                                <field name="l10n_eg_pos_branch_id" attrs="{'required': [('country_code', '=', 'EG')]}"/>
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <span class="o_form_label">ETA Activity Code</span>
+                                <field name="l10n_eg_pos_activity_type_id" attrs="{'required': [('country_code', '=', 'EG')]}"/>
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <span class="o_form_label">ETA Branch ID</span>
+                                <field name="l10n_eg_pos_branch_identifier" attrs="{'required': [('country_code', '=', 'EG')]}"/>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <span class="o_form_label">POS In Production Environment</span>
+                                <field name="l10n_eg_pos_production_env" attrs="{'required': [('country_code', '=', 'EG')]}"/>
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <span class="o_form_label">Receipt Threshold</span>
+                                <div class="text-muted">
+                                    Threshold at which you are required to give the VAT number of the customer
+                                </div>
+                                <field name="l10n_eg_pos_receipt_threshold" attrs="{'required': [('country_code', '=', 'EG')]}"/>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
                                 <span class="o_form_label">Model Framework</span>
                                 <div class="text-muted">
                                     Model Framework of the POS system used for authentication
                                 </div>
-                                <field name="l10n_eg_pos_model_framework" attrs="{'required': [('country_code', '=', 'EG')]}"/>
+                                <field name="l10n_eg_pos_model_framework" attrs="{'required': [('country_code', '=', 'EG'), ('l10n_eg_pos_production_env', '=', True)]}"/>
                             </div>
                             <div class="o_setting_right_pane">
                                 <span class="o_form_label">Pre-Shared Key</span>
                                 <div class="text-muted">
                                     Pre-Shared Key of the POS system used for authentication
                                 </div>
-                                <field name="l10n_eg_pos_pre_shared_key" attrs="{'required': [('country_code', '=', 'EG')]}"/>
+                                <field name="l10n_eg_pos_pre_shared_key" attrs="{'required': [('country_code', '=', 'EG'), ('l10n_eg_pos_production_env', '=', True)]}"/>
                             </div>
                         </div>
                     </div>
