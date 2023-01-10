@@ -5,6 +5,7 @@ class NewModule(models.Model):
     _inherit = 'pos.config'
 
     country_code = fields.Char(related="company_id.country_id.code")
+    l10n_eg_production_env = fields.Boolean(related="company_id.l10n_eg_production_env")
 
     l10n_eg_pos_serial = fields.Char("POS Serial")
     l10n_eg_pos_version = fields.Char("POS Version")

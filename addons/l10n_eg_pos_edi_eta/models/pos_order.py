@@ -3,7 +3,11 @@ from odoo.exceptions import UserError
 from hashlib import sha256
 import json
 
-from odoo.addons.l10n_eg_edi_eta.models.account_edi_format import ETA_DOMAINS
+
+ETA_QR_DOMAINS = {
+    'preproduction': 'https://preprod.invoicing.eta.gov.eg',
+    'production': 'https://invoicing.eta.gov.eg',
+}
 
 
 class PosOrder(models.Model):
@@ -33,7 +37,7 @@ class PosOrder(models.Model):
         :return: QR Code string
         :rtype: str
         """
-        api_domain = self.env.company.l10n_eg_production_env and ETA_DOMAINS['production'] or ETA_DOMAINS[
+        api_domain = self.env.company.l10n_eg_production_env and ETA_QR_DOMAINS['production'] or ETA_QR_DOMAINS[
             'preproduction']
         for order in self:
             order.l10n_eg_pos_qrcode = ''
@@ -281,7 +285,7 @@ class PosOrder(models.Model):
                 'header': receipt._l10n_eg_pos_eta_prepare_receipt_header(old_UUID),
                 'documentType': {
                     'receiptType': 'r' if old_UUID else 'S',
-                    'typeVersion': '1.1'
+                    'typeVersion': '1.2'
                 },
                 'seller': {
                     'rin': branch_id.vat,
@@ -330,7 +334,7 @@ class PosOrder(models.Model):
                 'posserial': config_id.l10n_eg_pos_serial,
                 'pososversion': config_id.l10n_eg_pos_version,
                 'posmodelframework': config_id.l10n_eg_pos_model_framework,
-                'presharedkey': config_id.l10n_eg_pos_pre_shared_key,
+                'presharedkey': config_id.l10n_eg_pos_pre_shared_key or '',
                 'Content-Type': 'application/x-www-form-urlencoded'
             }
         }
@@ -624,7 +628,7 @@ class PosOrder(models.Model):
             Scheduled action that retrieves the submission state of all submitted receipts.
         """
         submissions = self.search(
-            [('l10n_eg_pos_eta_state', '=', 'sent'), ('l10n_eg_pos_eta_validity', '=', 'pending')])
+            [('l10n_eg_pos_eta_state', '=', 'sent'), ('l10n_eg_pos_eta_submission_state', '=', 'pending')])
         submissions.l10n_eg_pos_eta_check_submissions()
 
     # region OVERRIDES

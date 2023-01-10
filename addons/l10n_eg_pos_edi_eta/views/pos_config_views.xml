@@ -8,6 +8,7 @@
             <field name="arch" type="xml">
                 <xpath expr="//sheet" position="inside">
                     <field name="country_code" invisible="1"/>
+                    <field name="l10n_eg_production_env" invisible="1"/>
                     <h2>ETA Configuration</h2>
                     <div class="row mt16 o_settings_container" id="l10n_eg_pos_eta_config">
                         <div class="col-12 col-lg-6 o_setting_box">
@@ -39,7 +40,7 @@
                                 <div class="text-muted">
                                     Pre-Shared Key of the POS system used for authentication
                                 </div>
-                                <field name="l10n_eg_pos_pre_shared_key" attrs="{'required': [('country_code', '=', 'EG')]}"/>
+                                <field name="l10n_eg_pos_pre_shared_key" attrs="{'required': [('country_code', '=', 'EG'), ('l10n_eg_production_env', '=', True)]}"/>
                             </div>
                         </div>
                     </div>
